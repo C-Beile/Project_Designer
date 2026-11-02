@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonView xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonView/1.2.3">
+  <name>THHIT_AddMemberToSelectionEdit_view</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <size>SMALL</size>
+  <layout>
+    <boxLayout />
+  </layout>
+  <children>
+    <genericViewTemplate>
+      <name>SelectContact</name>
+      <editMode v="true" />
+      <hideEmptyFields v="false" />
+      <fields>
+        <entityFieldLink>
+          <name>b47412fe-7fc7-4610-9493-076f4ef9876a</name>
+          <entityField>CONTACT_ID</entityField>
+        </entityFieldLink>
+      </fields>
+    </genericViewTemplate>
+  </children>
+</neonView>

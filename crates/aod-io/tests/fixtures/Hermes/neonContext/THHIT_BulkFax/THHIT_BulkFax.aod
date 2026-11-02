@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonContext xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonContext/1.2.0">
+  <name>THHIT_BulkFax</name>
+  <title>Bulk Fax</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <icon>VAADIN:PRINT</icon>
+  <mainView>THHIT_BulkFaxMain_view</mainView>
+  <filterView>THHIT_BulkFaxFilter_view</filterView>
+  <editView>THHIT_BulkFaxEdit_view</editView>
+  <previewView>THHIT_BulkFaxPreview_view</previewView>
+  <lookupView>THHIT_BulkFaxLookup_view</lookupView>
+  <entity>THHIT_BulkFax_entity</entity>
+  <references>
+    <neonViewReference>
+      <name>2023a437-4161-4dbf-8393-ab163a2f5090</name>
+      <view>THHIT_BulkFaxEdit_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>3f888c9b-4874-4a47-aad6-8ce2bd9a1cbf</name>
+      <view>THHIT_BulkFaxFilter_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>44aba46d-d97a-42e3-a979-b8ffc0fa7d71</name>
+      <view>THHIT_BulkFaxLookup_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>530742ce-9a3b-4d00-be1e-ae61c908f27e</name>
+      <view>THHIT_BulkFaxPreview_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>5fe67b23-4340-41ce-8627-52b636e44016</name>
+      <view>THHIT_BulkFaxMain_view</view>
+    </neonViewReference>
+  </references>
+</neonContext>

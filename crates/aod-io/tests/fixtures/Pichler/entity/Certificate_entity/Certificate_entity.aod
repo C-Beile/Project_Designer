@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entity/1.4.0">
+  <name>Certificate_entity</name>
+  <title>Certificate</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <initFilterProcess>%aditoprj%/entity/Certificate_entity/initFilterProcess.js</initFilterProcess>
+  <titlePlural>Certificates</titlePlural>
+  <recordContainer>db</recordContainer>
+  <entityFields>
+    <entityProvider>
+      <name>#PROVIDER</name>
+    </entityProvider>
+    <entityProvider>
+      <name>#PROVIDER_AGGREGATES</name>
+      <useAggregates v="true" />
+    </entityProvider>
+    <entityField>
+      <name>CERTIFICATEID</name>
+    </entityField>
+    <entityField>
+      <name>CONTACT_ID</name>
+      <title>Contact_Contact</title>
+      <consumer>Contacts</consumer>
+      <valueProcess>%aditoprj%/entity/Certificate_entity/entityfields/contact_id/valueProcess.js</valueProcess>
+      <displayValueProcess>%aditoprj%/entity/Certificate_entity/entityfields/contact_id/displayValueProcess.js</displayValueProcess>
+    </entityField>
+    <entityField>
+      <name>ORGANISATION_ID</name>
+      <title>Contact_Company</title>
+      <consumer>Organisations</consumer>
+      <valueProcess>%aditoprj%/entity/Certificate_entity/entityfields/organisation_id/valueProcess.js</valueProcess>
+      <displayValueProcess>%aditoprj%/entity/Certificate_entity/entityfields/organisation_id/displayValueProcess.js</displayValueProcess>
+    </entityField>
+    <entityField>
+      <name>EVENT_ID</name>
+      <title>Event</title>
+      <consumer>Events</consumer>
+      <linkedContext>Event</linkedContext>
+      <displayValueProcess>%aditoprj%/entity/Certificate_entity/entityfields/event_id/displayValueProcess.js</displayValueProcess>
+    </entityField>
+    <entityField>
+      <name>CERTIFICATENAME</name>
+      <title>Certificate name</title>
+      <consumer>KeywordCertificateName</consumer>
+    </entityField>
+    <entityConsumer>
+      <name>KeywordCertificateName</name>
+      <dependency>
+        <name>dependency</name>
+        <entityName>KeywordEntry_entity</entityName>
+        <fieldName>SpecificContainerKeywords</fieldName>
+      </dependency>
+      <children>
+        <entityParameter>
+          <name>ContainerName_param</name>
+          <valueProcess>%aditoprj%/entity/Certificate_entity/entityfields/keywordcertificatename/children/containername_param/valueProcess.js</valueProcess>
+        </entityParameter>
+      </children>
+    </entityConsumer>
+    <entityField>
+      <name>CREATIONDATE</name>
+      <title>Creation date</title>
+      <contentType>DATE</contentType>
+      <resolution>DAY</resolution>
+    </entityField>
+    <entityField>
+      <name>EXPIRATIONDATE</name>
+      <title>Expiration date</title>
+      <contentType>DATE</contentType>
+      <resolution>DAY</resolution>
+    </entityField>
+    <entityConsumer>
+      <name>Contacts</name>
+      <dependency>
+        <name>dependency</name>
+        <entityName>Person_entity</entityName>
+        <fieldName>Contacts</fieldName>
+      </dependency>
+    </entityConsumer>
+    <entityConsumer>
+      <name>Organisations</name>
+      <dependency>
+        <name>dependency</name>
+        <entityName>Organisation_entity</entityName>
+        <fieldName>Organisations</fieldName>
+      </dependency>
+    </entityConsumer>
+    <entityConsumer>
+      <name>Events</name>
+      <dependency>
+        <name>dependency</name>
+        <entityName>Event_entity</entityName>
+        <fieldName>Events</fieldName>
+      </dependency>
+    </entityConsumer>
+    <entityProvider>
+      <name>Certificates</name>
+    </entityProvider>
+    <entityParameter>
+      <name>OrgId_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityParameter>
+      <name>ContactId_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityParameter>
+      <name>RequestorContactId_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityParameter>
+      <name>RequestorOrgId_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityParameter>
+      <name>BaseContextId_param</name>
+      <expose v="true" />
+    </entityParameter>
+  </entityFields>
+  <recordContainers>
+    <dbRecordContainer>
+      <name>db</name>
+      <conditionProcess>%aditoprj%/entity/Certificate_entity/recordcontainers/db/conditionProcess.js</conditionProcess>
+      <alias>Data_alias</alias>
+      <recordFieldMappings>
+        <dbRecordFieldMapping>
+          <name>ORGANISATION_ID.value</name>
+          <recordfield>THHIT_CERTIFICATE.ORGANISATION_ID</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>EXPIRATIONDATE.value</name>
+          <recordfield>THHIT_CERTIFICATE.EXPIRATIONDATE</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>EVENT_ID.value</name>
+          <recordfield>THHIT_CERTIFICATE.EVENT_ID</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>CREATIONDATE.value</name>
+          <recordfield>THHIT_CERTIFICATE.CREATIONDATE</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>CONTACT_ID.value</name>
+          <recordfield>THHIT_CERTIFICATE.CONTACT_ID</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>CERTIFICATENAME.value</name>
+          <recordfield>THHIT_CERTIFICATE.CERTIFICATENAME</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>CERTIFICATEID.value</name>
+          <recordfield>THHIT_CERTIFICATE.CERTIFICATEID</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>CONTACT_ID.displayValue</name>
+          <expression>%aditoprj%/entity/Certificate_entity/recordcontainers/db/recordfieldmappings/contact_id.displayvalue/expression.js</expression>
+        </dbRecordFieldMapping>
+      </recordFieldMappings>
+      <linkInformation>
+        <linkInformation>
+          <name>THHIT_CERTIFICATE</name>
+          <tableName>THHIT_CERTIFICATE</tableName>
+          <primaryKey>CERTIFICATEID</primaryKey>
+          <isUIDTable v="true" />
+          <readonly v="false" />
+        </linkInformation>
+      </linkInformation>
+    </dbRecordContainer>
+  </recordContainers>
+</entity>

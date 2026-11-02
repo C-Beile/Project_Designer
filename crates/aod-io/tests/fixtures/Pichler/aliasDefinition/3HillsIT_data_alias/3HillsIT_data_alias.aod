@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aliasDefinition xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.3.1" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/aliasDefinition/1.3.1">
+  <name>3HillsIT_data_alias</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <datasourceType v="0" />
+  <aliasDefinitionSub>
+    <aliasDefDb>
+      <targetAliasName>Data_alias</targetAliasName>
+      <entityGroup>
+        <name>entityGroup</name>
+        <entities>
+          <entityDb>
+            <name>THHIT_DOCUMENTSLINK</name>
+            <category></category>
+            <dbName></dbName>
+            <idColumn>DOCUMENTSLINID</idColumn>
+            <idGeneratorType v="0" />
+            <idGeneratorInterval v="1" />
+            <documentation></documentation>
+            <title></title>
+            <description></description>
+            <auditSyncConfig>
+              <name>auditSyncConfig</name>
+              <auditMode v="0" />
+              <syncActive v="false" />
+              <syncComplete v="true" />
+              <syncDirection v="1" />
+              <syncIds></syncIds>
+            </auditSyncConfig>
+            <entityFields>
+              <entityFieldDb>
+                <name>DATE_EDIT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="91" />
+                <size v="10" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>DATE_NEW</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="91" />
+                <size v="10" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>DOCUMENTSLINID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="true" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>DOCUMENTSTYPE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>LINK</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="1000" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>OBJECT_ROWID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>OBJECT_TYPE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="200" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>THHIT_REFERENCE_NUMBER</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="15" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>USER_EDIT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>USER_NEW</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+            </entityFields>
+          </entityDb>
+          <entityDb>
+            <name>THHIT_CERTIFICATE</name>
+            <auditSyncConfig>
+              <name>auditSyncConfig</name>
+            </auditSyncConfig>
+            <entityFields>
+              <entityFieldDb>
+                <name>CERTIFICATEID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="true" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>CERTIFICATENAME</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>CONTACT_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>CREATIONDATE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="91" />
+                <size v="10" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>EVENT_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>EXPIRATIONDATE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="91" />
+                <size v="10" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>ORGANISATION_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+            </entityFields>
+          </entityDb>
+          <entityDb>
+            <name>THHIT_IMPORT_LOG</name>
+            <category></category>
+            <dbName></dbName>
+            <idColumn>ERROR_ID</idColumn>
+            <idGeneratorType v="0" />
+            <idGeneratorInterval v="1" />
+            <documentation></documentation>
+            <title></title>
+            <description></description>
+            <auditSyncConfig>
+              <name>auditSyncConfig</name>
+              <auditMode v="0" />
+              <syncActive v="false" />
+              <syncComplete v="true" />
+              <syncDirection v="1" />
+              <syncIds></syncIds>
+            </auditSyncConfig>
+            <entityFields>
+              <entityFieldDb>
+                <name>RAW_CSV_LINE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="-1" />
+                <size v="65535" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>CSV_GUID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>CREATED_AT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>ERROR_MESSAGE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="-1" />
+                <size v="65535" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>MAPPING_NAME</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="200" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>CSV_LINE_NUMBER</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="4" />
+                <size v="10" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>ERROR_ID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="12" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="true" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+            </entityFields>
+          </entityDb>
+        </entities>
+      </entityGroup>
+    </aliasDefDb>
+  </aliasDefinitionSub>
+</aliasDefinition>

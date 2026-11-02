@@ -1,0 +1,29 @@
+{
+  "app": {
+    "windows": [
+      {
+        "title": "Vendira Designer",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 960,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "shadow": true
+      }
+    ]
+  },
+  "bundle": {
+    "targets": ["dmg", "app"],
+    "category": "DeveloperTool",
+    "shortDescription": "Vendira Designer",
+    "longDescription": "Editor und Werkzeuge fuer ADITO-Projekte (Vendira Designer, 3Hills IT).",
+    "macOS": {
+      "minimumSystemVersion": "11.0",
+      "dmg": {
+        "windowSize": { "width": 600, "height": 400 }
+      }
+    }
+  }
+}

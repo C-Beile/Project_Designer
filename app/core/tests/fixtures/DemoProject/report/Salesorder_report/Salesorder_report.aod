@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.3.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/report/1.3.0">
+  <name>Salesorder_report</name>
+  <title>Recipt</title>
+  <description></description>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <alias>Data_alias</alias>
+  <reportData>%aditoprj%/report/Salesorder_report/reportData.jrxml</reportData>
+  <reportType>JASPER</reportType>
+  <subReports>
+    <subreport>
+      <name>UMST</name>
+      <reportData>%aditoprj%/report/Salesorder_report/UMST.jrxml</reportData>
+    </subreport>
+  </subReports>
+  <images>
+    <image>
+      <name>myLogo</name>
+      <fileName>myLogo.png</fileName>
+      <imageData>%aditoprj%/report/Salesorder_report/myLogo.png</imageData>
+    </image>
+  </images>
+</report>

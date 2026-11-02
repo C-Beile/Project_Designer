@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<preferences xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="3.4.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/preferences/3.4.3">
+  <name>_____PREFERENCES_PROJECT</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <customized />
+  <mailGlobalUserServerEnabled v="true" />
+  <projectName>ADITO xRM</projectName>
+  <jditoMaxContentSize v="57671680" />
+  <mailEnableUserDefault v="true" />
+  <mailDefaultMailserver>mailServerIMAP</mailDefaultMailserver>
+  <mailRepositoryAlias>defaultDbRepository</mailRepositoryAlias>
+  <calendarCategoriesEvent>
+    <entry>
+      <key>Meeting</key>
+      <value></value>
+    </entry>
+    <entry>
+      <key>Organisation</key>
+      <value></value>
+    </entry>
+    <entry>
+      <key>OutOfOffice</key>
+      <value></value>
+    </entry>
+    <entry>
+      <key>Vacation</key>
+      <value></value>
+    </entry>
+  </calendarCategoriesEvent>
+  <multilingualismIndexSearchLocales>
+    <element>de</element>
+    <element>en</element>
+  </multilingualismIndexSearchLocales>
+  <managerBackendAlias>ManagerBackend</managerBackendAlias>
+  <messageQueueAlias>MessageQueue</messageQueueAlias>
+  <pdfPreviewAlias>PdfPreview</pdfPreviewAlias>
+  <contentAnalysisAlias>ContentAnalysis</contentAnalysisAlias>
+  <textAnalysisAlias>TextAnalysis</textAnalysisAlias>
+  <clientSearchExcludeForIgnorecase v="true" />
+  <neonClientPermissionsEnabled v="true" />
+  <hashtagsEnabled v="false" />
+  <blobHandlingMethod>PROCESS</blobHandlingMethod>
+  <databaseAuditProcessLoggerUser>Admin</databaseAuditProcessLoggerUser>
+  <databaseAuditGetOldValueLobs v="false" />
+  <indexsearchGlobalEnabled v="true" />
+  <indexsearchFullIndexerEnabled v="true" />
+  <indexsearchFullIndexerInterval v="0" />
+  <indexsearchIncrementingIndexerEnabled v="true" />
+  <indexsearchIncrementingIndexerInterval v="15000" />
+  <indexsearchIncrementingIndexerBunchSize v="250" />
+  <userdirectoryAlias>_____SYSTEMALIAS</userdirectoryAlias>
+  <binariesAlias>_____SYSTEMALIAS</binariesAlias>
+  <mailBridgeMailserver>
+    <mailbridgeMailserver>
+      <name>abfa63d1-a47e-41f6-a87d-138bf04adc1e</name>
+      <enabled v="true" />
+      <bridgeName>Activity_Mailbridge</bridgeName>
+      <serverName>mailServerIMAP</serverName>
+      <timeout v="20000" />
+      <user>mailbridge</user>
+      <intervall v="60000" />
+      <bridgeMode v="1" />
+      <flagMode v="2" />
+      <process>mailbridge</process>
+      <errorProcess></errorProcess>
+      <attachmentHandling>ALL</attachmentHandling>
+    </mailbridgeMailserver>
+  </mailBridgeMailserver>
+  <customConfigProperties>
+    <customBooleanProperty>
+      <name>dataCaching.client.forceDisable</name>
+      <description>Enabling this option will disable the per-client-context data-cache within the customzing (for exameple the caching of Keywords). This is usefull if you're testing and want to frequently add data like keywords, etc. which are cached which help of the "DataCaching_lib".</description>
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>geo.maptiler.apikey</name>
+      <description>An API Key for using Maptiler functions. For example for the MapViewTemplate.</description>
+    </customStringProperty>
+    <customIntegerProperty>
+      <name>bulkmail.dateToSendPassedAfter</name>
+      <description>Number of hours after which a planned Bulkmail no longer gets send</description>
+      <property v="24" />
+    </customIntegerProperty>
+    <customStringProperty>
+      <name>bulkmail.baseReplacementURL</name>
+      <description>Base url for replacement of redirectlinks in bulkmails</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>bulkmail.fileStorage</name>
+      <description>Save Location for send Mails. When empty %aditodata% gets used.</description>
+      <property>/opt/ADITO/binaryfiles</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>bulkmail.user</name>
+      <description>Title of the useraccount that is used to send bulkmails</description>
+      <property>mailbridge</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>bulkmail.bg.serverId</name>
+      <description>ServerId of the background Server for sending bulkmails</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>mosaico.url</name>
+      <description>Url of the Mosaico Email Editor</description>
+    </customStringProperty>
+    <customBooleanProperty>
+      <name>snapADDY.isEnabled</name>
+      <description>Whether the webservice snapADDY, is useable or not. The default webservice is snapADDY, so if the property abbyy.ocr.isEnabled is also true the snapADDY webservice is used.</description>
+    </customBooleanProperty>
+    <customPasswordProperty>
+      <name>snapADDY.apiKey</name>
+      <description>The accessToken for the webservice snapADDY ocr.</description>
+    </customPasswordProperty>
+    <customBooleanProperty>
+      <name>sign8.isEnabled</name>
+      <description>Whether the webservice sign8 is useable or not. </description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customPasswordProperty>
+      <name>sign8.apiKey</name>
+      <description>Api Key for sign8</description>
+      <property>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsaWNlbnNlX2lkIjoiODAzMDRlZTEtYTlkZi00ZDc2LTk1MjgtYTI0MmJjZDg2YjEzIiwib3JnYW5pemF0aW9uX2lkIjoiNjc1YTEwYjAtMGEwNS00ZTM3LTg1OGUtMDM0MGU4NzEwNDQyIiwiZXhwaXJlc19hdCI6IjIwMjMtMDctMDlUMTY6MzY6MDguMDAwWiIsImNyZWF0ZWRfYXQiOiIyMDIyLTA2LTEwVDExOjQwOjM0LjAwMFoiLCJ1cGRhdGVkX2F0IjoiMjAyMi0wNi0xMFQxMTo0MDozNC4wMDBaIiwibGljZW5zZV9hY3RpdmUiOnRydWUsInNlc19zaWduYXR1cmVfbGltaXQiOjUwMDAsInFlc19zaWduYXR1cmVfbGltaXQiOjAsImFlc19zaWduYXR1cmVfbGltaXQiOjUwMDAsIm5hbWUiOiJUZXN0IFRva2VuIiwiaWF0IjoxNjU0ODYxMzczfQ.xXICNuLng5CZagE3X3I2Z_ZoZ9JzKr9o2fp158Fxb5I</property>
+    </customPasswordProperty>
+    <customStringProperty>
+      <name>sign8.token_Id</name>
+      <description>token for sign8</description>
+      <property>b8c027fc-8d5d-4a71-b5b4-9be53ae56802</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>sign8.interface_id</name>
+      <description>interface_id for sign8</description>
+      <property>806ceaa1-97f1-4f88-a808-42630417061d</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>sign8.license_key</name>
+      <description>license_key for sign8</description>
+      <property>20886362-2ab6-4613-900a-e8820a5ce614</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>sign8.organization_id</name>
+      <description>org id for sign8</description>
+      <property>95b5a49a-f44e-4031-9cb2-910536276d17</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>sign8.systemApiUrl</name>
+      <description>url of the sign8 api (e.g: https://dev-api.sign8.eu/api)</description>
+      <property>https://signing.sign8.eu/api</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>sign8.signingUrl</name>
+      <description>signing url of sign8 (e.g: https://dev-signing.sign8.eu/login)</description>
+      <property>https://signing.sign8.eu/login</property>
+    </customStringProperty>
+    <customPasswordProperty>
+      <name>sign8.secret</name>
+      <description>secret for sign8</description>
+      <property>d02f0d4614d40f3426cd7945871abdf155fa5f24</property>
+    </customPasswordProperty>
+    <customBooleanProperty>
+      <name>mailbridgeService.saveInlineAttachments</name>
+      <description>Save inline attachments as documents.</description>
+      <property v="false" />
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>mailbridgeService.serverAddress</name>
+      <description>Server address of the system starting with https: and ending with /client/ to be used in the mailbridge_servive process</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>outlook.clientUrl</name>
+      <description>url that is used for redirecting</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>msGraph.client_id</name>
+      <description>CLIENT_ID of a Azure Ressource that is used for MS Graph</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>msGraph.client_secret</name>
+      <description>CLIENT_SECRET of a Azure Ressource that is used for MS Graph</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>msGraph.tenant</name>
+      <description>TENANT of a Azure Ressource that is used for MS Graph</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>this.URL</name>
+      <description>the current url of the system</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>emailNotification.sender</name>
+      <description>the sender of the email notifications</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>snapADDY.apiUrl</name>
+      <description>The url to the mail signature webservice snapADDY.</description>
+      <property>https://backend.snapaddy.com/repro/data-services/v2/email</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>docx-templater.apiUrl</name>
+      <description>The url to the docx-templater service</description>
+      <property></property>
+    </customStringProperty>
+    <customPasswordProperty>
+      <name>docx-templater.password</name>
+      <description>The password for the basic auth of the docx-templater service</description>
+      <property></property>
+    </customPasswordProperty>
+    <customStringProperty>
+      <name>docx-templater.user</name>
+      <description>The user for the basic auth of the docx-templater service</description>
+      <property></property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>database.binarypath</name>
+      <description>The path of saved binary files for the blobHandler</description>
+      <property>/opt/ADITOData/binaryfiles/</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>productimages.path</name>
+      <description>image path for product images</description>
+      <property>/opt/ADITO/binaryfiles/vendira-product-images/</property>
+    </customStringProperty>
+  </customConfigProperties>
+  <customProperties>
+    <customBooleanProperty>
+      <name>phoneValidation.enable</name>
+      <description></description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customBooleanProperty>
+      <name>dsgvo.active</name>
+      <property v="true" />
+    </customBooleanProperty>
+    <customBooleanProperty>
+      <name>nominatim.enable</name>
+      <property v="true" />
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>nominatim.url</name>
+      <property>https://nom.adito.de/search.php</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>nominatim.user</name>
+      <property>aditouser</property>
+    </customStringProperty>
+    <customPasswordProperty>
+      <name>nominatim.pw</name>
+      <description></description>
+      <property>useradito</property>
+    </customPasswordProperty>
+    <customIntegerProperty>
+      <name>nominatim.resultLimit</name>
+      <description>Amount of rows returned by the address search. Default is 10, maximum is 50.</description>
+    </customIntegerProperty>
+    <customJDitoProperty>
+      <name>nominatim.filterKeys</name>
+      <description></description>
+    </customJDitoProperty>
+    <customIntegerProperty>
+      <name>duplicates.dataBlockSize</name>
+      <property v="5000" />
+    </customIntegerProperty>
+    <customBooleanProperty>
+      <name>AD.active</name>
+      <description></description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>AD.technicalUserDN</name>
+      <description>Complete distinguishedName of the technical user</description>
+    </customStringProperty>
+    <customPasswordProperty>
+      <name>AD.technicalUserPassword</name>
+    </customPasswordProperty>
+    <customStringProperty>
+      <name>AD.URL</name>
+      <description>URL to the Active Directory Server (withe ldap:// prefix and port), separate more values with semicolon  </description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>AD.Filter</name>
+      <description>Filter in LDAP Filter Syntax</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>AD.Config</name>
+      <description>Start point of the search in tree, separate more values with semicolon </description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>supportticket.coderegex</name>
+      <description>Regex for the Supportticketcode</description>
+      <property>\[[0-9]{1,10}\]</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>myCompany.addr</name>
+      <description>Addressline of my company</description>
+      <property>meineFirma | Wilhelm-Str. 2  |  DE 80807 München</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>myCompany.logo</name>
+      <description>Logo of my copany</description>
+      <property>base64:iVBORw0KGgoAAAANSUhEUgAAAM4AAABRCAYAAACaL5lSAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNS4xIFdpbmRvd3MiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MDA4QzAyM0IwREIwMTFFNEFGMDREM0VEMjExRjlBRTIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MDA4QzAyM0MwREIwMTFFNEFGMDREM0VEMjExRjlBRTIiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDowMDhDMDIzOTBEQjAxMUU0QUYwNEQzRUQyMTFGOUFFMiIgc3RSZWY6ZG9jdW1lbnRJRD0ieG1wLmRpZDowMDhDMDIzQTBEQjAxMUU0QUYwNEQzRUQyMTFGOUFFMiIvPiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PhF3nYoAAAlvSURBVHja7J1fjBXVHcfPJQJRoe1urQYJRBYlMUJisqwvGNjY3WgEUtN2CeWBIGb3Ju6LElsW+gA8AHe1UfuwTcBASB/Q7CZNG0tjw2pWU15kNzEBJFnLqmvQBNEbU0pbX+jve+9vlrOzM/fOnTtz78zs95P8cv/MOTPnzJzvnN/5zZ+Tu3XrliGE1MYC7gJCKBxCKBxCKBxCKBxCKBxCCIVDCIVDCIVDCIVDyDzmDq8/d+1/PY5trRB7VGyt2BqxVWLLxe4RW6JpbohdF7sq9qnYpNhFsY/Evoi6QKeOvMAWQKITToQ8LPaEWKfYBrFlVdL/SO1BsU3W/1+JnRMbE3tP7DIPHcmicLrFfia2VWxlBOuD4H6pNi32tthfxM7yEJIsCAc9yw6x7WJLYyozhNgvtlPsLbHT2hMRkjrhYPzynNhu/d4IIMxesafEToqdiGMcREhcwnlKe4AtTaoDhHpArF1sSOwdHlYSN/WGo/Niv2+iaGy2aFnyPKwkqT1OTmyf2pIE1Qdh7t+J/VjsqBgfbyWJEU5OXaMDCa0ThHxYbJHYIYqHJMVV25dg0dgc0LIS0nTh5FPWGPdxzEOaLRxEz/YkbEwTxG3bo2UnpOHCQci3XwffaWONln0FDzdptHBwcXNLiuu5RetASMOE02nKdwSknd1aF0IaIpwdGXFzVmhdCIldOLjLeXuG6rtd60RIrMLBowFLM1TfpVonQmITDh5C25rBOm/VuhESi3Dw5ObKDNZ5pdaNkFiE05nhenfy0JM4hIMI1IYM13uD4QVREoNw8DaaZRmu9zKtIyGh8HusYG3UG/pJ6w/NKy89O/P70j+nzSsn/zTz+5EHV5oHlt9rep58fFa+sQ8vmEtXps35C5/4+12PrTMP3H9v6dMGeZAX6/Cp49tsAiRK4TTsnrS771xsdj3TZTrWPeQrCtiljmnzhzfPmH//538zyyC0/l9tLonSC6wT1tmxzgxJ3q+//a4pdSTzx1Vb1SjR/Hr3L3xFY4MeCWnt3wf7d/iKxgYC+83un7vTruLhJ1H3OMsbsfHnpbdAo0Yv8rcPzpsz74/P6i3QU0AgtgA2b1pvPhQXDHltd+7MB+MzPQrSIa/tukE0mzeuN6f+/O6cOuZyubrr0tvb12bK73nDZ/cbbxwfzWKD2Tnw2l75KIiN/rHwYibvwggyobSfcO6Ju3COINDYX5axjsuNKo1PYLue+eksATy9scN0rF1T6q0AxkkYL9l8dvWaOXX1XfPZl9dK+W23zxJY1HXsUtEANK7RBDf+s1reakyJOFa7/utz6ivr6ZLlmTxBhHXVGvawmsfYYxYjf//HrHENBIMexVnmFs2cwIJr+WO33cKo64gGNKXfBzPcZo479Z2voqnU4zQENGz0DpWAaJAOLpoNxGa7dn6cv/jJbHfv/vtiqYu4ZhDN6pQd/5rdLUk/mPETQ109zo2GCOf8hUDpPr4yHTqvu8exAgQ3DCERC+d63BtGT1Ktt3G45uHK+VybmYPbDbSEc52Hn0QtnKtxb7jSuKZaWojOHvfUkt8JKjSijmT+jXEwqdOmeHuc/4bOe7OOvK46etLb24eoWI8pv4/aHhSP+IWZNRx9RX/mJd3xasvlP2wDUSo7wlUaQ8jyYrUKhClnvewceO2Yltkr4maHq0vLEXkz5SijU8duJ6jgXpf8btPfe937Q5YXNU+LpilYaSY0zUiVsrdrObD+FmsR8o1Uyx+kx5mcByeNSa/GLzauB6XdtRgH66w21rqR9aDRDJu5YWGsf1yF5pe3YeWsU2QoW6DQt6a94hLNzP6AYFRY4y7RGN0Hwypav/UXrLwtrsU91fIHFc7FeSCci67G2KIHGQehqL1CDmbK0TLnbFSQtH11brtPbdDaRqu5Hept82hAzShnveDEgN5ltZzNc2pePaFTJ5S9Fel89sewfs876zPlR+GdywAFFZcX7VYPtj5E/kCuGubcxPSBWb1D+iuto01BDwp2YreGl0vo923SEIf17LTXOqhhaHe7c+qa5VUYJRdOvg94uGxRlhMXMStdJu+u41oNyjgRMNzdoq7SNucPdc3y2pC7rBPJNtulQvkkTd7cnp2vx3iHyydUcFP2nzXkD9TjYIKmcxnubc4ZaxIqbazO2XnQbowunB0KV6m9ju2PusdALn/bfZZsVjnrZTCCtPZ+8hyHqLinLMEajzQDbtG48hcr5Q/a44AxU55zM4uMefi4Xg13FtJQJ6Qh2o16IqxwAi5ri7mcsd5vVsNguyhp/co44fPdzZTur7aQxZ0wwW5DqioczO6Mq4dZfO/Aex5uhcO3VqOr5l6EpVih0RcrbL/R5ayHqSj2RwURhdqeFZWzx5s1i62ScDAlOh706s+gcC4npHHVSoshoRDB9Fjjw7qpdq8apkTH7M5LM75fnTNeUc74rSxn5kTjXFtyGLDHUAhE1HDHeCDhYGWYEr13nginBQPwIBcfWc5UsdcKLmyLYoVB3h192mR/GvRRnwE4y5n+3qbdcnErBSvaoxbOmNjJLO9cRKGsgWehylX7rmZdlU9LOdM2RtS7ClqiFg44IfbXtO6thQvvuBkgWd7auePuRqcN8Zi5faGsWaSlnIlAw9yOS1vQIIEjmDb7frkogwMOcNWGTPnNMGl7O8zknYsX/UA+76p2NpcGB/93WBslzugFn+QTzapMWsqZMPLW/sI9ae7l3ToOChxxq2UO0HfEXjXpegAMZX118aKFNwM2SvjAqzXqUvRohPi/tdkv4khLORPU64yoONxjHNyVsD7MbUU5rzd67Nr/eqU8+8UOp2Sf/VbsiN/CU0deYKsioVgQIs9RsUMpqNshLSshkRPmZR23tFF+L7bPJG/69hsqmKNaVkISIRxHPHCBvhHbk6CAwaSOw47x0JIkCscBDfRzU76frdnTuSNcPqRBDEISLRyjDfWSKUdzMCV6o+edQagcF2hPmOzf4UAyJByn8R405bsMMCU6ZneO+8bQf5nyfXSnzdznawhJhXAcxtQQL8fszpioNurnefCMEB53wJ3bvDpOMiEch7NqGHNgotpOU54+MOw7DPCOgHMqSjyEdpmHjmRROA6X1YZ07IPpAzETGqJwmJ8GU21g1gAnpI1QMt6wiZcF4r1niJLhbTQfcfxCkkQuyFwghJDZLOAuIITCIYTCIYTCIYTCIYTCIYRQOIRQOIRQOIRQOIRQOISQWvi/AAMA9UczDEaG0p8AAAAASUVORK5CYII=</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>myCompany.contactID</name>
+      <description>The ID of the Company you are working for.</description>
+      <property>b219b58a-f120-42d8-9a64-0b176501eac7</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>myCompany.vatID</name>
+      <description></description>
+      <property>DE123456789</property>
+    </customStringProperty>
+    <customBooleanProperty>
+      <name>observation.isEnabled</name>
+      <description>Whether the observations are enabled or not</description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customBooleanProperty>
+      <name>observation.isMultiselectionEnabled</name>
+      <description>Whether the multiselectionaction for observations are enabled or not.</description>
+      <property v="false" />
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>sales.vat</name>
+      <description>Default VAT in percent</description>
+      <property>19</property>
+    </customStringProperty>
+    <customBooleanProperty>
+      <name>ai.salesprojectProbability</name>
+      <description></description>
+      <property v="false" />
+    </customBooleanProperty>
+    <customBooleanProperty>
+      <name>ews.active</name>
+      <description>Decides if EWS is activated or not</description>
+      <property v="false" />
+    </customBooleanProperty>
+    <customIntegerProperty>
+      <name>ews.syncsize</name>
+      <description>Defines how big a filter for synchronizing to Outlook may be</description>
+      <property v="7200" />
+    </customIntegerProperty>
+    <customStringProperty>
+      <name>local.currency</name>
+      <description>local currency as alpha3 (e.g. "EUR")</description>
+      <property>EUR</property>
+    </customStringProperty>
+    <customBooleanProperty>
+      <name>leadforensics.isActive</name>
+      <description>Activates lead forensics interface</description>
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>leadforensics.clientID</name>
+      <description>client Id of lead forensics</description>
+    </customStringProperty>
+    <customPasswordProperty>
+      <name>leadforensics.authorizationToken</name>
+      <description>authorization token for lead forensics</description>
+    </customPasswordProperty>
+    <customStringProperty>
+      <name>leadforensics.startDate</name>
+      <description>start date from which the first leadforensics import should start. subsequent imports will start from the date of the last import. format dd-MM-yyyy</description>
+    </customStringProperty>
+    <customBooleanProperty>
+      <name>mail.importAttachments</name>
+      <description>Controls whether attachments from imported emails are placed in the Documents tab of the associated activity.</description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customBooleanProperty>
+      <name>address.hideStreetNumber</name>
+      <description>Hide the street number from Address view and save it in the Streetaddress</description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>defaultBusinessHoursTo</name>
+      <description>Defualt business hours from as String</description>
+      <property>17:00</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>defaultBusinessHoursFrom</name>
+      <description>Defualt business hours to as String</description>
+      <property>08:00</property>
+    </customStringProperty>
+    <customBooleanProperty>
+      <name>showAppointmentsInEPK</name>
+      <description>Appointments should be displayed in the EPK</description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customIntegerProperty>
+      <name>sales.businessYearStartingMonth</name>
+      <description>Starting mont of the business year</description>
+    </customIntegerProperty>
+    <customStringProperty>
+      <name>productimages.path</name>
+      <description></description>
+      <property>/opt/ADITO/binaryfiles/vendira-product-images/</property>
+    </customStringProperty>
+  </customProperties>
+</preferences>

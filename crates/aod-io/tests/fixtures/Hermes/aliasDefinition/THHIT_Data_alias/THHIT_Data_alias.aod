@@ -1,0 +1,1522 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aliasDefinition xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.3.1" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/aliasDefinition/1.3.1">
+  <name>THHIT_Data_alias</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <datasourceType v="0" />
+  <aliasDefinitionSub>
+    <aliasDefDb>
+      <targetAliasName>Data_alias</targetAliasName>
+      <entityGroup>
+        <name>entityGroup</name>
+        <entities>
+          <entityDb>
+            <name>THHIT_AUDIT</name>
+            <category></category>
+            <dbName></dbName>
+            <idColumn>AUDITID</idColumn>
+            <idGeneratorType v="0" />
+            <idGeneratorInterval v="1" />
+            <documentation></documentation>
+            <title></title>
+            <description></description>
+            <auditSyncConfig>
+              <name>auditSyncConfig</name>
+              <auditMode v="0" />
+              <syncActive v="false" />
+              <syncComplete v="true" />
+              <syncDirection v="1" />
+              <syncIds></syncIds>
+            </auditSyncConfig>
+            <entityFields>
+              <entityFieldDb>
+                <name>AUDITID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="12" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="true" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>DATASETID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="1023" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>SQLACTION</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="1" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>TABLENAME</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="127" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>TIMESTAMP</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+            </entityFields>
+          </entityDb>
+          <entityDb>
+            <name>THHIT_BULKFAX</name>
+            <category></category>
+            <dbName></dbName>
+            <idColumn>BULKFAXID</idColumn>
+            <idGeneratorType v="0" />
+            <idGeneratorInterval v="1" />
+            <documentation></documentation>
+            <title></title>
+            <description></description>
+            <auditSyncConfig>
+              <name>auditSyncConfig</name>
+              <auditMode v="0" />
+              <syncActive v="false" />
+              <syncComplete v="true" />
+              <syncDirection v="1" />
+              <syncIds></syncIds>
+            </auditSyncConfig>
+            <entityFields>
+              <entityFieldDb>
+                <name>BULKFAXID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="true" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>CAMPAIGN_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="true" />
+                <documentation></documentation>
+                <title>Kampagne</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>CREATEACTIVITIES</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="-6" />
+                <size v="3" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Bulkmail_Create activities</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>DATE_EDIT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>DATE_NEW</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>DATE_TO_SEND</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Send Date</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>DESCRIPTION</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="500" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Bulkmail_Description</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>DOCUMENTTEMPLATE_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>DocTemp_Document Template</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>EMPLOYEE_CONTACT_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Bulkmail_Person in charge</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>INTEREST_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Interest</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>ISOLANGUAGE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="3" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Bulkmail_Language</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>MOSAICOTEMPLATE_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Mosaico template</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>NAME</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="100" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Name</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>PLACEOFUSE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Place of use</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>SENDER_FAX_NUMBER</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="100" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Sender</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>SENDTYPE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Bulkmail_Send type</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+            <customStringProperty>
+              <name>keyword</name>
+              <global v="false" />
+              <property>BulkMailSendType</property>
+            </customStringProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>STATUS</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Status</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+            <customStringProperty>
+              <name>keyword</name>
+              <global v="false" />
+              <property>BulkMailStatus</property>
+            </customStringProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>SUBJECT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="100" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Subject</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>TESTING_CONTACT_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Contact</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>TESTING_FAX_NUMBER</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>USE_TEMPLATE_ATTACHMENTS</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="-6" />
+                <size v="3" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Vorlagen-Anhänge verwenden</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>USER_EDIT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>USER_NEW</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+            </entityFields>
+          </entityDb>
+          <entityDb>
+            <name>THHIT_BULKFAXRECIPIENT</name>
+            <category></category>
+            <dbName></dbName>
+            <idColumn>BULKFAXRECIPIENTID</idColumn>
+            <idGeneratorType v="0" />
+            <idGeneratorInterval v="1" />
+            <documentation></documentation>
+            <title></title>
+            <description></description>
+            <auditSyncConfig>
+              <name>auditSyncConfig</name>
+              <auditMode v="0" />
+              <syncActive v="false" />
+              <syncComplete v="true" />
+              <syncDirection v="1" />
+              <syncIds></syncIds>
+            </auditSyncConfig>
+            <entityFields>
+              <entityFieldDb>
+                <name>BULKFAX_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>BULKFAXRECIPIENTID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="true" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>CONTACT_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Contact</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>DATE_EDIT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>DATE_NEW</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>FAX_NUMBER</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="255" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Fax</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>IS_TEST_RECIPIENT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="-6" />
+                <size v="3" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>SENTDATE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Versanddatum</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>STATUS</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Status</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+            <customStringProperty>
+              <name>keyword</name>
+              <global v="false" />
+              <property>BulkMailRecipientStatus</property>
+            </customStringProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>THHIT_FAX_JOBID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>USER_EDIT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>USER_NEW</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+            </entityFields>
+          </entityDb>
+          <entityDb>
+            <name>THHIT_BULKFAXTESTRECIPIENT</name>
+            <category></category>
+            <dbName></dbName>
+            <idColumn>THHIT_BULKFAXTESTRECIPIENTID</idColumn>
+            <idGeneratorType v="0" />
+            <idGeneratorInterval v="1" />
+            <documentation></documentation>
+            <title></title>
+            <description></description>
+            <auditSyncConfig>
+              <name>auditSyncConfig</name>
+              <auditMode v="0" />
+              <syncActive v="false" />
+              <syncComplete v="true" />
+              <syncDirection v="1" />
+              <syncIds></syncIds>
+            </auditSyncConfig>
+            <entityFields>
+              <entityFieldDb>
+                <name>BULKFAX_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>CONTACT_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="true" />
+                <documentation></documentation>
+                <title>Contact</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>DATE_EDIT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>DATE_NEW</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>FAX_NUMBER</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="255" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Fax</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>THHIT_BULKFAXTESTRECIPIENTID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="true" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>USER_EDIT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>USER_NEW</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+            </entityFields>
+          </entityDb>
+          <entityDb>
+            <name>THHIT_ORDER_PROCESS</name>
+            <category></category>
+            <dbName></dbName>
+            <idColumn>THHIT_ORDER_PROCESSID</idColumn>
+            <idGeneratorType v="0" />
+            <idGeneratorInterval v="1" />
+            <documentation></documentation>
+            <title></title>
+            <description></description>
+            <auditSyncConfig>
+              <name>auditSyncConfig</name>
+              <auditMode v="0" />
+              <syncActive v="false" />
+              <syncComplete v="true" />
+              <syncDirection v="1" />
+              <syncIds></syncIds>
+            </auditSyncConfig>
+            <entityFields>
+              <entityFieldDb>
+                <name>DATE_EDIT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>DATE_NEW</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>THHIT_ORDER_CONFIRMATION</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>THHIT_ORDER_PROCESSID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="true" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>USER_EDIT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>USER_NEW</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+            </entityFields>
+          </entityDb>
+          <entityDb>
+            <name>THHIT_ORDER_PROCESS_ELEMENT</name>
+            <category></category>
+            <dbName></dbName>
+            <idColumn>THHIT_ORDER_PROCESS_ELEMENTID</idColumn>
+            <idGeneratorType v="0" />
+            <idGeneratorInterval v="1" />
+            <documentation></documentation>
+            <title></title>
+            <description></description>
+            <auditSyncConfig>
+              <name>auditSyncConfig</name>
+              <auditMode v="0" />
+              <syncActive v="false" />
+              <syncComplete v="true" />
+              <syncDirection v="1" />
+              <syncIds></syncIds>
+            </auditSyncConfig>
+            <entityFields>
+              <entityFieldDb>
+                <name>DATE_EDIT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>DATE_NEW</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>OBJECT_ROWID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>OBJECT_TYPE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="63" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>THHIT_ORDER_PROCESS_ELEMENTID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="true" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>THHIT_ORDER_PROCESS_ID</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="63" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>USER_EDIT</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>USER_NEW</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="50" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+            </entityFields>
+          </entityDb>
+          <entityDb>
+            <name>THHIT_TOUR</name>
+            <category></category>
+            <dbName></dbName>
+            <idColumn>TOURID</idColumn>
+            <idGeneratorType v="0" />
+            <idGeneratorInterval v="1" />
+            <documentation></documentation>
+            <title></title>
+            <description></description>
+            <auditSyncConfig>
+              <name>auditSyncConfig</name>
+              <auditMode v="0" />
+              <syncActive v="false" />
+              <syncComplete v="true" />
+              <syncDirection v="1" />
+              <syncIds></syncIds>
+            </auditSyncConfig>
+            <entityFields>
+              <entityFieldDb>
+                <name>COUNTRY</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="2" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Country</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>ENDDATE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Tour end</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>STARTDATE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Tour start</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+              <entityFieldDb>
+                <name>TOURID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="true" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>TOURTITLE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="30" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title>Tour title</title>
+                <description></description>
+              <customProperties>
+            <customBooleanProperty>
+              <name>log</name>
+              <global v="false" />
+              <property v="true" />
+            </customBooleanProperty>
+          </customProperties>
+        </entityFieldDb>
+            </entityFields>
+          </entityDb>
+          <entityDb>
+            <name>THHIT_TOURPRODUCTDATA</name>
+            <category></category>
+            <dbName></dbName>
+            <idColumn></idColumn>
+            <idGeneratorType v="1" />
+            <idGeneratorInterval v="1" />
+            <documentation></documentation>
+            <title></title>
+            <description></description>
+            <auditSyncConfig>
+              <name>auditSyncConfig</name>
+              <auditMode v="0" />
+              <syncActive v="false" />
+              <syncComplete v="true" />
+              <syncDirection v="1" />
+              <syncIds></syncIds>
+            </auditSyncConfig>
+            <entityFields>
+              <entityFieldDb>
+                <name>COUNTRY</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="1" />
+                <size v="2" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>DATE_RECALCULATED</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="93" />
+                <size v="19" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="true" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>ITEMNAME</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="250" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>ORGANISATION_ID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>ORGANISATIONNAME</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="255" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>PRODUCT_ID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>QUANTITY</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="3" />
+                <size v="14" />
+                <scale v="2" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>QUANTITY_DELIVERY_OUTSTANDING</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="3" />
+                <size v="14" />
+                <scale v="2" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>QUANTITY_RETURNS</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="3" />
+                <size v="14" />
+                <scale v="2" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>TOTALSUM</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="3" />
+                <size v="14" />
+                <scale v="2" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>TOTALSUM_RETURNS</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="3" />
+                <size v="14" />
+                <scale v="2" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>TOUR_ID</name>
+                <dbName></dbName>
+                <primaryKey v="true" />
+                <columnType v="1" />
+                <size v="36" />
+                <scale v="0" />
+                <notNull v="true" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>TOURTITLE</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="12" />
+                <size v="30" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+              <entityFieldDb>
+                <name>YEAR</name>
+                <dbName></dbName>
+                <primaryKey v="false" />
+                <columnType v="5" />
+                <size v="5" />
+                <scale v="0" />
+                <notNull v="false" />
+                <isUnique v="false" />
+                <index v="false" />
+                <documentation></documentation>
+                <title></title>
+                <description></description>
+              </entityFieldDb>
+            </entityFields>
+          </entityDb>
+        </entities>
+      </entityGroup>
+    </aliasDefDb>
+  </aliasDefinitionSub>
+</aliasDefinition>

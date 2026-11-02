@@ -1,0 +1,738 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<application xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/application/1.4.0">
+  <name>_____SYSTEM_APPLICATION_NEON</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <entityNode>
+    <name>entityNode</name>
+    <kind v="200" />
+    <childNodes>
+      <entityNode>
+        <name>Contactmanagement</name>
+        <kind v="123" />
+        <title>Contact Management</title>
+        <icon>VAADIN:CONNECT</icon>
+        <childNodes>
+          <entityNode>
+            <name>Group1</name>
+            <kind v="123" />
+            <title></title>
+            <childNodes>
+              <entityNode>
+                <name>Person</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>INTERNAL_EVERYONE</name>
+                <kind v="159" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>Organisation</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Activity</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>TopicTreeFavorite</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Task</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>SearchSync</name>
+                <kind v="10077" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+        </childNodes>
+      </entityNode>
+      <entityNode>
+        <name>Sales</name>
+        <kind v="123" />
+        <title>Sales</title>
+        <icon>VAADIN:BRIEFCASE</icon>
+        <childNodes>
+          <entityNode>
+            <name>Group2</name>
+            <kind v="123" />
+            <title></title>
+            <childNodes>
+              <entityNode>
+                <name>SalesDashboard</name>
+                <kind v="10090" />
+              </entityNode>
+              <entityNode>
+                <name>Planning</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Salesproject</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Offer</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Order</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>DunningHistory</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>PROJECT_FieldStaff</name>
+                <kind v="159" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>PROJECT_OfficeStaff</name>
+                <kind v="159" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>Contract</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>ProductPackage</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Product</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Productprice</name>
+                <kind v="10077" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>SalesprojectConversionRates</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Advertising</name>
+                <kind v="10077" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+          <entityNode>
+            <name>Group8</name>
+            <kind v="123" />
+            <title></title>
+            <childNodes>
+              <entityNode>
+                <name>PROJECT_ProjectManagement</name>
+                <kind v="159" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>Turnover</name>
+                <kind v="10077" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+        </childNodes>
+      </entityNode>
+      <entityNode>
+        <name>Collaboration</name>
+        <kind v="123" />
+        <title>Collaboration</title>
+        <icon>NEON:PUZZLE</icon>
+        <childNodes>
+          <entityNode>
+            <name>Group17</name>
+            <kind v="123" />
+            <childNodes>
+              <entityNode>
+                <name>Project_New</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Projectticket_New</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>INTERNAL_EVERYONE</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>ProjectType</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>ProjectticketType</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>ProjectticketAttribute</name>
+                <kind v="10077" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+        </childNodes>
+      </entityNode>
+      <entityNode>
+        <name>PoS</name>
+        <kind v="123" />
+        <title>PoS</title>
+        <icon>VAADIN:CASH</icon>
+        <childNodes>
+          <entityNode>
+            <name>Group15</name>
+            <kind v="123" />
+            <childNodes>
+              <entityNode>
+                <name>POS_Listing</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>POS_Distribution</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>POS_Tour</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>POS_Promotion</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>INTERNAL_EVERYONE</name>
+                <kind v="159" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+        </childNodes>
+      </entityNode>
+      <entityNode>
+        <name>Group12</name>
+        <kind v="123" />
+        <title>External Work</title>
+        <icon>VAADIN:CAR</icon>
+        <childNodes>
+          <entityNode>
+            <name>Group15</name>
+            <kind v="123" />
+            <childNodes>
+              <entityNode>
+                <name>POS_Tour</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>VisitRecommendation</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Expenses</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Resource</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>ResourceOperation</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>ResourcePlanning</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>ResourceOperationTask</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>ResourceOperationTaskTemplate</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>INTERNAL_EVERYONE</name>
+                <kind v="159" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+        </childNodes>
+      </entityNode>
+      <entityNode>
+        <name>Marketing</name>
+        <kind v="123" />
+        <title>Marketing</title>
+        <icon>VAADIN:GROUP</icon>
+        <childNodes>
+          <entityNode>
+            <name>Group16</name>
+            <kind v="123" />
+            <childNodes>
+              <entityNode>
+                <name>INTERNAL_ADMINISTRATOR</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>Marketingdashboard</name>
+                <kind v="10090" />
+              </entityNode>
+              <entityNode>
+                <name>PROJECT_Marketing</name>
+                <kind v="159" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+          <entityNode>
+            <name>Group10</name>
+            <kind v="123" />
+            <title></title>
+            <childNodes>
+              <entityNode>
+                <name>INTERNAL_ADMINISTRATOR</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>PROJECT_ProjectManagement</name>
+                <kind v="159" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>CampaignPlanning</name>
+                <kind v="10077" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+          <entityNode>
+            <name>Group4</name>
+            <kind v="123" />
+            <title></title>
+            <childNodes>
+              <entityNode>
+                <name>INTERNAL_ADMINISTRATOR</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>Campaign</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>EventDefinition</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Event</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>PROJECT_Marketing</name>
+                <kind v="159" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>BulkMail</name>
+                <kind v="10077" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>SerialLetter</name>
+                <kind v="10077" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>MosaicoTemplate</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Questionnaire</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Weblink</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Interest</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>EmailFilterHandling</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Webfile</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>DocumentTemplate</name>
+                <kind v="10077" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+          <entityNode>
+            <name>Group11</name>
+            <kind v="123" />
+            <title></title>
+            <childNodes>
+              <entityNode>
+                <name>INTERNAL_ADMINISTRATOR</name>
+                <kind v="159" />
+                <title></title>
+              </entityNode>
+            </childNodes>
+          </entityNode>
+        </childNodes>
+      </entityNode>
+      <entityNode>
+        <name>Service</name>
+        <kind v="123" />
+        <title>Service</title>
+        <icon>VAADIN:CHAT</icon>
+        <childNodes>
+          <entityNode>
+            <name>Group18</name>
+            <kind v="123" />
+            <childNodes>
+              <entityNode>
+                <name>PROJECT_ServiceAdmin</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>TeamLeader_Dashboard</name>
+                <kind v="10090" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+          <entityNode>
+            <name>Group6</name>
+            <kind v="123" />
+            <title></title>
+            <childNodes>
+              <entityNode>
+                <name>PROJECT_ServiceAdmin</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>Service</name>
+                <kind v="10090" />
+              </entityNode>
+              <entityNode>
+                <name>PROJECT_ServiceAgent</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>SupportTicket</name>
+                <kind v="10077" />
+                <title></title>
+              </entityNode>
+            </childNodes>
+          </entityNode>
+        </childNodes>
+      </entityNode>
+      <entityNode>
+        <name>ServiceAdministration</name>
+        <kind v="123" />
+        <title>Service Administration</title>
+        <icon>VAADIN:WRENCH</icon>
+        <childNodes>
+          <entityNode>
+            <name>Group5</name>
+            <kind v="123" />
+            <childNodes>
+              <entityNode>
+                <name>PROJECT_ServiceAdmin</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>Inbox</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>InboxFilterGroup</name>
+                <kind v="10077" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+          <entityNode>
+            <name>Group13</name>
+            <kind v="123" />
+            <childNodes>
+              <entityNode>
+                <name>PROJECT_ServiceAdmin</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>SupportTicketTemplate</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>SupportTicketEscalation</name>
+                <kind v="10077" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+          <entityNode>
+            <name>Group16</name>
+            <kind v="123" />
+            <childNodes>
+              <entityNode>
+                <name>PROJECT_ServiceAdmin</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>EmployeeGroup</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>EmployeeGroupRuleGroup</name>
+                <kind v="10077" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+        </childNodes>
+      </entityNode>
+      <entityNode>
+        <name>Group</name>
+        <kind v="123" />
+        <title>Knowledge Management</title>
+        <icon>VAADIN:ACADEMY_CAP</icon>
+        <childNodes>
+          <entityNode>
+            <name>Group5</name>
+            <kind v="123" />
+            <childNodes>
+              <entityNode>
+                <name>KnowledgeManagementCategory</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>INTERNAL_EVERYONE</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>KnowledgeManagement</name>
+                <kind v="10077" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+        </childNodes>
+      </entityNode>
+      <entityNode>
+        <name>Manager</name>
+        <kind v="123" />
+        <icon>NEON:FILTER</icon>
+        <childNodes>
+          <entityNode>
+            <name>Group19</name>
+            <kind v="123" />
+            <childNodes>
+              <entityNode>
+                <name>PROJECT_Manager</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>INTERNAL_ADMINISTRATOR</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>Session</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Server</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Process</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>ProcessHistory</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Database</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Peers</name>
+                <kind v="10077" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+        </childNodes>
+      </entityNode>
+      <entityNode>
+        <name>Administration</name>
+        <kind v="123" />
+        <title>Administration</title>
+        <icon>VAADIN:CONTROLLER</icon>
+        <childNodes>
+          <entityNode>
+            <name>Group3</name>
+            <kind v="123" />
+            <title></title>
+            <childNodes>
+              <entityNode>
+                <name>INTERNAL_ADMINISTRATOR</name>
+                <kind v="159" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>Attribute</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>KeywordCategory</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>KeywordEntry</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>KeywordAttribute</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>ObjectRelationType</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>ClassificationAdmin</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>TargetAcquisition</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Salutation</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>DuplicateScanner</name>
+                <kind v="10077" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>ExportTemplate</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Leadimport</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>WorkflowDefinition</name>
+                <kind v="10077" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>District</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>Checklist</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>EWSSyncDashboard</name>
+                <kind v="10090" />
+              </entityNode>
+              <entityNode>
+                <name>TopicTreeAdmin</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>CurrencyAdmin</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>DigitalSigningTemplate</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>ExpenseAdmin</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>DunningLevel</name>
+                <kind v="10077" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+          <entityNode>
+            <name>Group13</name>
+            <kind v="123" />
+            <childNodes>
+              <entityNode>
+                <name>INTERNAL_ADMINISTRATOR</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>DSGVOConfiguration</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>PROJECT_DSGVO</name>
+                <kind v="159" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+        </childNodes>
+      </entityNode>
+      <entityNode>
+        <name>Useradministration</name>
+        <kind v="123" />
+        <title>User Administration</title>
+        <icon>VAADIN:UNLINK</icon>
+        <childNodes>
+          <entityNode>
+            <name>Group7</name>
+            <kind v="123" />
+            <title></title>
+            <childNodes>
+              <entityNode>
+                <name>Employee</name>
+                <kind v="10077" />
+              </entityNode>
+              <entityNode>
+                <name>INTERNAL_ADMINISTRATOR</name>
+                <kind v="159" />
+              </entityNode>
+            </childNodes>
+          </entityNode>
+          <entityNode>
+            <name>Group9</name>
+            <kind v="123" />
+            <title></title>
+            <childNodes>
+              <entityNode>
+                <name>Role</name>
+                <kind v="10077" />
+                <title></title>
+              </entityNode>
+              <entityNode>
+                <name>INTERNAL_ADMINISTRATOR</name>
+                <kind v="159" />
+              </entityNode>
+              <entityNode>
+                <name>PermissionMetaData</name>
+                <kind v="10077" />
+                <title></title>
+              </entityNode>
+            </childNodes>
+          </entityNode>
+        </childNodes>
+      </entityNode>
+    </childNodes>
+  </entityNode>
+  <company>
+    <name>company</name>
+    <title></title>
+  </company>
+</application>

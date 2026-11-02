@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonView xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonView/1.2.3">
+  <name>THHIT_ActivityFilter_view</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <filterable v="true" />
+  <dashletConfigurations>
+    <neonDashletConfiguration>
+      <name>AllActivitiesDashlet</name>
+      <title>Activities</title>
+      <description>Show all activities</description>
+      <fragment>Activity/filter</fragment>
+      <singleton v="true" />
+      <requiresConfiguration v="false" />
+      <storeRoles />
+      <icon>VAADIN:HOURGLASS_END</icon>
+      <categories>
+        <neonDashletCategory>
+          <name>contactmanagement</name>
+          <title>Contact Management</title>
+        </neonDashletCategory>
+      </categories>
+    </neonDashletConfiguration>
+    <neonDashletConfiguration>
+      <name>InnateActivitiesDashlet</name>
+      <title>My Activities</title>
+      <description>Show my activities</description>
+      <fragment>Activity/filter</fragment>
+      <singleton v="true" />
+      <requiresConfiguration v="false" />
+      <icon>VAADIN:HOURGLASS_END</icon>
+      <categories>
+        <neonDashletCategory>
+          <name>contactmanagement</name>
+          <title>Contact Management</title>
+        </neonDashletCategory>
+      </categories>
+      <parameters>
+        <neonDashletParameter>
+          <name>OnlyInnate_param</name>
+          <value>true</value>
+        </neonDashletParameter>
+      </parameters>
+    </neonDashletConfiguration>
+  </dashletConfigurations>
+  <layout>
+    <groupLayout />
+  </layout>
+  <children>
+    <timelineViewTemplate>
+      <name>ActivitiesTimeline</name>
+      <dateField>entryDateDateFormat</dateField>
+      <titleField>SUBJECT_DETAILS</titleField>
+      <descriptionField>INFO</descriptionField>
+      <iconIdField>#IMAGE</iconIdField>
+      <hideTime v="true" />
+      <entityField>#ENTITY</entityField>
+      <favoriteActionGroup1>filterActions</favoriteActionGroup1>
+      <favoriteActionGroup2>MSTeamsActions</favoriteActionGroup2>
+    </timelineViewTemplate>
+    <tableViewTemplate>
+      <name>ActivitiesTable</name>
+      <iconField>#IMAGE</iconField>
+      <titleField>SUBJECT</titleField>
+      <subtitleField>ENTRYDATE</subtitleField>
+      <descriptionField>DIRECTION</descriptionField>
+      <linkedColumns>
+        <element>SUBJECT</element>
+      </linkedColumns>
+      <entityField>#ENTITY</entityField>
+      <favoriteActionGroup1>filterActions</favoriteActionGroup1>
+      <favoriteActionGroup2>MSTeamsActions</favoriteActionGroup2>
+      <columns>
+        <neonTableColumn>
+          <name>56f0d70a-04de-4acf-b7f6-08414ab5e7ce</name>
+          <entityField>entryDateDateFormat</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>c1ff85eb-dde9-4362-82bc-8be6e3346b1c</name>
+          <entityField>#IMAGE</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>aafb6ac4-a584-48c4-9355-630bfd4579d3</name>
+          <entityField>RESPONSIBLE</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>c8fc85eb-dde9-4362-82bc-8be6e3346b1c</name>
+          <entityField>SUBJECT</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>692a655b-18f5-4323-8d87-ee42726bed38</name>
+          <entityField>INFO</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>a9ae5785-1793-4e0f-88b5-1c4ff3043c66</name>
+          <entityField>POS_ACTIVITYTYPE</entityField>
+        </neonTableColumn>
+      </columns>
+    </tableViewTemplate>
+    <treeTableViewTemplate>
+      <name>ActivitiesTreeTable</name>
+      <iconField>#IMAGE</iconField>
+      <titleField>SUBJECT</titleField>
+      <subtitleField>ENTRYDATE</subtitleField>
+      <descriptionField>DIRECTION</descriptionField>
+      <entityField>#ENTITY</entityField>
+      <favoriteActionGroup1>filterActions</favoriteActionGroup1>
+      <favoriteActionGroup2>MSTeamsActions</favoriteActionGroup2>
+      <columns>
+        <neonTreeTableColumn>
+          <name>cdf48078-3766-4d45-8bfb-e17e472e32d6</name>
+          <entityField>entryDateDateFormat</entityField>
+        </neonTreeTableColumn>
+        <neonTreeTableColumn>
+          <name>eb7135af-53a3-4e8c-81d4-fa744a279021</name>
+          <entityField>#IMAGE</entityField>
+        </neonTreeTableColumn>
+        <neonTreeTableColumn>
+          <name>c397cb0e-3faa-4af6-a1ac-b96cdd74dda5</name>
+          <entityField>RESPONSIBLE</entityField>
+        </neonTreeTableColumn>
+        <neonTreeTableColumn>
+          <name>c0ca1925-9d79-4d75-afc1-12c1f19354af</name>
+          <entityField>SUBJECT</entityField>
+        </neonTreeTableColumn>
+        <neonTreeTableColumn>
+          <name>8e5a2dea-32ea-4312-b110-40b18b7ec34f</name>
+          <entityField>INFO</entityField>
+        </neonTreeTableColumn>
+        <neonTreeTableColumn>
+          <name>587448a9-fdde-4cba-833a-52bc7caa8a30</name>
+          <entityField>POS_ACTIVITYTYPE</entityField>
+        </neonTreeTableColumn>
+      </columns>
+    </treeTableViewTemplate>
+    <neonViewReference>
+      <name>d09b51b2-9b8c-4aa1-8226-f20554491951</name>
+      <entityField>#ENTITY</entityField>
+      <view>ActivityAnalyses_view</view>
+    </neonViewReference>
+  </children>
+</neonView>

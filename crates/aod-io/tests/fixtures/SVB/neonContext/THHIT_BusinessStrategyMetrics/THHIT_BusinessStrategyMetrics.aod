@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonContext xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonContext/1.2.0">
+  <name>THHIT_BusinessStrategyMetrics</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <previewView>THHIT_BusinessStrategyMetricsPreview_view</previewView>
+  <entity>THHIT_BusinessStrategyMetrics_entity</entity>
+  <references>
+    <neonViewReference>
+      <name>b8a11a03-e24f-4dd5-a6c4-24969268e8ea</name>
+      <view>THHIT_BusinessStrategyMetricsMain_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>5c3f8d21-7b64-4e09-a2d5-16f4b8c7e903</name>
+      <view>THHIT_BusinessStrategyMetricsPreview_view</view>
+    </neonViewReference>
+  </references>
+</neonContext>

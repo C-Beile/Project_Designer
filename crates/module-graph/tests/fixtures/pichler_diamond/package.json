@@ -1,0 +1,40 @@
+{
+    "name": "@3hills-it/easescreen",
+    "version": "1.6.4",
+    "adito": {
+        "type": "project"
+    },
+    "engines": {
+        "adito": ">=2025.0.0 <2026.0.0"
+    },
+    "publishConfig": {
+        "registry": "https://gitlab.adito.de/api/v4/projects/1646/packages/npm/"
+    },
+    "dependencies": {
+        "@aditosoftware/platform": "^5.0.0",
+        "@aditosoftware/contactmanagement": "^2.0.0",
+        "@aditosoftware/basic-base": ">=2024.1.3-SNAPSHOT.0 <2024.2.0",
+        "@aditosoftware/basic-base-serviceimplementation": "^1.1.0",
+        "@aditosoftware/manager": "^6.0.3",
+        "@3hills-it/utilities":"0.1.6",
+        "@3hills-it/userImportGraph": "1.0.1-RC13"
+    },
+    "devDependencies": {
+        "@aditosoftware/devtools": "^2.0.0",
+        "@aditosoftware/jdito-types": ">=2025.0.0-RC <2025.1.0",
+        "mariadb": "2.5.5",
+        "compressing": "1.5.1",
+        "urllib": "2.38.0",
+        "liquibase": "4.4.0"
+    },
+    "scripts": {
+        "update package-lock": "npm update --package-lock=false --package-lock-only --strict-peer-deps",
+        "npm install symlinks": "npm install --install-links=false",
+        "startMariaDB": "node ./scripts/mariaDB.js",
+        "postinstall": "node ./scripts/dev/genDependencyChangelog.js"
+    },
+    "overrides": {
+        "@aditosoftware/root": "^5.0.1",
+        "@aditosoftware/sharedalias": "^2.0.0"
+    }
+}

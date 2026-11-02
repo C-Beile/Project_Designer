@@ -1,0 +1,22 @@
+[target.x86_64-pc-windows-gnu]
+# Verified working GNU linker path (WinLibs mingw64), see RISKS.md R13 and spike-editor.md.
+linker = "C:/Users/ClemensBeile/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/mingw64/bin/gcc.exe"
+# rustc shells out to "dlltool" to build import libraries for windows-sys' raw-dylib links on
+# the GNU target; -C dlltool= is the targeted, PATH-independent way to point it at the verified
+# WinLibs binary (a PATH override was tried first and did not reliably apply to rustc's internal
+# invocation — this flag does). See RISKS.md R18.
+rustflags = ["-C", "dlltool=C:/Users/ClemensBeile/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/mingw64/bin/dlltool.exe"]
+
+[env]
+# Some dependencies (e.g. `ring`, pulled in transitively by rustls/sqlx/tiberius in db-layer)
+# run a build.rs that needs a real C compiler, not just a configured linker. Pointing the `cc`
+# crate directly at the verified mingw64 gcc/ar (rather than mutating PATH, which would affect
+# every other tool invocation) fixes "failed to find tool gcc.exe" workspace-wide. See RISKS.md R18.
+CC_x86_64_pc_windows_gnu = "C:/Users/ClemensBeile/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/mingw64/bin/gcc.exe"
+AR_x86_64_pc_windows_gnu = "C:/Users/ClemensBeile/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/mingw64/bin/ar.exe"
+# tauri-winres' build.rs shells out to a bare "windres" (Windows resource compiler) via PATH —
+# unlike CC/AR there is no crate-specific env var for this, and unlike rustc's internal dlltool
+# call, a build-script child process DOES inherit cargo's [env] PATH, so a forced PATH override
+# (mingw64 bin first, then the real Windows PATH so nothing else breaks) fixes this without
+# needing a rustflag. See RISKS.md R22.
+PATH = { value = "C:/Users/ClemensBeile/AppData/Local/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/mingw64/bin;C:/Program Files/Python313/Scripts/;C:/Program Files/Python313/;C:/Windows/system32;C:/Windows;C:/Windows/System32/Wbem;C:/Windows/System32/WindowsPowerShell/v1.0/;C:/Windows/System32/OpenSSH/;C:/Program Files/dotnet/;C:/Program Files/Git/cmd;C:/Program Files/PuTTY/;C:/Program Files/Microsoft VS Code/bin;C:/Program Files/nodejs/;C:/Users/ClemensBeile/.cargo/bin;C:/Users/ClemensBeile/AppData/Local/Microsoft/WindowsApps;C:/Users/ClemensBeile/AppData/Local/Programs/Microsoft VS Code/bin;C:/Users/ClemensBeile/AppData/Local/spicetify;C:/Users/ClemensBeile/.local/bin;C:/Users/ClemensBeile/AppData/Local/Programs/neofetch-win;C:/Program Files/nodejs;C:/Users/ClemensBeile/AppData/Roaming/npm", force = true }

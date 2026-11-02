@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonContext xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonContext/1.2.0">
+  <name>THHIT_Tour</name>
+  <title>Tour</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <icon>VAADIN:CAR</icon>
+  <filterView>THHIT_TourFilter_view</filterView>
+  <editView>THHIT_TourEdit_view</editView>
+  <previewView>THHIT_TourPreview_view</previewView>
+  <entity>THHIT_Tour_entity</entity>
+  <references>
+    <neonViewReference>
+      <name>71053690-a4aa-405a-a58b-fc80ad5c8362</name>
+      <view>THHIT_TourFilter_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>d982c2a3-8033-48ca-8c56-ddd52d061714</name>
+      <view>THHIT_TourPreview_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>56683ed0-189a-4b11-b14f-381b003dd642</name>
+      <view>THHIT_TourEdit_view</view>
+    </neonViewReference>
+    <webserviceReference>
+      <name>0e23c9b9-188a-4495-84c5-48a0e26e4570</name>
+      <webservice>THHIT_Tour_ws</webservice>
+    </webserviceReference>
+    <webserviceReference>
+      <name>bec59a5e-d15f-495b-a2c4-ec0c943c9d4c</name>
+      <webservice>THHIT_Tour_token_ws</webservice>
+    </webserviceReference>
+  </references>
+</neonContext>

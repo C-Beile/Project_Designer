@@ -1,0 +1,60 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Vendira Designer",
+  "mainBinaryName": "vendira-designer",
+  "version": "1.0.0-rc11",
+  "identifier": "de.threehillsit.vendira-designer",
+  "build": {
+    "frontendDist": "../ui/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Vendira Designer",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 960,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": false,
+        "shadow": true,
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "createUpdaterArtifacts": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["German", "English"],
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "../ui/src/assets/brand/installer-header.bmp",
+        "sidebarImage": "../ui/src/assets/brand/installer-sidebar.bmp"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUzN0Y5NjVGNzk2QzUwMUQKUldRZFVHeDVYNVovNDJsNC9jaUFjVWNOcHRSTFFvQmZ2V3ZEZ1ZXZGU0eUtEWGhla24rT3JPdW8K",
+      "endpoints": ["https://raw.githubusercontent.com/C-Beile/Project_designer/updates/latest.json"],
+      "windows": { "installMode": "passive" }
+    }
+  }
+}

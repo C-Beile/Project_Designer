@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonView xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonView/1.2.3">
+  <name>THHIT_ActivityDateSearchLookup_view</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <layout>
+    <drawerLayout>
+      <layoutCaption>Activities</layoutCaption>
+    </drawerLayout>
+  </layout>
+  <children>
+    <tableViewTemplate>
+      <name>Table</name>
+      <hideActions v="true" />
+      <autoNewRow v="false" />
+      <isCreatable v="false" />
+      <isDeletable v="false" />
+      <isEditable v="false" />
+      <columns>
+        <neonTableColumn>
+          <name>8a1386a0-73a8-4cd4-90d9-61c789fc6834</name>
+          <entityField>ENTRYDATE</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>e6167b9b-0606-4bee-bd5b-fc5781a22590</name>
+          <entityField>RESPONSIBLE</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>f9add45c-25c9-4e3b-82bb-9302f9827f0b</name>
+          <entityField>SUBJECT</entityField>
+        </neonTableColumn>
+      </columns>
+    </tableViewTemplate>
+  </children>
+</neonView>

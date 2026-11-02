@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonContext xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonContext/1.2.0">
+  <name>THHIT_DocumentsLink</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <editView>THHIT_DocumentsLinkEdit_view</editView>
+  <previewView>THHIT_DocumentsLinkPreview_view</previewView>
+  <entity>THHIT_DocumentsLink_entity</entity>
+  <references>
+    <neonViewReference>
+      <name>b3728678-274f-4980-81e1-5e06cb033211</name>
+      <view>THHIT_DocumentsLinkPreview_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>23385eec-8216-4af5-ade3-213f7fb3a9e5</name>
+      <view>THHIT_DocumentsLinkEdit_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>d5245120-b634-473f-b86e-ab761b1f6a3c</name>
+      <view>THHIT_DocumentsLinkFilter_view</view>
+    </neonViewReference>
+  </references>
+</neonContext>

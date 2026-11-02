@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonView xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonView/1.2.3">
+  <name>THHIT_ActivityDetail_view</name>
+  <title>Activity_Description</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <layout>
+    <noneLayout />
+  </layout>
+  <children>
+    <genericViewTemplate>
+      <name>Generic</name>
+      <showDrawer v="true" />
+      <drawerCaption>Activity_Description</drawerCaption>
+      <fixedDrawer v="true" />
+      <hideLabels v="true" />
+      <entityField>#ENTITY</entityField>
+      <title>Activity_Description</title>
+      <fields>
+        <entityFieldLink>
+          <name>041a6ded-06b3-4d84-be29-d89d01df6dec</name>
+          <entityField>INFO</entityField>
+        </entityFieldLink>
+      </fields>
+    </genericViewTemplate>
+    <neonViewReference>
+      <name>62634d84-b0a1-472c-aee2-04b392371ecf</name>
+      <entityField>Topics</entityField>
+      <view>TopicTreeTitledList_view</view>
+    </neonViewReference>
+  </children>
+</neonView>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonContext xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonContext/1.2.0">
+  <name>THHIT_Committee</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <icon>NEON:GROUP_APPOINTMENT</icon>
+  <filterView>THHIT_CommitteeFilter_view</filterView>
+  <entity>THHIT_Committee_entity</entity>
+  <references>
+    <neonViewReference>
+      <name>23ec75d8-6216-43b0-90cf-5021e304af3f</name>
+      <view>THHIT_CommitteeFilter_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>f2a3b4c5-d6e7-8901-f234-567890abcdef</name>
+      <view>THHIT_CommitteeMemberList_view</view>
+    </neonViewReference>
+  </references>
+</neonContext>

@@ -1,0 +1,134 @@
+# Builds the Vendira Designer for macOS (universal: Apple Silicon + Intel) in GitHub Actions.
+# Prepared on Windows, NOT run yet: the first run on GitHub is the first real test (see
+# PROJECT/MACOS_PORT.md for the steps and the open points).
+#
+# Repository layout assumed: the repository root is the `forge` folder (Cargo.toml workspace,
+# app/, crates/). If the repository root is a parent folder, set FORGE_DIR below.
+#
+# Started by hand only (Actions > Build macOS > Run workflow); nothing runs on push.
+# No secrets are used. No code signing and no notarization yet - see the placeholders in the
+# macOS job for the later Apple certificate.
+
+name: Build macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_windows:
+        description: "Also build the Windows installer with MSVC (optional, for comparison)"
+        type: boolean
+        default: false
+
+env:
+  FORGE_DIR: .
+  # The repository pins the GNU toolchain for the local Windows machine (rust-toolchain.toml) and
+  # forces Windows-only paths in .cargo/config.toml. RUSTUP_TOOLCHAIN overrides the pin; the
+  # config file is removed on the runner (the repository file stays untouched).
+  RUSTUP_TOOLCHAIN: stable
+
+jobs:
+  macos:
+    name: macOS universal (dmg)
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use the runner's toolchain instead of the local Windows setup
+        working-directory: ${{ env.FORGE_DIR }}
+        run: |
+          rm -f .cargo/config.toml
+          rm -f rust-toolchain.toml
+
+      - name: Rust stable with both Apple targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ env.FORGE_DIR }}/app/ui/package-lock.json
+
+      - name: Cache cargo build output
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ env.FORGE_DIR }} -> target
+
+      - name: Install front end dependencies
+        working-directory: ${{ env.FORGE_DIR }}/app/ui
+        run: npm ci
+
+      - name: Build the app (tauri build, universal)
+        working-directory: ${{ env.FORGE_DIR }}/app
+        # The Tauri command line tool is a dev dependency of app/ui (@tauri-apps/cli), so no
+        # separate `cargo install tauri-cli` is needed. tauri.macos.conf.json selects dmg + app.
+        run: npx --prefix ui tauri build --target universal-apple-darwin
+        env:
+          # Placeholders for a later signed build (do not fill in here; use repository secrets):
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          CI: "true"
+
+      - name: List the result
+        run: find "${{ env.FORGE_DIR }}/target" -path "*bundle*" \( -name "*.dmg" -o -name "*.app" \) -maxdepth 8
+
+      - name: Upload the dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: vendira-designer-macos-universal-dmg
+          path: ${{ env.FORGE_DIR }}/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    name: Windows installer (MSVC, optional)
+    if: ${{ inputs.build_windows }}
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      RUSTUP_TOOLCHAIN: stable-x86_64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use MSVC instead of the local GNU setup (RISKS.md R13/R22 do not apply)
+        shell: bash
+        working-directory: ${{ env.FORGE_DIR }}
+        run: |
+          rm -f .cargo/config.toml
+          rm -f rust-toolchain.toml
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ env.FORGE_DIR }}/app/ui/package-lock.json
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ env.FORGE_DIR }} -> target
+
+      - name: Install front end dependencies
+        working-directory: ${{ env.FORGE_DIR }}/app/ui
+        run: npm ci
+
+      - name: Build the installer
+        working-directory: ${{ env.FORGE_DIR }}/app
+        run: npx --prefix ui tauri build --target x86_64-pc-windows-msvc
+
+      - name: Upload the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: vendira-designer-windows-setup
+          path: ${{ env.FORGE_DIR }}/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
+          if-no-files-found: error
+          retention-days: 14

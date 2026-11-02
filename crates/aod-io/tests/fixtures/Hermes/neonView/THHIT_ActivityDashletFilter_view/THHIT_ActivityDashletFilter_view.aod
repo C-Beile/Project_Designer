@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonView xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonView/1.2.3">
+  <name>THHIT_ActivityDashletFilter_view</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <filterable v="true" />
+  <dashletConfigurations>
+    <neonDashletConfiguration>
+      <name>THHIT_MyActivitiesDashlet</name>
+      <title>My Activities (Custom)</title>
+      <description>Show my activities</description>
+      <fragment>Activity/filter?search=eyJ0eXBlIjoiZ3JvdXAiLCJvcGVyYXRvciI6IkFORCIsImNoaWxkcyI6W3sidHlwZSI6InJvdyIsIm5hbWUiOiJFTlRSWURBVEUiLCJvcGVyYXRvciI6IlRJTUVGUkFNRV9FUVVBTCIsInZhbHVlIjoiSGV1dGUiLCJrZXkiOiJSRUw9QURKVVNURUQ7VU5JVD1EQVkiLCJjb250ZW50dHlwZSI6IkRBVEUifSx7InR5cGUiOiJyb3ciLCJuYW1lIjoiUkVTUE9OU0lCTEUiLCJvcGVyYXRvciI6IkVRVUFMIiwidmFsdWUiOiJJY2giLCJrZXkiOiIkJCRnbG9iYWwudXNlci5jb250YWN0SWQkJCQiLCJjb250ZW50dHlwZSI6IlRFWFQifV19</fragment>
+      <singleton v="true" />
+      <requiresConfiguration v="false" />
+      <storeRoles />
+      <icon>VAADIN:HOURGLASS_END</icon>
+      <categories>
+        <neonDashletCategory>
+          <name>custom</name>
+          <title>Custom</title>
+        </neonDashletCategory>
+      </categories>
+      <parameters>
+        <neonDashletParameter>
+          <name>OnlyInnate_param</name>
+          <value>true</value>
+        </neonDashletParameter>
+      </parameters>
+    </neonDashletConfiguration>
+  </dashletConfigurations>
+  <layout>
+    <groupLayout />
+  </layout>
+  <children>
+    <tableViewTemplate>
+      <name>ActivitiesDashletTable</name>
+      <hideContentSearch v="true" />
+      <iconField>#IMAGE</iconField>
+      <titleField>SUBJECT</titleField>
+      <subtitleField>ENTRYDATE</subtitleField>
+      <descriptionField>DIRECTION</descriptionField>
+      <autoNewRow v="false" />
+      <linkedColumns>
+        <element>SUBJECT</element>
+      </linkedColumns>
+      <favoriteActionGroup1>filterActions</favoriteActionGroup1>
+      <isCreatable v="false" />
+      <isDeletable v="false" />
+      <isEditable v="false" />
+      <columns>
+        <neonTableColumn>
+          <name>74667a35-17ef-4ab3-8b85-6a8c8f4f92b0</name>
+          <entityField>entryDateDateFormat</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>29ef42a8-1815-40d0-9dda-7e394df54cb5</name>
+          <entityField>CATEGORY</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>e8cdb8af-57fd-45fc-871c-28fa8df6ac91</name>
+          <entityField>SUBJECT</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>a996fd62-da72-44f1-863f-8f5869474d42</name>
+          <entityField>INFO</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>afa08c4a-4f71-4a4e-84b0-de3c8324f11b</name>
+          <entityField>THHIT_ORGANISATIONS</entityField>
+        </neonTableColumn>
+      </columns>
+    </tableViewTemplate>
+  </children>
+</neonView>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<system xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/system/1.2.0">
+  <name>prod</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <serverConfigPath>$PROJECTHOME/others/cloud/hermes.adito.cloud_serverconfig_system.xml</serverConfigPath>
+  <tunnelConfigPath>$PROJECTHOME/others/cloud/hermes.adito.cloud_tunnelconfig.xml</tunnelConfigPath>
+  <productiveSystem v="true" />
+</system>

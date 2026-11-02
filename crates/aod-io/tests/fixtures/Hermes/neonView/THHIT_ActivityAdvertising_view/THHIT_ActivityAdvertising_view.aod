@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonView xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonView/1.2.3">
+  <name>THHIT_ActivityAdvertising_view</name>
+  <title>Advertising material</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <layout>
+    <boxLayout />
+  </layout>
+  <children>
+    <neonViewReference>
+      <name>2f70a528-fea9-45d7-abbd-cb48fd767472</name>
+      <entityField>AdvertisingInformationConsumer</entityField>
+      <view>AdvertisingDetail_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>ef365c58-5b50-4e16-907c-4c45643eb6a5</name>
+      <entityField>AdvertisingItems</entityField>
+      <view>THHIT_AdvertisingItemFilter_view</view>
+    </neonViewReference>
+  </children>
+</neonView>

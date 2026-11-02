@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entity/1.4.0">
+  <name>THHIT_Committee_entity</name>
+  <title>THHIT_Committee_entity</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <iconId>NEON:GROUP_APPOINTMENT</iconId>
+  <titlePlural>THHIT_Committee_entitys</titlePlural>
+  <recordContainer>db</recordContainer>
+  <entityFields>
+    <entityProvider>
+      <name>#PROVIDER</name>
+    </entityProvider>
+    <entityField>
+      <name>DATE_EDIT</name>
+      <title>Date_edit</title>
+      <contentType>DATE</contentType>
+      <mandatory v="true" />
+      <valueProcess>%aditoprj%/entity/THHIT_Committee_entity/entityfields/date_edit/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>DATE_NEW</name>
+      <title>Date_new</title>
+      <contentType>DATE</contentType>
+      <mandatory v="true" />
+      <valueProcess>%aditoprj%/entity/THHIT_Committee_entity/entityfields/date_new/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>THHIT_COMMITTEEID</name>
+      <title>Thhit_committeeid</title>
+    </entityField>
+    <entityField>
+      <name>THHIT_COMMITTEENAME</name>
+      <title>Thhit_committeename</title>
+      <maxFieldSize v="500" />
+      <mandatory v="true" />
+    </entityField>
+    <entityField>
+      <name>THHIT_COMPANYNAME</name>
+      <title>Thhit_companyname</title>
+      <maxFieldSize v="500" />
+      <mandatory v="true" />
+    </entityField>
+    <entityField>
+      <name>USER_EDIT</name>
+      <title>User_edit</title>
+      <mandatory v="true" />
+      <valueProcess>%aditoprj%/entity/THHIT_Committee_entity/entityfields/user_edit/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>USER_NEW</name>
+      <title>User_new</title>
+      <mandatory v="true" />
+      <valueProcess>%aditoprj%/entity/THHIT_Committee_entity/entityfields/user_new/valueProcess.js</valueProcess>
+    </entityField>
+    <entityProvider>
+      <name>#PROVIDER_AGGREGATES</name>
+      <useAggregates v="true" />
+    </entityProvider>
+    <entityConsumer>
+      <name>CommitteeMembers</name>
+      <stateProcess>%aditoprj%/entity/THHIT_Committee_entity/entityfields/committeemembers/stateProcess.js</stateProcess>
+      <dependency>
+        <name>dependency</name>
+        <entityName>THHIT_CommitteePersonLink_entity</entityName>
+        <fieldName>CommitteeMembers</fieldName>
+      </dependency>
+      <children>
+        <entityParameter>
+          <name>CommitteeId_param</name>
+          <valueProcess>%aditoprj%/entity/THHIT_Committee_entity/entityfields/committeemembers/children/committeeid_param/valueProcess.js</valueProcess>
+        </entityParameter>
+      </children>
+    </entityConsumer>
+  </entityFields>
+  <recordContainers>
+    <dbRecordContainer>
+      <name>db</name>
+      <alias>THHIT_Data_alias</alias>
+      <recordFieldMappings>
+        <dbRecordFieldMapping>
+          <name>DATE_EDIT.value</name>
+          <recordfield>THHIT_COMMITTEE.DATE_EDIT</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>DATE_NEW.value</name>
+          <recordfield>THHIT_COMMITTEE.DATE_NEW</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>THHIT_COMMITTEEID.value</name>
+          <recordfield>THHIT_COMMITTEE.THHIT_COMMITTEEID</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>THHIT_COMMITTEENAME.value</name>
+          <recordfield>THHIT_COMMITTEE.THHIT_COMMITTEENAME</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>THHIT_COMPANYNAME.value</name>
+          <recordfield>THHIT_COMMITTEE.THHIT_COMPANYNAME</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>USER_EDIT.value</name>
+          <recordfield>THHIT_COMMITTEE.USER_EDIT</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>USER_NEW.value</name>
+          <recordfield>THHIT_COMMITTEE.USER_NEW</recordfield>
+        </dbRecordFieldMapping>
+      </recordFieldMappings>
+      <linkInformation>
+        <linkInformation>
+          <name>e6eb1494-25d3-4d2b-ad30-c42697994b11</name>
+          <tableName>THHIT_COMMITTEE</tableName>
+          <primaryKey>THHIT_COMMITTEEID</primaryKey>
+          <isUIDTable v="true" />
+          <readonly v="false" />
+        </linkInformation>
+      </linkInformation>
+      <filterExtensions>
+        <filterExtension>
+          <name>THHIT_CommitteeMember_filter</name>
+          <title>Gremienbeteiligter</title>
+          <contentType>TEXT</contentType>
+          <filterValuesProcess>%aditoprj%/entity/THHIT_Committee_entity/recordcontainers/db/filterextensions/thhit_committeemember_filter/filterValuesProcess.js</filterValuesProcess>
+          <filterConditionProcess>%aditoprj%/entity/THHIT_Committee_entity/recordcontainers/db/filterextensions/thhit_committeemember_filter/filterConditionProcess.js</filterConditionProcess>
+          <isFilterable v="true" />
+          <filtertype>BASIC</filtertype>
+        </filterExtension>
+      </filterExtensions>
+    </dbRecordContainer>
+  </recordContainers>
+</entity>

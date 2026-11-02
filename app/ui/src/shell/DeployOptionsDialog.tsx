@@ -1,0 +1,173 @@
+import { useState } from 'react'
+import type { ForgeApi } from '../api/ForgeApi'
+import { Modal } from './Dialogs'
+import { useSshKeyPath } from '../settings/sshKey'
+import { resolvePathVariables } from '../properties/pathVariables'
+import { systemKey } from '../services/tunnelState'
+
+// First dialog of a deploy (original Designer, manual chapter 11, picture 178): Project, System and
+// the three check boxes. Added by Vendira: "Build before deploy" (Build and Deploy) and the tunnel
+// check - the plan of the next step is read from the system database, so the tunnel to the chosen
+// system has to stand. The write step keeps its own explicit confirmation in the following dialog.
+
+export interface DeploySystem {
+  name: string
+  tunnelRef: string
+  serverRef: string
+  productive: boolean
+  cloud: boolean
+}
+
+export interface DeployOptionsPayload {
+  projects: string[]
+  project: string
+  systems: DeploySystem[]
+  defaultSystem: string
+  /** Systems and the default (bold) system of every open project; systems differ per project. */
+  systemsByProject?: Record<string, { systems: DeploySystem[]; defaultSystem: string }>
+  /** System the open database session belongs to (null: none or not known). */
+  connectedSystem: string | null
+  /** Every system that has its own open tunnel and database session. */
+  openSystems?: string[]
+  buildFirst: boolean
+  checkScan: boolean
+}
+
+export interface DeployOptionsResult {
+  project: string
+  system: string
+  checkScan: boolean
+  force: boolean
+  userhelp: boolean
+  build: boolean
+  connectedSystem: string | null
+}
+
+const baseName = (p: string) => p.split(/[\\/]/).filter(Boolean).pop() ?? p
+
+export function systemWarning(s: DeploySystem | undefined): string | null {
+  if (!s) return null
+  if (s.productive || /prod/i.test(s.name)) return `${s.name} looks like a productive system. A deploy overwrites its models.`
+  if (s.cloud) return `${s.name} is a cloud system. A deploy overwrites its database.`
+  return null
+}
+
+export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: ForgeApi; payload: DeployOptionsPayload; onOk: (r: DeployOptionsResult) => void; onCancel: () => void }) {
+  const [project, setProject] = useState(payload.project)
+  const [system, setSystem] = useState(payload.defaultSystem || payload.systems[0]?.name || '')
+  const [checkScan, setCheckScan] = useState(payload.checkScan)
+  const [force, setForce] = useState(false)
+  const [build, setBuild] = useState(payload.buildFirst)
+  const [connected, setConnected] = useState<string | null>(payload.connectedSystem)
+  const [opened, setOpened] = useState<string[]>(payload.openSystems ?? (payload.connectedSystem ? [payload.connectedSystem] : []))
+  const [opening, setOpening] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [keyFile] = useSshKeyPath(api)
+  const systemList = payload.systemsByProject?.[project]?.systems ?? payload.systems
+  const current = systemList.find((s) => s.name === system)
+  const tunnelOk = opened.includes(systemKey(project, system)) || (connected !== null && connected === systemKey(project, system))
+  const warning = systemWarning(current)
+
+  async function openTunnel() {
+    if (!current) return
+    setOpening(true)
+    setError(null)
+    try {
+      if (!current.tunnelRef || !current.serverRef) throw new Error('tunnelConfigPath and serverConfigPath of this system must be set to open its tunnel.')
+      const tunnel = resolvePathVariables('tunnelConfigPath', current.tunnelRef, { projectHome: project })
+      const server = resolvePathVariables('serverConfigPath', current.serverRef, { projectHome: project })
+      if (tunnel.unresolved.length > 0 || server.unresolved.length > 0) throw new Error('The config paths contain variables that cannot be resolved here.')
+      await api.dbConnect(tunnel.resolved, server.resolved, keyFile.trim() || null, null, systemKey(project, current.name))
+      setConnected(systemKey(project, current.name))
+      setOpened((o) => (o.includes(systemKey(project, current.name)) ? o : [...o, systemKey(project, current.name)]))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setOpening(false)
+    }
+  }
+
+  const ok = () => onOk({ project, system, checkScan, force, userhelp: false, build, connectedSystem: tunnelOk ? systemKey(project, system) : connected })
+
+  return (
+    <Modal
+      title={build ? 'Build and Deploy' : 'Deploy'}
+      onClose={onCancel}
+      footer={
+        <>
+          <button type="button" onClick={ok} disabled={!tunnelOk || !system}>
+            OK
+          </button>
+          <button type="button" onClick={onCancel}>
+            Cancel
+          </button>
+        </>
+      }
+    >
+      <div className="forge-deploy">
+        <label className="forge-field">
+          <span>Project:</span>
+          <select
+            aria-label="Project"
+            value={project}
+            onChange={(e) => {
+              setProject(e.target.value)
+              const entry = payload.systemsByProject?.[e.target.value]
+              if (entry) setSystem(entry.defaultSystem || entry.systems[0]?.name || '')
+            }}
+          >
+            {payload.projects.map((p) => (
+              <option key={p} value={p}>
+                {baseName(p)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="forge-field">
+          <span>System:</span>
+          <select aria-label="System" value={system} onChange={(e) => setSystem(e.target.value)}>
+            {systemList.map((s) => (
+              <option key={s.name} value={s.name}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {warning ? (
+          <p className="forge-field-error" role="alert">
+            {warning}
+          </p>
+        ) : null}
+        {!tunnelOk ? (
+          <p className="forge-field-hint" role="status">
+            The tunnel to {system || 'the system'} is not open.{' '}
+            <button type="button" className="forge-link-button" onClick={() => void openTunnel()} disabled={opening || !current}>
+              {opening ? 'Opening...' : 'Open tunnel'}
+            </button>
+          </p>
+        ) : null}
+        {error ? (
+          <p className="forge-field-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <label className="forge-check">
+          <input type="checkbox" checked={checkScan} onChange={(e) => setCheckScan(e.target.checked)} />
+          <span>Check Scan Services (Errors, Warnings)</span>
+        </label>
+        <label className="forge-check">
+          <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />
+          <span>Force deploy</span>
+        </label>
+        <label className="forge-check" title="Deploying the userhelp is not available yet">
+          <input type="checkbox" disabled />
+          <span>Deploy Userhelp</span>
+        </label>
+        <label className="forge-check">
+          <input type="checkbox" checked={build} onChange={(e) => setBuild(e.target.checked)} />
+          <span>Build (transpile) before the deploy</span>
+        </label>
+      </div>
+    </Modal>
+  )
+}

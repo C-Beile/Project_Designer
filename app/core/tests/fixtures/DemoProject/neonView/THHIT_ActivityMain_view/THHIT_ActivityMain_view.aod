@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonView xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonView/1.2.3">
+  <name>THHIT_ActivityMain_view</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <layout>
+    <masterSlaveLayout>
+      <master>aba154fa-0375-4b3b-9427-e3e5c6fbed46</master>
+    </masterSlaveLayout>
+  </layout>
+  <children>
+    <neonViewReference>
+      <name>62648554-04b1-4461-bba3-a089a0f7ff92</name>
+      <entityField>#ENTITY</entityField>
+      <view>THHIT_ActivityDetail_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>f6c6888a-f3d6-410a-b97b-30c34a9dd6a2</name>
+      <entityField>ModuleTrees</entityField>
+      <view>ModuleTree_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>f57fb116-d356-47c7-8da6-ee64b4a01b46</name>
+      <entityField>AttributeTree</entityField>
+      <view>AttributeRelationTree_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>7bab8dbf-b69e-412d-a604-3a6999658e10</name>
+      <entityField>Documents</entityField>
+      <view>DocumentFilter_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>09c7c743-b2ff-4005-9034-0e9dedfe9e30</name>
+      <entityField>#ENTITY</entityField>
+      <view>THHIT_ActivityAdvertising_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>8b6d9b7d-588e-481b-84ac-a3f918b266dc</name>
+      <entityField>LogHistories</entityField>
+      <view>LogHistoryFilter_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>aba154fa-0375-4b3b-9427-e3e5c6fbed46</name>
+      <entityField>#ENTITY</entityField>
+      <view>THHIT_ActivityPreview_view</view>
+    </neonViewReference>
+  </children>
+</neonView>

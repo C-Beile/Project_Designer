@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="report1" printOrder="Horizontal" pageWidth="1000" pageHeight="595" orientation="Landscape" columnWidth="960" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="e7a916c8-3f9a-497d-84bb-3909b15271ea">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<style name="Column Header" mode="Opaque" forecolor="#000000" backcolor="#999999" scaleImage="FillFrame" hAlign="Center" vAlign="Middle" fontSize="11" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false">
+		<box>
+			<topPen lineWidth="1.0"/>
+			<leftPen lineWidth="1.0"/>
+			<bottomPen lineWidth="1.0"/>
+			<rightPen lineWidth="1.0"/>
+		</box>
+	</style>
+	<style name="Detail" forecolor="#000000" backcolor="#FFFFFF" hAlign="Center" vAlign="Middle" fontSize="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false">
+		<box>
+			<topPen lineWidth="1.0"/>
+			<leftPen lineWidth="1.0"/>
+			<bottomPen lineWidth="1.0"/>
+			<rightPen lineWidth="1.0"/>
+		</box>
+	</style>
+	<parameter name="user" class="java.lang.String"/>
+	<parameter name="calendarweek" class="java.lang.String"/>
+	<parameter name="datebegin" class="java.lang.String"/>
+	<parameter name="customercode" class="java.lang.String"/>
+	<parameter name="contactperson" class="java.lang.String"/>
+	<parameter name="pharmacy" class="java.lang.String"/>
+	<parameter name="street" class="java.lang.String"/>
+	<parameter name="zip" class="java.lang.String"/>
+	<parameter name="place" class="java.lang.String"/>
+	<parameter name="phone" class="java.lang.String"/>
+	<parameter name="classification" class="java.lang.String"/>
+	<parameter name="lastorderdate" class="java.lang.String"/>
+	<parameter name="totalnetcurrentyear" class="java.lang.String"/>
+	<parameter name="totalnetlastyear" class="java.lang.String"/>
+	<parameter name="currentyear" class="java.lang.String"/>
+	<parameter name="currentmonth" class="java.lang.String"/>
+	<parameter name="title" class="java.lang.String"/>
+	<parameter name="print" class="java.lang.String"/>
+	<parameter name="for" class="java.lang.String"/>
+	<parameter name="currentdate" class="java.lang.String"/>
+	<field name="CUSTOMERCODE" class="java.lang.String"/>
+	<field name="CONTACTPERSON" class="java.lang.String"/>
+	<field name="PHARMACY" class="java.lang.String"/>
+	<field name="STREET" class="java.lang.String"/>
+	<field name="ZIP" class="java.lang.String"/>
+	<field name="CITY" class="java.lang.String"/>
+	<field name="CLASSIFICATION" class="java.lang.String"/>
+	<field name="Total_Net_lastYear" class="java.lang.String"/>
+	<field name="Total_Net_currentYear" class="java.lang.String"/>
+	<field name="PHONE" class="java.lang.String"/>
+	<field name="LASTORDERDATE" class="java.lang.String"/>
+	<field name="DATE_BEGIN" class="java.lang.String"/>
+	<field name="CALENDARWEEK" class="java.lang.String"/>
+	<title>
+		<band height="78" splitType="Stretch">
+			<textField>
+				<reportElement x="372" y="33" width="28" height="20" uuid="e6d80f57-5c42-49bd-a149-21458de2fe9e"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$P{currentyear}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="400" y="33" width="10" height="20" uuid="dbc5266d-a86a-4c98-b425-110ddf6e8261"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[/]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="410" y="33" width="14" height="20" uuid="dc58bbe8-ea8c-4060-856f-6353cff1d2ed"/>
+				<textFieldExpression><![CDATA[$P{currentmonth}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="438" y="33" width="100" height="20" uuid="b7bf85ba-dba8-416b-951c-df81e4498656"/>
+				<textFieldExpression><![CDATA[$P{user}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="187" y="33" width="185" height="20" uuid="e1841be8-14f0-4e60-a9b5-9fbe99a7f9a6"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$P{title}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="424" y="33" width="14" height="20" uuid="bcc4b2ba-0327-4837-b04f-ad8eb2f020b5"/>
+				<textFieldExpression><![CDATA[$P{for}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<columnHeader>
+		<band height="33">
+			<staticText>
+				<reportElement style="Column Header" x="0" y="0" width="24" height="33" uuid="bde190a5-91d2-4271-9560-4038083b2259"/>
+				<text><![CDATA[KW]]></text>
+			</staticText>
+			<textField>
+				<reportElement style="Column Header" x="24" y="0" width="63" height="33" uuid="e2dabd65-a2c6-46d5-adb7-2441b009dbc3"/>
+				<textFieldExpression><![CDATA[$P{datebegin}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Column Header" x="87" y="0" width="48" height="33" uuid="fe9dd4a6-8d9c-498b-9599-51377211e8eb"/>
+				<textFieldExpression><![CDATA[$P{customercode}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Column Header" x="135" y="0" width="111" height="33" uuid="0834595d-69e9-4bc0-aa4a-1a41a0f79b49"/>
+				<textFieldExpression><![CDATA[$P{contactperson}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Column Header" x="246" y="0" width="115" height="33" uuid="aae6da7e-4bbc-4808-9cc8-69c2a3bf0c5b"/>
+				<textFieldExpression><![CDATA[$P{pharmacy}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Column Header" x="504" y="0" width="61" height="33" uuid="4be68674-a489-4a51-8cc0-22c1485f7860"/>
+				<textFieldExpression><![CDATA[$P{zip}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Column Header" x="565" y="0" width="69" height="33" uuid="eed4b355-32d9-4bb7-8bd1-a09f88a3de9e"/>
+				<textFieldExpression><![CDATA[$P{place}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Column Header" x="830" y="0" width="68" height="33" uuid="93b2fe7f-1045-4a81-99ca-9de8129bda24"/>
+				<textFieldExpression><![CDATA[$P{totalnetcurrentyear}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Column Header" x="898" y="0" width="62" height="33" uuid="eb2ee450-d1b7-4b46-a421-e0f1a282d004"/>
+				<textFieldExpression><![CDATA[$P{totalnetlastyear}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Column Header" x="634" y="0" width="100" height="33" uuid="8a4fc4e1-f2aa-4c21-b0a7-c1629e0d59c6"/>
+				<textFieldExpression><![CDATA[$P{phone}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Column Header" x="361" y="0" width="143" height="33" uuid="7a85613a-3bba-403c-91a0-2320ad241e39"/>
+				<textFieldExpression><![CDATA[$P{street}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Column Header" x="734" y="0" width="33" height="33" uuid="147278f6-a093-4a5b-9a5a-4c36888aad1c"/>
+				<textFieldExpression><![CDATA[$P{classification}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Column Header" x="767" y="0" width="63" height="33" uuid="eed17d95-b138-4d12-a70e-9d702f1d7d28"/>
+				<textFieldExpression><![CDATA[$P{lastorderdate}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="33" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement style="Detail" x="0" y="0" width="24" height="33" uuid="b9a9eeb5-74ba-4781-b91a-297bf879b348"/>
+				<textFieldExpression><![CDATA[$F{CALENDARWEEK}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="24" y="0" width="63" height="33" uuid="73ab84be-64b6-4747-94f0-b408d0b6e406"/>
+				<textFieldExpression><![CDATA[$F{DATE_BEGIN}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="87" y="0" width="48" height="33" uuid="9283e66d-dc13-4959-a62e-c643f22a46ff"/>
+				<textFieldExpression><![CDATA[$F{CUSTOMERCODE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="135" y="0" width="111" height="33" uuid="49735576-cadf-4fdf-bbfc-05c3b697d23a"/>
+				<textFieldExpression><![CDATA[$F{CONTACTPERSON}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="246" y="0" width="115" height="33" uuid="d6d5f463-a0de-41cf-a17b-3a0d45b54dba"/>
+				<textFieldExpression><![CDATA[$F{PHARMACY}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="361" y="0" width="143" height="33" uuid="e4880cd0-d2a1-4096-94e3-0ae983924b3a"/>
+				<textFieldExpression><![CDATA[$F{STREET}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="504" y="0" width="61" height="33" uuid="828c4a1a-af93-4a4c-b694-8f80dd04907c"/>
+				<textFieldExpression><![CDATA[$F{ZIP}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="565" y="0" width="69" height="33" uuid="be477435-0bf8-44f0-9cb0-e159d98167a4"/>
+				<textFieldExpression><![CDATA[$F{CITY}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="634" y="0" width="100" height="33" uuid="1685f55c-3b75-42a1-8407-e7a1c722f25b"/>
+				<textFieldExpression><![CDATA[$F{PHONE}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="734" y="0" width="33" height="33" uuid="d9981ee7-15c6-4230-9562-aa1d569b6257"/>
+				<textFieldExpression><![CDATA[$F{CLASSIFICATION}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Detail" x="767" y="0" width="63" height="33" uuid="314944bd-58ef-4a5d-ad61-7be6f407e2a0"/>
+				<textFieldExpression><![CDATA[$F{LASTORDERDATE}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0;-#,##0">
+				<reportElement style="Detail" x="830" y="0" width="68" height="33" uuid="2ad5132d-a880-49be-825e-a26d39e927ec"/>
+				<textFieldExpression><![CDATA[$F{Total_Net_currentYear}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0;-#,##0">
+				<reportElement style="Detail" x="898" y="0" width="62" height="33" uuid="1547539e-7520-4a71-b6fa-dca48893de2f"/>
+				<textFieldExpression><![CDATA[$F{Total_Net_lastYear}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="54" splitType="Stretch">
+			<textField>
+				<reportElement x="778" y="34" width="35" height="20" uuid="693210d3-7c0e-4f62-a9ea-1aac8abd3122"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="813" y="34" width="17" height="20" uuid="c1c16c3c-b103-4dd4-bf37-0368f021eb11"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[/]]></text>
+			</staticText>
+			<textField evaluationTime="Report">
+				<reportElement x="830" y="34" width="22" height="20" uuid="a1ce83bc-5d74-4f90-a912-7279d349688b"/>
+				<textFieldExpression><![CDATA[$V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="24" y="34" width="100" height="20" uuid="15e426b4-0fe5-4134-9616-84b7f5733e99"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isItalic="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{print}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="135" y="34" width="100" height="20" uuid="9a95be66-d21a-4fc2-8515-912a6a5e1828"/>
+				<textElement verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{currentdate}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+</jasperReport>

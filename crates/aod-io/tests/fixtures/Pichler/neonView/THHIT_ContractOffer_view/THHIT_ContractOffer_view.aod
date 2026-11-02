@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonView xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonView/1.2.3">
+  <name>THHIT_ContractOffer_view</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <layout>
+    <noneLayout />
+  </layout>
+</neonView>

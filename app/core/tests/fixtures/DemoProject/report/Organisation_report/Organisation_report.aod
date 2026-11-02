@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.3.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/report/1.3.0">
+  <name>Organisation_report</name>
+  <title>Customer Base Sheet</title>
+  <description></description>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <icon>%aditoprj%/report/Organisation_report/icon.png</icon>
+  <iconInactive>%aditoprj%/report/Organisation_report/iconInactive.png</iconInactive>
+  <reportData>%aditoprj%/report/Organisation_report/reportData.jrxml</reportData>
+  <reportType>JASPER</reportType>
+  <subReports>
+    <subreport>
+      <name>Kontaktpersonen</name>
+      <reportData>%aditoprj%/report/Organisation_report/Kontaktpersonen.jrxml</reportData>
+    </subreport>
+    <subreport>
+      <name>Historien</name>
+      <reportData>%aditoprj%/report/Organisation_report/Historien.jrxml</reportData>
+    </subreport>
+    <subreport>
+      <name>Aufgaben</name>
+      <reportData>%aditoprj%/report/Organisation_report/Aufgaben.jrxml</reportData>
+    </subreport>
+    <subreport>
+      <name>Kommunikationsdaten</name>
+      <reportData>%aditoprj%/report/Organisation_report/Kommunikationsdaten.jrxml</reportData>
+    </subreport>
+  </subReports>
+  <images>
+    <image>
+      <name>myLogo</name>
+      <fileName>myLogo.png</fileName>
+      <imageData>%aditoprj%/report/Organisation_report/myLogo.png</imageData>
+    </image>
+    <image>
+      <name>icon</name>
+      <fileName>icon.png</fileName>
+      <imageData>%aditoprj%/report/Organisation_report/icon.png</imageData>
+    </image>
+    <image>
+      <name>iconInactive</name>
+      <fileName>iconInactive.png</fileName>
+      <imageData>%aditoprj%/report/Organisation_report/iconInactive.png</imageData>
+    </image>
+  </images>
+</report>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<system xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/system/1.2.0">
+  <name>test</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <serverConfigPath>C:\AditoProjects\VendiraBasic\data\config\test-vendira-c2-adito-cloud_serverconfig.xml</serverConfigPath>
+  <tunnelConfigPath>C:\AditoProjects\VendiraBasic\data\config\test-vendira-c2-adito-cloud_tunnelconfig.xml</tunnelConfigPath>
+  <cloudSystemId>test-vendira-c2-adito-cloud#7655017e-1ebd-4f56-90db-71e4e69447a2</cloudSystemId>
+  <serverAddress>vendira.test.c2.adito.cloud</serverAddress>
+</system>

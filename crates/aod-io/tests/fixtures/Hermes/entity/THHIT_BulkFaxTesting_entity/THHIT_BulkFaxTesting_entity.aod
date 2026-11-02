@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entity/1.4.0">
+  <name>THHIT_BulkFaxTesting_entity</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <siblings>
+    <element>THHIT_BulkFax_entity</element>
+  </siblings>
+  <recordContainer>recordContainer</recordContainer>
+  <entityFields>
+    <entityProvider>
+      <name>#PROVIDER</name>
+    </entityProvider>
+    <entityProvider>
+      <name>#PROVIDER_AGGREGATES</name>
+      <useAggregates v="true" />
+    </entityProvider>
+    <entityField>
+      <name>TESTING_FAX_NUMBER</name>
+      <title>Recipient address</title>
+      <state>EDITABLE</state>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxTesting_entity/entityfields/testing_fax_number/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>TESTING_CONTACT_ID</name>
+      <title>Contact</title>
+      <consumer>Contacts</consumer>
+      <linkedContext>AnyContact</linkedContext>
+      <state>EDITABLE</state>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxTesting_entity/entityfields/testing_contact_id/valueProcess.js</valueProcess>
+      <displayValueProcess>%aditoprj%/entity/THHIT_BulkFaxTesting_entity/entityfields/testing_contact_id/displayValueProcess.js</displayValueProcess>
+    </entityField>
+    <entityField>
+      <name>SAVESETTINGS</name>
+      <title>Save settings</title>
+      <contentType>BOOLEAN</contentType>
+      <state>EDITABLE</state>
+    </entityField>
+    <entityParameter>
+      <name>BulkFaxId_param</name>
+      <expose v="true" />
+      <mandatory v="true" />
+    </entityParameter>
+    <entityConsumer>
+      <name>Contacts</name>
+      <dependency>
+        <name>dependency</name>
+        <entityName>AnyContact_entity</entityName>
+        <fieldName>#PROVIDER</fieldName>
+      </dependency>
+    </entityConsumer>
+    <entityActionField>
+      <name>testFax</name>
+      <title>Test email</title>
+      <onActionProcess>%aditoprj%/entity/THHIT_BulkFaxTesting_entity/entityfields/testfax/onActionProcess.js</onActionProcess>
+      <iconId>VAADIN:PAPERPLANE_O</iconId>
+    </entityActionField>
+  </entityFields>
+  <recordContainers>
+    <datalessRecordContainer>
+      <name>recordContainer</name>
+      <alias>Data_alias</alias>
+    </datalessRecordContainer>
+  </recordContainers>
+</entity>

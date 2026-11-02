@@ -1,0 +1,911 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.3.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/language/1.3.0">
+  <name>_____LANGUAGE_de_basic-project</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <language>de</language>
+  <country></country>
+  <variant></variant>
+  <keyValueMap>
+    <stringEntry>
+      <name>Filter_DocLink: Reference Number</name>
+      <value>Dokumentenlinks: Referenznummer</value>
+    </stringEntry>
+    <stringEntry>
+      <name>DocumentsLink_Reference_Number</name>
+      <value>Referenznummer</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Main contact person</name>
+      <value>Hauptansprechpartner</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Creditor</name>
+      <value>Kreditor</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Visitingaddress</name>
+      <value>Besuchsadresse</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Business Card</name>
+      <value>Visitenkarte</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Organisation type</name>
+      <value>Firmenart</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Agency</name>
+      <value>Agentur</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Consultant</name>
+      <value>Beratungsagentur</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Distributor</name>
+      <value>Distributor</value>
+    </stringEntry>
+    <stringEntry>
+      <name>End Customer</name>
+      <value>Endkunde</value>
+    </stringEntry>
+    <stringEntry>
+      <name>End Customer PMT</name>
+      <value>Endkunde PMT</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Ecosystem partner</name>
+      <value>Ökosystempartner</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Systemintegrator</name>
+      <value>Systemintegrator</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Misc</name>
+      <value>Sonstige</value>
+    </stringEntry>
+    <stringEntry>
+      <name>DISTRIBUTOR</name>
+      <value>DISTRIBUTOR</value>
+    </stringEntry>
+    <stringEntry>
+      <name>RESELLER</name>
+      <value>WIEDERVERKÄUFER</value>
+    </stringEntry>
+    <stringEntry>
+      <name>GOLD</name>
+      <value>GOLD</value>
+    </stringEntry>
+    <stringEntry>
+      <name>PLATIN</name>
+      <value>PLATIN</value>
+    </stringEntry>
+    <stringEntry>
+      <name>END CUSTOMER</name>
+      <value>ENDKUNDE</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Partner status</name>
+      <value>Partnerstatus</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Corporate</name>
+      <value>Unternehmensbüros &amp; professionelle Dienstleistungen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Education</name>
+      <value>Bildungswesen &amp; Training</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Entertainment</name>
+      <value>Unterhaltung, Tourismus, Freizeit &amp; Sport</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Finance</name>
+      <value>Finanzen, Versicherungen &amp; Immobilien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Healthcare</name>
+      <value>Gesundheitswesen &amp; Wellness</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Hospitality &amp; Gastronomy</name>
+      <value>Gastgewerbe &amp; Gastronomie</value>
+    </stringEntry>
+    <stringEntry>
+      <name>House of Worship</name>
+      <value>Gebetshäuser</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Authorities</name>
+      <value>öffentliche Einrichtungen &amp; Behörden</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Retail</name>
+      <value>Einzelhandel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Trade &amp; Industry</name>
+      <value>Produktion, Handel &amp; Industry</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Transportation</name>
+      <value>Transport &amp; Logistik</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Military</name>
+      <value>Militär</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Organisation industry</name>
+      <value>Industrie</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Debtor number</name>
+      <value>Debitornummer</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Creditor number</name>
+      <value>Kreditornummer</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Certificate</name>
+      <value>Zertifikat</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Certificates</name>
+      <value>Zertifikate</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Certificate name</name>
+      <value>Zertifikatsname</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Creation date</name>
+      <value>Erstellungsdatum</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Expiration date</name>
+      <value>Ablaufdatum</value>
+    </stringEntry>
+    <stringEntry>
+      <name>End User</name>
+      <value>Endbenutzer</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Decision maker</name>
+      <value>Entscheidungsträger</value>
+    </stringEntry>
+    <stringEntry>
+      <name>NAV Contact Nr</name>
+      <value>NAV Kontakt Nr</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Management</name>
+      <value>Management</value>
+    </stringEntry>
+    <stringEntry>
+      <name>First contact (internal)</name>
+      <value>Erstkontakt (intern)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>New</name>
+      <value>Neu</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Contacted</name>
+      <value>Kontaktiert</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Basedata qualified</name>
+      <value>Stammdaten qualifiziert</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Disqualified</name>
+      <value>Disqualifiziert</value>
+    </stringEntry>
+    <stringEntry>
+      <name>won</name>
+      <value>Gewonnen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>postponend</name>
+      <value>Verschoben</value>
+    </stringEntry>
+    <stringEntry>
+      <name>partially won</name>
+      <value>Teilweise gewonnen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Conditions</name>
+      <value>Konditionen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Contact_Company address</name>
+      <value>Rechnungsadresse</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Contact_Company Addresses</name>
+      <value>Rechnungsadressen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Company address</name>
+      <value>Rechnungsadresse</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Company Addresses</name>
+      <value>Rechnungsadressen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Office address</name>
+      <value>Rechnungsadresse</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Large enterprise (over 1000)</name>
+      <value>Enterprise (ab 1000)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Large company (over 250)</name>
+      <value>Großunternehmen (ab 250)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Medium company (50-249)</name>
+      <value>Mittleres Unternehmen (50-249)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Small company (10-49)</name>
+      <value>Kleinunternehmen (10-49)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Micro company (1-9)</name>
+      <value>Kleinstunternehmen (1-9)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Employee Count</name>
+      <value>Mitarbeiteranzahl</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Target market</name>
+      <value>Zielmarkt</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Documents link</name>
+      <value>Dokumentenlink</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Documents links</name>
+      <value>Dokumentenlinks</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Document type</name>
+      <value>Dokumentenart</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Offer</name>
+      <value>Angebot</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bill</name>
+      <value>Rechnung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Order confirmation</name>
+      <value>Auftragsbestätigung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>All documents</name>
+      <value>Alle Dokumente</value>
+    </stringEntry>
+    <stringEntry>
+      <name>DocumentsLink_Link</name>
+      <value>Link</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Turnover Current Year</name>
+      <value>Umsatz aktuelles Jahr</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Turnover Last Year</name>
+      <value>Umsatz Vorjahr</value>
+    </stringEntry>
+    <stringEntry>
+      <name>EditorInitial</name>
+      <value>Bearbeiter-Kürzel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>NAV Client</name>
+      <value>NAV-Mandant</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Probability can't be over 100</name>
+      <value>Wahrscheinlichkeit darf nicht über 100 sein</value>
+    </stringEntry>
+    <stringEntry>
+      <name>can not contact</name>
+      <value>nicht kontaktierbar</value>
+    </stringEntry>
+    <stringEntry>
+      <name>no longer interested</name>
+      <value>nicht mehr interessiert</value>
+    </stringEntry>
+    <stringEntry>
+      <name>not relevant</name>
+      <value>nicht relevant</value>
+    </stringEntry>
+    <stringEntry>
+      <name>known customer</name>
+      <value>bekannter Kunde</value>
+    </stringEntry>
+    <stringEntry>
+      <name>cancelled</name>
+      <value>storniert</value>
+    </stringEntry>
+    <stringEntry>
+      <name>commercially undersell</name>
+      <value>preislich unterboten</value>
+    </stringEntry>
+    <stringEntry>
+      <name>technical undersell</name>
+      <value>technisch unterlegen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>relationally undersell</name>
+      <value>anderweitig unterlegen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Management</name>
+      <value>Geschäftsführung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Sales</name>
+      <value>Vertrieb</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Production</name>
+      <value>Produktion</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Marketing</name>
+      <value>Marketing</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_IT</name>
+      <value>IT</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Technical Service</name>
+      <value>Technischer Service</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Purchasing</name>
+      <value>Einkauf</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Human Resources</name>
+      <value>Personalwesen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Finance and Accounting</name>
+      <value>Finanz und Buchhaltung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Research and Development</name>
+      <value>Forschung und Entwicklung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Operations</name>
+      <value>Betrieb und Organisation</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Legal</name>
+      <value>Rechtsabteilung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Quality Assurance</name>
+      <value>Qualitätssicherung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Unknown</name>
+      <value>Nicht bekannt</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Support</name>
+      <value>Support</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Solution Engineering</name>
+      <value>Technical Sales</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ContactDepartment_Cyber and Information Security</name>
+      <value>Cyber- und Informationssicherheit</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Contact_${ADDRESS_STATE}</name>
+      <value>Bundesstaat</value>
+    </stringEntry>
+    <stringEntry>
+      <name>MemberRole_Internal Sales Manager</name>
+      <value>Intern: Verkaufsleiter</value>
+    </stringEntry>
+    <stringEntry>
+      <name>MissingAddressOrganisation</name>
+      <value>Mindestens eine Adresse erforderlich</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Lead Contact</name>
+      <value>Lead-Kontakt</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Created on</name>
+      <value>Erstellt am</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Task_Type</name>
+      <value>Aufgabenart</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Offer international</name>
+      <value>Angebot International
+</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Offer AT</name>
+      <value>Angebot AT</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Corporate Offices &amp; Professional Services</name>
+      <value>Unternehmensbüros &amp; professionelle Dienstleistungen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Education &amp; Training</name>
+      <value>Bildungswesen &amp; Training</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Entertainment, Tourism, Leisure &amp; Sports</name>
+      <value>Unterhaltung, Tourismus, Freizeit &amp; Sport</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Events &amp; Exhibitions</name>
+      <value>Veranstaltungen &amp; Messen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Finance, Insurance &amp; Real Estate</name>
+      <value>Finanzen, Versicherungen &amp; Immobilien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Healthcare &amp; Wellness</name>
+      <value>Gesundheitswesen &amp; Wellness</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Houses of Worship</name>
+      <value>Gebetshäuser</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Manufacturing, Trade &amp; Industry</name>
+      <value>Produktion, Handel &amp; Industry</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Public Institutions &amp; Government</name>
+      <value>öffentliche Einrichtungen &amp; Behörden</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Transportation &amp; Logistics</name>
+      <value>Transport &amp; Logistik</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Large Corporate Headquarters &amp; Multi-site Offices</name>
+      <value>Große Unternehmenszentralen &amp; Büros an mehreren Standorten</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Professional Services &amp; Consulting</name>
+      <value>Professionelle Dienstleistungen &amp; Beratung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Legal, Financial &amp; Real Estate Services</name>
+      <value>Rechts-, Finanz- &amp; Immobiliendienstleistungen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Marketing, Media &amp; Creative Agencies</name>
+      <value>Marketing-, Medien- &amp; Kreativagenturen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Engineering, Architecture &amp; Design Firms</name>
+      <value>Ingenieur-, Architektur- &amp; Designbüros</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Technology &amp; Software Companies</name>
+      <value>Technologie- &amp; Softwareunternehmen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>NGOs &amp; Non-Profits</name>
+      <value>NGOs &amp; gemeinnützige Organisationen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Corporate Training &amp; Learning Centers</name>
+      <value>Unternehmensschulungs- &amp; Lernzentren</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Corporate Event &amp; Conference Centers</name>
+      <value>Unternehmensveranstaltungs- &amp; Konferenzzentren</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Shared Office Providers &amp; Flexible Workspaces</name>
+      <value>Anbieter von Gemeinschaftsbüros &amp; flexiblen Arbeitsplätzen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Facilities Management &amp; Services</name>
+      <value>Facility Management &amp; Dienstleistungen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Higher Education</name>
+      <value>Hochschulen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Lower Education</name>
+      <value>Grundschulen &amp; weiterführende Schulen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Specialized Schools</name>
+      <value>Fachschulen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Research &amp; Innovation Centers</name>
+      <value>Forschungs- &amp; Innovationszentren</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Concert Halls &amp; Live Music Venues</name>
+      <value>Konzert- &amp; Live-Musikveranstaltungsorte</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Cruise Ships</name>
+      <value>Kreuzfahrtschiffe</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Fitness Studios, Gyms &amp; Sports Clubs</name>
+      <value>Fitnessstudios, Sporthallen &amp; Sportclubs</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Museums &amp; Galleries</name>
+      <value>Museen &amp; Galerien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Sports Organizations</name>
+      <value>Sportorganisationen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Stadiums &amp; Arenas</name>
+      <value>Stadien &amp; Arenen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Theaters &amp; Cinemas</name>
+      <value>Theater &amp; Kinos</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Theme Parks &amp; Tourist Attractions</name>
+      <value>Freizeitparks &amp; Touristenattraktionen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Travel Agencies &amp; Tour Operators</name>
+      <value>Reisebüros &amp; Reiseveranstalter</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Speciality Venues</name>
+      <value>Spezialisierte Veranstaltungsorte</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Event Organizer &amp; Stand Builders</name>
+      <value>Veranstaltungsorganisator &amp; Standbauer</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Event Venues</name>
+      <value>Veranstaltungsorte</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Exhibition Halls, Conference Centers &amp; Trade Shows</name>
+      <value>Messehallen, Konferenzzentren &amp; Messen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Banks</name>
+      <value>Banken</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Financial Service Providers</name>
+      <value>Finanzdienstleister</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Insurance Companies</name>
+      <value>Versicherungsgesellschaften</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Investment Firms &amp; Stock Exchanges</name>
+      <value>Investmentfirmen &amp; Börsen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Real Estate</name>
+      <value>Immobilien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Clinics &amp; Outpatient Centers</name>
+      <value>Kliniken &amp; Ambulanzen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Hospitals &amp; Medical Centers</name>
+      <value>Krankenhäuser &amp; medizinische Zentren</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Medical Practices &amp; Medical Practice Groups</name>
+      <value>Arztpraxen &amp; Ärztegruppen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Pharmacies</name>
+      <value>Apotheken</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Senior Living &amp; Assisted Living Facilities</name>
+      <value>Seniorenwohnheime &amp; Einrichtungen für betreutes Wohnen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Wellness Centers &amp; Spas</name>
+      <value>Wellnesszentren &amp; Spas</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Personal Care</name>
+      <value>Körperpflege</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Cafés &amp; Coffee Chains</name>
+      <value>Cafés &amp; Kaffeehausketten</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Hostels &amp; Boutique Hotels</name>
+      <value>Hostels &amp; Boutique-Hotels</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Hotels &amp; Resorts</name>
+      <value>Hotels &amp; Resorts</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Nightclubs &amp; Bars</name>
+      <value>Nachtclubs &amp; Bars</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Quick Service Restaurants</name>
+      <value>Schnellrestaurants</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Restaurants &amp; Restaurant Chains</name>
+      <value>Restaurants &amp; Restaurantketten</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Churches</name>
+      <value>Kirchen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Faith-based Community Centers</name>
+      <value>Glaubensgemeinschaften</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Religious Organizations &amp; Institutions</name>
+      <value>Religiöse Organisationen &amp; Institutionen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Mosques</name>
+      <value>Moscheen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Synagogues</name>
+      <value>Synagogen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Temples</name>
+      <value>Tempel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Automotive &amp; Transportation Manufacturing</name>
+      <value>Automobil- &amp; Transportindustrie</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Heavy Industry &amp; Industrial Production</name>
+      <value>Schwerindustrie &amp; industrielle Fertigung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>High-Tech &amp; Precision Manufacturing</name>
+      <value>Hightech- &amp; Präzisionsfertigung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Industrial Parks &amp; Innovation Centers</name>
+      <value>Industrieparks &amp; Innovationszentren</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Light Manufacturing &amp; Assembly</name>
+      <value>Leichtindustrie &amp; Montage</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Wholesale &amp; Industrial Trade</name>
+      <value>Großhandel &amp; Industriehandel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Community Centers</name>
+      <value>Gemeindezentren</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Courts &amp; Judicial Facilities</name>
+      <value>Gerichte &amp; Justizbehörden</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Military &amp; Defense</name>
+      <value>Militär &amp; Verteidigung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Ministries &amp; Government</name>
+      <value>Ministerien &amp; Behörden</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Municipal Buildings &amp; City Halls</name>
+      <value>Kommunale Gebäude &amp; Rathäuser</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Police &amp; Fire Departments</name>
+      <value>Polizei &amp; Feuerwehr</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Social Insurance</name>
+      <value>Sozialversicherung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Food &amp; Beverage Retail</name>
+      <value>Lebensmittel- &amp; Getränkegeschäft</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Non-Food Stores &amp; Chains</name>
+      <value>Non-Food-Geschäfte &amp; -Ketten</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Shopping Malls &amp; Retail Centers</name>
+      <value>Einkaufszentren &amp; Einzelhandelszentren</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Convenience &amp; On-the-Go Retail</name>
+      <value>Convenience- &amp; On-the-Go-Einzelhandel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Showroom &amp; Specialty Sales</name>
+      <value>Showroom &amp; Fachhandel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Airports &amp; Airlines</name>
+      <value>Flughäfen &amp; Fluggesellschaften</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bus &amp; Bus Terminals</name>
+      <value>Bus &amp; Busbahnhöfe</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Freight Forwardings &amp; Warehouses</name>
+      <value>Speditionen &amp; Lagerhäuser</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Parking</name>
+      <value>Parken</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Ports &amp; Shipping</name>
+      <value>Häfen &amp; Schifffahrt</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Trains &amp; Metro</name>
+      <value>Züge &amp; U-Bahn</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_Distribution</name>
+      <value>Distribution</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_Sales</name>
+      <value>Sales</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ChangeResponsible</name>
+      <value>Verantwortlichen ändern</value>
+    </stringEntry>
+    <stringEntry>
+      <name>LeadProtection Partner</name>
+      <value>Leadschutz-Partner</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Dealer</name>
+      <value>Händler</value>
+    </stringEntry>
+    <stringEntry>
+      <name>StandardConditions</name>
+      <value>Standardkonditionen ERP</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Contact_Informations</name>
+      <value>Temporäre Konditionen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Retail Chain</name>
+      <value>Händlerkette</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Leadprotection</name>
+      <value>Leadschutzpartner (Händler)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_NewOfferTask_Messagetext</name>
+      <value>Die Angebotsaufgabe wurde erfolgreich erstellt.</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_NewOfferTask_Messagetitle</name>
+      <value>Angebotsaufgabe</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_NewOfferTask_taskSubject</name>
+      <value>Bitte Angebot erstellen für Opportunity</value>
+    </stringEntry>
+    <stringEntry>
+      <name>lost</name>
+      <value>Verloren</value>
+    </stringEntry>
+    <stringEntry>
+      <name>postponed</name>
+      <value>Verschoben</value>
+    </stringEntry>
+    <stringEntry>
+      <name>parent/partner organisation</name>
+      <value>Übergeordneten Firma / Zugeteilter Partner</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_Csv_line</name>
+      <value>CSV Zeilennummer</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_Error_Message</name>
+      <value>Fehlermeldung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>OpportunityTitleUpdated</name>
+      <value>Opportunity-Titel aktualisiert</value>
+    </stringEntry>
+    <stringEntry>
+      <name>DealerChainEstablished</name>
+      <value>Händlerkette festgelegt</value>
+    </stringEntry>
+    <stringEntry>
+      <name>thhit_salesproj_person</name>
+      <value>Kontaktdaten vollständig</value>
+    </stringEntry>
+    <stringEntry>
+      <name>thhit_salesproj_organisation</name>
+      <value>Firmendaten vollständig</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_PROSPECT</name>
+      <value>Prospect Checklist</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Opportunity investments</name>
+      <value>Opportunity-Beteiligungen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Ungrouped</name>
+      <value>Nicht gruppiert</value>
+    </stringEntry>
+    <stringEntry>
+      <name>lead-import</name>
+      <value>Lead-Import</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Import_Organisations</name>
+      <value>Organisationen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Temporary conditions</name>
+      <value>Temporäre Konditionen</value>
+    </stringEntry>
+  </keyValueMap>
+</language>

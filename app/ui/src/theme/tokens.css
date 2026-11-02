@@ -1,0 +1,221 @@
+@font-face {
+  font-family: 'Montserrat';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('../assets/fonts/montserrat-latin-500-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('../assets/fonts/montserrat-latin-700-normal.woff2') format('woff2');
+}
+
+/*
+ * Forge design tokens - central palette, sourced from the official "Night Owl" VS Code theme
+ * (Sarah Drasner, `sdras.night-owl`), pulled verbatim from the theme repository's own color
+ * definitions:
+ *   https://github.com/sdras/night-owl-vscode-theme
+ *   themes/Night Owl-color-theme.json (dark)
+ *   themes/Night Owl-Light-color-theme.json (light - see p6-theming-notes.md for why this file
+ *   was chosen as the light-mode starting point, and why it is still an OPEN design decision,
+ *   not yet confirmed by Clemens)
+ *
+ * Every token below is either:
+ *   (a) a literal hex value copied from one of those two theme files, or
+ *   (b) a value derived FROM one of those hexes by a documented, mechanical lightness
+ *       adjustment, done only where the literal Night Owl value failed WCAG 2.1 AA contrast
+ *       (4.5:1 for normal text) against the background it is paired with here - Forge's own
+ *       UI chrome (titlebar, tree, property grid) is not identical to a VS Code window, so a
+ *       handful of pairings the theme file never had to make (e.g. its muted blue-grey used as
+ *       *readable secondary text* here, not just as a line-number decoration) needed the fix.
+ * Full pairing-by-pairing contrast numbers, including which values were adjusted and by how
+ * much, are recorded in PROJECT\60_design\p6-theming-notes.md - this file intentionally carries
+ * no prose, only the tokens themselves, so it stays the single source of truth components read.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces (dark / Night Owl, default theme) */
+  --bg: #011627; /* editor.background */
+  --bg-elevated: #021320; /* editorWidget.background - popovers, menus, dialogs */
+  --bg-panel: #0b2942; /* tab.activeBackground - secondary panel surfaces, active tab */
+  --bg-inset: #01111d; /* tab.inactiveBackground - recessed/inactive surfaces */
+  --bg-titlebar: #011627; /* titleBar.activeBackground */
+  --bg-titlebar-inactive: #010e1a; /* titleBar.inactiveBackground */
+
+  /* Text */
+  --fg: #d6deeb; /* editor.foreground */
+  --fg-titlebar: #eeefff; /* titleBar.activeForeground */
+  --fg-titlebar-inactive: #62829c; /* own choice: theme leaves titleBar.inactiveForeground unset;
+    reusing the AA-adjusted muted token below keeps the unfocused-window title readable instead
+    of falling back to the browser/OS default, which would reintroduce an unthemed patch. */
+  --fg-muted: #62829c; /* adjusted from statusBar.foreground/#5f7e97 (3.87:1 on --bg -> fails AA
+    normal text); lightened to #62829c (4.53:1) - see p6-theming-notes.md AA table */
+  --fg-comment: #6d8484; /* adjusted from the "Comment" token color #637777 (3.87:1 -> 4.61:1) */
+
+  /* Borders / structure */
+  --border: #1d3b53; /* editor.selectionBackground, reused as the low-key structural border/row */
+--selection: #0b4f8f; /* selected row in Properties and Navigator (original: strong blue row) */
+  --border-strong: #5f7e97; /* dropdown.border / panel.border - decorative, non-text (3:1 rule) */
+  --focus-ring: #82aaff; /* own choice: theme's own focusBorder (#122d42) is ~1.2:1 on --bg,
+    effectively invisible as a focus indicator - accent blue used instead, see notes */
+
+  /* Accents (lifted directly from Night Owl's syntax token colors - "mood" reference from
+     design-direction.md) */
+  --accent: #82aaff; /* Library/function & constant */
+  --accent-2: #c792ea; /* Keyword */
+  --warm: #ecc48d; /* String */
+  --cyan: #7fdbca; /* Keyword Operator */
+  --error: #ef5350; /* errorForeground */
+  --warning: #ffca28; /* inputValidation.warningBorder */
+  --success: #addb67; /* Night Owl "Variable"/green token - Run button and success lines in Output */
+
+  /* Selection */
+  --selected-bg: var(--accent);
+  --selected-fg: #011627; /* dark text on accent bg, 7.98:1 */
+
+  /* Buttons */
+  --button-bg: var(--accent);
+  --button-fg: #011627; /* 7.98:1, see above */
+
+  /* Project-tree type icons - a derived, evenly-spaced 11-hue extension anchored at Night Owl's
+     real accent blue (#82aaff's hue), NOT eleven literal per-type theme colors (Night Owl itself
+     has no notion of "one color per ADITO object type"). Each hex individually verified >=3:1
+     (WCAG 1.4.11 non-text contrast) against --bg-panel, the tree's own surface. See
+     p6-theming-notes.md for the full generation method and per-color ratios. */
+  --icon-entity: #92a7e8;
+  --icon-neonView: #ab92e8;
+  --icon-neonContext: #da92e8;
+  --icon-neonDashboard: #e892c6;
+  --icon-aliasDefinition: #e89297;
+  --icon-language: #e8bb92;
+  --icon-system: #e6e892;
+  --icon-preferences: #b7e892;
+  --icon-application: #92e89b;
+  --icon-entityWebservice: #92e8ca;
+  --icon-report: #92d6e8;
+  --icon-folder: var(--border-strong);
+
+  /* Projects-tree type folders (LAYOUT_SPEC §4.4, estimated from the original's Screenshot 41).
+     They identify the ADITO object type, not the theme, so they are the same in dark and light
+     and deliberately not redefined in the light block below. */
+  --folder-system: #4a80c8;
+  --folder-preferences: #d452c8;
+  --folder-application: #e08a2e;
+  --folder-context: #e6c35c;
+  --folder-notificationtype: #c5de6a;
+  --folder-entity: #f25c9c;
+  --folder-dashboard: #8e8cf0;
+  --folder-renderer: #7e7e7e;
+  --folder-process: #9cc25c;
+  --folder-test: #2c8cb4;
+  --folder-service: #3e9a3e;
+  --folder-report: #b49274;
+  --folder-language: #b48fd8;
+  --folder-role: #f0c878;
+  --folder-alias: #e88aa0;
+  --folder-others: #e05a3a;
+  --folder-plain: #c8c8c8;
+  --project-icon-a: #e05a3a;
+  --project-icon-b: #4a80c8;
+
+  /* Vendira brand (Brand Guide v1.0). Single place for all brand colors; surfaces above stay
+     untouched. UNCERTAIN: teal/blue were read from the PDF labels (#00b7be / #0d6cb4), the
+     rendered swatches look like #51b4bd / #2e6eb0 - the *-rendered variants keep that reading
+     so switching is a one-line change. */
+  /* Entity diagram (boxes are light on the dark canvas, as in the original Designer) */
+  --diagram-box: #c9d1d9;
+  --diagram-box-head: #8e99a4;
+  --diagram-box-fg: #1b2530;
+  --diagram-line: #c9d1d9;
+  --brand-teal: #00b7be;
+  --brand-blue: #0d6cb4;
+  --brand-teal-rendered: #51b4bd;
+  --brand-blue-rendered: #2e6eb0;
+  --brand-accent: #0697ba; /* small highlights only, never large surfaces */
+  --brand-bg-light: #f7f9fc;
+  --brand-gray: #444444;
+  --brand-underline: var(--brand-teal); /* active tab underline */
+  --brand-link: var(--brand-teal);
+  --brand-gradient: linear-gradient(135deg, var(--brand-teal), var(--brand-blue));
+  --font-heading: 'Montserrat', 'Segoe UI', system-ui, sans-serif;
+}
+
+/*
+ * Light theme - Forge's OWN, not-yet-confirmed counterpart to Night Owl (design-direction.md
+ * leaves the light-mode question open; Night Owl itself is dark-only). Starting point is the
+ * same author's official "Night Owl Light" companion theme, again pulled from the real repo
+ * file, not invented - see the header comment above for the exact path. Activated by setting
+ * `data-theme="light"` on `<html>` (see ui/src/theme/useTheme.ts); dark stays the default so a
+ * still-unconfirmed palette is never shown without the user asking for it.
+ */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #fbfbfb; /* editor.background */
+  --bg-elevated: #f0f0f0; /* editorWidget.background */
+  --bg-panel: #f6f6f6; /* tab.activeBackground */
+  --bg-inset: #f0f0f0; /* tab.inactiveBackground */
+  --bg-titlebar: #f0f0f0; /* titleBar.activeBackground */
+  --bg-titlebar-inactive: #e4e4e4; /* own choice: Night Owl Light never defines this either */
+
+  --fg: #403f53; /* editor.foreground / top-level "foreground" */
+  --fg-titlebar: #403f53; /* theme leaves titleBar.activeForeground unset -> falls back to the
+    theme's global "foreground", which really is this value (verified in the real file) */
+  --fg-titlebar-inactive: #4a636f; /* adjusted from #5c7885 (reused --fg-muted value; 3.69:1 on
+    --bg-titlebar-inactive -> fails AA normal text once the inactive-window titlebar state is
+    actually wired up, see chrome/TitleBar.tsx); darkened to 5.00:1 */
+  --fg-muted: #5c7885; /* adjusted from editorLineNumber.foreground #90a7b2 (2.43:1 -> fails AA);
+    darkened to #5c7885 (4.53:1) */
+  --fg-comment: #6b748d; /* adjusted from the "Comment" token color #989fb1 (2.56:1 -> 4.50:1) */
+
+  --border: #d9d9d9; /* panel.border */
+--selection: #cfe3f7; /* selected row in Properties and Navigator */
+  --border-strong: #7a8888; /* adjusted from focusBorder #93a1a1 (2.58:1 on --bg -> fails WCAG
+    1.4.11 non-text 3:1, and this token draws visible input/dropdown borders, not just a decorative
+    line); darkened to #7a8888 (3.56:1) - see p6-theming-notes.md AA table */
+  --focus-ring: #4070d4; /* own choice, mirrors the dark theme's accent-as-focus-ring pattern */
+
+  --accent: #4070d4; /* adjusted from the "String"/entity.name.function token #4876d6
+    (4.19:1 -> fails AA; darkened to 4.52:1) */
+  --accent-2: #994cc3; /* Keyword token color, 4.86:1 as-is, no adjustment needed */
+  --warm: #aa0982; /* Number token color, 6.61:1 as-is */
+  --cyan: #0c969b; /* Keyword Operator token color - kept literal; only ~3.5:1 on --bg, so this
+    token is used for non-text/decorative accents in the light theme, not body text (see notes) */
+  --error: #e02621; /* adjusted from editorError.foreground #e64d49 (3.67:1 -> 4.54:1) */
+  --warning: #8e6f01; /* adjusted from editorWarning.foreground #daaa01 (2.09:1 -> 4.59:1) */
+  --success: #2e7d32; /* own choice: readable green on the light background (>= 4.5:1) */
+
+  --selected-bg: #d3e8f8; /* list.activeSelectionBackground */
+  --selected-fg: #403f53;
+
+  --button-bg: #22847b; /* adjusted from button.background #2aa298 (white-on-teal was 2.74:1) */
+  --button-fg: #ffffff; /* 4.51:1 on the adjusted button-bg */
+
+  /* Type-icon palette, light variant - same 11 hues as the dark set, re-darkened so each still
+     clears >=3:1 against --bg-panel (a pastel dark-theme icon disappears on a light surface).
+     See p6-theming-notes.md for the generation method. */
+  --icon-entity: #2046b6;
+  --icon-neonView: #4c20b6;
+  --icon-neonContext: #9e20b6;
+  --icon-neonDashboard: #b6207c;
+  --icon-aliasDefinition: #b6202a;
+  --icon-language: #b66820;
+  --icon-system: #8c8f19;
+  --icon-preferences: #539c1c;
+  --icon-application: #1ca02b;
+  --icon-entityWebservice: #1c9c70;
+  --icon-report: #1f94b2;
+  --icon-folder: var(--border-strong);
+}
+
+:root[data-theme='light'] {
+  --diagram-box: #dde3e9;
+  --diagram-box-head: #aab4be;
+  --diagram-line: #55606b;
+}

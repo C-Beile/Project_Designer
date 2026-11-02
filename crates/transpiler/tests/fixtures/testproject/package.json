@@ -1,0 +1,10 @@
+{
+    "name": "@forge-spike/testproject",
+    "version": "1.0.0",
+    "adito": {
+        "type": "project"
+    },
+    "engines": {
+        "adito": ">=2026.0.0 <2026.1.0"
+    }
+}

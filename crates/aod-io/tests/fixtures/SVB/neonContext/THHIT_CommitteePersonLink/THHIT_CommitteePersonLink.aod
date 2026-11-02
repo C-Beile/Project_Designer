@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonContext xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonContext/1.2.0">
+  <name>THHIT_CommitteePersonLink</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <entity>THHIT_CommitteePersonLink_entity</entity>
+  <references>
+    <neonViewReference>
+      <name>94cd5cde-7c16-4035-a9ce-d82f104a514b</name>
+      <view>THHIT_CommitteePersonLinkOrganisationFilter_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>cfc4dba6-0d23-430b-ac8f-1972bca8b162</name>
+      <view>THHIT_CommitteePersonLinkPersonFilter_view</view>
+    </neonViewReference>
+  </references>
+</neonContext>

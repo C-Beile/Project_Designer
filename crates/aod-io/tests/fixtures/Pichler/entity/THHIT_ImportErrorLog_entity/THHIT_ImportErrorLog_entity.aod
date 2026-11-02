@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entity/1.4.0">
+  <name>THHIT_ImportErrorLog_entity</name>
+  <title>Importer Error Log</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <icon>NEON:OVERDUE</icon>
+  <recordContainer>db</recordContainer>
+  <entityFields>
+    <entityProvider>
+      <name>#PROVIDER</name>
+    </entityProvider>
+    <entityProvider>
+      <name>#PROVIDER_AGGREGATES</name>
+      <useAggregates v="true" />
+    </entityProvider>
+    <entityField>
+      <name>ERROR_ID</name>
+      <title>Error ID</title>
+    </entityField>
+    <entityField>
+      <name>RAW_CSV_LINE</name>
+      <title>Raw Csv Line</title>
+    </entityField>
+    <entityField>
+      <name>MAPPING_NAME</name>
+      <title>Mapping Name</title>
+    </entityField>
+    <entityField>
+      <name>ERROR_MESSAGE</name>
+      <title>THHIT_Error_Message</title>
+    </entityField>
+    <entityField>
+      <name>CSV_LINE_NUMBER</name>
+      <title>THHIT_Csv_line</title>
+    </entityField>
+    <entityField>
+      <name>CSV_MSCRM_GUID</name>
+      <title>MSCRM GUID</title>
+    </entityField>
+    <entityField>
+      <name>DATE_NEW</name>
+      <title>Created on</title>
+      <contentType>DATE</contentType>
+      <resolution>DAY</resolution>
+    </entityField>
+  </entityFields>
+  <recordContainers>
+    <dbRecordContainer>
+      <name>db</name>
+      <alias>3HillsIT_data_alias</alias>
+      <recordFieldMappings>
+        <dbRecordFieldMapping>
+          <name>CSV_LINE_NUMBER.value</name>
+          <recordfield>THHIT_IMPORT_LOG.CSV_LINE_NUMBER</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>CSV_MSCRM_GUID.value</name>
+          <recordfield>THHIT_IMPORT_LOG.CSV_GUID</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>DATE_NEW.value</name>
+          <recordfield>THHIT_IMPORT_LOG.CREATED_AT</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>ERROR_ID.value</name>
+          <recordfield>THHIT_IMPORT_LOG.ERROR_ID</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>ERROR_MESSAGE.value</name>
+          <recordfield>THHIT_IMPORT_LOG.ERROR_MESSAGE</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>MAPPING_NAME.value</name>
+          <recordfield>THHIT_IMPORT_LOG.MAPPING_NAME</recordfield>
+          <isFilterable v="true" />
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>RAW_CSV_LINE.value</name>
+          <recordfield>THHIT_IMPORT_LOG.CSV_LINE_NUMBER</recordfield>
+        </dbRecordFieldMapping>
+      </recordFieldMappings>
+      <linkInformation>
+        <linkInformation>
+          <name>THHIT_IMPORT_LOG</name>
+          <tableName>THHIT_IMPORT_LOG</tableName>
+          <primaryKey>ERROR_ID</primaryKey>
+          <isUIDTable v="true" />
+          <readonly v="false" />
+        </linkInformation>
+      </linkInformation>
+    </dbRecordContainer>
+  </recordContainers>
+</entity>

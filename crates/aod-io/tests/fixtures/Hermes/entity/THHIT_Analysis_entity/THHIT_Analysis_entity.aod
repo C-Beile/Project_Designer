@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entity/1.4.0">
+  <name>THHIT_Analysis_entity</name>
+  <title>Daily Overview</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <recordContainer>jdito</recordContainer>
+  <entityFields>
+    <entityProvider>
+      <name>#PROVIDER</name>
+    </entityProvider>
+    <entityProvider>
+      <name>#PROVIDER_AGGREGATES</name>
+      <useAggregates v="true" />
+    </entityProvider>
+    <entityField>
+      <name>MY_TODAY_ACTIVITY_COUNT</name>
+      <title>Visits Today</title>
+      <valueProcess>%aditoprj%/entity/THHIT_Analysis_entity/entityfields/my_today_activity_count/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>MY_TODAY_ORDER_COUNT</name>
+      <title>Orders Today</title>
+      <valueProcess>%aditoprj%/entity/THHIT_Analysis_entity/entityfields/my_today_order_count/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>MY_TODAY_TOTAL_ORDER_REGULAR</name>
+      <title>Orders Total Today</title>
+      <contentType>NUMBER</contentType>
+      <outputFormat>#,##0.00 '€'</outputFormat>
+      <valueProcess>%aditoprj%/entity/THHIT_Analysis_entity/entityfields/my_today_total_order_regular/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>MY_TODAY_TOTAL_ORDER_RETURN</name>
+      <title>Order Return Today</title>
+      <contentType>NUMBER</contentType>
+      <outputFormat>#,##0.00 '€'</outputFormat>
+      <valueProcess>%aditoprj%/entity/THHIT_Analysis_entity/entityfields/my_today_total_order_return/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>MY_TODAY_TOTAL_ORDER_CREDIT</name>
+      <title>Order Credits Today</title>
+      <contentType>NUMBER</contentType>
+      <outputFormat>#,##0.00 '€'</outputFormat>
+      <valueProcess>%aditoprj%/entity/THHIT_Analysis_entity/entityfields/my_today_total_order_credit/valueProcess.js</valueProcess>
+    </entityField>
+  </entityFields>
+  <recordContainers>
+    <jDitoRecordContainer>
+      <name>jdito</name>
+      <jDitoRecordAlias>Data_alias</jDitoRecordAlias>
+    </jDitoRecordContainer>
+  </recordContainers>
+</entity>

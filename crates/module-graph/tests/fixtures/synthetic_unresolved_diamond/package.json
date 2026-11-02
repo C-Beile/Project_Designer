@@ -1,0 +1,11 @@
+{
+    "name": "@synthetic/unresolved-diamond-project",
+    "version": "1.0.0",
+    "adito": {
+        "type": "project"
+    },
+    "dependencies": {
+        "@synthetic/a": "^1.0.0",
+        "@synthetic/m": "^2.0.0"
+    }
+}

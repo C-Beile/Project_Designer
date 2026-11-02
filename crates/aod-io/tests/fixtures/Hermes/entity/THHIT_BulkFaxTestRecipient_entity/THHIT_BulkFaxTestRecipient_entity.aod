@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entity/1.4.0">
+  <name>THHIT_BulkFaxTestRecipient_entity</name>
+  <title>Bulkmail_Test Recipient</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <recordsRecipeSupported v="true" />
+  <titlePlural>Bulkmail_Test Recipients</titlePlural>
+  <recordContainer>recordContainer</recordContainer>
+  <entityFields>
+    <entityProvider>
+      <name>#PROVIDER</name>
+    </entityProvider>
+    <entityProvider>
+      <name>#PROVIDER_AGGREGATES</name>
+      <useAggregates v="true" />
+    </entityProvider>
+    <entityField>
+      <name>ORGANISATION_ID</name>
+    </entityField>
+    <entityField>
+      <name>FAX_NUMBER</name>
+      <title>Fax</title>
+      <maxFieldSize v="255" />
+      <dropDownProcess>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/entityfields/fax_number/dropDownProcess.js</dropDownProcess>
+      <textInputAllowed v="true" />
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/entityfields/fax_number/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>USER_NEW</name>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/entityfields/user_new/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>PERSON_ID</name>
+    </entityField>
+    <entityField>
+      <name>USER_EDIT</name>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/entityfields/user_edit/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>CONTACT_ID</name>
+      <title>Contact</title>
+      <consumer>Contacts</consumer>
+      <linkedContextProcess>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/entityfields/contact_id/linkedContextProcess.js</linkedContextProcess>
+      <mandatory v="true" />
+    </entityField>
+    <entityField>
+      <name>BULKFAXTESTRECIPIENTID</name>
+    </entityField>
+    <entityField>
+      <name>DATE_NEW</name>
+      <contentType>DATE</contentType>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/entityfields/date_new/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>DATE_EDIT</name>
+      <contentType>DATE</contentType>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/entityfields/date_edit/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>BULKFAX_ID</name>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/entityfields/bulkfax_id/valueProcess.js</valueProcess>
+    </entityField>
+    <entityProvider>
+      <name>BulkFaxTestRecipients</name>
+      <documentation>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/entityfields/bulkfaxtestrecipients/documentation.adoc</documentation>
+    </entityProvider>
+    <entityParameter>
+      <name>BulkFaxId_param</name>
+      <expose v="true" />
+      <mandatory v="false" />
+    </entityParameter>
+    <entityConsumer>
+      <name>Contacts</name>
+      <dependency>
+        <name>dependency</name>
+        <entityName>AnyContact_entity</entityName>
+        <fieldName>#PROVIDER</fieldName>
+      </dependency>
+    </entityConsumer>
+    <entityActionField>
+      <name>openAdminView</name>
+      <title>Open Admin View</title>
+      <onActionProcess>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/entityfields/openadminview/onActionProcess.js</onActionProcess>
+      <iconId>VAADIN:CURLY_BRACKETS</iconId>
+      <stateProcess>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/entityfields/openadminview/stateProcess.js</stateProcess>
+    </entityActionField>
+  </entityFields>
+  <recordContainers>
+    <dbRecordContainer>
+      <name>recordContainer</name>
+      <fromClauseProcess>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/recordcontainers/recordcontainer/fromClauseProcess.js</fromClauseProcess>
+      <conditionProcess>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/recordcontainers/recordcontainer/conditionProcess.js</conditionProcess>
+      <alias>Data_alias</alias>
+      <recordFieldMappings>
+        <dbRecordFieldMapping>
+          <name>BULKFAX_ID.value</name>
+          <recordfield>THHIT_BULKFAXTESTRECIPIENT.BULKFAX_ID</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>BULKFAXTESTRECIPIENTID.value</name>
+          <recordfield>THHIT_BULKFAXTESTRECIPIENT.THHIT_BULKFAXTESTRECIPIENTID</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>CONTACT_ID.value</name>
+          <recordfield>THHIT_BULKFAXTESTRECIPIENT.CONTACT_ID</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>CONTACT_ID.displayValue</name>
+          <expression>%aditoprj%/entity/THHIT_BulkFaxTestRecipient_entity/recordcontainers/recordcontainer/recordfieldmappings/contact_id.displayvalue/expression.js</expression>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>DATE_EDIT.value</name>
+          <recordfield>THHIT_BULKFAXTESTRECIPIENT.DATE_EDIT</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>DATE_NEW.value</name>
+          <recordfield>THHIT_BULKFAXTESTRECIPIENT.DATE_NEW</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>FAX_NUMBER.value</name>
+          <recordfield>THHIT_BULKFAXTESTRECIPIENT.FAX_NUMBER</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>ORGANISATION_ID.value</name>
+          <recordfield>CONTACT.ORGANISATION_ID</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>PERSON_ID.value</name>
+          <recordfield>CONTACT.PERSON_ID</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>USER_EDIT.value</name>
+          <recordfield>THHIT_BULKFAXTESTRECIPIENT.USER_EDIT</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>USER_NEW.value</name>
+          <recordfield>THHIT_BULKFAXTESTRECIPIENT.USER_NEW</recordfield>
+        </dbRecordFieldMapping>
+      </recordFieldMappings>
+      <linkInformation>
+        <linkInformation>
+          <name>THHIT_BULKFAXTESTRECIPIENT</name>
+          <tableName>THHIT_BULKFAXTESTRECIPIENT</tableName>
+          <primaryKey>THHIT_BULKFAXTESTRECIPIENTID</primaryKey>
+          <isUIDTable v="true" />
+          <readonly v="false" />
+        </linkInformation>
+        <linkInformation>
+          <name>CONTACT</name>
+          <tableName>CONTACT</tableName>
+          <primaryKey>CONTACTID</primaryKey>
+          <isUIDTable v="false" />
+          <readonly v="true" />
+        </linkInformation>
+      </linkInformation>
+    </dbRecordContainer>
+  </recordContainers>
+</entity>

@@ -1,0 +1,10 @@
+{
+    "name": "@synthetic/cycle-project",
+    "version": "1.0.0",
+    "adito": {
+        "type": "project"
+    },
+    "dependencies": {
+        "@synthetic/a": "^1.0.0"
+    }
+}

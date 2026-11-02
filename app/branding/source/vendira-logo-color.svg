@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 861.21 620.87">
+  <defs>
+    <style>
+      .cls-1 {
+        isolation: isolate;
+      }
+
+      .cls-2 {
+        fill: url(#Unbenannter_Verlauf_230);
+      }
+
+      .cls-3 {
+        fill: url(#Unbenannter_Verlauf_199);
+      }
+
+      .cls-4 {
+        fill: url(#Unbenannter_Verlauf_275);
+        mix-blend-mode: multiply;
+        opacity: .4;
+      }
+    </style>
+    <linearGradient id="Unbenannter_Verlauf_199" data-name="Unbenannter Verlauf 199" x1="615.94" y1="-47.34" x2="608.13" y2="489.64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00b7be"/>
+      <stop offset=".45" stop-color="#0697ba"/>
+      <stop offset="1" stop-color="#0d6cb4"/>
+    </linearGradient>
+    <linearGradient id="Unbenannter_Verlauf_275" data-name="Unbenannter Verlauf 275" x1="730.7" y1="3.83" x2="352.94" y2="587.64" gradientUnits="userSpaceOnUse">
+      <stop offset=".43" stop-color="#02aabc" stop-opacity="0"/>
+      <stop offset=".51" stop-color="#02a3b5" stop-opacity=".05"/>
+      <stop offset=".58" stop-color="#058fa2" stop-opacity=".21"/>
+      <stop offset=".64" stop-color="#096d81" stop-opacity=".47"/>
+      <stop offset=".69" stop-color="#0e3d53" stop-opacity=".84"/>
+      <stop offset=".71" stop-color="#112940"/>
+    </linearGradient>
+    <linearGradient id="Unbenannter_Verlauf_230" data-name="Unbenannter Verlauf 230" x1="277.14" y1="112.6" x2="283.38" y2="736.99" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00b7be"/>
+      <stop offset=".26" stop-color="#00b4bd"/>
+      <stop offset=".39" stop-color="#01adbc"/>
+      <stop offset=".49" stop-color="#049fbb"/>
+      <stop offset=".54" stop-color="#0697ba"/>
+      <stop offset=".62" stop-color="#0691b9"/>
+      <stop offset=".72" stop-color="#0981b7"/>
+      <stop offset=".81" stop-color="#0d6cb4"/>
+    </linearGradient>
+  </defs>
+  <g class="cls-1">
+    <g id="Ebene_2" data-name="Ebene 2">
+      <path class="cls-3" d="M613.33,18.92c-1.56,1.96-3.71,3.35-5.24,5.33l-238.51,309.06c-6.64,8.6-7.6,20.34-2.35,29.86,49.16,89.15,123.19,101.21,154.56,102.05,8.95.24,17.45-3.86,22.84-11.01,48.45-64.2,302.6-401.17,312.72-418.22,7-11.19,3.75-21.67-4.04-28.31-5.63-4.8-10.77-6.37-25.17-7.23h-174.14c-5.61,0-11.2.79-16.53,2.52-7.46,2.42-17.08,7.08-24.13,15.96Z"/>
+      <path class="cls-4" d="M613.34,19.35c-7.27,4.93-237.74,308.23-243.77,314.4-6.63,8.59-7.59,20.33-2.34,29.85,49.16,89.15,123.19,101.21,154.56,102.05,8.95.24,17.45-3.86,22.84-11.01,48.45-64.2,302.6-401.17,312.72-418.22,7-11.19,3.75-21.67-4.04-28.31-8.62-14.73-183.2-4.27-199.32-7.24-15.77.54-28.71,4.83-40.67,18.48Z"/>
+      <path class="cls-2" d="M334.89,586.85l-171.58-222.57c-.68-.94-159.74-207.49-160.23-208.54-.35-.75-.77-1.72-1.22-2.87-7.01-18.22,6.72-37.77,26.25-37.77l136.64.92s22.41-.4,36.37,14.92c13.96,15.32,175.36,233.35,175.36,233.35l15.67,16.87c32.11,34.56,77.15,54.19,124.32,54.19h39.06c1.91,0,2.98,2.19,1.81,3.7l-112.83,145.17s-54.04,80.71-109.63,2.64Z"/>
+    </g>
+  </g>
+</svg>

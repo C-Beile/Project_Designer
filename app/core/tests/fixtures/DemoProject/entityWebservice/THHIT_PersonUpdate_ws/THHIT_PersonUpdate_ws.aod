@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entityWebservice xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.1.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entityWebservice/1.1.0">
+  <name>THHIT_PersonUpdate_ws</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <webserviceMethods>
+    <element>PATCH</element>
+  </webserviceMethods>
+  <loginTypeId>
+    <element>internal.default</element>
+  </loginTypeId>
+  <webserviceFields>
+    <webserviceField>
+      <name>05791e24-8af7-4f69-8acf-3ebdb3c585a4</name>
+      <webserviceFieldName>THHIT_NAVCONTACTNR</webserviceFieldName>
+    </webserviceField>
+  </webserviceFields>
+</entityWebservice>

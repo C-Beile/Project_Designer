@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Kommunikationsdaten" pageWidth="555" pageHeight="802" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c659b407-943a-4427-8fa5-032bff204ff4">
+	<property name="ireport.zoom" value="1.6105100000000008"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<field name="KINDOFCOMM" class="java.lang.String"/>
+	<field name="COMMVALUE" class="java.lang.String"/>
+	<field name="CLIENTID" class="java.lang.String"/>
+	<field name="ORGANISATION_ID" class="java.lang.String"/>
+	<field name="CONTACT_ID" class="java.lang.String"/>
+	<field name="COMMDATA" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<detail>
+		<band height="16" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="1" width="100" height="15" uuid="c356083f-2a5e-4a3e-9b08-c7baf2b1381e"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{KINDOFCOMM}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="103" y="1" width="255" height="15" uuid="48bf1f6b-953a-44b6-9ebf-504203afa70d"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{COMMVALUE}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="6">
+			<line>
+				<reportElement x="0" y="2" width="555" height="1" uuid="632ccf1b-5e1c-49b6-9332-e9992b53e878"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineStyle="Dotted"/>
+				</graphicElement>
+			</line>
+		</band>
+	</detail>
+</jasperReport>

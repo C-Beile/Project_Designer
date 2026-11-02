@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonView xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonView/1.2.3">
+  <name>MyDailyOverviewCard_view</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <icon>NEON:ACTIVITY</icon>
+  <dashletConfigurations>
+    <neonDashletConfiguration>
+      <name>MyDailyOverview</name>
+      <title>Tagesüberblick</title>
+      <fragment>THHIT_Analysis/full</fragment>
+      <singleton v="true" />
+      <provider></provider>
+      <icon>VAADIN:GRID_BIG</icon>
+      <categories>
+        <neonDashletCategory>
+          <name>custom</name>
+          <title>Custom</title>
+        </neonDashletCategory>
+      </categories>
+    </neonDashletConfiguration>
+  </dashletConfigurations>
+  <layout>
+    <boxLayout>
+      <direction>VERTICAL</direction>
+      <maxDirectionElements v="2" />
+      <autoHeight v="false" />
+    </boxLayout>
+  </layout>
+  <children>
+    <scoreCardViewTemplate>
+      <name>MyDailyOverviewScoreCard</name>
+      <entityField>#ENTITY</entityField>
+      <fields>
+        <entityFieldLink>
+          <name>9e255711-a1b0-4a28-8dd2-0719be7e27bb</name>
+          <entityField>MY_TODAY_ACTIVITY_COUNT</entityField>
+        </entityFieldLink>
+        <entityFieldLink>
+          <name>f533a2b8-9047-46a6-ae5b-b6cc329a3335</name>
+          <entityField>MY_TODAY_ORDER_COUNT</entityField>
+        </entityFieldLink>
+        <entityFieldLink>
+          <name>3fd87cdd-444f-4093-ba2c-6242226f1f81</name>
+          <entityField>MY_TODAY_TOTAL_ORDER_REGULAR</entityField>
+        </entityFieldLink>
+        <entityFieldLink>
+          <name>f5c642a3-a8d8-45f6-b03d-e90094564f4b</name>
+          <entityField>MY_TODAY_TOTAL_ORDER_CREDIT</entityField>
+        </entityFieldLink>
+        <entityFieldLink>
+          <name>43c6415c-63ca-43e4-9f28-e40a9ca6554a</name>
+          <entityField>MY_TODAY_TOTAL_ORDER_RETURN</entityField>
+        </entityFieldLink>
+      </fields>
+    </scoreCardViewTemplate>
+  </children>
+</neonView>

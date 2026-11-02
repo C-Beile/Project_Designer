@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<preferences xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="3.4.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/preferences/3.4.3">
+  <name>_____PREFERENCES_PROJECT</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <customized />
+  <mailGlobalUserServerEnabled v="true" />
+  <projectName>hermes xRM2026</projectName>
+  <jditoMaxContentSize v="57671680" />
+  <mailEnableUserDefault v="true" />
+  <mailRepositoryAlias>defaultDbRepository</mailRepositoryAlias>
+  <calendarCategoriesEvent>
+    <entry>
+      <key>Meeting</key>
+      <value></value>
+    </entry>
+    <entry>
+      <key>Organisation</key>
+      <value></value>
+    </entry>
+    <entry>
+      <key>OutOfOffice</key>
+      <value></value>
+    </entry>
+    <entry>
+      <key>Vacation</key>
+      <value></value>
+    </entry>
+  </calendarCategoriesEvent>
+  <multilingualismIndexSearchLocales>
+    <element>de</element>
+    <element>en</element>
+  </multilingualismIndexSearchLocales>
+  <recordContainerCachingAlias>RecordContainerCache</recordContainerCachingAlias>
+  <clusterMessagingAlias>ClusterMessaging</clusterMessagingAlias>
+  <managerBackendAlias>ManagerBackend</managerBackendAlias>
+  <messageQueueAlias>MessageQueue</messageQueueAlias>
+  <pdfPreviewAlias>PdfPreview</pdfPreviewAlias>
+  <contentAnalysisAlias>ContentAnalysis</contentAnalysisAlias>
+  <textAnalysisAlias>TextAnalysis</textAnalysisAlias>
+  <clientSearchExcludeForIgnorecase v="true" />
+  <neonClientPermissionsEnabled v="true" />
+  <hashtagsEnabled v="false" />
+  <ckeditorAIAlias>AIAlias</ckeditorAIAlias>
+  <ckeditorAIAssistantEnabled v="true" />
+  <ckeditorDefaultAICommandsProcess>getCkeditorAiCommands</ckeditorDefaultAICommandsProcess>
+  <blobHandlingMethod>PROCESS</blobHandlingMethod>
+  <databaseAuditProcessLoggerUser>Admin</databaseAuditProcessLoggerUser>
+  <databaseAuditGetOldValueLobs v="false" />
+  <indexsearchGlobalEnabled v="true" />
+  <indexsearchFullIndexerEnabled v="true" />
+  <indexsearchFullIndexerInterval v="0" />
+  <indexsearchIncrementingIndexerEnabled v="true" />
+  <indexsearchIncrementingIndexerInterval v="15000" />
+  <indexsearchIncrementingIndexerBunchSize v="250" />
+  <userdirectoryAlias>_____SYSTEMALIAS</userdirectoryAlias>
+  <binariesAlias>_____SYSTEMALIAS</binariesAlias>
+  <mailBridgeMailserver>
+    <mailbridgeMailserver>
+      <name>abfa63d1-a47e-41f6-a87d-138bf04adc1e</name>
+      <enabled v="true" />
+      <bridgeName>Activity_Mailbridge</bridgeName>
+      <serverName>mailServerHermes</serverName>
+      <timeout v="20000" />
+      <user>mailbridge</user>
+      <intervall v="60000" />
+      <bridgeMode v="1" />
+      <flagMode v="2" />
+      <process>mailbridge</process>
+      <errorProcess></errorProcess>
+      <attachmentHandling>ALL</attachmentHandling>
+    </mailbridgeMailserver>
+  </mailBridgeMailserver>
+  <customConfigProperties>
+    <customBooleanProperty>
+      <name>dataCaching.client.forceDisable</name>
+      <description>Enabling this option will disable the per-client-context data-cache within the customzing (for exameple the caching of Keywords). This is usefull if you're testing and want to frequently add data like keywords, etc. which are cached which help of the "DataCaching_lib".</description>
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>geo.maptiler.apikey</name>
+      <description>An API Key for using Maptiler functions. For example for the MapViewTemplate.</description>
+    </customStringProperty>
+    <customIntegerProperty>
+      <name>bulkmail.dateToSendPassedAfter</name>
+      <description>Number of hours after which a planned Bulkmail no longer gets send</description>
+      <property v="24" />
+    </customIntegerProperty>
+    <customStringProperty>
+      <name>bulkmail.baseReplacementURL</name>
+      <description>Base url for replacement of redirectlinks in bulkmails</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>bulkmail.fileStorage</name>
+      <description>Save Location for send Mails. When empty %aditodata% gets used.</description>
+      <property>/opt/ADITO/binaryfiles</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>bulkmail.user</name>
+      <description>Title of the useraccount that is used to send bulkmails</description>
+      <property>mailbridge</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>bulkmail.bg.serverId</name>
+      <description>ServerId of the background Server for sending bulkmails</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>mosaico.url</name>
+      <description>Url of the Mosaico Email Editor</description>
+    </customStringProperty>
+    <customBooleanProperty>
+      <name>snapADDY.isEnabled</name>
+      <description>Whether the webservice snapADDY, is useable or not. The default webservice is snapADDY, so if the property abbyy.ocr.isEnabled is also true the snapADDY webservice is used.</description>
+    </customBooleanProperty>
+    <customPasswordProperty>
+      <name>snapADDY.apiKey</name>
+      <description>The accessToken for the webservice snapADDY ocr.</description>
+    </customPasswordProperty>
+    <customBooleanProperty>
+      <name>sign8.isEnabled</name>
+      <description>Whether the webservice sign8 is useable or not. </description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customPasswordProperty>
+      <name>sign8.apiKey</name>
+      <description>Api Key for sign8</description>
+      <property>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsaWNlbnNlX2lkIjoiODAzMDRlZTEtYTlkZi00ZDc2LTk1MjgtYTI0MmJjZDg2YjEzIiwib3JnYW5pemF0aW9uX2lkIjoiNjc1YTEwYjAtMGEwNS00ZTM3LTg1OGUtMDM0MGU4NzEwNDQyIiwiZXhwaXJlc19hdCI6IjIwMjMtMDctMDlUMTY6MzY6MDguMDAwWiIsImNyZWF0ZWRfYXQiOiIyMDIyLTA2LTEwVDExOjQwOjM0LjAwMFoiLCJ1cGRhdGVkX2F0IjoiMjAyMi0wNi0xMFQxMTo0MDozNC4wMDBaIiwibGljZW5zZV9hY3RpdmUiOnRydWUsInNlc19zaWduYXR1cmVfbGltaXQiOjUwMDAsInFlc19zaWduYXR1cmVfbGltaXQiOjAsImFlc19zaWduYXR1cmVfbGltaXQiOjUwMDAsIm5hbWUiOiJUZXN0IFRva2VuIiwiaWF0IjoxNjU0ODYxMzczfQ.xXICNuLng5CZagE3X3I2Z_ZoZ9JzKr9o2fp158Fxb5I</property>
+    </customPasswordProperty>
+    <customStringProperty>
+      <name>sign8.token_Id</name>
+      <description>token for sign8</description>
+      <property>b8c027fc-8d5d-4a71-b5b4-9be53ae56802</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>sign8.interface_id</name>
+      <description>interface_id for sign8</description>
+      <property>806ceaa1-97f1-4f88-a808-42630417061d</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>sign8.license_key</name>
+      <description>license_key for sign8</description>
+      <property>20886362-2ab6-4613-900a-e8820a5ce614</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>sign8.organization_id</name>
+      <description>org id for sign8</description>
+      <property>95b5a49a-f44e-4031-9cb2-910536276d17</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>sign8.systemApiUrl</name>
+      <description>url of the sign8 api (e.g: https://dev-api.sign8.eu/api)</description>
+      <property>https://signing.sign8.eu/api</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>sign8.signingUrl</name>
+      <description>signing url of sign8 (e.g: https://dev-signing.sign8.eu/login)</description>
+      <property>https://signing.sign8.eu/login</property>
+    </customStringProperty>
+    <customPasswordProperty>
+      <name>sign8.secret</name>
+      <description>secret for sign8</description>
+      <property>d02f0d4614d40f3426cd7945871abdf155fa5f24</property>
+    </customPasswordProperty>
+    <customBooleanProperty>
+      <name>mailbridgeService.saveInlineAttachments</name>
+      <description>Save inline attachments as documents.</description>
+      <property v="false" />
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>mailbridgeService.serverAddress</name>
+      <description>Server address of the system starting with https: and ending with /client/ to be used in the mailbridge_servive process</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>msGraph.client_id</name>
+      <description>CLIENT_ID of a Azure Ressource that is used for MS Graph</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>msGraph.client_secret</name>
+      <description>CLIENT_SECRET of a Azure Ressource that is used for MS Graph</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>msGraph.tenant</name>
+      <description>TENANT of a Azure Ressource that is used for MS Graph</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>this.URL</name>
+      <description>the current url of the system</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>emailNotification.sender</name>
+      <description>the sender of the email notifications</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>snapADDY.apiUrl</name>
+      <description>The url to the mail signature webservice snapADDY.</description>
+      <property>https://backend.snapaddy.com/repro/data-services/v2/email</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>docx-templater.apiUrl</name>
+      <description>The url to the docx-templater service</description>
+      <property></property>
+    </customStringProperty>
+    <customPasswordProperty>
+      <name>docx-templater.password</name>
+      <description>The password for the basic auth of the docx-templater service</description>
+      <property></property>
+    </customPasswordProperty>
+    <customStringProperty>
+      <name>docx-templater.user</name>
+      <description>The user for the basic auth of the docx-templater service</description>
+      <property></property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>database.binarypath</name>
+      <description>The path of saved binary files for the blobHandler</description>
+      <property>/opt/ADITOData/binaryfiles/</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>faxApi.url</name>
+      <description>base URL for the external Fax Api</description>
+      <property>https://faxws.de1.retarus.com/rest/v1</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>faxApi.fallbackSenderName</name>
+      <description>Fallback sender name for fax api</description>
+      <property>Hermes Arzneimittel GmbH</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>faxApi.fallbackSenderCompany</name>
+      <description>Fallback company name for fax api</description>
+      <property>Hermes Arzneimittel GmbH</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>faxApi.fallbackSenderNo</name>
+      <description>Fallback sender fax number for fax api</description>
+      <property>+49 89 / 79 102-280</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>faxApi.username</name>
+      <description>username for the external Fax Api</description>
+      <property>retarus@hermes-holding.group</property>
+    </customStringProperty>
+    <customPasswordProperty>
+      <name>faxApi.password</name>
+      <description>password for the external Fax Api</description>
+      <property>t3)*zH$6V!</property>
+    </customPasswordProperty>
+    <customStringProperty>
+      <name>faxApi.custNr</name>
+      <description>customer number for the external Fax Api</description>
+      <property>31741</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>faxApi.aditoWsUser</name>
+      <description>user for accessing adito ws</description>
+      <property>wsFaxUser</property>
+    </customStringProperty>
+    <customPasswordProperty>
+      <name>faxApi.aditoWsPassword</name>
+      <description>pw for accessing adito ws</description>
+      <property>4NWp9BxzUPgdkdY5</property>
+    </customPasswordProperty>
+  </customConfigProperties>
+  <customProperties>
+    <customBooleanProperty>
+      <name>phoneValidation.enable</name>
+      <description></description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customBooleanProperty>
+      <name>dsgvo.active</name>
+      <property v="true" />
+    </customBooleanProperty>
+    <customBooleanProperty>
+      <name>nominatim.enable</name>
+      <property v="true" />
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>nominatim.url</name>
+      <property>https://nom.adito.de/search.php</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>nominatim.user</name>
+      <property>aditouser</property>
+    </customStringProperty>
+    <customPasswordProperty>
+      <name>nominatim.pw</name>
+      <description></description>
+      <property>useradito</property>
+    </customPasswordProperty>
+    <customIntegerProperty>
+      <name>nominatim.resultLimit</name>
+      <description>Amount of rows returned by the address search. Default is 10, maximum is 50.</description>
+    </customIntegerProperty>
+    <customJDitoProperty>
+      <name>nominatim.filterKeys</name>
+      <description></description>
+    </customJDitoProperty>
+    <customIntegerProperty>
+      <name>duplicates.dataBlockSize</name>
+      <property v="5000" />
+    </customIntegerProperty>
+    <customBooleanProperty>
+      <name>AD.active</name>
+      <description></description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>AD.technicalUserDN</name>
+      <description>Complete distinguishedName of the technical user</description>
+    </customStringProperty>
+    <customPasswordProperty>
+      <name>AD.technicalUserPassword</name>
+    </customPasswordProperty>
+    <customStringProperty>
+      <name>AD.URL</name>
+      <description>URL to the Active Directory Server (withe ldap:// prefix and port), separate more values with semicolon  </description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>AD.Filter</name>
+      <description>Filter in LDAP Filter Syntax</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>AD.Config</name>
+      <description>Start point of the search in tree, separate more values with semicolon </description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>supportticket.coderegex</name>
+      <description>Regex for the Supportticketcode</description>
+      <property>\[[0-9]{1,10}\]</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>myCompany.addr</name>
+      <description>Addressline of my company</description>
+      <property>HERMES ARZNEITMITTEL GMBH | Georg-Kalb-Str. 5 - 8 | 82049 Pullach i. Isartal</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>myCompany.logo</name>
+      <description>Logo of my copany</description>
+      <property>base64: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</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>myCompany.contactID</name>
+      <description>The ID of the Company you are working for.</description>
+      <property>b219b58a-f120-42d8-9a64-0b176501eac7</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>myCompany.vatID</name>
+      <description></description>
+      <property>DE123456789</property>
+    </customStringProperty>
+    <customBooleanProperty>
+      <name>observation.isEnabled</name>
+      <description>Whether the observations are enabled or not</description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customBooleanProperty>
+      <name>observation.isMultiselectionEnabled</name>
+      <description>Whether the multiselectionaction for observations are enabled or not.</description>
+      <property v="false" />
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>sales.vat</name>
+      <description>Default VAT in percent</description>
+      <property>19</property>
+    </customStringProperty>
+    <customBooleanProperty>
+      <name>ai.salesprojectProbability</name>
+      <description></description>
+      <property v="false" />
+    </customBooleanProperty>
+    <customBooleanProperty>
+      <name>ews.active</name>
+      <description>Decides if EWS is activated or not</description>
+      <property v="false" />
+    </customBooleanProperty>
+    <customIntegerProperty>
+      <name>ews.syncsize</name>
+      <description>Defines how big a filter for synchronizing to Outlook may be</description>
+      <property v="7200" />
+    </customIntegerProperty>
+    <customStringProperty>
+      <name>local.currency</name>
+      <description>local currency as alpha3 (e.g. "EUR")</description>
+      <property>EUR</property>
+    </customStringProperty>
+    <customBooleanProperty>
+      <name>leadforensics.isActive</name>
+      <description>Activates lead forensics interface</description>
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>leadforensics.clientID</name>
+      <description>client Id of lead forensics</description>
+    </customStringProperty>
+    <customPasswordProperty>
+      <name>leadforensics.authorizationToken</name>
+      <description>authorization token for lead forensics</description>
+    </customPasswordProperty>
+    <customStringProperty>
+      <name>leadforensics.startDate</name>
+      <description>start date from which the first leadforensics import should start. subsequent imports will start from the date of the last import. format dd-MM-yyyy</description>
+    </customStringProperty>
+    <customBooleanProperty>
+      <name>mail.importAttachments</name>
+      <description>Controls whether attachments from imported emails are placed in the Documents tab of the associated activity.</description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customBooleanProperty>
+      <name>address.hideStreetNumber</name>
+      <description>Hide the street number from Address view and save it in the Streetaddress</description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>defaultBusinessHoursTo</name>
+      <description>Defualt business hours from as String</description>
+      <property>17:00</property>
+    </customStringProperty>
+    <customStringProperty>
+      <name>defaultBusinessHoursFrom</name>
+      <description>Defualt business hours to as String</description>
+      <property>08:00</property>
+    </customStringProperty>
+    <customBooleanProperty>
+      <name>showAppointmentsInEPK</name>
+      <description>Appointments should be displayed in the EPK</description>
+      <property v="true" />
+    </customBooleanProperty>
+    <customIntegerProperty>
+      <name>sales.businessYearStartingMonth</name>
+      <description>Starting mont of the business year</description>
+    </customIntegerProperty>
+    <customBooleanProperty>
+      <name>bulkmail.followCsaGuidelines</name>
+      <description>When active the headers List-Unsubscribe or List-Help get send with bulkmails</description>
+    </customBooleanProperty>
+    <customStringProperty>
+      <name>bulkmail.listHelpLandingPage</name>
+      <description>URL of the landing page for the list help header</description>
+    </customStringProperty>
+    <customStringProperty>
+      <name>mail.defaultLocale</name>
+      <description> Default language for Mailbridge LangISO2</description>
+      <property>de</property>
+    </customStringProperty>
+  </customProperties>
+</preferences>

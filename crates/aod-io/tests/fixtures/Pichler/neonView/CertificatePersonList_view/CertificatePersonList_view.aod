@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonView xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonView/1.2.3">
+  <name>CertificatePersonList_view</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <filterable v="true" />
+  <layout>
+    <groupLayout />
+  </layout>
+  <children>
+    <tableViewTemplate>
+      <name>Certificates</name>
+      <columns>
+        <neonTableColumn>
+          <name>8c18501d-315c-4db2-9201-2b725db2b64a</name>
+          <entityField>EVENT_ID</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>f53a4d7f-da6c-4d9b-b896-a38df8388c1c</name>
+          <entityField>CERTIFICATENAME</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>0a4c8814-1c21-4383-8b66-ffebba7a923f</name>
+          <entityField>CREATIONDATE</entityField>
+        </neonTableColumn>
+        <neonTableColumn>
+          <name>130f437b-1360-458b-bd83-400ecd8162d8</name>
+          <entityField>EXPIRATIONDATE</entityField>
+        </neonTableColumn>
+      </columns>
+    </tableViewTemplate>
+  </children>
+</neonView>

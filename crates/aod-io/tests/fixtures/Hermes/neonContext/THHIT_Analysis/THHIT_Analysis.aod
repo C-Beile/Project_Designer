@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonContext xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonContext/1.2.0">
+  <name>THHIT_Analysis</name>
+  <title>Analysis</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <entity>THHIT_Analysis_entity</entity>
+  <references>
+    <neonViewReference>
+      <name>d5c292e9-5892-4435-a4be-870fc0db427c</name>
+      <view>MyDailyOverviewCard_view</view>
+    </neonViewReference>
+  </references>
+</neonContext>

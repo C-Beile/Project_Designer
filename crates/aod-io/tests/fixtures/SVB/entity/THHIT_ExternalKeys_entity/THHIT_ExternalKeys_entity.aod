@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entity/1.4.0">
+  <name>THHIT_ExternalKeys_entity</name>
+  <title>THHIT_External Key</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <grantCreateProcess>%aditoprj%/entity/THHIT_ExternalKeys_entity/grantCreateProcess.js</grantCreateProcess>
+  <grantUpdateProcess>%aditoprj%/entity/THHIT_ExternalKeys_entity/grantUpdateProcess.js</grantUpdateProcess>
+  <grantDeleteProcess>%aditoprj%/entity/THHIT_ExternalKeys_entity/grantDeleteProcess.js</grantDeleteProcess>
+  <titlePlural>THHIT_External Keys</titlePlural>
+  <recordContainer>db</recordContainer>
+  <entityFields>
+    <entityProvider>
+      <name>#PROVIDER</name>
+    </entityProvider>
+    <entityProvider>
+      <name>#PROVIDER_AGGREGATES</name>
+      <useAggregates v="true" />
+    </entityProvider>
+    <entityField>
+      <name>DATE_NEW</name>
+      <contentType>DATE</contentType>
+      <resolution>SECOND</resolution>
+      <valueProcess>%aditoprj%/entity/THHIT_ExternalKeys_entity/entityfields/date_new/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>DATE_EDIT</name>
+      <contentType>DATE</contentType>
+      <resolution>SECOND</resolution>
+      <valueProcess>%aditoprj%/entity/THHIT_ExternalKeys_entity/entityfields/date_edit/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>USER_NEW</name>
+      <valueProcess>%aditoprj%/entity/THHIT_ExternalKeys_entity/entityfields/user_new/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>USER_EDIT</name>
+      <valueProcess>%aditoprj%/entity/THHIT_ExternalKeys_entity/entityfields/user_edit/valueProcess.js</valueProcess>
+    </entityField>
+    <entityParameter>
+      <name>RowId_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityParameter>
+      <name>ObjectType_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityConsumer>
+      <name>THHIT_KeywordExternalSystem</name>
+      <dependency>
+        <name>dependency</name>
+        <entityName>KeywordEntry_entity</entityName>
+        <fieldName>SpecificContainerKeywords</fieldName>
+      </dependency>
+      <children>
+        <entityParameter>
+          <name>ContainerName_param</name>
+          <valueProcess>%aditoprj%/entity/THHIT_ExternalKeys_entity/entityfields/thhit_keywordexternalsystem/children/containername_param/valueProcess.js</valueProcess>
+        </entityParameter>
+      </children>
+    </entityConsumer>
+    <entityField>
+      <name>OBJECT_TYPE</name>
+      <valueProcess>%aditoprj%/entity/THHIT_ExternalKeys_entity/entityfields/object_type/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>OBJECT_ROWID</name>
+      <valueProcess>%aditoprj%/entity/THHIT_ExternalKeys_entity/entityfields/object_rowid/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>THHIT_EXTERNALSYSTEM</name>
+      <title>THHIT_External System</title>
+      <consumer>THHIT_KeywordExternalSystem</consumer>
+    </entityField>
+    <entityField>
+      <name>THHIT_EXTERNALKEY</name>
+      <title>THHIT_External Key</title>
+      <maxFieldSize v="100" />
+    </entityField>
+    <entityField>
+      <name>THHIT_EXTERNALKEYSID</name>
+    </entityField>
+    <entityProvider>
+      <name>THHIT_ExternalKeys</name>
+    </entityProvider>
+  </entityFields>
+  <recordContainers>
+    <dbRecordContainer>
+      <name>db</name>
+      <conditionProcess>%aditoprj%/entity/THHIT_ExternalKeys_entity/recordcontainers/db/conditionProcess.js</conditionProcess>
+      <alias>Data_alias</alias>
+      <recordFieldMappings>
+        <dbRecordFieldMapping>
+          <name>DATE_EDIT.value</name>
+          <recordfield>THHIT_EXTERNALKEYS.DATE_EDIT</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>DATE_NEW.value</name>
+          <recordfield>THHIT_EXTERNALKEYS.DATE_NEW</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>OBJECT_ROWID.value</name>
+          <recordfield>THHIT_EXTERNALKEYS.OBJECT_ROWID</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>OBJECT_TYPE.value</name>
+          <recordfield>THHIT_EXTERNALKEYS.OBJECT_TYPE</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>THHIT_EXTERNALKEY.value</name>
+          <recordfield>THHIT_EXTERNALKEYS.THHIT_EXTERNALKEY</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>THHIT_EXTERNALKEYSID.value</name>
+          <recordfield>THHIT_EXTERNALKEYS.THHIT_EXTERNALKEYID</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>THHIT_EXTERNALSYSTEM.value</name>
+          <recordfield>THHIT_EXTERNALKEYS.THHIT_EXTERNALSYSTEM</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>USER_EDIT.value</name>
+          <recordfield>THHIT_EXTERNALKEYS.USER_EDIT</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>USER_NEW.value</name>
+          <recordfield>THHIT_EXTERNALKEYS.USER_NEW</recordfield>
+        </dbRecordFieldMapping>
+      </recordFieldMappings>
+      <linkInformation>
+        <linkInformation>
+          <name>THHIT_EXTERNALKEYS</name>
+          <tableName>THHIT_EXTERNALKEYS</tableName>
+          <primaryKey>THHIT_EXTERNALKEYID</primaryKey>
+          <isUIDTable v="true" />
+          <readonly v="false" />
+        </linkInformation>
+      </linkInformation>
+    </dbRecordContainer>
+  </recordContainers>
+</entity>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonContext xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonContext/1.2.0">
+  <name>THHIT_CSVImporter</name>
+  <title>CSV Importer</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <icon>NEON:IMPORT</icon>
+  <mainView>THHIT_CSVImporterEdit_view</mainView>
+  <entity>THHIT_CSVImporter_entity</entity>
+  <references>
+    <neonViewReference>
+      <name>890bed5a-c621-4f93-96c7-ecdf015bb43e</name>
+      <view>THHIT_CSVImporterEdit_view</view>
+    </neonViewReference>
+  </references>
+</neonContext>

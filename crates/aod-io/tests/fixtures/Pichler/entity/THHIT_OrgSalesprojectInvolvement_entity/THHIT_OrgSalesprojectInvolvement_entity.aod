@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entity/1.4.0">
+  <name>THHIT_OrgSalesprojectInvolvement_entity</name>
+  <title>Opportunity involvement</title>
+  <titlePlural>Opportunity involvements</titlePlural>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <grantCreate v="false" />
+  <grantUpdate v="false" />
+  <grantDelete v="false" />
+  <recordContainer>jdito</recordContainer>
+  <initFilterProcess>%aditoprj%/entity/THHIT_OrgSalesprojectInvolvement_entity/initFilterProcess.js</initFilterProcess>
+  <entityFields>
+    <entityProvider>
+      <name>#PROVIDER</name>
+    </entityProvider>
+    <entityProvider>
+      <name>#PROVIDER_AGGREGATES</name>
+      <useAggregates v="true" />
+    </entityProvider>
+
+    <entityField>
+      <name>UID</name>
+      <state>READONLY</state>
+    </entityField>
+
+    <entityField>
+      <name>MEMBERROLE</name>
+      <title>Role</title>
+      <consumer>KeywordMemberRoles</consumer>
+      <groupable v="true" />
+      <state>READONLY</state>
+      <displayValueProcess>%aditoprj%/entity/THHIT_OrgSalesprojectInvolvement_entity/entityfields/memberrole/displayValueProcess.js</displayValueProcess>
+    </entityField>
+    <entityConsumer>
+      <name>KeywordMemberRoles</name>
+      <dependency>
+        <name>dependency</name>
+        <entityName>MemberRoles_entity</entityName>
+        <fieldName>ByCategory</fieldName>
+      </dependency>
+      <children>
+        <entityParameter>
+          <name>UsageFilter_param</name>
+          <valueProcess>%aditoprj%/entity/THHIT_OrgSalesprojectInvolvement_entity/entityfields/memberrole/children/usagefilter_param/valueProcess.js</valueProcess>
+        </entityParameter>
+        <entityParameter>
+          <name>UsageSubFilter_param</name>
+          <valueProcess>%aditoprj%/entity/THHIT_OrgSalesprojectInvolvement_entity/entityfields/memberrole/children/usagesubfilter_param/valueProcess.js</valueProcess>
+        </entityParameter>
+      </children>
+    </entityConsumer>
+
+    <entityField>
+      <name>THHIT_salesprojectname</name>
+      <title>Title</title>
+      <linkedContext>Salesproject</linkedContext>
+      <state>READONLY</state>
+    </entityField>
+
+    <entityField>
+      <name>THHIT_salesprojectstatus</name>
+      <title>Status</title>
+      <consumer>THHIT_KeywordSalesprojectStates</consumer>
+      <groupable v="true" />
+      <state>READONLY</state>
+      <displayValueProcess>%aditoprj%/entity/THHIT_OrgSalesprojectInvolvement_entity/entityfields/thhit_salesprojectstatus/displayValueProcess.js</displayValueProcess>
+    </entityField>
+    <entityConsumer>
+      <name>THHIT_KeywordSalesprojectStates</name>
+      <dependency>
+        <name>dependency</name>
+        <entityName>KeywordEntry_entity</entityName>
+        <fieldName>SpecificContainerKeywords</fieldName>
+      </dependency>
+      <children>
+        <entityParameter>
+          <name>ContainerName_param</name>
+          <valueProcess>%aditoprj%/entity/THHIT_OrgSalesprojectInvolvement_entity/entityfields/thhit_keywordsalesprojectstates/children/containername_param/valueProcess.js</valueProcess>
+        </entityParameter>
+      </children>
+    </entityConsumer>
+
+    <entityField>
+      <name>THHIT_salesprojectenddate</name>
+      <title>Target date of the service</title>
+      <contentType>DATE</contentType>
+      <resolution>DAY</resolution>
+      <state>READONLY</state>
+    </entityField>
+    <entityField>
+      <name>THHIT_salesprojectdatenew</name>
+      <title>Created on</title>
+      <contentType>DATE</contentType>
+      <resolution>SECOND</resolution>
+      <state>READONLY</state>
+    </entityField>
+    <entityField>
+      <name>THHIT_salesprojectvolumen</name>
+      <contentType>NUMBER</contentType>
+      <outputFormat>#,##0.00</outputFormat>
+      <state>READONLY</state>
+      <titleProcess>%aditoprj%/entity/THHIT_OrgSalesprojectInvolvement_entity/entityfields/thhit_salesprojectvolumen/titleProcess.js</titleProcess>
+    </entityField>
+
+    <entityProvider>
+      <name>THHIT_OrgSalesprojectInvolvements</name>
+      <titlePlural>Opportunity involvements</titlePlural>
+    </entityProvider>
+
+    <entityParameter>
+      <name>ObjectType_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityParameter>
+      <name>THHIT_ContactId_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityParameter>
+      <name>THHIT_CustomContactIds_param</name>
+      <expose v="true" />
+    </entityParameter>
+  </entityFields>
+  <recordContainers>
+    <jDitoRecordContainer>
+      <name>jdito</name>
+      <jDitoRecordAlias>Data_alias</jDitoRecordAlias>
+      <isFilterable v="true" />
+      <contentProcess>%aditoprj%/entity/THHIT_OrgSalesprojectInvolvement_entity/recordcontainers/jdito/contentProcess.js</contentProcess>
+      <recordFieldMappings>
+        <jDitoRecordFieldMapping>
+          <name>UID.value</name>
+        </jDitoRecordFieldMapping>
+        <jDitoRecordFieldMapping>
+          <name>MEMBERROLE.value</name>
+        </jDitoRecordFieldMapping>
+        <jDitoRecordFieldMapping>
+          <name>THHIT_salesprojectname.value</name>
+        </jDitoRecordFieldMapping>
+        <jDitoRecordFieldMapping>
+          <name>THHIT_salesprojectname.displayValue</name>
+        </jDitoRecordFieldMapping>
+        <jDitoRecordFieldMapping>
+          <name>THHIT_salesprojectstatus.value</name>
+          <isFilterable v="true" />
+        </jDitoRecordFieldMapping>
+        <jDitoRecordFieldMapping>
+          <name>THHIT_salesprojectenddate.value</name>
+        </jDitoRecordFieldMapping>
+        <jDitoRecordFieldMapping>
+          <name>THHIT_salesprojectdatenew.value</name>
+        </jDitoRecordFieldMapping>
+        <jDitoRecordFieldMapping>
+          <name>THHIT_salesprojectvolumen.value</name>
+        </jDitoRecordFieldMapping>
+      </recordFieldMappings>
+    </jDitoRecordContainer>
+  </recordContainers>
+</entity>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entity/1.4.0">
+  <name>THHIT_CSVImporter_entity</name>
+  <title>CSV Importer</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <icon>NEON:IMPORT</icon>
+  <recordContainer>recordContainer</recordContainer>
+  <entityFields>
+    <entityProvider>
+      <name>#PROVIDER</name>
+    </entityProvider>
+    <entityProvider>
+      <name>#PROVIDER_AGGREGATES</name>
+      <useAggregates v="true" />
+    </entityProvider>
+    <entityField>
+      <name>bindata</name>
+      <title>CSV</title>
+      <contentType>FILE</contentType>
+      <state>EDITABLE</state>
+    </entityField>
+    <entityField>
+      <name>import_result</name>
+      <title>THHIT_CSVImporter_Import result</title>
+      <contentType>LONG_TEXT</contentType>
+      <state>INVISIBLE</state>
+    </entityField>
+    <entityField>
+      <name>mode</name>
+      <title>THHIT_CSVImporter_Entity to be imported</title>
+      <dropDownProcess>%aditoprj%/entity/THHIT_CSVImporter_entity/entityfields/mode/dropDownProcess.js</dropDownProcess>
+      <state>EDITABLE</state>
+    </entityField>
+    <entityActionField>
+      <name>save</name>
+      <title>THHIT_CSVImporter_Import</title>
+      <onActionProcess>%aditoprj%/entity/THHIT_CSVImporter_entity/entityfields/save/onActionProcess.js</onActionProcess>
+      <iconId>NEON:IMPORT</iconId>
+      <stateProcess>%aditoprj%/entity/THHIT_CSVImporter_entity/entityfields/save/stateProcess.js</stateProcess>
+    </entityActionField>
+    <entityServiceDefinition>
+      <name>modedropdownlist_service</name>
+      <implementations>
+        <serviceImplementation>
+          <name>contactperson_impl</name>
+          <process>%aditoprj%/entity/THHIT_CSVImporter_entity/entityfields/modedropdownlist_service/implementations/contactperson_impl/process.js</process>
+        </serviceImplementation>
+        <serviceImplementation>
+          <name>organisation_impl</name>
+          <process>%aditoprj%/entity/THHIT_CSVImporter_entity/entityfields/modedropdownlist_service/implementations/organisation_impl/process.js</process>
+        </serviceImplementation>
+        <serviceImplementation>
+          <name>parentorganisation_impl</name>
+          <process>%aditoprj%/entity/THHIT_CSVImporter_entity/entityfields/modedropdownlist_service/implementations/parentorganisation_impl/process.js</process>
+        </serviceImplementation>
+        <serviceImplementation>
+          <name>maincontactperson_impl</name>
+          <process>%aditoprj%/entity/THHIT_CSVImporter_entity/entityfields/modedropdownlist_service/implementations/maincontactperson_impl/process.js</process>
+        </serviceImplementation>
+        <serviceImplementation>
+          <name>leadcsv_impl</name>
+          <process>%aditoprj%/entity/THHIT_CSVImporter_entity/entityfields/modedropdownlist_service/implementations/leadcsv_impl/process.js</process>
+        </serviceImplementation>
+        <serviceImplementation>        
+          <name>opportunity_impl</name>
+          <process>%aditoprj%/entity/THHIT_CSVImporter_entity/entityfields/modedropdownlist_service/implementations/opportunity_impl/process.js</process>
+        </serviceImplementation>
+      </implementations>
+    </entityServiceDefinition>
+  </entityFields>
+  <recordContainers>
+    <datalessRecordContainer>
+      <name>recordContainer</name>
+      <alias>Data_alias</alias>
+    </datalessRecordContainer>
+  </recordContainers>
+</entity>

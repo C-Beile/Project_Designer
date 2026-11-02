@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aliasDefinition xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.3.1" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/aliasDefinition/1.3.1">
+  <name>mailServerHermes</name>
+  <title>mailServerHermes</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <icon>VAADIN:SERVER</icon>
+  <datasourceType v="33" />
+</aliasDefinition>

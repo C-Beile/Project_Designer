@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSHumanReadableCopyright</key>
+  <string>Copyright (c) 3Hills IT. Alle Rechte vorbehalten.</string>
+  <key>LSApplicationCategoryType</key>
+  <string>public.app-category.developer-tools</string>
+  <key>NSDesktopFolderUsageDescription</key>
+  <string>Vendira Designer liest und schreibt ADITO-Projekte in den von Ihnen gewaehlten Ordnern, auch auf dem Schreibtisch.</string>
+  <key>NSDocumentsFolderUsageDescription</key>
+  <string>Vendira Designer liest und schreibt ADITO-Projekte in den von Ihnen gewaehlten Ordnern, auch in Dokumente.</string>
+  <key>NSDownloadsFolderUsageDescription</key>
+  <string>Vendira Designer liest und schreibt ADITO-Projekte in den von Ihnen gewaehlten Ordnern, auch in Downloads.</string>
+</dict>
+</plist>

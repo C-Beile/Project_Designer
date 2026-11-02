@@ -1,0 +1,32 @@
+{
+    "name": "@3hills-it/pos-distribution-listing",
+    "version": "1.0.4",
+    "adito": {
+        "type": "module"
+    },
+    "publishConfig": {
+        "registry": "https://gitlab.adito.de/api/v4/projects/2239/packages/npm/"
+    },
+    "overrides": {
+
+    },
+    "dependencies": {
+        "@3hills-it/pos-listing": "~1.0.0",
+        "@3hills-it/pos-distribution": ">=1.0.0 <1.2.0"
+    },
+    "peerDependencies": {
+
+    },
+    "devDependencies": {
+        "@aditosoftware/devtools": "^2.0.1",
+		"@aditosoftware/eslint-config-adito": "^5.1.1",
+        "@aditosoftware/jdito-types": ">=2025.0.0-RC <2025.1.0",
+        "liquibase": "4.4.0",
+        "typescript": "~5.0.0"
+    },
+    "scripts": {
+        "update package-lock": "npm update --package-lock=false --install-links=false",
+        "eslint all": "npx eslint \"**/*.js\" --ignore-pattern node_modules/ --fix",
+        "npm install symlinks": "npm install --install-links=false"
+    }
+}

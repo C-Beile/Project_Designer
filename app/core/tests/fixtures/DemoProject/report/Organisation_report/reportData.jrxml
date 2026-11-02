@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Kundenstammblatt" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="e7a916c8-3f9a-497d-84bb-3909b15271ea">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<parameter name="myAddr" class="java.lang.String"/>
+	<parameter name="ORGAddr" class="java.lang.String"/>
+	<parameter name="ORGAttr" class="java.lang.String"/>
+	<parameter name="ORGComm" class="java.lang.String"/>
+	<parameter name="ORGANISATIONID" class="java.lang.String"/>
+	<parameter name="RELID" class="java.lang.String"/>
+	<parameter name="CLIENTID" class="java.lang.String"/>
+	<parameter name="adito.datasource.subdataTask" class="java.lang.Object"/>
+	<parameter name="adito.datasource.subdataComm" class="java.lang.Object"/>
+	<parameter name="adito.datasource.subdataPers" class="java.lang.Object"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["C:\\Users\\b.ulrich\\Documents\\AditoProjects\\basicLocal4\\report\\Organisation_report\\"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="adito.image.myLogo" class="java.lang.String"/>
+	<parameter name="adito.datasource.subdataHist" class="java.lang.Object"/>
+	<parameter name="INFO" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band height="106" splitType="Stretch">
+			<printWhenExpression><![CDATA[true]]></printWhenExpression>
+			<image scaleImage="RetainShape" hAlign="Center">
+				<reportElement x="182" y="0" width="174" height="50" uuid="3a34d632-09a6-44c2-b8e4-38d8138af87d"/>
+				<imageExpression><![CDATA[$P{adito.image.myLogo}]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement x="0" y="70" width="555" height="20" forecolor="#999999" uuid="d8a7a770-46d6-4bd7-bc79-a98285ded43e"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{myAddr}]]></textFieldExpression>
+			</textField>
+			<frame>
+				<reportElement x="0" y="70" width="555" height="20" uuid="53d00eed-675d-4f66-87c0-d945bfd92889"/>
+				<box>
+					<pen lineWidth="1.0" lineColor="#666666"/>
+					<topPen lineWidth="1.0" lineColor="#666666"/>
+					<leftPen lineWidth="1.0" lineColor="#666666"/>
+					<bottomPen lineWidth="1.0" lineColor="#666666"/>
+					<rightPen lineWidth="1.0" lineColor="#666666"/>
+				</box>
+			</frame>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="80" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="14" width="167" height="20" forecolor="#999999" uuid="db320a72-fac5-477a-8c9e-19d15a8d250f"/>
+				<textElement>
+					<font fontName="Open Sans" size="14"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Customer Base Sheet}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="0" y="46" width="100" height="15" uuid="cbc5f584-e9ee-4062-b6f5-7fd3a6e918f4"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{ORGAddr}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="344" y="61" width="200" height="15" uuid="8d54ea3a-8c35-48a5-a3da-b77ff53591b7"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{INFO}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="344" y="46" width="92" height="15" uuid="a73a7562-7435-412e-b987-b8ba0980a7b7"/>
+				<textElement>
+					<font fontName="Open Sans" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Information}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="39">
+			<line>
+				<reportElement x="0" y="32" width="555" height="1" uuid="7a549c9f-9902-4f32-97eb-297a794d3498"/>
+			</line>
+			<textField>
+				<reportElement x="0" y="15" width="100" height="15" uuid="ef198107-4f82-49ad-96f6-8afb09be58f1"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Type}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="103" y="15" width="100" height="15" uuid="b42a9c7d-fd06-4e16-a32e-61aa3ffcf299"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Value}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="0" width="103" height="15" forecolor="#0033FF" uuid="7c9e61d7-c823-4fbc-85ee-5a5a73a7999c"/>
+				<textElement>
+					<font fontName="Open Sans" size="8" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Communication data}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="21">
+			<subreport>
+				<reportElement x="0" y="0" width="544" height="21" uuid="d1da0bc7-7a62-4ceb-886b-dba0ebbef275"/>
+				<dataSourceExpression><![CDATA[$P{adito.datasource.subdataComm}]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Kommunikationsdaten.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+		<band height="42" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="100" height="15" forecolor="#0033FF" uuid="9e3a2dda-7b73-41c5-a840-f356a2373e23"/>
+				<textElement>
+					<font fontName="Open Sans" size="8" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Contacts}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="15" width="100" height="15" uuid="f7f6caee-b1f5-487e-8d1a-738c533b214d"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Name}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="35" width="555" height="1" uuid="4b698800-cc36-4830-8bbf-d040f890ddbf"/>
+			</line>
+			<textField>
+				<reportElement x="103" y="15" width="100" height="15" uuid="e12cde69-8455-4dca-a760-c1eecb9a8034"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Position}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="221" y="15" width="100" height="15" uuid="0a43120b-40f3-4c5a-a7c9-15540fda5ff6"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Department}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="344" y="15" width="160" height="15" uuid="72c93546-9005-4051-9f52-28e10f8f54a5"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Communication data}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="21">
+			<subreport>
+				<reportElement x="0" y="0" width="555" height="21" uuid="f08ee4f5-2a1c-49c4-bed3-cb7d377afcd3"/>
+				<dataSourceExpression><![CDATA[$P{adito.datasource.subdataPers}]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Kontaktpersonen.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+		<band height="40">
+			<textField>
+				<reportElement x="0" y="2" width="100" height="15" forecolor="#0033FF" uuid="60192885-ecfd-46cd-9de1-67cd2e285d1b"/>
+				<textElement>
+					<font fontName="Open Sans" size="8" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Activity}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="19" width="100" height="15" uuid="fbf2402f-6b63-48b9-814d-22d7f49d81db"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Date}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="103" y="19" width="100" height="15" uuid="652de0c2-220e-4bfc-a983-7335638307a5"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Contact type}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="221" y="19" width="100" height="15" uuid="eca234d8-ad5c-4b2e-aecd-81a9adff5f9d"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Employee}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="344" y="19" width="100" height="15" uuid="310e6639-fae6-4724-b353-d793069819b7"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Remark}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="36" width="555" height="1" uuid="419b9760-399c-4478-9a82-c1fd11d72994"/>
+			</line>
+		</band>
+		<band height="24">
+			<subreport>
+				<reportElement x="0" y="0" width="555" height="22" uuid="a47de115-bd5f-4a9f-95a5-2cb170fa0b9a"/>
+				<dataSourceExpression><![CDATA[$P{adito.datasource.subdataHist}]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Historien.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+		<band height="19">
+			<textField>
+				<reportElement x="0" y="2" width="100" height="15" forecolor="#0033FF" uuid="4b8833cc-3fda-4a75-ae61-83fbfe995f72">
+					<printWhenExpression><![CDATA[$P{ORGAttr} != null && !$P{ORGAttr}.equals("")]]></printWhenExpression>
+				</reportElement>
+				<textElement>
+					<font fontName="Open Sans" size="8" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Attributes}]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="18">
+			<textField isStretchWithOverflow="true">
+				<reportElement x="10" y="5" width="534" height="13" uuid="1ef0e703-9180-4540-b094-e1bcc9983001"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{ORGAttr}]]></textFieldExpression>
+			</textField>
+			<frame>
+				<reportElement stretchType="RelativeToBandHeight" x="0" y="2" width="555" height="16" isPrintInFirstWholeBand="true" uuid="62244829-371e-4972-b91d-cca3c857b15e">
+					<printWhenExpression><![CDATA[$P{ORGAttr} != null && !$P{ORGAttr}.equals("")]]></printWhenExpression>
+				</reportElement>
+				<box>
+					<pen lineWidth="1.0"/>
+					<topPen lineWidth="1.0"/>
+					<leftPen lineWidth="1.0"/>
+					<bottomPen lineWidth="1.0"/>
+					<rightPen lineWidth="1.0"/>
+				</box>
+			</frame>
+		</band>
+		<band height="42">
+			<textField>
+				<reportElement x="0" y="20" width="100" height="15" uuid="ea868aed-1495-42b8-a398-b0a62ac0de80"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Subject}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="117" y="20" width="161" height="15" uuid="a2509776-a2f4-465d-851b-617468e91c3c"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Description}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="300" y="20" width="78" height="15" uuid="b3260378-eced-4883-ad0b-8692a3f83547"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Status}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="385" y="20" width="100" height="15" uuid="653a5cd5-4209-4570-b6c5-037285921d1a"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{responsible}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="4" width="100" height="15" forecolor="#0033FF" uuid="41f65e5b-23a5-4d39-8f9a-267ccab96c76"/>
+				<textElement>
+					<font fontName="Open Sans" size="8" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Tasks}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="38" width="555" height="1" uuid="a3b5c9fc-f1a8-41bf-a3a7-efaab215acb8"/>
+			</line>
+		</band>
+		<band height="26">
+			<subreport>
+				<reportElement x="0" y="0" width="555" height="24" uuid="f39de822-874b-4624-89ae-d7300649f0fd"/>
+				<dataSourceExpression><![CDATA[$P{adito.datasource.subdataTask}]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "Aufgaben.jasper"]]></subreportExpression>
+			</subreport>
+		</band>
+	</detail>
+	<pageFooter>
+		<band height="38" splitType="Stretch">
+			<textField pattern="EEEEE dd MMMMM yyyy">
+				<reportElement x="378" y="17" width="102" height="20" forecolor="#999999" uuid="84480a49-acb2-48cd-9885-540b816d74f1"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="480" y="17" width="45" height="20" forecolor="#999999" uuid="047a5366-fd18-439d-847d-8a20efb74d34"/>
+				<textElement textAlignment="Right">
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{Seite}+" "+$V{PAGE_NUMBER}+" "+$R{von}]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="525" y="17" width="30" height="20" forecolor="#999999" uuid="fa23c12f-1e58-45d6-962d-0bbf70bc0032"/>
+				<textElement>
+					<font fontName="Open Sans" size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement x="0" y="9" width="555" height="1" forecolor="#999999" uuid="b45a4621-34b5-4c70-85e6-4fda980647ce"/>
+			</line>
+		</band>
+	</pageFooter>
+</jasperReport>

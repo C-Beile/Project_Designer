@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonView xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.3" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonView/1.2.3">
+  <name>THHIT_CSVImporterEdit_view</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <layout>
+    <noneLayout />
+  </layout>
+  <children>
+    <genericViewTemplate>
+      <name>fileupload</name>
+      <editMode v="true" />
+      <fields>
+        <entityFieldLink>
+          <name>5ded69aa-0693-490a-b0b6-cfef41b29fb8</name>
+          <entityField>bindata</entityField>
+        </entityFieldLink>
+        <entityFieldLink>
+          <name>98733117-0a9d-4b12-b58b-516345e4e7b4</name>
+          <entityField>import_result</entityField>
+        </entityFieldLink>
+        <entityFieldLink>
+          <name>f27ecad2-e02f-4339-864a-a5aa29c0c813</name>
+          <entityField>mode</entityField>
+        </entityFieldLink>
+      </fields>
+    </genericViewTemplate>
+    <actionsViewTemplate>
+      <name>action</name>
+      <actions>
+        <element>save</element>
+      </actions>
+    </actionsViewTemplate>
+  </children>
+</neonView>

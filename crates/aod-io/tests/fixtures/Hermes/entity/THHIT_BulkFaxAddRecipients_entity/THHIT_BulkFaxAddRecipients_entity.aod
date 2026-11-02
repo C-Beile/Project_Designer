@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entity/1.4.0">
+  <name>THHIT_BulkFaxAddRecipients_entity</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <recordContainer>recordContainer</recordContainer>
+  <entityFields>
+    <entityProvider>
+      <name>#PROVIDER</name>
+    </entityProvider>
+    <entityProvider>
+      <name>#PROVIDER_AGGREGATES</name>
+      <useAggregates v="true" />
+    </entityProvider>
+    <entityField>
+      <name>proposedContactIds</name>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxAddRecipients_entity/entityfields/proposedcontactids/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>validContactIds</name>
+      <description>the filtered contactIds (contactIds that are not already in the bulkmail and don't have a commrestriction)</description>
+      <state>EDITABLE</state>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxAddRecipients_entity/entityfields/validcontactids/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>recipientCountMessage</name>
+      <state>EDITABLE</state>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxAddRecipients_entity/entityfields/recipientcountmessage/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>futureRecipientCount</name>
+      <documentation>%aditoprj%/entity/THHIT_BulkFaxAddRecipients_entity/entityfields/futurerecipientcount/documentation.adoc</documentation>
+      <title>Recipients after adding</title>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxAddRecipients_entity/entityfields/futurerecipientcount/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>notAddedCount</name>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxAddRecipients_entity/entityfields/notaddedcount/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>currentRecipientCount</name>
+      <documentation>%aditoprj%/entity/THHIT_BulkFaxAddRecipients_entity/entityfields/currentrecipientcount/documentation.adoc</documentation>
+      <title>Current Recipients</title>
+      <valueProcess>%aditoprj%/entity/THHIT_BulkFaxAddRecipients_entity/entityfields/currentrecipientcount/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>BULKFAX_ID</name>
+      <title>Bulk fax</title>
+      <consumer>BulkFaxes</consumer>
+      <linkedContext>THHIT_BulkFax</linkedContext>
+      <mandatory v="true" />
+      <state>EDITABLE</state>
+      <displayValueProcess>%aditoprj%/entity/THHIT_BulkFaxAddRecipients_entity/entityfields/bulkfax_id/displayValueProcess.js</displayValueProcess>
+    </entityField>
+    <entityConsumer>
+      <name>BulkFaxes</name>
+      <dependency>
+        <name>dependency</name>
+        <entityName>THHIT_BulkFax_entity</entityName>
+        <fieldName>BulkFaxesNotSent</fieldName>
+      </dependency>
+    </entityConsumer>
+    <entityParameter>
+      <name>Parameters_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityParameter>
+      <name>ObjectType_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityParameter>
+      <name>RecordsRecipe_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityParameter>
+      <name>Filter_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityParameter>
+      <name>Ids_param</name>
+      <expose v="true" />
+    </entityParameter>
+    <entityActionField>
+      <name>addRecipients</name>
+      <title>Add Recipients</title>
+      <onActionProcess>%aditoprj%/entity/THHIT_BulkFaxAddRecipients_entity/entityfields/addrecipients/onActionProcess.js</onActionProcess>
+      <iconId>VAADIN:AT</iconId>
+      <state>DISABLED</state>
+      <stateProcess>%aditoprj%/entity/THHIT_BulkFaxAddRecipients_entity/entityfields/addrecipients/stateProcess.js</stateProcess>
+    </entityActionField>
+  </entityFields>
+  <recordContainers>
+    <datalessRecordContainer>
+      <name>recordContainer</name>
+      <alias>Data_alias</alias>
+    </datalessRecordContainer>
+  </recordContainers>
+</entity>

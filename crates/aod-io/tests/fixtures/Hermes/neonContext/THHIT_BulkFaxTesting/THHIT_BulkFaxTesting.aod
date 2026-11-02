@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonContext xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonContext/1.2.0">
+  <name>THHIT_BulkFaxTesting</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <entity>THHIT_BulkFaxTesting_entity</entity>
+  <references>
+    <neonViewReference>
+      <name>c68a07b5-ccdc-440a-9c2d-8a1572517ed9</name>
+      <view>THHIT_BulkFaxTesting_view</view>
+    </neonViewReference>
+  </references>
+</neonContext>

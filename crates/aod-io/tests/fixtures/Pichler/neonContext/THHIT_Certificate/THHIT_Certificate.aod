@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonContext xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonContext/1.2.0">
+  <name>THHIT_Certificate</name>
+  <title>Certificate</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <editView>CertificateEdit_view</editView>
+  <entity>Certificate_entity</entity>
+  <references>
+    <neonViewReference>
+      <name>835d70d1-6c38-4f55-b42c-d05bd3c7eda6</name>
+      <view>CertificatePersonList_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>93d758f0-4f39-4de9-b68f-b6f471553d5f</name>
+      <view>CertificateOrganisationList_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>d88f82ad-dd33-4064-968b-304303c8471c</name>
+      <view>CertificateEdit_view</view>
+    </neonViewReference>
+  </references>
+</neonContext>

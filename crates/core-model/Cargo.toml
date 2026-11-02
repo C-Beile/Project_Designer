@@ -1,0 +1,15 @@
+[package]
+name = "core-model"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror = "1"
+# Integration round (forge-core): backs the real EventSource implementation in
+# aod_io_adapter.rs against the actual .aod document representation.
+aod-io = { path = "../aod-io" }
+
+[lints]
+workspace = true

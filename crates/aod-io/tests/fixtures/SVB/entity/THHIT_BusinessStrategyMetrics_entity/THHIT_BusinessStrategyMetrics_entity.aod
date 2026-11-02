@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entity/1.4.0">
+  <name>THHIT_BusinessStrategyMetrics_entity</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <recordContainer>db</recordContainer>
+  <entityFields>
+    <entityProvider>
+      <name>#PROVIDER</name>
+    </entityProvider>
+    <entityProvider>
+      <name>#PROVIDER_AGGREGATES</name>
+      <useAggregates v="true" />
+    </entityProvider>
+    <entityField>
+      <name>UNIT</name>
+      <title>THHIT_Unit</title>
+    </entityField>
+    <entityField>
+      <name>ORG_ID</name>
+    </entityField>
+    <entityField>
+      <name>TARGET_LEVEL_VALUE</name>
+      <title>THHIT_Target_Level_Value</title>
+      <contentType>NUMBER</contentType>
+      <maxIntegerDigits v="10" />
+      <maxFractionDigits v="2" />
+      <outputFormat>#,##0.00</outputFormat>
+    </entityField>
+    <entityField>
+      <name>TARGET_LEVEL_YEAR</name>
+      <title>THHIT_Target_Level_Year</title>
+      <contentType>NUMBER</contentType>
+      <maxIntegerDigits v="5" />
+      <maxFractionDigits v="0" />
+      <outputFormat>######</outputFormat>
+    </entityField>
+    <entityField>
+      <name>KPI</name>
+      <title>THHIT_KPI</title>
+    </entityField>
+    <entityField>
+      <name>TOPIC_AREA</name>
+      <title>THHIT_Topic_Area</title>
+      <groupable v="true" />
+      <preferredGroupOrder>VALUE</preferredGroupOrder>
+    </entityField>
+    <entityField>
+      <name>kpi_html</name>
+      <title>THHIT_KPI</title>
+      <contentType>HTML</contentType>
+      <valueProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/kpi_html/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>kpi_full_html</name>
+      <title>THHIT_KPI</title>
+      <contentType>HTML</contentType>
+      <valueProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/kpi_full_html/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>STATUS_DATE</name>
+      <title>THHIT_Status_Date</title>
+      <contentType>DATE</contentType>
+      <resolution>DAY</resolution>
+    </entityField>
+    <entityField>
+      <name>VALUE_1</name>
+      <title>THHIT_BSM_Wert_1</title>
+      <contentType>NUMBER</contentType>
+      <maxIntegerDigits v="10" />
+      <maxFractionDigits v="2" />
+      <outputFormat>#,##0.00</outputFormat>
+      <titleProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/value_1/titleProcess.js</titleProcess>
+    </entityField>
+    <entityField>
+      <name>RANK_1</name>
+      <title>THHIT_BSM_Rang</title>
+      <contentType>NUMBER</contentType>
+      <maxIntegerDigits v="3" />
+      <maxFractionDigits v="0" />
+    </entityField>
+    <entityField>
+      <name>VALUE_2</name>
+      <title>THHIT_BSM_Wert_2</title>
+      <contentType>NUMBER</contentType>
+      <maxIntegerDigits v="10" />
+      <maxFractionDigits v="2" />
+      <outputFormat>#,##0.00</outputFormat>
+      <titleProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/value_2/titleProcess.js</titleProcess>
+    </entityField>
+    <entityField>
+      <name>RANK_2</name>
+      <title>THHIT_BSM_Rang</title>
+      <contentType>NUMBER</contentType>
+      <maxIntegerDigits v="3" />
+      <maxFractionDigits v="0" />
+    </entityField>
+    <entityField>
+      <name>VALUE_3</name>
+      <title>THHIT_BSM_Wert_3</title>
+      <contentType>NUMBER</contentType>
+      <maxIntegerDigits v="10" />
+      <maxFractionDigits v="2" />
+      <outputFormat>#,##0.00</outputFormat>
+      <titleProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/value_3/titleProcess.js</titleProcess>
+    </entityField>
+    <entityField>
+      <name>RANK_3</name>
+      <title>THHIT_BSM_Rang</title>
+      <contentType>NUMBER</contentType>
+      <maxIntegerDigits v="3" />
+      <maxFractionDigits v="0" />
+    </entityField>
+    <entityField>
+      <name>VALUE_4</name>
+      <title>THHIT_BSM_Wert_4</title>
+      <contentType>NUMBER</contentType>
+      <maxIntegerDigits v="10" />
+      <maxFractionDigits v="2" />
+      <outputFormat>#,##0.00</outputFormat>
+      <titleProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/value_4/titleProcess.js</titleProcess>
+    </entityField>
+    <entityField>
+      <name>RANK_4</name>
+      <title>THHIT_BSM_Rang</title>
+      <contentType>NUMBER</contentType>
+      <maxIntegerDigits v="3" />
+      <maxFractionDigits v="0" />
+    </entityField>
+    <entityField>
+      <name>VALUE_5</name>
+      <title>THHIT_BSM_Wert_5</title>
+      <contentType>NUMBER</contentType>
+      <maxIntegerDigits v="10" />
+      <maxFractionDigits v="2" />
+      <outputFormat>#,##0.00</outputFormat>
+      <titleProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/value_5/titleProcess.js</titleProcess>
+    </entityField>
+    <entityField>
+      <name>RANK_5</name>
+      <title>THHIT_BSM_Rang</title>
+      <contentType>NUMBER</contentType>
+      <maxIntegerDigits v="3" />
+      <maxFractionDigits v="0" />
+    </entityField>
+    <entityProvider>
+      <name>BusinessStrategyProvider</name>
+      <sortingField>SORT_ORDER</sortingField>
+      <titlePlural>THHIT_BusinessStrategyMetrics</titlePlural>
+    </entityProvider>
+    <entityField>
+      <name>SORT_ORDER</name>
+    </entityField>
+    <entityField>
+      <name>rank_1_html</name>
+      <title>THHIT_BSM_Rang</title>
+      <colorProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/rank_1_html/colorProcess.js</colorProcess>
+      <contentType>HTML</contentType>
+      <valueProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/rank_1_html/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>rank_2_html</name>
+      <title>THHIT_BSM_Rang</title>
+      <colorProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/rank_2_html/colorProcess.js</colorProcess>
+      <contentType>HTML</contentType>
+      <valueProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/rank_2_html/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>rank_3_html</name>
+      <title>THHIT_BSM_Rang</title>
+      <colorProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/rank_3_html/colorProcess.js</colorProcess>
+      <contentType>HTML</contentType>
+      <valueProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/rank_3_html/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>rank_4_html</name>
+      <title>THHIT_BSM_Rang</title>
+      <colorProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/rank_4_html/colorProcess.js</colorProcess>
+      <contentType>HTML</contentType>
+      <valueProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/rank_4_html/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>rank_5_html</name>
+      <title>THHIT_BSM_Rang</title>
+      <colorProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/rank_5_html/colorProcess.js</colorProcess>
+      <contentType>HTML</contentType>
+      <valueProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/entityfields/rank_5_html/valueProcess.js</valueProcess>
+    </entityField>
+    <entityField>
+      <name>DATE_NEW</name>
+      <contentType>DATE</contentType>
+    </entityField>
+    <entityField>
+      <name>DATE_EDIT</name>
+      <contentType>DATE</contentType>
+    </entityField>
+    <entityField>
+      <name>USER_EDIT</name>
+    </entityField>
+    <entityField>
+      <name>USER_NEW</name>
+    </entityField>
+    <entityField>
+      <name>BUSINESSSTRATEGYMETRICSID</name>
+    </entityField>
+    <entityParameter>
+      <name>Org_Id_param</name>
+      <expose v="true" />
+    </entityParameter>
+  </entityFields>
+  <recordContainers>
+    <dbRecordContainer>
+      <name>db</name>
+      <conditionProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/recordcontainers/db/conditionProcess.js</conditionProcess>
+      <orderClauseProcess>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/recordcontainers/db/orderClauseProcess.js</orderClauseProcess>
+      <alias>Data_alias</alias>
+      <recordFieldMappings>
+        <dbRecordFieldMapping>
+          <name>VALUE_1.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.VALUE_1</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>VALUE_4.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.VALUE_4</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>VALUE_5.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.VALUE_5</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>VALUE_2.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.VALUE_2</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>VALUE_3.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.VALUE_3</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>BUSINESSSTRATEGYMETRICSID.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.BUSINESSSTRATEGYMETRICSID</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>DATE_EDIT.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.DATE_EDIT</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>DATE_NEW.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.DATE_NEW</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>KPI.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.KPI</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>ORG_ID.value</name>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>STATUS_DATE.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.STATUS_DATE</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>TARGET_LEVEL_VALUE.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.TARGET_LEVEL_VALUE</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>TARGET_LEVEL_YEAR.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.TARGET_LEVEL_YEAR</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>TOPIC_AREA.value</name>
+          <expression>%aditoprj%/entity/THHIT_BusinessStrategyMetrics_entity/recordcontainers/db/recordfieldmappings/topic_area.value/expression.js</expression>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>UNIT.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.UNIT</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>USER_EDIT.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.USER_EDIT</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>USER_NEW.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.USER_NEW</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>RANK_1.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.RANK_1</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>RANK_2.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.RANK_2</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>RANK_3.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.RANK_3</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>RANK_4.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.RANK_4</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>RANK_5.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.RANK_5</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>SORT_ORDER.value</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.SORT_ORDER</recordfield>
+        </dbRecordFieldMapping>
+        <dbRecordFieldMapping>
+          <name>TOPIC_AREA.displayValue</name>
+          <recordfield>THHIT_BUSINESSSTRATEGYMETRICS.TOPIC_AREA</recordfield>
+        </dbRecordFieldMapping>
+      </recordFieldMappings>
+      <linkInformation>
+        <linkInformation>
+          <name>THHIT_BUSINESSSTRATEGYMETRICS</name>
+          <tableName>THHIT_BUSINESSSTRATEGYMETRICS</tableName>
+          <primaryKey>BUSINESSSTRATEGYMETRICSID</primaryKey>
+          <isUIDTable v="true" />
+          <readonly v="false" />
+        </linkInformation>
+      </linkInformation>
+    </dbRecordContainer>
+  </recordContainers>
+</entity>

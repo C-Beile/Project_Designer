@@ -1,0 +1,45 @@
+# Build output and caches
+target/
+**/target/
+node_modules/
+**/node_modules/
+app/ui/dist/
+dist/
+*.tsbuildinfo
+
+# Never committed: lock files that only come from local npm runs
+package-lock.json
+
+# Scratch copies of customer projects and test runs (never commit customer data)
+_scratch/
+**/_scratch/
+
+# Installers and packaged artifacts
+*.exe
+*.msi
+*.dmg
+*.nsis
+bundle/
+
+# Secrets and connection material (never commit)
+*.ppk
+*.pem
+*.key
+*_tunnelconfig.xml
+*_serverconfig*.xml
+.env
+.env.*
+
+# Logs and local backups of the app
+*.log
+logs/
+backups/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# npm lockfile of customer/test projects must never be committed; the UI lockfile is kept
+# (app/ui/package-lock.json is intentionally tracked for reproducible CI builds)

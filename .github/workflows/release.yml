@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+env:
+  REPO: C-Beile/Project_designer
+  RUSTUP_TOOLCHAIN: stable-x86_64-pc-windows-msvc
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag must match the app version
+        run: |
+          app_version=$(jq -r .version app/src-tauri/tauri.conf.json)
+          if [ "v$app_version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match version $app_version in tauri.conf.json"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal --target x86_64-pc-windows-msvc
+          rustup default stable-x86_64-pc-windows-msvc
+
+      - name: Install UI dependencies
+        working-directory: app/ui
+        run: npm install --no-audit --no-fund
+
+      - name: Build and sign the installer
+        working-directory: app
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+          VENDIRA_UPDATE_TOKEN: ${{ secrets.VENDIRA_UPDATE_TOKEN }}
+        run: npx --prefix ui tauri build --target x86_64-pc-windows-msvc
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          bundle="target/x86_64-pc-windows-msvc/release/bundle/nsis"
+          exe=$(ls "$bundle"/*-setup.exe)
+          sig="$exe.sig"
+          gh release create "$GITHUB_REF_NAME" "$exe" "$sig" --repo "$REPO" --title "$GITHUB_REF_NAME" --generate-notes
+          asset_id=$(gh api "repos/$REPO/releases/tags/$GITHUB_REF_NAME" --jq ".assets[] | select(.name == \"$(basename "$exe")\") | .id")
+          notes=$(gh api "repos/$REPO/releases/tags/$GITHUB_REF_NAME" --jq .body)
+          jq -n \
+            --arg version "${GITHUB_REF_NAME#v}" \
+            --arg notes "$notes" \
+            --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg url "https://api.github.com/repos/$REPO/releases/assets/$asset_id" \
+            --arg signature "$(cat "$sig")" \
+            '{version: $version, notes: $notes, pub_date: $date, platforms: {"windows-x86_64": {signature: $signature, url: $url}}}' > latest.json
+
+      - name: Publish latest.json on the updates branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "release-bot"
+          git config user.email "release-bot@users.noreply.github.com"
+          cp latest.json "$RUNNER_TEMP/latest.json"
+          git checkout --orphan updates
+          git rm -rf . > /dev/null
+          cp "$RUNNER_TEMP/latest.json" latest.json
+          git add latest.json
+          git commit -m "Update feed $GITHUB_REF_NAME"
+          git push --force origin updates

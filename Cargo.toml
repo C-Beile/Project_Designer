@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+# Wildcard membership: every P3 agent creates exactly one new directory under crates/
+# and never edits this file. That keeps parallel agents from ever touching the same file.
+# "cli/*" was re-added by the cli-forge integration agent once cli/forge/Cargo.toml existed
+# (see RISKS.md R16: an empty cli/ directory matched by a glob with nothing inside it broke
+# `cargo test`/`cargo check` workspace-wide, found by the plugin-kernel agent, 2026-09-21).
+# "app/src-tauri" added explicitly (not a wildcard - P4's editor-entity agent owns exactly one
+# app crate; see R16 for why an empty-glob wildcard is dangerous here) once the crate already
+# existed, per the same "create crate first, then extend workspace root" guardrail cli-forge used.
+members = ["crates/*", "cli/*", "app/src-tauri", "app/core"]
+
+[workspace.package]
+edition = "2021"
+license = "UNLICENSED"
+publish = false
+
+# Shared lint policy for the whole workspace — kept intentionally light for P3, tightened later.
+[workspace.lints.rust]
+unsafe_code = "warn"

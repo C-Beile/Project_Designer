@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.4.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/entity/1.4.0">
+  <name>TestMin_entity</name>
+  <title>Test Minimal</title>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <recordContainer>jdito</recordContainer>
+  <entityFields>
+    <entityProvider>
+      <name>#PROVIDER</name>
+    </entityProvider>
+    <entityField>
+      <name>TESTFIELD</name>
+      <title>Test Field</title>
+    </entityField>
+  </entityFields>
+  <recordContainers>
+    <jDitoRecordContainer>
+      <name>jdito</name>
+    </jDitoRecordContainer>
+  </recordContainers>
+</entity>

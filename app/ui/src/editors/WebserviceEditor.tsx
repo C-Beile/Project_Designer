@@ -1,0 +1,179 @@
+import type { EditorProps } from './registry'
+import { field, textField, textValue } from '../wire/types'
+import type { WireValue } from '../wire/types'
+import { EditableText } from './EditableText'
+
+// P4 sixth family (`WebserviceEditor`): the MUST subset of feature-matrix.md's WebserviceEditor
+// entry. Own mini format analysis this agent ran (no P1 `webservice.schema.json` existed, see
+// `p4-editor-webservice-notes.md` §1) - object folder is `entityWebservice` (NOT `webservice`,
+// despite aod-format.md §4's `webserviceReference.webservice` reference-type name), root element
+// `entityWebservice`. `name`/`majorModelMode` shown read-only (identity/constant, same precedent
+// `LanguageEditor.tsx`/`SystemEditor.tsx` set). `webserviceMethods`/`loginTypeId` are shown
+// read-only (fixed-vocabulary token lists - HTTP verbs / auth-type ids - editing free text here
+// would not respect that vocabulary, and `forge_core::ProjectHandle::set_property` cannot
+// insert/delete a list entry anyway, the same structural-edit limitation every prior family
+// documents). `jditoWebserviceUser`/`writeProvider`/`readProvider` are the genuinely editable
+// plain-text scalars - editable only where the real file already declares them (verified: some
+// real instances, e.g. `THHIT_PersonUpdate_ws`, omit all three entirely - same "editable only
+// where the document already has the element" precedent `ApplicationEditor.tsx` sets for
+// `title`/`icon`). `webserviceFields` (the list of published entity fields, mixing leaf
+// `webserviceField` and nested `webserviceFieldConsumer` entries) is rendered read-only as a tree -
+// `webserviceFieldName`/`consumer` are references to real entity fields/consumers, the same
+// "key is an identity, not free text" precedent `LanguageEditor.tsx`/`ApplicationEditor.tsx` set for
+// `name`.
+export function WebserviceEditor({ nodeId, tree, api, onTreeChange }: EditorProps) {
+  async function commitScalar(path: string, next: string) {
+    const updated = await api.setProperty(nodeId, path, textValue(next))
+    onTreeChange(updated)
+  }
+
+  const name = textField(tree, 'name') ?? ''
+  const majorModelMode = textField(tree, 'majorModelMode') ?? ''
+  const methods = stringListField(tree, 'webserviceMethods')
+  const loginTypes = stringListField(tree, 'loginTypeId')
+  const jditoWebserviceUser = textField(tree, 'jditoWebserviceUser')
+  const writeProvider = textField(tree, 'writeProvider')
+  const readProvider = textField(tree, 'readProvider')
+  const topFields = webserviceFieldEntries(field(tree, 'webserviceFields'))
+
+  return (
+    <div className="webservice-editor">
+      <h2>{name}</h2>
+      <p className="webservice-editor-meta">
+        Model mode: <code>{majorModelMode}</code>
+      </p>
+
+      <section>
+        <h3>HTTP methods</h3>
+        {methods.length > 0 ? (
+          <ul className="webservice-methods">
+            {methods.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+        ) : (
+          <p className="webservice-editor-warning">No HTTP method published - this endpoint answers no request.</p>
+        )}
+      </section>
+
+      {loginTypes.length > 0 && (
+        <section>
+          <h3>Login types</h3>
+          <ul className="webservice-login-types">
+            {loginTypes.map((l) => (
+              <li key={l}>{l}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {jditoWebserviceUser !== undefined && (
+        <label>
+          JDito webservice user
+          <EditableText
+            value={jditoWebserviceUser}
+            ariaLabel="JDito webservice user"
+            onCommit={(next) => commitScalar('jditoWebserviceUser', next)}
+          />
+        </label>
+      )}
+      {writeProvider !== undefined && (
+        <label>
+          Write provider
+          <EditableText value={writeProvider} ariaLabel="Write provider" onCommit={(next) => commitScalar('writeProvider', next)} />
+        </label>
+      )}
+      {readProvider !== undefined && (
+        <label>
+          Read provider
+          <EditableText value={readProvider} ariaLabel="Read provider" onCommit={(next) => commitScalar('readProvider', next)} />
+        </label>
+      )}
+
+      <section>
+        <h3>Published fields</h3>
+        {topFields.length > 0 ? (
+          <ul className="webservice-fields-tree">
+            {topFields.map((entry) => (
+              <WebserviceFieldNode key={entry.path} entry={entry} />
+            ))}
+          </ul>
+        ) : (
+          <p>No fields published.</p>
+        )}
+      </section>
+    </div>
+  )
+}
+
+// `webserviceMethods.element`/`loginTypeId.element` independently hit the real R26 shape (RISKS.md)
+// this object type has - a single real token projects as an un-indexed `element` (plain scalar),
+// 2+ as an indexed `element[N]` array (see `webservice_validators.rs`'s module doc for the full
+// real-corpus evidence). Handling both uniformly here is what makes a `THHIT_Tour_ws`-shaped single
+// method/login-type actually render instead of silently disappearing.
+function stringListField(tree: WireValue, listKey: string): string[] {
+  const list = field(tree, listKey)
+  if (!list) return []
+  const raw = field(list, 'element')
+  if (!raw) return []
+  if (raw.kind === 'array') return raw.items.filter((item) => item.kind === 'text').map((item) => (item as { kind: 'text'; value: string }).value)
+  if (raw.kind === 'text') return [raw.value]
+  return []
+}
+
+interface WebserviceFieldRef {
+  path: string
+  kind: 'field' | 'consumer'
+  value: WireValue
+}
+
+// Same real R26 shape as `stringListField` above, but for a *mixed*-tag list: `webserviceFields`
+// holds `webserviceField` (leaf) and `webserviceFieldConsumer` (recursive, its own nested
+// `webserviceFields`) side by side, and `group_children` (aod-io) collapses each tag name to
+// Object-vs-Array independently of the other - the same "one tag Array, a different tag in the same
+// list stays an Object" shape `preferences`'s custom property banks established
+// (`p4-editor-system-preferences-application-notes.md` §3). `THHIT_PersonUpdate_ws`'s single real
+// `webserviceField` (no `[0]`) is the minimal real example this must not drop.
+function webserviceFieldEntries(container: WireValue | undefined): WebserviceFieldRef[] {
+  if (!container) return []
+  const entries: WebserviceFieldRef[] = []
+
+  const rawFields = field(container, 'webserviceField')
+  if (rawFields?.kind === 'array') {
+    rawFields.items.forEach((item, i) => entries.push({ path: `webserviceField[${i}]`, kind: 'field', value: item }))
+  } else if (rawFields?.kind === 'object') {
+    entries.push({ path: 'webserviceField', kind: 'field', value: rawFields })
+  }
+
+  const rawConsumers = field(container, 'webserviceFieldConsumer')
+  if (rawConsumers?.kind === 'array') {
+    rawConsumers.items.forEach((item, i) => entries.push({ path: `webserviceFieldConsumer[${i}]`, kind: 'consumer', value: item }))
+  } else if (rawConsumers?.kind === 'object') {
+    entries.push({ path: 'webserviceFieldConsumer', kind: 'consumer', value: rawConsumers })
+  }
+
+  return entries
+}
+
+function WebserviceFieldNode({ entry }: { entry: WebserviceFieldRef }) {
+  if (entry.kind === 'field') {
+    const fieldName = textField(entry.value, 'webserviceFieldName') ?? ''
+    return <li className="webservice-field-leaf">{fieldName}</li>
+  }
+
+  const consumerName = textField(entry.value, 'consumer') ?? ''
+  const children = webserviceFieldEntries(field(entry.value, 'webserviceFields'))
+
+  return (
+    <li>
+      <span className="webservice-field-consumer">{consumerName}</span>
+      {children.length > 0 && (
+        <ul>
+          {children.map((child) => (
+            <WebserviceFieldNode key={`${entry.path}.${child.path}`} entry={child} />
+          ))}
+        </ul>
+      )}
+    </li>
+  )
+}

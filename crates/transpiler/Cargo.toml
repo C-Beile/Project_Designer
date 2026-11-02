@@ -1,0 +1,17 @@
+[package]
+name = "transpiler"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
+# Integration round (forge-core): platform_runner.rs adds a second TranspilerRunner backed by
+# platform::ProcessSpawner, alongside the existing std::process::Command-based
+# NbexecTranspilerRunner (left untouched).
+platform = { path = "../platform" }
+
+[lints]
+workspace = true

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<neonContext xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/neonContext/1.2.0">
+  <name>THHIT_BulkFaxRecipients</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <filterView>THHIT_BulkFaxRecipientsFilter_view</filterView>
+  <editView>THHIT_BulkFaxRecipientsEdit_view</editView>
+  <entity>THHIT_BulkFaxRecipients_entity</entity>
+  <references>
+    <neonViewReference>
+      <name>8aae8ae0-6cf5-4ef6-ae89-099107df39db</name>
+      <view>THHIT_BulkFaxRecipientsEdit_view</view>
+    </neonViewReference>
+    <neonViewReference>
+      <name>73f39559-e765-4f9a-a34e-ca63d5379b7c</name>
+      <view>THHIT_BulkFaxRecipientsFilter_view</view>
+    </neonViewReference>
+  </references>
+</neonContext>

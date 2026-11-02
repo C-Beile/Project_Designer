@@ -1,0 +1,1710 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.3.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/language/1.3.0">
+  <name>_____LANGUAGE_de</name>
+  <majorModelMode>DISTRIBUTED</majorModelMode>
+  <language>de</language>
+  <country></country>
+  <variant></variant>
+  <keyValueMap>
+    <stringEntry>
+      <name>Vacation</name>
+      <value>Urlaub</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Added</name>
+      <value>Hinzugefügt</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Pending</name>
+      <value>Ausstehend</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Afghanistan</name>
+      <value>Afghanistan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Åland Islands</name>
+      <value>Ålandinseln</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Albania</name>
+      <value>Albanien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Algeria</name>
+      <value>Algerien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>American Samoa</name>
+      <value>Amerikanisch-Samoa</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Andorra</name>
+      <value>Andorra</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Angola</name>
+      <value>Angola</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Anguilla</name>
+      <value>Anguilla</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Antarctica</name>
+      <value>Antarktis</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Antigua and Barbuda</name>
+      <value>Antigua und Barbuda</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Argentina</name>
+      <value>Argentinien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Armenia</name>
+      <value>Armenien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Aruba</name>
+      <value>Aruba</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Australia</name>
+      <value>Australien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Austria</name>
+      <value>Österreich</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Azerbaijan</name>
+      <value>Aserbaidschan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bahamas</name>
+      <value>Bahamas</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bahrain</name>
+      <value>Bahrain</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bangladesh</name>
+      <value>Bangladesch</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Barbados</name>
+      <value>Barbados</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Belarus</name>
+      <value>Weißrussland</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Belgium</name>
+      <value>Belgien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Belize</name>
+      <value>Belize</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Benin</name>
+      <value>Benin</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bermuda</name>
+      <value>Bermuda</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bhutan</name>
+      <value>Bhutan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bolivia</name>
+      <value>Bolivien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bonaire, Sint Eustatius and Saba</name>
+      <value>Bonaire, Sint Eustatius und Saba</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bosnia and Herzegovina</name>
+      <value>Bosnien und Herzegowina</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Botswana</name>
+      <value>Botswana</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bouvet Island</name>
+      <value>Bouvetinsel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Brazil</name>
+      <value>Brasilien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>British Indian Ocean Territory</name>
+      <value>Britisches Territorium des Indischen Ozeans</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Brunei</name>
+      <value>Brunei</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bulgaria</name>
+      <value>Bulgarien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Burkina Faso</name>
+      <value>Burkina Faso</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Burundi</name>
+      <value>Burundi</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Cabo Verde</name>
+      <value>Kap Verde</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Cambodia</name>
+      <value>Kambodscha</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Cameroon</name>
+      <value>Kamerun</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Canada</name>
+      <value>Kanada</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Cayman Islands</name>
+      <value>Caymaninseln</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Central African Republic</name>
+      <value>Zentralafrikanische Republik</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Chad</name>
+      <value>Tschad</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Chile</name>
+      <value>Chile</value>
+    </stringEntry>
+    <stringEntry>
+      <name>China</name>
+      <value>China</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Christmas Island</name>
+      <value>Weihnachtsinsel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Cocos (Keeling) Islands</name>
+      <value>Kokosinseln (Keelinginseln)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Colombia</name>
+      <value>Kolumbien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Comoros</name>
+      <value>Komoren</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Congo</name>
+      <value>Kongo</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Congo (Democratic Republic of the)</name>
+      <value>Kongo (Demokratische Republik)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Cook Islands</name>
+      <value>Cookinseln</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Costa Rica</name>
+      <value>Costa Rica</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Croatia</name>
+      <value>Kroatien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Cuba</name>
+      <value>Kuba</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Curaçao</name>
+      <value>Curacao</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Cyprus</name>
+      <value>Zypern</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Czech Republic</name>
+      <value>Tschechische Republik</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Denmark</name>
+      <value>Dänemark</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Djibouti</name>
+      <value>Dschibuti</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Dominica</name>
+      <value>Dominica</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Dominican Republic</name>
+      <value>Dominikanische Republik</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Ecuador</name>
+      <value>Ecuador</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Egypt</name>
+      <value>Ägypten</value>
+    </stringEntry>
+    <stringEntry>
+      <name>El Salvador</name>
+      <value>El Salvador</value>
+    </stringEntry>
+    <stringEntry>
+      <name>English</name>
+      <value>Englisch</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Equatorial Guinea</name>
+      <value>Äquatorialguinea</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Eritrea</name>
+      <value>Eritrea</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Estonia</name>
+      <value>Estland</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Ethiopia</name>
+      <value>Äthiopien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Falkland Islands</name>
+      <value>Falklandinseln</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Faroe Islands</name>
+      <value>Färöer</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Fiji</name>
+      <value>Fidschi</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Finland</name>
+      <value>Finnland</value>
+    </stringEntry>
+    <stringEntry>
+      <name>France</name>
+      <value>Frankreich</value>
+    </stringEntry>
+    <stringEntry>
+      <name>French</name>
+      <value>Französisch</value>
+    </stringEntry>
+    <stringEntry>
+      <name>French Guiana</name>
+      <value>Französisch-Guayana</value>
+    </stringEntry>
+    <stringEntry>
+      <name>French Polynesia</name>
+      <value>Französisch Polynesien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>French Southern Territories</name>
+      <value>Südfranzösische Territorien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Gabon</name>
+      <value>Gabun</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Gambia</name>
+      <value>Gambia</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Georgia</name>
+      <value>Georgia</value>
+    </stringEntry>
+    <stringEntry>
+      <name>German</name>
+      <value>Deutsch</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Germany</name>
+      <value>Deutschland</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Ghana</name>
+      <value>Ghana</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Gibraltar</name>
+      <value>Gibraltar</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Greece</name>
+      <value>Griechenland</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Greenland</name>
+      <value>Grönland</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Grenada</name>
+      <value>Grenada</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Guadeloupe</name>
+      <value>Guadeloupe</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Guam</name>
+      <value>Guam</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Guatemala</name>
+      <value>Guatemala</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Guernsey</name>
+      <value>Guernsey</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Guinea</name>
+      <value>Guinea</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Guinea-Bissau</name>
+      <value>Guinea-Bissau</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Guyana</name>
+      <value>Guyana</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Haiti</name>
+      <value>Haiti</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Heard Island and McDonald Islands</name>
+      <value>Heard und McDonaldinseln</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Honduras</name>
+      <value>Honduras</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Hong Kong</name>
+      <value>Hong Kong</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Hungary</name>
+      <value>Ungarn</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Iceland</name>
+      <value>Island</value>
+    </stringEntry>
+    <stringEntry>
+      <name>India</name>
+      <value>Indien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Indonesia</name>
+      <value>Indonesien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Iran</name>
+      <value>Iran</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Iraq</name>
+      <value>Irak</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Ireland</name>
+      <value>Irland</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Isle of Man</name>
+      <value>Isle of Man</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Israel</name>
+      <value>Israel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Italy</name>
+      <value>Italien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Ivory Coast</name>
+      <value>Elfenbeinküste</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Jamaica</name>
+      <value>Jamaika</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Japan</name>
+      <value>Japan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Jersey</name>
+      <value>Jersey</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Jordan</name>
+      <value>Jordan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Kazakhstan</name>
+      <value>Kasachstan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Kenya</name>
+      <value>Kenia</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Kiribati</name>
+      <value>Kiribati</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Kosovo</name>
+      <value>Kosovo</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Kuwait</name>
+      <value>Kuwait</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Kyrgyzstan</name>
+      <value>Kirgisistan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Laos</name>
+      <value>Laos</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Latvia</name>
+      <value>Lettland</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Lebanon</name>
+      <value>Libanon</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Lesotho</name>
+      <value>Lesotho</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Liberia</name>
+      <value>Liberia</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Libya</name>
+      <value>Libyen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Liechtenstein</name>
+      <value>Liechtenstein</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Lithuania</name>
+      <value>Litauen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Luxembourg</name>
+      <value>Luxemburg</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Macao</name>
+      <value>Macao</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Madagascar</name>
+      <value>Madagaskar</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Malawi</name>
+      <value>Malawi</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Malaysia</name>
+      <value>Malaysia</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Maldives</name>
+      <value>Malediven</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Mali</name>
+      <value>Mali</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Malta</name>
+      <value>Malta</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Marshall Islands</name>
+      <value>Marshallinseln</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Martinique</name>
+      <value>Martinique</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Mauritania</name>
+      <value>Mauretanien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Mauritius</name>
+      <value>Mauritius</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Mayotte</name>
+      <value>Mayotte</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Mexico</name>
+      <value>Mexiko</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Micronesia</name>
+      <value>Mikronesien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Moldova</name>
+      <value>Moldawien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Monaco</name>
+      <value>Monaco</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Mongolia</name>
+      <value>Mongolei</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Montenegro</name>
+      <value>Montenegro</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Montserrat</name>
+      <value>Montserrat</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Morocco</name>
+      <value>Marokko</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Mozambique</name>
+      <value>Mosambik</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Myanmar</name>
+      <value>Myanmar</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Namibia</name>
+      <value>Namibia</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Nauru</name>
+      <value>Nauru</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Nepal</name>
+      <value>Nepal</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Netherlands</name>
+      <value>Niederlande</value>
+    </stringEntry>
+    <stringEntry>
+      <name>New Caledonia</name>
+      <value>Neukaledonien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>New Zealand</name>
+      <value>Neuseeland</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Nicaragua</name>
+      <value>Nicaragua</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Niger</name>
+      <value>Niger</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Nigeria</name>
+      <value>Nigeria</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Niue</name>
+      <value>Niue</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Norfolk Island</name>
+      <value>Norfolkinsel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>North Korea</name>
+      <value>Nordkorea</value>
+    </stringEntry>
+    <stringEntry>
+      <name>North Macedonia</name>
+      <value>Nordmazedonien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Northern Mariana Islands</name>
+      <value>Nördliche Marianneninseln</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Norway</name>
+      <value>Norwegen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Oman</name>
+      <value>Oman</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Pakistan</name>
+      <value>Pakistan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Palau</name>
+      <value>Palau</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Palestine</name>
+      <value>Palästina</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Panama</name>
+      <value>Panama</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Papua New Guinea</name>
+      <value>Papua Neuguinea</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Paraguay</name>
+      <value>Paraguay</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Peru</name>
+      <value>Peru</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Philippines</name>
+      <value>Philippinen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Pitcairn</name>
+      <value>Pitcairn</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Poland</name>
+      <value>Polen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Portugal</name>
+      <value>Portugal</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Puerto Rico</name>
+      <value>Puerto Rico</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Qatar</name>
+      <value>Katar</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Réunion</name>
+      <value>Réunion</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Romania</name>
+      <value>Rumänien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Russia</name>
+      <value>Russland</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Rwanda</name>
+      <value>Ruanda</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Saint Barthélemy</name>
+      <value>Saint Barthélemy</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Saint Helena, Ascension and Tristan da Cunha</name>
+      <value>St. Helena, Himmelfahrt und Tristan da Cunha</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Saint Kitts and Nevis</name>
+      <value>St. Kitts und Nevis</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Saint Lucia</name>
+      <value>St. Lucia</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Saint Martin (French part)</name>
+      <value>Saint Martin (französischer Teil)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Saint Pierre and Miquelon</name>
+      <value>Saint Pierre und Miquelon</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Saint Vincent and the Grenadines</name>
+      <value>St. Vincent und die Grenadinen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Samoa</name>
+      <value>Samoa</value>
+    </stringEntry>
+    <stringEntry>
+      <name>San Marino</name>
+      <value>San Marino</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Sao Tome and Principe</name>
+      <value>Sao Tome und Principe</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Saudi Arabia</name>
+      <value>Saudi Arabien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Senegal</name>
+      <value>Senegal</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Serbia</name>
+      <value>Serbien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Seychelles</name>
+      <value>Seychellen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Sierra Leone</name>
+      <value>Sierra Leone</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Singapore</name>
+      <value>Singapur</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Sint Maarten (Dutch part)</name>
+      <value>Sint Maarten (niederländischer Teil)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Slovakia</name>
+      <value>Slowakei</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Slovenia</name>
+      <value>Slowenien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Solomon Islands</name>
+      <value>Salomon-Inseln</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Somalia</name>
+      <value>Somalia</value>
+    </stringEntry>
+    <stringEntry>
+      <name>South Africa</name>
+      <value>Südafrika</value>
+    </stringEntry>
+    <stringEntry>
+      <name>South Georgia and the South Sandwich Islands</name>
+      <value>Süd-Georgien und die südlichen Sandwich-Inseln</value>
+    </stringEntry>
+    <stringEntry>
+      <name>South Korea</name>
+      <value>Südkorea</value>
+    </stringEntry>
+    <stringEntry>
+      <name>South Sudan</name>
+      <value>Südsudan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Spain</name>
+      <value>Spanien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Spanish</name>
+      <value>Spanisch</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Sri Lanka</name>
+      <value>Sri Lanka</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Sudan</name>
+      <value>Sudan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Suriname</name>
+      <value>Suriname</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Svalbard and Jan Mayen</name>
+      <value>Svalbard und Jan Mayen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Swaziland</name>
+      <value>Swasiland</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Sweden</name>
+      <value>Schweden</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Switzerland</name>
+      <value>Schweiz</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Syria</name>
+      <value>Syrien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Taiwan</name>
+      <value>Taiwan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Tajikistan</name>
+      <value>Tadschikistan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Tanzania</name>
+      <value>Tansania</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Thailand</name>
+      <value>Thailand</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Timor-Leste</name>
+      <value>Timor-Leste</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Togo</name>
+      <value>Togo</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Tokelau</name>
+      <value>Tokelau</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Tonga</name>
+      <value>Tonga</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Trinidad and Tobago</name>
+      <value>Trinidad und Tobago</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Tunisia</name>
+      <value>Tunesien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Turkey</name>
+      <value>Türkei</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Turkmenistan</name>
+      <value>Turkmenistan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Turks and Caicos Islands</name>
+      <value>Turks- und Caicosinseln</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Tuvalu</name>
+      <value>Tuvalu</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Uganda</name>
+      <value>Uganda</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Ukraine</name>
+      <value>Ukraine</value>
+    </stringEntry>
+    <stringEntry>
+      <name>United Arab Emirates</name>
+      <value>Vereinigte Arabische Emirate</value>
+    </stringEntry>
+    <stringEntry>
+      <name>United Kingdom</name>
+      <value>Großbritannien</value>
+    </stringEntry>
+    <stringEntry>
+      <name>United States</name>
+      <value>Vereinigte Staaten</value>
+    </stringEntry>
+    <stringEntry>
+      <name>United States Minor Outlying Islands</name>
+      <value>Kleinere abgelegene Inseln der Vereinigten Staaten</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Uruguay</name>
+      <value>Uruguay</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Uzbekistan</name>
+      <value>Usbekistan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Vanuatu</name>
+      <value>Vanuatu</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Vatican</name>
+      <value>Vatikan</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Venezuela</name>
+      <value>Venezuela</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Vietnam</name>
+      <value>Vietnam</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Virgin Islands (British)</name>
+      <value>Jungferninseln (Britisch)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Virgin Islands (U.S.)</name>
+      <value>Jungferninseln (US)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Wallis and Futuna</name>
+      <value>Wallis und Futuna</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Western Sahara</name>
+      <value>Westsahara</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Yemen</name>
+      <value>Jemen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Zambia</name>
+      <value>Sambia</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Zimbabwe</name>
+      <value>Zimbabwe</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Contact Management</name>
+      <value>Kontaktmanagement</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Sales</name>
+      <value>Vertrieb</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Collaboration</name>
+      <value>Collaboration</value>
+    </stringEntry>
+    <stringEntry>
+      <name>External Work</name>
+      <value>Aussendienst</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Marketing</name>
+      <value>Marketing</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Service</name>
+      <value>Service</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Service Administration</name>
+      <value>Service Administration</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Knowledge Management</name>
+      <value>Wissensmanagement</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Manager</name>
+      <value>Manager</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Administration</name>
+      <value>Administration</value>
+    </stringEntry>
+    <stringEntry>
+      <name>User Administration</name>
+      <value>Benutzerverwaltung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Trade</name>
+      <value>Handel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Country</name>
+      <value>Land</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Tours</name>
+      <value>Touren</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Delivery address</name>
+      <value>Lieferadresse</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Receipt_Links</name>
+      <value>Beleg</value>
+    </stringEntry>
+    <stringEntry>
+      <name>normal order</name>
+      <value>Normaler Auftrag</value>
+    </stringEntry>
+    <stringEntry>
+      <name>return - goods settlement</name>
+      <value>Retourenauftrag als Warenausgleich</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Refund</name>
+      <value>Gutschrift</value>
+    </stringEntry>
+    <stringEntry>
+      <name>return - credit note</name>
+      <value>Retouren als Gutschrift</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Ordercontacttype</name>
+      <value>Auftrags Kontaktart</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Ordertext</name>
+      <value>Auftragstext</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Personalmessage</name>
+      <value>Persönliche Nachricht</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Links</name>
+      <value>Verknüpfungen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Order confirmation</name>
+      <value>Bestellbestätigung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Itemdeliverydate</name>
+      <value>Lieferdatum</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Offers / Receipts</name>
+      <value>Angebote / Belege</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Productgroup</name>
+      <value>Artikelgruppe</value>
+    </stringEntry>
+    <stringEntry>
+      <name>product key</name>
+      <value>Warenschlüssel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>product class</name>
+      <value>Artikelklasse</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Legal status</name>
+      <value>Rechtsstatus</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Default Quantity</name>
+      <value>Standardmenge</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Offers</name>
+      <value>Angebote</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Receipts</name>
+      <value>Belege</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Last Visit</name>
+      <value>Letzter Besuch</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Fixed appointment</name>
+      <value>fixer Termin</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Order Sum Current Year (%0)</name>
+      <value>Umsatz aktuelles Jahr (%0)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Order Sum Last Year (%0)</name>
+      <value>Umsatz Vorjahr (%0)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Organisations</name>
+      <value>Firmen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Visiting organisation</name>
+      <value>Besuchskunden</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Turnover</name>
+      <value>Umsatz</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Customer Blocked</name>
+      <value>Kundensperre</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Payment Type</name>
+      <value>Zahlmethode</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Classification</name>
+      <value>Klassifizierung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Main contact person</name>
+      <value>Hauptansprechpartner</value>
+    </stringEntry>
+    <stringEntry>
+      <name>District M3</name>
+      <value>Gebiet M3</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Open</name>
+      <value>Offen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Completed</name>
+      <value>Abgeschlossen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Transmitted</name>
+      <value>Übertragen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Error</name>
+      <value>Fehler</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Item total price</name>
+      <value>Positionsgesamtpreis</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Item from stock</name>
+      <value>Handlager</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Item valuta days</name>
+      <value>Valutatage</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Itemstatus</name>
+      <value>Positionsstatus</value>
+    </stringEntry>
+    <stringEntry>
+      <name>pers. visit</name>
+      <value>pers. Besuch</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Inside sales</name>
+      <value>Inndendienst</value>
+    </stringEntry>
+    <stringEntry>
+      <name>by phone</name>
+      <value>Telefonisch</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Complete Order</name>
+      <value>Auftrag abschließen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>New appointment</name>
+      <value>Neuer Termin</value>
+    </stringEntry>
+    <stringEntry>
+      <name>New order confirmation</name>
+      <value>In Bestellbestätigung übertragen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>New agenda proposal</name>
+      <value>Neuer Themenvorschlag</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Order</name>
+      <value>Bestellung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Date</name>
+      <value>Datum</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Cust. Code</name>
+      <value>Kd.-Nr.</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Contact</name>
+      <value>Kontakt</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Phone</name>
+      <value>Telefon</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Fax</name>
+      <value>Fax</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Article Number</name>
+      <value>Artikelnummer</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Article title</name>
+      <value>Artikelbezeichnung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Quantity</name>
+      <value>Menge</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Terms of payment</name>
+      <value>Zahlungsbedingungen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Delivery specification</name>
+      <value>Lieferbedingung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Directly responsible:</name>
+      <value>Verantwortlich:</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Customercode</name>
+      <value>Kundennummer</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Visit without order (with meeting)</name>
+      <value>Besuch ohne Auftrag (mit Gespräch)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Visit without order (without meeting)</name>
+      <value>Besuch ohne Auftrag (kein Gespräch)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>POS_ActivityType_Visitreport</name>
+      <value>Besuchsbericht</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Supervisor assignment</name>
+      <value>Betreuerzuordnung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>ResourceOperations_Begin</name>
+      <value>Beginn</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Role_Controller</name>
+      <value>Controller</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Role_Sales</name>
+      <value>Vertrieb</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Role_TargetResponsible</name>
+      <value>Zielverantwortlicher</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Assistance</name>
+      <value>Betreuung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Birthday list</name>
+      <value>Geburtstagsliste</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Apo Cooperation</name>
+      <value>Apo-Kooperation</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Collaboration points</name>
+      <value>Punkte Zusammenarbeit</value>
+    </stringEntry>
+    <stringEntry>
+      <name>GH-Provider</name>
+      <value>GH-Besorger</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Points for Situation</name>
+      <value>Punkte Lagen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Points Number of cash registers</name>
+      <value>Punkte Anzahl Kassen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Points Of Sight Selection</name>
+      <value>Punkte Sichtwahl</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Receptive to Actions</name>
+      <value>Empfänglich für Aktionen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Sales Points</name>
+      <value>Punkte Umsatz</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Sales Potential</name>
+      <value>Umsatzpotential</value>
+    </stringEntry>
+    <stringEntry>
+      <name>In Tour</name>
+      <value>In Tagestour</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Visits Today</name>
+      <value>Anzahl Besuche</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Orders Today</name>
+      <value>Anzahl Belege</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Order Credits Today</name>
+      <value>Gesamtwert Retouren als Gutschrift</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Orders Total Today</name>
+      <value>Gesamtwert Normaler Auftrag</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Order Return Today</name>
+      <value>Gesamtwert Retouren als Warenausgleich</value>
+    </stringEntry>
+    <stringEntry>
+      <name>My Activities (Custom)</name>
+      <value>Meine Aktivitäten (benutzerdefiniert)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Show my activities</name>
+      <value>Meine Aktivitäten anzeigen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>My Orders (custom)</name>
+      <value>Meine Belege (benutzerdefiniert)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Show my orders</name>
+      <value>Meine Belege anzeigen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Custom</name>
+      <value>Benutzerdefiniert</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Representative number</name>
+      <value>Vertreternummer</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Add the selection to a bulk fax</name>
+      <value>Auswahl zu einer Serienfax hinzufügen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bulk fax</name>
+      <value>Serienfax</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bulk Fax</name>
+      <value>Serienfax</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Bulk fax sent</name>
+      <value>Serienfax gesendet</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Create a bulk fax with the selection as recipients</name>
+      <value>Neue Serienmail mit den ausgewählten Teilnehmern erstellen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Add to bulk fax</name>
+      <value>Zu Serienfax hinzufügen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Copy bulk fax</name>
+      <value>Serienfax kopieren</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Continue faxing</name>
+      <value>Faxeb fortsetzen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>no notification</name>
+      <value>Kein Avis</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Atmosphere</name>
+      <value>Stimmung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>good</name>
+      <value>Gut</value>
+    </stringEntry>
+    <stringEntry>
+      <name>medium</name>
+      <value>Mittel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>bad</name>
+      <value>Schlecht</value>
+    </stringEntry>
+    <stringEntry>
+      <name>NoSending</name>
+      <value>Kein Versand</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Email</name>
+      <value>E-Mail</value>
+    </stringEntry>
+    <stringEntry>
+      <name>In delivery</name>
+      <value>in Zustellung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Reserved</name>
+      <value>Reserviert</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_OrderTasks</name>
+      <value>Aufgaben</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_ContactPerson</name>
+      <value>Ansprechpartner</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_Pharmacy</name>
+      <value>Apotheke</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_Place</name>
+      <value>Ort</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_LastOrder</name>
+      <value>Letzter Auftrag</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_TotalNet</name>
+      <value>Betrag netto</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_PreparationForTheVisit</name>
+      <value>Besuchsvorbereitung</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_Print</name>
+      <value>Druck:</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_for</name>
+      <value>für</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Meet a qualified AP</name>
+      <value>Treffe einen qualifizierten AP</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Pricing policy</name>
+      <value>Preispolitik</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Customer discount (%)</name>
+      <value>Kundenrabatt (%)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>No</name>
+      <value>Nein</value>
+    </stringEntry>
+    <stringEntry>
+      <name>yes, without actions</name>
+      <value>Ja, ohne Aktionen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Yes, with actions</name>
+      <value>Ja, mit Aktionen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Yes</name>
+      <value>Ja</value>
+    </stringEntry>
+    <stringEntry>
+      <name>suspicion</name>
+      <value>Verdacht</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Highly frequented</name>
+      <value>Hoch frequentiert</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Well frequented</name>
+      <value>Gut frequentiert</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Other Situations</name>
+      <value>Andere Lagen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>more than 3 Cash registers</name>
+      <value>mehr als 3 Kassen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>2-3 Cash registers</name>
+      <value>2-3 Kassen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>1 Cash register</name>
+      <value>1 Kasse</value>
+    </stringEntry>
+    <stringEntry>
+      <name>more than 8 Moduls</name>
+      <value>mehr als 8 Module</value>
+    </stringEntry>
+    <stringEntry>
+      <name>5-8 Moduls</name>
+      <value>5-8 Module</value>
+    </stringEntry>
+    <stringEntry>
+      <name>less than 5 Moduls</name>
+      <value>weniger als 5 Module</value>
+    </stringEntry>
+    <stringEntry>
+      <name>High</name>
+      <value>Hoch</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Medium</name>
+      <value>Mittel</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Obligatory</name>
+      <value>Pflicht</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Optional</name>
+      <value>Optional</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_BoughtProduct</name>
+      <value>Kauft (Produkt)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_BoughtProductGroup</name>
+      <value>Kauft (Produktgruppe)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_BoughtArticleGroup</name>
+      <value>Kauft (Artikelgruppe)</value>
+    </stringEntry>
+    <stringEntry>
+      <name>THHIT_ProductBuyingDate</name>
+      <value>Kaufzeitraum</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Order Sum Current Year</name>
+      <value>Umsatz aktuelles Jahr</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Order Sum Last Year</name>
+      <value>Umsatz Vorjahr</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Current Recipients</name>
+      <value>Derzeitige Empfänger</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Recipients after adding</name>
+      <value>Empfänger nach dem Hinzufügen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Add Recipients</name>
+      <value>Empfänger Hinzufügen</value>
+    </stringEntry>
+    <stringEntry>
+      <name>No new recipients found that can be added to the bulk fax.</name>
+      <value>Es wurden keine neuen Empfänger gefunden, die dem Serienfax hinzugefügt werden können.</value>
+    </stringEntry>
+    <stringEntry>
+      <name>%0 recipient will be added to the bulk fax.</name>
+      <value>%0 Empfänger wird dem Serienfax hinzugefügt.</value>
+    </stringEntry>
+    <stringEntry>
+      <name>%0 new recipients will be added to the bulk fax.</name>
+      <value>%0 neue Empfänger werden dem Serienfax hinzugefügt.</value>
+    </stringEntry>
+    <stringEntry>
+      <name>%0 of the chosen records are already recipients, don't have a fax set or don't fullfill the communicationsettings requirements</name>
+      <value>%0 der ausgewählten Datensätze sind bereits Empfänger, haben kein Fax hinterlegt oder erfüllen die Anforderungen der Kommunikationseinstellungen nicht</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Mail Template</name>
+      <value>Mail Vorlage</value>
+    </stringEntry>
+    <stringEntry>
+      <name>Fax Template</name>
+      <value>Fax Vorlage</value>
+    </stringEntry>
+    <stringEntry>
+      <name>POS_SuperiorOrganisation</name>
+      <value>Übergeordnete Firma</value>
+    </stringEntry>
+  </keyValueMap>
+</language>
