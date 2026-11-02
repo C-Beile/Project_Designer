@@ -22,6 +22,7 @@ pub mod watch;
 pub mod alias_validators;
 pub mod catalog;
 pub mod db_session;
+pub mod liquibase;
 pub mod system_config;
 pub mod system_db;
 pub mod tunnels;

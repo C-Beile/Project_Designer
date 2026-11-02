@@ -797,6 +797,66 @@ async fn db_connect_alias(system: String, alias: String, tunnel_config: String, 
     .map_err(|e| e.to_string())?
 }
 
+#[derive(serde::Serialize)]
+struct LiquibaseTarget {
+    system: String,
+    host: String,
+    database: String,
+}
+
+/// System key to work on: the given one or the active session, without the `|alias:` suffix of an
+/// alias browser session.
+fn liquibase_system(system: Option<String>, db: &DbManager) -> Result<String, String> {
+    let key = system.or_else(|| db.active_system()).unwrap_or_default();
+    let key = key.split("|alias:").next().unwrap_or("").to_string();
+    if key.is_empty() || !db.activate(&key) {
+        return Err("Connect a system first (Services > Connect); Liquibase needs the open session of a system.".to_string());
+    }
+    Ok(key)
+}
+
+/// Where a Liquibase update of this alias would go; shown in the confirmation before anything runs.
+#[tauri::command]
+async fn liquibase_target(system: Option<String>, alias: String, db: State<'_, std::sync::Arc<DbManager>>) -> Result<LiquibaseTarget, String> {
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let system = liquibase_system(system, &db)?;
+        let conn = forge_app_core::system_db::read_alias_db(&db, &alias)?;
+        Ok(LiquibaseTarget { system, host: conn.host, database: conn.database })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Liquibase > Update of a database alias: runs the changelogs of `.liquibase/<alias>` against the
+/// alias database of the system. Only called after the user confirmed the target.
+#[tauri::command]
+async fn liquibase_update(app: tauri::AppHandle, system: Option<String>, alias: String, project_root: String, db: State<'_, std::sync::Arc<DbManager>>) -> Result<String, String> {
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        use tauri::Emitter;
+        let system = liquibase_system(system, &db)?;
+        let dir = forge_app_core::liquibase::changelog_dir(&PathBuf::from(&project_root), &alias)?;
+        let conn = forge_app_core::system_db::read_alias_db(&db, &alias)?;
+        let port = db.forward_port_for(&conn.host, conn.port).ok_or_else(|| format!("Open the tunnel to {}:{} first (Services).", conn.host, conn.port))?;
+        let configured = settings_file(&app).ok().and_then(|f| settings::load_settings(&f).designer_install_dir);
+        let install = configured.filter(|d| !d.trim().is_empty()).or_else(settings::detect_designer_install).ok_or("The Designer installation was not found. Choose it in Tools > Options.")?;
+        let appdata = std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_default();
+        let install = PathBuf::from(install);
+        let toolchain = forge_app_core::liquibase::discover_toolchain(&install, &forge_app_core::liquibase::designer_userdirs(&install, &appdata))?;
+        let target = forge_app_core::liquibase::JdbcTarget { url: forge_app_core::liquibase::jdbc_url(port, &conn.database), user: conn.user.clone(), password: conn.password.clone() };
+        let emit = |error: bool, line: &str| {
+            let _ = app.emit("forge://build-output", serde_json::json!({ "line": line, "error": error }));
+        };
+        emit(false, &format!("Liquibase update of {alias} on system {system} (database {})", conn.database));
+        forge_app_core::liquibase::run_update(&toolchain, &dir, &target, &emit)?;
+        emit(false, "Liquibase update finished.");
+        Ok("Liquibase update finished.".to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 #[tauri::command(async)]
 fn db_cancel_connect(db: State<'_, std::sync::Arc<DbManager>>) {
     db.cancel_connect();
@@ -1257,6 +1317,8 @@ fn build_native_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             db_activate,
             db_cancel_connect,
             db_connect_alias,
+            liquibase_target,
+            liquibase_update,
             db_query,
             db_schema,
             git_overview,

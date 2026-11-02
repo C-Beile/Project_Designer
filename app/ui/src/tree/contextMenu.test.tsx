@@ -51,10 +51,22 @@ describe('file menu (original shot 94)', () => {
 })
 
 describe('buildTreeMenu', () => {
+  it('offers Liquibase > Update on a database alias and keeps both drop actions off', () => {
+    const alias: TreeNode = { id: 'C:/p/alias/Data_alias/Data_alias.aod', label: 'Data_alias', object_type: 'aliasDefinition', is_leaf: true, children: [], kind: 'object' }
+    const items = buildTreeMenu(alias, { clipboard: null, hasProject: true })
+    const lb = find(items, 'liquibase')
+    expect(lb?.enabled).toBe(true)
+    expect(lb?.children?.map((c) => c.label)).toEqual(['Update...', 'Drop All...', 'Drop All & Update...'])
+    expect(find(lb?.children ?? [], 'liquibase.update')?.enabled).toBe(true)
+    expect(find(lb?.children ?? [], 'liquibase.dropAll')?.enabled).toBe(false)
+    expect(find(lb?.children ?? [], 'liquibase.dropAllUpdate')?.enabled).toBe(false)
+    expect(find(buildTreeMenu(entity('C:/p/entity/Person/Person.aod'), { clipboard: null, hasProject: true }), 'liquibase')).toBeUndefined()
+  })
+
   it('lists the entity entries of the original in order, Deploy dimmed', () => {
     const items = buildTreeMenu(entity('C:/p/entity/Person/Person.aod'), { clipboard: null, hasProject: true })
     expect(labels(items)).toEqual([
-      'Open', 'Copy', 'Paste', 'Open Model Source', 'Upgrade Model', 'Deploy "Person"', 'Find...', 'Find Usages', 'Replace', 'Delete', 'Rename...', 'History', 'Git', 'Refresh Folder', 'Tools', 'Edit Properties',
+      'Open', 'Copy', 'Paste', 'Open Model Source', 'Deploy "Person"', 'Find...', 'Find Usages', 'Replace', 'Delete', 'Rename...', 'History', 'Git', 'Refresh Folder', 'Tools', 'Properties',
     ])
     expect(find(items, 'deploy')?.enabled).toBe(false)
     for (const id of ['open', 'copy', 'openSource', 'delete', 'rename', 'refresh', 'properties']) expect(find(items, id)?.enabled).toBe(true)

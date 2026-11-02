@@ -1,4 +1,4 @@
-import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOutcome, DeployPlan, TableDump, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOutcome, DeployPlan, TableDump, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The frontend's one seam onto the generic Tauri command surface (architecture.md §6: "Commands
 // sind generisch ... nicht pro Editor-Typ dupliziert"). Every editor component talks to this
@@ -85,6 +85,10 @@ export interface ForgeApi {
   findUsages(projectRoot: string, objectType: string, name: string): Promise<UsageDto[]>
   // Local data folders (Help > Local Data, Janitor list); read-only.
   localDataInfo(thresholdDays: number): Promise<LocalDataInfo>
+  /** Database a Liquibase update of this alias would change; shown in the confirmation. */
+  liquibaseTarget(system: string | null, alias: string): Promise<LiquibaseTarget>
+  /** Runs the changelogs of `.liquibase/<alias>` against the alias database; output goes to Output > Build. */
+  liquibaseUpdate(system: string | null, alias: string, projectRoot: string): Promise<string>
   /** Newer release in the private update repository, or null when this version is current. */
   checkForUpdate(): Promise<UpdateInfo | null>
   /** Downloads and installs the newer release, then restarts the app. */

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { GitFileStatus, GitOutput, GitOverview } from '../wire/types'
 import { Modal } from './Dialogs'
+import { Chevron, CollapseAllIcon, ExpandAllIcon, FileIcon, FolderIcon, ListToggleIcon } from './commitIcons'
 
 // Team menu: basic Git on the repository of the active project (commit, pull, push, switch
 // branch, status, history). Every action runs from exactly one click on its own button and never
@@ -53,62 +54,67 @@ function fileClass(code: string): string {
   return code.includes('?') || code.includes('A') ? 'is-new' : 'is-modified'
 }
 
-function CommitTree({
-  folder,
-  depth,
-  checked,
-  collapsed,
-  onToggleFile,
-  onToggleFolder,
-  onToggleCollapse,
-}: {
-  folder: TreeFolder
-  depth: number
+interface TreeHandlers {
   checked: Set<string>
   collapsed: Set<string>
   onToggleFile: (path: string, on: boolean) => void
   onToggleFolder: (paths: string[], on: boolean) => void
   onToggleCollapse: (path: string) => void
-}) {
+}
+
+function countLabel(n: number): string {
+  return `${n} file${n === 1 ? '' : 's'} changed`
+}
+
+// One folder of the commit tree. The project folder itself is the root node, as in the original;
+// files of a folder come before its sub folders.
+function FolderNode({ folder, label, handlers }: { folder: TreeFolder; label: string; handlers: TreeHandlers }) {
+  const { checked, collapsed, onToggleFile, onToggleFolder, onToggleCollapse } = handlers
+  const all = filesUnder(folder)
+  const on = all.filter((x) => checked.has(x.path)).length
+  const open = !collapsed.has(folder.path)
   return (
-    <ul className="forge-commit-tree" role={depth === 0 ? 'tree' : 'group'}>
-      {folder.folders.map((f) => {
-        const all = filesUnder(f)
-        const on = all.filter((x) => checked.has(x.path)).length
-        const open = !collapsed.has(f.path)
-        return (
-          <li key={f.path} role="treeitem" aria-expanded={open}>
-            <div className="forge-commit-row">
-              <button type="button" className="forge-commit-twisty" aria-label={`${open ? 'Collapse' : 'Expand'} ${f.name}`} onClick={() => onToggleCollapse(f.path)}>
-                {open ? '\u25BE' : '\u25B8'}
-              </button>
-              <input
-                type="checkbox"
-                aria-label={f.name}
-                checked={on === all.length}
-                ref={(el) => {
-                  if (el) el.indeterminate = on > 0 && on < all.length
-                }}
-                onChange={(e) => onToggleFolder(all.map((x) => x.path), e.target.checked)}
-              />
-              <span className="forge-commit-folder">{f.name}</span>
-              <span className="forge-commit-count">
-                {all.length} file{all.length === 1 ? '' : 's'} changed
-              </span>
-            </div>
-            {open ? <CommitTree folder={f} depth={depth + 1} checked={checked} collapsed={collapsed} onToggleFile={onToggleFile} onToggleFolder={onToggleFolder} onToggleCollapse={onToggleCollapse} /> : null}
-          </li>
-        )
-      })}
-      {folder.files.map((f) => (
-        <li key={f.path} role="treeitem" className="forge-commit-row forge-commit-file">
-          <input type="checkbox" aria-label={f.path} checked={checked.has(f.path)} onChange={(e) => onToggleFile(f.path, e.target.checked)} />
-          <span className={`forge-commit-name ${fileClass(f.code)}`} title={`${f.code.trim() || '?'}  ${f.path}`}>
-            {f.path.split('/').pop()}
-          </span>
-        </li>
-      ))}
-    </ul>
+    <li role="treeitem" aria-expanded={open}>
+      <div className="forge-commit-row">
+        <button type="button" className="forge-commit-twisty" aria-label={`${open ? 'Collapse' : 'Expand'} ${label}`} onClick={() => onToggleCollapse(folder.path)}>
+          <Chevron open={open} />
+        </button>
+        <input
+          type="checkbox"
+          aria-label={label}
+          checked={on === all.length}
+          ref={(el) => {
+            if (el) el.indeterminate = on > 0 && on < all.length
+          }}
+          onChange={(e) => onToggleFolder(all.map((x) => x.path), e.target.checked)}
+        />
+        <FolderIcon />
+        <span className="forge-commit-folder">{label}</span>
+        <span className="forge-commit-count">{countLabel(all.length)}</span>
+      </div>
+      {open ? (
+        <ul className="forge-commit-tree" role="group">
+          {folder.files.map((f) => (
+            <FileRow key={f.path} file={f} label={f.path.split('/').pop() ?? f.path} handlers={{ onToggleFile, checked }} />
+          ))}
+          {folder.folders.map((f) => (
+            <FolderNode key={f.path} folder={f} label={f.name} handlers={handlers} />
+          ))}
+        </ul>
+      ) : null}
+    </li>
+  )
+}
+
+function FileRow({ file, label, handlers }: { file: GitFileStatus; label: string; handlers: Pick<TreeHandlers, 'checked' | 'onToggleFile'> }) {
+  return (
+    <li role="treeitem" className="forge-commit-row forge-commit-file">
+      <input type="checkbox" aria-label={file.path} checked={handlers.checked.has(file.path)} onChange={(e) => handlers.onToggleFile(file.path, e.target.checked)} />
+      <FileIcon json={file.path.endsWith('.json')} />
+      <span className={`forge-commit-name ${fileClass(file.code)}`} title={`${file.code.trim() || '?'}  ${file.path}`}>
+        {label}
+      </span>
+    </li>
   )
 }
 
@@ -143,6 +149,7 @@ export function GitDialog({
   const [remoteTarget, setRemoteTarget] = useState(initialTarget?.remote ?? '')
   const [newName, setNewName] = useState(initialTarget?.remote ? initialTarget.remote.replace(/^[^/]+\//, '') : '')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [flat, setFlat] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -182,15 +189,42 @@ export function GitDialog({
   const tree = useMemo(() => buildTree(overview?.files ?? []), [overview])
   const nameIssue = newName.trim() !== '' && !/^[A-Za-z0-9._/-]+$/.test(newName.trim()) ? 'Use letters, digits and _ - . / only.' : null
   const canCommit = !busy && checked.size > 0 && message.trim() !== '' && !messageIssue
+  const rootName = (overview?.root ?? projectRoot).replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? ''
+  const flatRoot: TreeFolder = { name: '', path: '', folders: [], files: overview?.files ?? [] }
+  const isCommitView = initialTab === 'changes'
+
+  const commit = () => act(() => api.gitCommit(projectRoot, message.trim(), [...checked]).then((r) => { if (r.ok) setMessage(''); return r }))
+  const commitAndPush = () =>
+    act(async () => {
+      const c = await api.gitCommit(projectRoot, message.trim(), [...checked])
+      if (!c.ok) return c
+      setMessage('')
+      const p = await api.gitPush(projectRoot)
+      return { ok: p.ok, text: `${c.text}\n${p.text}`.trim() }
+    })
 
   return (
     <Modal
-      title="Team - Git"
+      title={isCommitView ? 'Commit' : 'Team - Git'}
       onClose={onClose}
       footer={
-        <button type="button" onClick={onClose}>
-          Cancel
-        </button>
+        isCommitView ? (
+          <>
+            <button type="button" disabled={!canCommit} onClick={commit}>
+              Commit
+            </button>
+            <button type="button" className="is-primary" disabled={!canCommit} title="Commits the checked files, then pushes the current branch" onClick={commitAndPush}>
+              Commit &amp; Push
+            </button>
+            <button type="button" onClick={onClose}>
+              Cancel
+            </button>
+          </>
+        ) : (
+          <button type="button" onClick={onClose}>
+            Cancel
+          </button>
+        )
       }
     >
       {error ? (
@@ -200,9 +234,12 @@ export function GitDialog({
       ) : null}
       {overview ? (
         <div className="forge-git">
-          <p className="forge-field-hint" title={overview.root}>
-            Branch <strong>{overview.branch ?? '(detached)'}</strong> - {overview.root}
-          </p>
+          {!isCommitView ? (
+            <p className="forge-field-hint" title={overview.root}>
+              Branch <strong>{overview.branch ?? '(detached)'}</strong> - {overview.root}
+            </p>
+          ) : null}
+          {initialTab !== 'changes' ? (
           <div className="forge-subtabs" role="tablist" aria-label="Git views">
             {TABS.map((t) => (
               <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={`forge-subtab${tab === t.id ? ' is-active' : ''}`} onClick={() => setTab(t.id)}>
@@ -210,20 +247,21 @@ export function GitDialog({
               </button>
             ))}
           </div>
+          ) : null}
 
           {tab === 'changes' ? (
             <div className="forge-commit">
               <div className="forge-commit-main">
                 <div className="forge-commit-toolbar" role="toolbar" aria-label="Commit tree">
                   <button type="button" title="Expand all" aria-label="Expand all" onClick={() => setCollapsed(new Set())}>
-                    +
+                    <ExpandAllIcon />
                   </button>
                   <button
                     type="button"
                     title="Collapse all"
                     aria-label="Collapse all"
                     onClick={() => {
-                      const all = new Set<string>()
+                      const all = new Set<string>([''])
                       const walk = (f: TreeFolder) =>
                         f.folders.forEach((c) => {
                           all.add(c.path)
@@ -233,102 +271,79 @@ export function GitDialog({
                       setCollapsed(all)
                     }}
                   >
-                    -
+                    <CollapseAllIcon />
+                  </button>
+                  <button type="button" title="Show changes as a list" aria-label="Show as list" aria-pressed={flat} className={flat ? 'is-active' : undefined} onClick={() => setFlat((v) => !v)}>
+                    <ListToggleIcon />
                   </button>
                 </div>
                 {overview.files.length === 0 ? <p className="forge-field-hint">No changes.</p> : null}
                 <div className="forge-commit-treebox" aria-label="Changed files">
-                  <CommitTree
-                    folder={tree}
-                    depth={0}
-                    checked={checked}
-                    collapsed={collapsed}
-                    onToggleFile={(path, on) =>
-                      setChecked((prev) => {
-                        const next = new Set(prev)
-                        if (on) next.add(path)
-                        else next.delete(path)
-                        return next
-                      })
-                    }
-                    onToggleFolder={(paths, on) =>
-                      setChecked((prev) => {
-                        const next = new Set(prev)
-                        for (const p of paths) {
-                          if (on) next.add(p)
-                          else next.delete(p)
-                        }
-                        return next
-                      })
-                    }
-                    onToggleCollapse={(path) =>
-                      setCollapsed((prev) => {
-                        const next = new Set(prev)
-                        if (next.has(path)) next.delete(path)
-                        else next.add(path)
-                        return next
-                      })
-                    }
-                  />
+                  <ul className="forge-commit-tree" role="tree">
+                    <FolderNode
+                      folder={flat ? flatRoot : tree}
+                      label={rootName}
+                      handlers={{
+                        checked,
+                        collapsed,
+                        onToggleFile: (path, on) =>
+                          setChecked((prev) => {
+                            const next = new Set(prev)
+                            if (on) next.add(path)
+                            else next.delete(path)
+                            return next
+                          }),
+                        onToggleFolder: (paths, on) =>
+                          setChecked((prev) => {
+                            const next = new Set(prev)
+                            for (const p of paths) {
+                              if (on) next.add(p)
+                              else next.delete(p)
+                            }
+                            return next
+                          }),
+                        onToggleCollapse: (path) =>
+                          setCollapsed((prev) => {
+                            const next = new Set(prev)
+                            if (next.has(path)) next.delete(path)
+                            else next.add(path)
+                            return next
+                          }),
+                      }}
+                    />
+                  </ul>
                 </div>
-                <label className="forge-field">
+                <div className="forge-titled-rule">
                   <span>Commit Message</span>
-                  <input type="text" value={message} onChange={(e) => setMessage(e.target.value)} aria-label="Commit message" />
-                </label>
+                </div>
+                <textarea className="forge-commit-message" value={message} onChange={(e) => setMessage(e.target.value)} aria-label="Commit message" rows={5} />
                 {messageIssue ? <p className="forge-field-error">{messageIssue}</p> : null}
               </div>
               <aside className="forge-commit-side">
-                <fieldset>
-                  <legend>Author (This commit only)</legend>
-                  <label className="forge-field">
-                    <span>Name:</span>
-                    <input type="text" disabled placeholder="from git config user.name" title="The author comes from the Git configuration of the repository." />
-                  </label>
-                  <label className="forge-field">
-                    <span>Email:</span>
-                    <input type="text" disabled placeholder="from git config user.email" title="The author comes from the Git configuration of the repository." />
-                  </label>
-                </fieldset>
-                <fieldset>
-                  <legend>General</legend>
-                  <label title="Not available yet">
-                    <input type="checkbox" disabled /> Amend Commit
-                  </label>
-                </fieldset>
-                <fieldset>
-                  <legend>Before Commit</legend>
-                  <label title="Not available yet">
-                    <input type="checkbox" disabled /> ESLint analyze changed files
-                  </label>
-                </fieldset>
+                <div className="forge-titled-rule">
+                  <span>Author (This commit only)</span>
+                </div>
+                <label className="forge-commit-author">
+                  <span>Name:</span>
+                  <input type="text" readOnly value={overview.user_name ?? ''} placeholder="from git config user.name" title="The author comes from the Git configuration of the repository." />
+                </label>
+                <label className="forge-commit-author">
+                  <span>Email:</span>
+                  <input type="text" readOnly value={overview.user_email ?? ''} placeholder="from git config user.email" title="The author comes from the Git configuration of the repository." />
+                </label>
+                <div className="forge-titled-rule">
+                  <span>General</span>
+                </div>
+                <label className="forge-commit-check" title="Not available yet">
+                  <input type="checkbox" disabled /> Amend Commit
+                </label>
+                <div className="forge-titled-rule">
+                  <span>Before Commit</span>
+                </div>
+                <label className="forge-commit-check" title="Not available yet">
+                  <input type="checkbox" disabled /> ESLint analyze changed files
+                </label>
               </aside>
-              <div className="forge-commit-buttons">
-                <button type="button" disabled={!canCommit} onClick={() => act(() => api.gitCommit(projectRoot, message.trim(), [...checked]).then((r) => { if (r.ok) setMessage(''); return r }))}>
-                  Commit {checked.size} file(s)
-                </button>
-                <button
-                  type="button"
-                  disabled={!canCommit}
-                  title="Commits the checked files, then pushes the current branch"
-                  onClick={() =>
-                    act(async () => {
-                      const c = await api.gitCommit(projectRoot, message.trim(), [...checked])
-                      if (!c.ok) return c
-                      setMessage('')
-                      const p = await api.gitPush(projectRoot)
-                      return { ok: p.ok, text: `${c.text}\n${p.text}`.trim() }
-                    })
-                  }
-                >
-                  Commit &amp; Push
-                </button>
-                <button type="button" disabled={busy} onClick={() => act(() => api.gitPull(projectRoot))} title="git pull on the current branch">
-                  Pull
-                </button>
-                <button type="button" disabled={busy} onClick={() => act(() => api.gitPush(projectRoot))} title="git push of the current branch to its configured remote">
-                  Push
-                </button>
-              </div>
             </div>
           ) : null}
 

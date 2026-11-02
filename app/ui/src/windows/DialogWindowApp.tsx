@@ -11,6 +11,7 @@ import { LocalDataDialog } from '../shell/LocalDataDialog'
 import { PluginsDialog } from '../shell/PluginsDialog'
 import { ProjectZipDialog } from '../shell/ProjectZipDialog'
 import { UpdatesDialog } from '../shell/UpdatesDialog'
+import { GitDialog } from '../shell/GitDialog'
 import { RenameDialog } from '../tree/TreeDialogs'
 import type { ThemeName } from '../theme/useTheme'
 import type { TranspilerEngineId } from '../settings/transpilerEngine'
@@ -26,6 +27,23 @@ type Done = (result: unknown) => void
 
 interface DialogSpec {
   render(api: ForgeApi, payload: Record<string, unknown>, done: Done): ReactNode
+}
+
+// The Git window reports whether the work tree changed, so the main window reloads its tree.
+function GitWindow({ api, payload, done }: { api: ForgeApi; payload: Record<string, unknown>; done: Done }) {
+  const changed = useRef(false)
+  return (
+    <GitDialog
+      api={api}
+      projectRoot={String(payload.project ?? '')}
+      initialTab={payload.tab === 'history' || payload.tab === 'branches' ? payload.tab : 'changes'}
+      initialTarget={(payload.target as { local?: string; remote?: string } | null) ?? null}
+      onChanged={() => {
+        changed.current = true
+      }}
+      onClose={() => done(changed.current ? { changed: true } : null)}
+    />
+  )
 }
 
 export interface OptionsWindowResult {
@@ -120,6 +138,9 @@ export const DIALOG_WINDOWS: Record<string, DialogSpec> = {
   },
   updates: {
     render: (api, _p, done) => <UpdatesDialog api={api} onClose={() => done(null)} onOpenTableCenter={() => done({ tableCenter: true })} />,
+  },
+  git: {
+    render: (api, p, done) => <GitWindow api={api} payload={p} done={done} />,
   },
   localdata: {
     render: (api, _p, done) => <LocalDataDialog api={api} onClose={() => done(null)} />,

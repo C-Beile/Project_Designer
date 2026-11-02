@@ -29,7 +29,6 @@ const READ_ONLY = 'Objects of modules are read-only'
 const READ_ONLY_FILE = 'Files of modules are read-only'
 const SERVER = 'Server control is not evidenced: the start/stop and cache protocol of the original is unknown (needs a screenshot or trace of it)'
 
-const UPGRADE_HINT = 'Offered only for models with a pending upgrade; Vendira cannot upgrade models yet'
 // Models the original refuses to copy (Copy needs a single parent and none of these types).
 export const COPY_BLOCKED_TYPES = ['context', 'neonContext', 'preferences', 'application', 'language']
 const USAGE_TYPES = ['entity', 'neonView', 'entityWebservice']
@@ -84,6 +83,18 @@ const gitMenu = (enabled: boolean): MenuEntry => ({
     entry('git.branches', 'Switch Branch...', enabled),
     entry('git.history', 'History...', enabled),
   ],
+})
+
+// Liquibase submenu of a database alias (manual 14.5.2). Update runs the changelogs of
+// `.liquibase/<alias>`; the two drop actions delete every table and stay off until a tested,
+// confirmed write path exists.
+const DROP_HINT = 'Drops every table of the database and cannot be undone; not available yet'
+const liquibaseMenu = (enabled: boolean): MenuEntry => ({
+  id: 'liquibase',
+  label: 'Liquibase',
+  enabled,
+  hint: enabled ? undefined : 'Open a project first',
+  children: [entry('liquibase.update', 'Update...', enabled, 'Open a project first'), entry('liquibase.dropAll', 'Drop All...', false, DROP_HINT), entry('liquibase.dropAllUpdate', 'Drop All & Update...', false, DROP_HINT)],
 })
 
 const NODEJS_ACTIONS: [string, string][] = [
@@ -157,7 +168,7 @@ export function buildTreeMenu(node: TreeNode, ctx: TreeMenuContext): MenuEntry[]
       entry('openSource', 'Open Model Source', !missing),
     ]
     if (inModule(node.id)) items.splice(1, 0, entry('createModification', 'Create Modification', !missing))
-    items.push(sep(s++), entry('upgradeModel', 'Upgrade Model', false, UPGRADE_HINT))
+    items.push(sep(s++))
     if (type === 'system') items.push(later('setDefault', 'Set Default'))
     items.push(later('deploy', `Deploy "${node.label}"`))
     if (type === 'system') {
@@ -182,10 +193,11 @@ export function buildTreeMenu(node: TreeNode, ctx: TreeMenuContext): MenuEntry[]
       sep(s++),
       historyMenu(!missing),
       gitMenu(git),
+      ...(type === 'aliasDefinition' ? [liquibaseMenu(git && !!layout && !missing)] : []),
       entry('refresh', 'Refresh Folder', true),
       sep(s++),
       toolsMenu(),
-      entry('properties', 'Edit Properties', true),
+      entry('properties', 'Properties', true),
     )
     if (type === 'context' || type === 'neonContext' || type === 'neonView') items.push(sep(s++), later('new', 'New'))
     if (type === 'neonView') items.push(later('executeTests', 'Execute Tests'))

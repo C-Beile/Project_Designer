@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import type { ForgeApi } from './ForgeApi'
-import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployPlan, TableDump, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployPlan, TableDump, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The real implementation - a pure pass-through to the Tauri commands in
 // app/src-tauri/src/lib.rs, one call each, no business logic (architecture.md §1
@@ -56,6 +56,8 @@ export const tauriForgeApi: ForgeApi = {
   activateMapping: (nodeId, path) => invoke<ActivateOutcome>('activate_mapping', { nodeId, path }),
   findUsages: (projectRoot, objectType, name) => invoke<UsageDto[]>('find_usages', { projectRoot, objectType, name }),
   localDataInfo: (thresholdDays) => invoke<LocalDataInfo>('local_data_info', { thresholdDays }),
+  liquibaseTarget: (system, alias) => invoke<LiquibaseTarget>('liquibase_target', { system, alias }),
+  liquibaseUpdate: (system, alias, projectRoot) => invoke<string>('liquibase_update', { system, alias, projectRoot }),
   checkForUpdate: () => invoke<UpdateInfo | null>('check_for_update'),
   installUpdate: () => invoke<void>('install_update'),
   scanProblems: (projectRoot) => invoke<ProblemDto[]>('scan_problems', { projectRoot }),

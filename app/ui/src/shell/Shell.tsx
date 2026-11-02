@@ -10,7 +10,7 @@ import { ProjectIndexContext } from '../editors/projectIndex'
 import { tunnelTabNode, isAliasConfigNode, EMPTY_TABS, activateTab, activeTab, closeTab, closeTabsWhere, isFileNode, isServiceNode, isTunnelNode, openTab, setSubTab, type SubTab, type TabState } from '../tabs/tabModel'
 import { TitleBar } from '../chrome/TitleBar'
 import { closeWindow } from '../chrome/tauriWindow'
-import { useTheme } from '../theme/useTheme'
+import { useTheme, type ThemeName } from '../theme/useTheme'
 import { ExperimentalEngineWarning } from '../settings/TranspilerEngineSelector'
 import {
   DEFAULT_ENGINE,
@@ -19,7 +19,7 @@ import {
   type TranspileMode,
   type TranspilerEngineId,
 } from '../settings/transpilerEngine'
-import type { DbStatus, DiagnosticDto, DiffTarget, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { DbStatus, DiagnosticDto, DiffTarget, GitOutput, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 import { boolField, textField } from '../wire/types'
 import { ServicesPanel } from '../services/ServicesPanel'
 import { DockLayout, type PanelContent } from './DockLayout'
@@ -41,6 +41,7 @@ import { OpenModelDialog } from './OpenModelDialog'
 import { PluginsDialog } from './PluginsDialog'
 import { LocalDataDialog } from './LocalDataDialog'
 import { UpdatesDialog } from './UpdatesDialog'
+import { GitDialog } from './GitDialog'
 import { TableCenterDialog } from './TableCenterDialog'
 import { defaultToolbarPrefs, loadToolbarPrefs, saveToolbarPrefs, type ToolbarGroup, type ToolbarPrefs } from './toolbarPrefs'
 import { getEditorPrefs, reloadEditorPrefs, setEditorPref, subscribeEditorPrefs, type EditorPrefs } from '../theme/editorPrefs'
@@ -61,7 +62,6 @@ import { codeTabNode, processCodeTarget, saveCodeProperty } from '../properties/
 import { objectRoot } from '../properties/objectRoot'
 import { choiceDialog, confirmDialog, DialogHost, promptDialog } from './dialogService'
 import { ToastHost, notify } from './notifications'
-import { ScmPanel } from '../scm/ScmPanel'
 import { collectByType, entityOfView, findObject } from './treeIndex'
 import { useFloatBridge } from '../windows/useFloatBridge'
 import { useEditorWindows } from '../windows/useEditorWindows'
@@ -208,7 +208,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   const [sheetVersion, setSheetVersion] = useState(0)
 
   const [layout, setLayout] = useState<LayoutState>(loadLayout)
-  const [projectsTab, setProjectsTab] = useState<'projects' | 'services' | 'scm'>('projects')
+  const [projectsTab, setProjectsTab] = useState<'projects' | 'services'>('projects')
   const [outputTab, setOutputTab] = useState<OutputMainTab>('output')
   const [outputSub, setOutputSub] = useState<OutputSubTab>('build')
   const [logs, setLogs] = useState(EMPTY_LOGS)
@@ -218,7 +218,8 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   const [installDir, setInstallDir] = useState<string | null>(null)
   // Object whose file changed on disk (for example by Git) while it holds unsaved edits; set when a save is refused.
   const [conflict, setConflict] = useState<string | null>(null)
-  const [dialog, setDialog] = useState<'options' | 'about' | 'deploy' | 'openModel' | 'plugins' | 'updates' | 'localData' | 'tableCenter' | null>(null)
+  const [dialog, setDialog] = useState<'options' | 'about' | 'deploy' | 'openModel' | 'plugins' | 'updates' | 'localData' | 'tableCenter' | 'git' | null>(null)
+  const [gitView, setGitView] = useState<{ tab: 'changes' | 'history' | 'branches'; target: { local?: string; remote?: string } | null }>({ tab: 'changes', target: null })
   // Services tab: connection state (polled, so a dying tunnel shows up) and the text of the open
   // SQL editors, which survives tab switches.
   const [db, setDb] = useState<DbStatus>(NO_DB)
@@ -714,11 +715,33 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
 
   useEffect(() => subscribeOutput((sub, lines) => appendLog(sub, lines)), [appendLog])
 
+  // Team > Git: the Commit dialog and the history and branch views open as dialogs, Pull and Push run
+  // directly from the menu click, as in the original Designer.
+  const openGit = useCallback((tab: 'changes' | 'history' | 'branches', target: { local?: string; remote?: string } | null = null) => {
+    setGitView({ tab, target })
+    setDialog('git')
+  }, [])
+  const runGit = useCallback(
+    async (label: string, action: () => Promise<GitOutput>) => {
+      try {
+        const result = await action()
+        if (result.ok) {
+          notify(`${label} finished.`, { kind: 'success' })
+          setReloadToken((t) => t + 1)
+        } else notify(result.text.split('\n')[0] || `${label} failed.`, { kind: 'error', timeoutMs: 10000 })
+      } catch (e) {
+        notify(e instanceof Error ? e.message : String(e), { kind: 'error', timeoutMs: 10000 })
+      }
+      if (root.trim()) void refreshScm(api, root)
+    },
+    [api, root],
+  )
+
   // Window menu: opens the tool window if needed and moves keyboard focus into it, like the original.
   const showToolWindow = useCallback((id: ToolWindowId, focus = true) => {
     const panel = TOOL_WINDOWS.find((w) => w.id === id)!.panel
     if (panel) setLayout((prev) => ({ ...prev, panels: { ...prev.panels, [panel]: 'open' } }))
-    if (id === 'projects' || id === 'services' || id === 'scm') setProjectsTab(id)
+    if (id === 'projects' || id === 'services') setProjectsTab(id)
     if (id === 'output' || id === 'scanservices' || id === 'search' || id === 'notifications' || id === 'refactoring' || id === 'problems') setOutputTab(id)
     if (focus) {
       const selector = panel ? `[data-panel="${panel}"]` : '.forge-editor-area'
@@ -1259,6 +1282,49 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     }
   }
 
+  // Liquibase > Update of a database alias: asks which database it would change, then runs the
+  // changelogs of .liquibase/<alias>; the lines of Liquibase appear in Output > Build.
+  const runLiquibaseUpdate = useCallback(
+    async (node: TreeNode, project: string) => {
+      const alias = objectLayout(node.id)?.name
+      if (!alias) return
+      const prefix = systemKey(project, '')
+      const connected = Object.entries(getTunnelState().bySystem)
+        .filter(([key, value]) => value.connected && key.startsWith(prefix) && !key.includes('|alias:'))
+        .map(([key]) => key)
+      if (connected.length === 0) {
+        notify('Connect a system first (Services): Liquibase updates the database of a connected system.', { kind: 'error', timeoutMs: 10000 })
+        return
+      }
+      let system = connected[0]
+      if (connected.length > 1) {
+        const pick = await choiceDialog('Which system should be updated?', [...connected.map((key) => ({ id: key, label: systemNameOf(key) })), { id: '', label: 'Cancel' }], 'Liquibase Update')
+        if (!pick) return
+        system = pick
+      }
+      try {
+        const target = await api.liquibaseTarget(system, alias)
+        const ok = await confirmDialog(
+          `Update the database ${target.database} on ${target.host} (system ${systemNameOf(target.system)}) with the changelogs of ${alias}? Changes that are not in the database yet are applied. This cannot be undone.`,
+          { title: 'Liquibase Update', okLabel: 'Update' },
+        )
+        if (!ok) return
+        showToolWindow('output', false)
+        setOutputSub('build')
+        appendLog('build', [{ level: 'info', text: `[${timestamp()}] Liquibase update of ${alias} started` }])
+        const message = await api.liquibaseUpdate(system, alias, project)
+        notify(message, { kind: 'success' })
+        setStatus(message)
+      } catch (e) {
+        const text = e instanceof Error ? e.message : String(e)
+        appendLog('build', [{ level: 'error', text: `[${timestamp()}] ${text}` }])
+        notify(text, { kind: 'error', timeoutMs: 10000 })
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [api, showToolWindow, appendLog],
+  )
+
   const runTreeAction = useCallback(
     (id: string, node: TreeNode, top: TreeNode) => {
       const project = projectOf(top)
@@ -1354,12 +1420,23 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         case 'buildDeploy':
           void startDeploy(true)
           return
+        case 'liquibase.update':
+          void runLiquibaseUpdate(node, project)
+          return
         case 'git.commit':
+          if (gitActive) openGit('changes')
+          return
         case 'git.pull':
+          if (gitActive) void runGit('Pull', () => api.gitPull(root))
+          return
         case 'git.push':
+          if (gitActive) void runGit('Push', () => api.gitPush(root))
+          return
         case 'git.branches':
+          if (gitActive) openGit('branches')
+          return
         case 'git.history':
-          if (gitActive) showToolWindow('scm')
+          if (gitActive) openGit('history')
           return
       }
     },
@@ -1511,7 +1588,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
             setReloadToken((t) => t + 1)
             return
           case 'view.theme':
-            if (arg && arg !== theme) toggleTheme()
+            if (arg && arg !== theme) toggleTheme(arg as ThemeName)
             return
           case 'tools.transpilePartial':
             await transpile('partial')
@@ -1560,12 +1637,19 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
             setLayout(defaultLayout())
             return
           case 'team.commit':
+            openGit('changes')
+            return
           case 'team.pull':
+            void runGit('Pull', () => api.gitPull(root))
+            return
           case 'team.push':
+            void runGit('Push', () => api.gitPush(root))
+            return
           case 'team.switchBranch':
+            openGit('branches')
+            return
           case 'team.history':
-            // The Source Control panel only shows the buttons; the click on Commit, Pull or Push is the confirmation.
-            showToolWindow('scm')
+            openGit('history')
             return
           case 'help.about':
             setDialog('about')
@@ -2011,7 +2095,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         reloadEditorPrefs()
         setInstallDir(r.installDir)
         if (r.engine !== engine) setEngine(r.engine)
-        if (r.theme !== theme) toggleTheme()
+        if (r.theme !== theme) toggleTheme(r.theme)
       })
       .catch((e) => notify(e instanceof Error ? e.message : String(e), { kind: 'error' }))
       .finally(() => {
@@ -2091,12 +2175,22 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     () => setDialog((d) => (d === 'updates' ? null : d)),
   )
 
+  useOsDialog<{ changed?: boolean }>(
+    dialog === 'git' && hasProject,
+    () => ({ name: 'git', title: gitView.tab === 'changes' ? 'Commit' : gitView.tab === 'history' ? 'Log' : 'Branches', size: { width: 1100, height: 760 }, payload: { project: root, tab: gitView.tab, target: gitView.target } }),
+    (r) => {
+      if (r?.changed) setReloadToken((t) => t + 1)
+      if (root.trim()) void refreshScm(api, root)
+    },
+    () => setDialog((d) => (d === 'git' ? null : d)),
+  )
+
   const panels: Record<PanelId, PanelContent> = {
     projects: {
-      title: projectsTab === 'projects' ? 'Projects' : projectsTab === 'scm' ? 'Source Control' : 'Services',
+      title: projectsTab === 'projects' ? 'Projects' : 'Services',
       header: (
         <div className="forge-panel-tabs" role="tablist" aria-label="Project windows">
-          {(gitActive ? (['projects', 'services', 'scm'] as const) : (['projects', 'services'] as const)).filter((t) => !bridge.floating.includes(t as FloatView)).map((t) => (
+          {(['projects', 'services'] as const).filter((t) => !bridge.floating.includes(t as FloatView)).map((t) => (
             <button
               key={t}
               type="button"
@@ -2105,8 +2199,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
               className={`forge-panel-tab${projectsTab === t ? ' is-active' : ''}`}
               onClick={() => setProjectsTab(t)}
             >
-              {t === 'projects' ? 'Projects' : t === 'scm' ? 'Source Control' : 'Services'}
-              {t === 'scm' && scm.overview && scm.root === root && scm.overview.files.length > 0 ? <span className="forge-panel-tab-badge">{scm.overview.files.length}</span> : null}
+              {t === 'projects' ? 'Projects' : 'Services'}
             </button>
           ))}
         </div>
@@ -2137,8 +2230,6 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
               </div>
             ) : null}
           </div>
-        ) : projectsTab === 'scm' ? (
-          <ScmPanel api={api} root={root} onOpenDiff={openDiff} onChanged={() => setReloadToken((t) => t + 1)} />
         ) : (
           <ServicesPanel api={api} db={db} onDbChange={changeDb} onOpenSql={openSql} />
         ),
@@ -2224,7 +2315,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         onFloat={
           osWindowsAvailable()
             ? {
-                canFloat: (id) => id === 'navigator' || id === 'properties' || id === 'output' || (id === 'projects' && (projectsTab === 'scm' || projectsTab === 'services')),
+                canFloat: (id) => id === 'navigator' || id === 'properties' || id === 'output' || (id === 'projects' && projectsTab === 'services'),
                 float: (id, at) => {
                   const view = (id === 'projects' ? projectsTab : id) as FloatView
                   const size = FLOAT_SIZES[view]
@@ -2258,7 +2349,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         gitEnabled={gitActive && hasProject}
         loadBranches={() => api.gitOverview(root)}
         onCheckoutBranch={(t) => void quickBranch(t)}
-        onGit={(a) => (a === 'newBranch' ? void quickBranch({}) : showToolWindow('scm'))}
+        onGit={(a) => (a === 'newBranch' ? void quickBranch({}) : openGit('branches'))}
       />
       {dialog === 'options' && !osWindowsAvailable() ? (
         <OptionsDialog
@@ -2268,7 +2359,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
           engine={engine}
           onEngineChange={setEngine}
           theme={theme}
-          onThemeChange={(t) => t !== theme && toggleTheme()}
+          onThemeChange={(t) => t !== theme && toggleTheme(t)}
           keymap={keymapEntries(menus)}
         />
       ) : null}
@@ -2418,6 +2509,9 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       ) : null}
       {dialog === 'plugins' && !osWindowsAvailable() ? <PluginsDialog onClose={() => setDialog(null)} /> : null}
       {dialog === 'localData' && !osWindowsAvailable() ? <LocalDataDialog api={api} onClose={() => setDialog(null)} /> : null}
+      {dialog === 'git' && hasProject && !osWindowsAvailable() ? (
+        <GitDialog api={api} projectRoot={root} initialTab={gitView.tab} initialTarget={gitView.target} onClose={() => setDialog(null)} onChanged={() => setReloadToken((t) => t + 1)} />
+      ) : null}
       {dialog === 'updates' && !osWindowsAvailable() ? <UpdatesDialog api={api} onClose={() => setDialog(null)} onOpenTableCenter={() => setDialog('tableCenter')} /> : null}
       {dialog === 'tableCenter' ? <TableCenterDialog api={api} db={db} onClose={() => setDialog(null)} /> : null}
     </div>

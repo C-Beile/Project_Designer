@@ -219,3 +219,45 @@
   --diagram-box-head: #aab4be;
   --diagram-line: #55606b;
 }
+
+
+/*
+ * "Lion in der City": the neutral grey of the original Designer (its panels are #424242, its editor
+ * #2b2b2b), one step darker. Accent and link blues are lightened from the original's #3498db so
+ * text in them reaches 4.5:1 on the grey surfaces; filled blue controls are darkened for white text.
+ */
+:root[data-theme='lion'] {
+  color-scheme: dark;
+
+  --bg: #2b2b2b;
+  --bg-elevated: #303030;
+  --bg-panel: #353535;
+  --bg-inset: #262626;
+  --bg-titlebar: #1f1f1f;
+  --bg-titlebar-inactive: #1a1a1a;
+
+  --fg: #d4d4d4;
+  --fg-titlebar: #e0e0e0;
+  --fg-titlebar-inactive: #8f8f8f;
+  --fg-muted: #9a9a9a;
+  --fg-comment: #8a8a8a;
+
+  --border: #4a4a4a;
+  --selection: #2a78b4;
+  --border-strong: #8a8a8a;
+  --focus-ring: #4aa8e8;
+
+  --accent: #4aa8e8;
+  --accent-2: #b48fd8;
+  --warm: #e0b46a;
+  --cyan: #5cc8c0;
+  --error: #ff6b68;
+  --warning: #e6b422;
+  --success: #49d249;
+
+  --selected-bg: #2a78b4;
+  --selected-fg: #ffffff;
+
+  --button-bg: #2a78b4;
+  --button-fg: #ffffff;
+}

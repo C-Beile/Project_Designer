@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
-export type ThemeName = 'dark' | 'light'
+export type ThemeName = 'dark' | 'light' | 'lion'
+
+export const THEME_LABELS: Record<ThemeName, string> = { dark: 'Dark (Night Owl)', light: 'Light', lion: 'Lion in der City' }
 
 const STORAGE_KEY = 'forge.theme'
 
@@ -9,7 +11,8 @@ const STORAGE_KEY = 'forge.theme'
 // nobody sees the unconfirmed palette unless they deliberately switch to it.
 function readStoredTheme(): ThemeName {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) === 'light' ? 'light' : 'dark'
+    const stored = window.localStorage.getItem(STORAGE_KEY)
+    return stored === 'light' || stored === 'lion' ? stored : 'dark'
   } catch {
     // Private browsing / disabled storage - fall back to the default rather than failing the
     // whole app over a theme preference.
@@ -17,8 +20,8 @@ function readStoredTheme(): ThemeName {
   }
 }
 
-/** Applies `data-theme` to <html> and persists the choice; returns the current theme + a toggle. */
-export function useTheme(): [ThemeName, () => void] {
+/** Applies `data-theme` to <html> and persists the choice; returns the current theme and a setter. Without an argument the setter flips between dark and light. */
+export function useTheme(): [ThemeName, (next?: ThemeName) => void] {
   const [theme, setTheme] = useState<ThemeName>(() => (typeof window === 'undefined' ? 'dark' : readStoredTheme()))
 
   useEffect(() => {
@@ -30,7 +33,7 @@ export function useTheme(): [ThemeName, () => void] {
     }
   }, [theme])
 
-  const toggle = useCallback(() => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), [])
+  const toggle = useCallback((next?: ThemeName) => setTheme((t) => next ?? (t === 'dark' ? 'light' : 'dark')), [])
 
   return [theme, toggle]
 }

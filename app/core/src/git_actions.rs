@@ -20,6 +20,9 @@ pub struct GitOverview {
     /// Remote-tracking branches (`origin/name`), listed in the branch popup of the status bar.
     pub remote_branches: Vec<String>,
     pub commits: Vec<GitCommit>,
+    /// Author of a new commit as Git itself would record it (`user.name`, `user.email`).
+    pub user_name: Option<String>,
+    pub user_email: Option<String>,
 }
 
 /// Result of a pull, push, checkout or commit: the text git printed.
@@ -69,7 +72,15 @@ pub fn overview(dir: &Path) -> Result<GitOverview, String> {
     let branches = git.list_branches(&root).map_err(|e| e.to_string())?;
     let commits = git.log(&root, HISTORY_LIMIT).map_err(|e| e.to_string())?;
     let remote_branches = remote_branch_names(&root);
-    Ok(GitOverview { root: root.to_string_lossy().into_owned(), branch: status.branch, files: status.files, branches, remote_branches, commits })
+    let user_name = git_config(&root, "user.name");
+    let user_email = git_config(&root, "user.email");
+    Ok(GitOverview { root: root.to_string_lossy().into_owned(), branch: status.branch, files: status.files, branches, remote_branches, commits, user_name, user_email })
+}
+
+fn git_config(root: &Path, key: &str) -> Option<String> {
+    let out = platform::console::command("git").args(["config", key]).current_dir(root).output().ok()?;
+    let value = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    if out.status.success() && !value.is_empty() { Some(value) } else { None }
 }
 
 fn remote_branch_names(root: &Path) -> Vec<String> {

@@ -320,6 +320,8 @@ export interface GitOverview {
   branches: GitBranch[]
   remote_branches: string[]
   commits: GitCommit[]
+  user_name?: string | null
+  user_email?: string | null
 }
 
 export interface GitOutput {
@@ -503,6 +505,12 @@ export interface VersionDir {
   modified_unix: number | null
   days_unused: number | null
   outdated: boolean
+}
+
+export interface LiquibaseTarget {
+  system: string
+  host: string
+  database: string
 }
 
 export interface UpdateInfo {

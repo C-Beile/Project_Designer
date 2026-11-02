@@ -336,6 +336,8 @@ struct Session {
     host: String,
     /// Target of a forward owned by the tunnel manager; this session only uses its local port.
     shared: Option<(String, u16)>,
+    /// Database host, port and the local port this session reaches it on (for tools that need their own connection).
+    forward: Option<(String, u16, u16)>,
 }
 
 impl Session {
@@ -570,7 +572,7 @@ impl DbManager {
                 return Err(format!("{}{hint}", scrub(&e.to_string(), &refs)));
             }
         };
-        let session = Session { plink: child, runtime: Some(runtime), conn: Box::new(conn), secrets, database: alias.database.clone(), host: alias.host.clone(), shared: shared_port.map(|_| (tunnel.target_host.clone(), tunnel.target_port)) };
+        let session = Session { plink: child, runtime: Some(runtime), conn: Box::new(conn), secrets, database: alias.database.clone(), host: alias.host.clone(), shared: shared_port.map(|_| (tunnel.target_host.clone(), tunnel.target_port)), forward: Some((alias.host.clone(), alias.port, local_port)) };
         self.sessions.lock().unwrap().insert(system.to_string(), session);
         *self.active.lock().unwrap() = Some(system.to_string());
         Ok(self.status_for(system))
@@ -608,7 +610,7 @@ impl DbManager {
                 return Err(scrub(&e.to_string(), &refs));
             }
         };
-        let session = Session { plink: None, runtime: Some(runtime), conn: Box::new(conn), secrets, database: alias.database.clone(), host: alias.host.clone(), shared: Some((tunnel.target_host.clone(), tunnel.target_port)) };
+        let session = Session { plink: None, runtime: Some(runtime), conn: Box::new(conn), secrets, database: alias.database.clone(), host: alias.host.clone(), shared: Some((tunnel.target_host.clone(), tunnel.target_port)), forward: Some((alias.host.clone(), alias.port, local_port)) };
         self.sessions.lock().unwrap().insert(key.to_string(), session);
         *self.active.lock().unwrap() = Some(key.to_string());
         Ok(self.status_for(key))
@@ -648,8 +650,17 @@ impl DbManager {
     #[doc(hidden)]
     pub fn attach_connection_for(&self, system: &str, conn: Box<dyn DbConnection>, secrets: Vec<String>) {
         let runtime = tokio::runtime::Builder::new_multi_thread().worker_threads(1).enable_all().build().unwrap();
-        self.sessions.lock().unwrap().insert(system.to_string(), Session { plink: None, runtime: Some(runtime), conn, secrets, database: system_label(system), host: "localhost".into(), shared: None });
+        self.sessions.lock().unwrap().insert(system.to_string(), Session { plink: None, runtime: Some(runtime), conn, secrets, database: system_label(system), host: "localhost".into(), shared: None, forward: None });
         *self.active.lock().unwrap() = Some(system.to_string());
+    }
+
+    /// Local port of an open forward to `host:port`: one the tunnel manager owns, or the one a
+    /// session of this manager opened for it.
+    pub fn forward_port_for(&self, host: &str, port: u16) -> Option<u16> {
+        if let Some(p) = self.tunnels.local_port(host, port) {
+            return Some(p);
+        }
+        self.sessions.lock().unwrap().values().find_map(|s| s.forward.as_ref().filter(|(h, p, _)| h.eq_ignore_ascii_case(host) && *p == port).map(|(_, _, local)| *local))
     }
 
     /// Credentials of the open session, only for scrubbing texts that go to the UI.

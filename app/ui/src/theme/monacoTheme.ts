@@ -16,6 +16,7 @@ import * as monaco from 'monaco-editor'
 
 export const NIGHT_OWL_DARK = 'forge-night-owl-dark'
 export const NIGHT_OWL_LIGHT = 'forge-night-owl-light'
+export const LION_DARK = 'forge-lion-dark'
 
 let defined = false
 
@@ -60,6 +61,37 @@ export function ensureMonacoThemesDefined(): void {
     },
   })
 
+  monaco.editor.defineTheme(LION_DARK, {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '8a8a8a', fontStyle: 'italic' },
+      { token: 'string', foreground: 'ce9178' },
+      { token: 'number', foreground: 'b5cea8' },
+      { token: 'keyword', foreground: '569cd6' },
+      { token: 'identifier', foreground: 'd4d4d4' },
+      { token: 'type', foreground: '4ec9b0' },
+      { token: 'function', foreground: 'dcdcaa' },
+      { token: 'delimiter', foreground: 'd4d4d4' },
+      { token: 'operator', foreground: 'd4d4d4' },
+      { token: 'variable', foreground: '9cdcfe' },
+      { token: 'constant', foreground: '4fc1ff' },
+    ],
+    colors: {
+      'editor.background': '#2b2b2b',
+      'editor.foreground': '#d4d4d4',
+      'editorLineNumber.foreground': '#8a8a8a',
+      'editorLineNumber.activeForeground': '#d4d4d4',
+      'editor.selectionBackground': '#2a78b4',
+      'editorCursor.foreground': '#4aa8e8',
+      'editor.inactiveSelectionBackground': '#2a78b480',
+      'editorWidget.background': '#303030',
+      'editorWidget.border': '#8a8a8a',
+      'editor.lineHighlightBackground': '#323232',
+      'focusBorder': '#4aa8e8',
+    },
+  })
+
   monaco.editor.defineTheme(NIGHT_OWL_LIGHT, {
     base: 'vs',
     inherit: true,
@@ -97,7 +129,8 @@ export function ensureMonacoThemesDefined(): void {
 }
 
 /** Maps Forge's own theme name (theme/useTheme.ts) to the matching Monaco theme id. */
-export function monacoThemeFor(forgeTheme: 'dark' | 'light'): string {
+export function monacoThemeFor(forgeTheme: 'dark' | 'light' | 'lion'): string {
+  if (forgeTheme === 'lion') return LION_DARK
   return forgeTheme === 'light' ? NIGHT_OWL_LIGHT : NIGHT_OWL_DARK
 }
 
@@ -106,9 +139,10 @@ export function monacoThemeFor(forgeTheme: 'dark' | 'light'): string {
  * theme/useTheme.ts) without needing a React context plumbed down to every Monaco host - the
  * `<html>` attribute is already the single source of truth useTheme.ts writes to.
  */
-export function currentForgeTheme(): 'dark' | 'light' {
+export function currentForgeTheme(): 'dark' | 'light' | 'lion' {
   if (typeof document === 'undefined') return 'dark'
-  return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark'
+  const attr = document.documentElement.getAttribute('data-theme')
+  return attr === 'light' || attr === 'lion' ? attr : 'dark'
 }
 
 /**

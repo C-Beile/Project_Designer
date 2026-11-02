@@ -241,6 +241,10 @@ export function OptionsDialog({
             <input type="radio" name="theme" checked={themeChoice === 'light'} onChange={() => setThemeChoice('light')} />
             <span>Light</span>
           </label>
+          <label className="forge-check">
+            <input type="radio" name="theme" checked={themeChoice === 'lion'} onChange={() => setThemeChoice('lion')} />
+            <span>Lion in der City</span>
+          </label>
         </fieldset>
       </>
     )

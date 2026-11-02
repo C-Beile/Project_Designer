@@ -162,27 +162,48 @@ describe('GitDialog', () => {
     render(<GitDialog api={api} projectRoot="C:/p" initialTab="changes" onClose={() => {}} onChanged={() => {}} />)
     await screen.findByText('A.aod')
     expect(screen.getByRole('checkbox', { name: /package-lock.json/ })).not.toBeChecked()
-    const commit = screen.getByRole('button', { name: /^Commit 1 file/ })
+    const commit = screen.getByRole('button', { name: 'Commit' })
     expect(commit).toBeDisabled()
     await user.type(screen.getByRole('textbox', { name: 'Commit message' }), 'Fix tree icons')
     await user.click(commit)
     await waitFor(() => expect(api.gitCalls).toEqual(['commit:Fix tree icons:entity/A/A.aod']))
   })
 
-  it('runs nothing on its own and pulls, pushes and switches branches only on click', async () => {
-    const user = userEvent.setup()
+  it('shows the Commit dialog without tabs and without Pull and Push buttons, as the original does', async () => {
     const api = createMockForgeApi({ projectTree: [], documents: {}, git })
     render(<GitDialog api={api} projectRoot="C:/p" initialTab="changes" onClose={() => {}} onChanged={() => {}} />)
-    await screen.findByRole('button', { name: 'Pull' })
+    await screen.findByText('A.aod')
+    expect(screen.queryByRole('tab')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Pull' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Push' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Commit & Push' })).toBeInTheDocument()
     expect(api.gitCalls).toEqual([])
-    await user.click(screen.getByRole('button', { name: 'Pull' }))
-    await user.click(screen.getByRole('button', { name: 'Push' }))
-    await user.click(screen.getByRole('tab', { name: 'Branches' }))
-    await user.click(screen.getByRole('button', { name: 'Switch branch' }))
-    await waitFor(() => expect(api.gitCalls).toEqual(['pull', 'push', 'checkout:feature/x']))
   })
 
-  it('commits and pushes with the Commit & Push button, and creates a branch from a remote branch on click', async () => {
+  it('shows the project folder as the root of the tree with its sub folders and the git author, as in the original', async () => {
+    const api = createMockForgeApi({ projectTree: [], documents: {}, git: { ...git, user_name: 'Clemens Beile', user_email: 'c@example.invalid' } })
+    render(<GitDialog api={api} projectRoot="C:/p" initialTab="changes" onClose={() => {}} onChanged={() => {}} />)
+    await screen.findByText('A.aod')
+    expect(screen.getByRole('checkbox', { name: 'p' })).toBeInTheDocument()
+    expect(screen.getByText('2 files changed')).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'entity' })).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'A' })).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Clemens Beile')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('c@example.invalid')).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Commit message' }).tagName).toBe('TEXTAREA')
+  })
+
+  it('runs nothing on its own and switches branches only on click', async () => {
+    const user = userEvent.setup()
+    const api = createMockForgeApi({ projectTree: [], documents: {}, git })
+    render(<GitDialog api={api} projectRoot="C:/p" initialTab="branches" onClose={() => {}} onChanged={() => {}} />)
+    await screen.findByRole('button', { name: 'Switch branch' })
+    expect(api.gitCalls).toEqual([])
+    await user.click(screen.getByRole('button', { name: 'Switch branch' }))
+    await waitFor(() => expect(api.gitCalls).toEqual(['checkout:feature/x']))
+  })
+
+  it('commits and pushes with the Commit & Push button', async () => {
     const user = userEvent.setup()
     const api = createMockForgeApi({ projectTree: [], documents: {}, git })
     render(<GitDialog api={api} projectRoot="C:/p" initialTab="changes" onClose={() => {}} onChanged={() => {}} />)
@@ -192,11 +213,16 @@ describe('GitDialog', () => {
     await user.type(screen.getByRole('textbox', { name: 'Commit message' }), 'Fix')
     await user.click(both)
     await waitFor(() => expect(api.gitCalls).toEqual(['commit:Fix:entity/A/A.aod', 'push']))
-    await user.click(screen.getByRole('tab', { name: 'Branches' }))
-    await user.type(screen.getByRole('textbox', { name: 'New branch name' }), 'feature/z')
+  })
+
+  it('creates a branch from a remote branch on click', async () => {
+    const user = userEvent.setup()
+    const api = createMockForgeApi({ projectTree: [], documents: {}, git })
+    render(<GitDialog api={api} projectRoot="C:/p" initialTab="branches" onClose={() => {}} onChanged={() => {}} />)
+    await user.type(await screen.findByRole('textbox', { name: 'New branch name' }), 'feature/z')
     await user.selectOptions(screen.getByRole('combobox', { name: 'Start from' }), 'origin/feature/y')
     await user.click(screen.getByRole('button', { name: 'Create and switch' }))
-    await waitFor(() => expect(api.gitCalls[2]).toBe('newbranch:feature/z:origin/feature/y'))
+    await waitFor(() => expect(api.gitCalls).toEqual(['newbranch:feature/z:origin/feature/y']))
   })
 
   it('lists the history and reports a folder outside a repository', async () => {

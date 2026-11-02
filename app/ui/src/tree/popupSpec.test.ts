@@ -42,13 +42,13 @@ describe.skipIf(!haveSpec)('object popup against popups.json', () => {
     const labels = labelsOf(buildTreeMenu(object('entity'), { clipboard: null, hasProject: true }))
     const present = labels.filter((l) => expectedOrder.includes(l))
     expect(present).toEqual(expectedOrder.filter((l) => labels.includes(l)))
-    expect(present.length).toBeGreaterThanOrEqual(10)
+    expect(present.length).toBeGreaterThanOrEqual(9)
   })
 
   it('puts the system entries between Deploy and Find as the layer positions say', () => {
     const labels = labelsOf(buildTreeMenu(object('system'), { clipboard: null, hasProject: true }))
     const at = (l: string) => labels.indexOf(l)
-    expect(at('Set Default')).toBeGreaterThan(at('Upgrade Model'))
+    expect(at('Set Default')).toBeGreaterThan(at('Open Model Source'))
     expect(at('Set Default')).toBeLessThan(at('Deploy'))
     for (const l of ['Start Server', 'Clear Cache', 'Open Neon Client', 'Open Tunnels', 'Close Opened Tunnels']) {
       expect(at(l), l).toBeGreaterThan(at('Deploy'))
@@ -77,9 +77,10 @@ describe('Copy enablement (behavior spec section 1)', () => {
     expect(buildTreeMenu(object('neonView', 'C:/p/neonView/V/V.aod'), ctx).find((i) => i.id === 'paste')!.enabled).toBe(false)
   })
 
-  it('shows Upgrade Model dimmed with a reason and the project entries in the layer order', () => {
+  it('offers no Upgrade Model entry (the running original shows none without a pending upgrade) and lists the project entries in the layer order', () => {
     const entity = buildTreeMenu(object('entity'), { clipboard: null, hasProject: true })
-    expect(entity.find((i) => i.id === 'upgradeModel')).toMatchObject({ enabled: false, hint: expect.stringMatching(/pending upgrade/) })
+    expect(entity.find((i) => i.id === 'upgradeModel')).toBeUndefined()
+    expect(labelsOf(entity)).toContain('Properties')
     const project = buildTreeMenu({ id: 'project:C:/p', label: 'p', object_type: null, is_leaf: false, children: [], kind: 'project' }, { clipboard: null, hasProject: true })
     expect(labelsOf(project).slice(0, 4)).toEqual(['Upgrade All Models', 'Upgrade JDito', 'Partial Transpile', 'Full Transpile'])
   })

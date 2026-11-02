@@ -82,7 +82,7 @@ export interface MenuContext {
   canUndo: boolean
   canRedo: boolean
   recentProject: string | null
-  theme: 'dark' | 'light'
+  theme: 'dark' | 'light' | 'lion'
   transpileRunning: boolean
   engine: TranspilerEngineId
   /** A code editor (Source tab, SQL, plain file) is open: Edit, Source and Navigate act on it. */
@@ -431,6 +431,7 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
           children: [
             item('view.theme', 'Dark (Night Owl)', true, { id: 'view.theme.dark', arg: 'dark', check: 'radio', checked: ctx.theme === 'dark' }),
             item('view.theme', 'Light', true, { id: 'view.theme.light', arg: 'light', check: 'radio', checked: ctx.theme === 'light' }),
+            item('view.theme', 'Lion in der City', true, { id: 'view.theme.lion', arg: 'lion', check: 'radio', checked: ctx.theme === 'lion' }),
           ],
         },
         item('help.localData', 'Local Data...', true),

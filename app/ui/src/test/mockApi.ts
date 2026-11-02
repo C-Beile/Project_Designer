@@ -59,6 +59,7 @@ export function createMockForgeApi(options: {
   localData?: import('../wire/types').LocalDataInfo
   update?: import('../wire/types').UpdateInfo | null
   updateError?: string
+  liquibaseError?: string
   onInstallUpdate?: () => void
   usages?: import('../wire/types').UsageDto[]
   // File > New, Rename and the zip export/import stand-ins (calls are recorded in 	reeCalls).
@@ -68,7 +69,7 @@ export function createMockForgeApi(options: {
   projectModels?: import('../wire/types').ModelEntry[]
   zipModels?: import('../wire/types').ModelEntry[]
   jditoTypes?: import('../wire/types').JditoTypes | null
-}): ForgeApi & { diagnosticsFor: (nodeId: string) => DiagnosticDto[]; dbCalls: { sql: string; allowWrite: boolean }[]; gitCalls: string[]; treeCalls: string[]; deployCalls: string[]; connectCalls: string[]; enabledModifications: string[] } {
+}): ForgeApi & { diagnosticsFor: (nodeId: string) => DiagnosticDto[]; dbCalls: { sql: string; allowWrite: boolean }[]; gitCalls: string[]; liquibaseCalls: string[]; treeCalls: string[]; deployCalls: string[]; connectCalls: string[]; enabledModifications: string[] } {
   const mockForwards = new Map<string, import('../wire/types').ForwardStatusDto>()
   const mockTunnelCalls = options.tunnelCalls ?? []
   const NO_DB_STATUS: DbStatus = { connected: false, tunnel_up: false, database: null, host: null }
@@ -80,6 +81,7 @@ export function createMockForgeApi(options: {
   const connectCalls: string[] = []
   const enabledModifications: string[] = []
   const gitCalls: string[] = []
+  const liquibaseCalls: string[] = []
   const treeCalls: string[] = []
   let scmState: import('../wire/types').ScmOverview = options.scm ?? { root: '', branch: null, upstream: null, ahead: 0, behind: 0, files: [], truncated: false, branches: [], remote_branches: [] }
   let gitState: GitOverview = options.git ?? { root: '', branch: null, files: [], branches: [], remote_branches: [], commits: [] }
@@ -284,6 +286,15 @@ export function createMockForgeApi(options: {
     },
     async findUsages() {
       return options.usages ?? []
+    },
+    async liquibaseTarget(system, alias) {
+      liquibaseCalls.push(`target:${alias}`)
+      return { system: system ?? 'C:/demo|dev1', host: 'db.example', database: 'cloud_data' }
+    },
+    async liquibaseUpdate(_system, alias, projectRoot) {
+      liquibaseCalls.push(`update:${alias}:${projectRoot}`)
+      if (options.liquibaseError) throw new Error(options.liquibaseError)
+      return 'Liquibase update finished.'
     },
     async checkForUpdate() {
       if (options.updateError) throw new Error(options.updateError)
@@ -582,6 +593,7 @@ export function createMockForgeApi(options: {
     deployCalls,
     connectCalls,
     gitCalls,
+    liquibaseCalls,
     treeCalls,
     diagnosticsFor() {
       return []
