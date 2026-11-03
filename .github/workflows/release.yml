@@ -9,11 +9,12 @@ permissions:
 
 env:
   REPO: C-Beile/Project_designer
-  RUSTUP_TOOLCHAIN: stable-x86_64-pc-windows-msvc
 
 jobs:
   windows:
     runs-on: windows-latest
+    env:
+      RUSTUP_TOOLCHAIN: stable-x86_64-pc-windows-msvc
     defaults:
       run:
         shell: bash
@@ -49,27 +50,96 @@ jobs:
           VENDIRA_UPDATE_TOKEN: ${{ secrets.VENDIRA_UPDATE_TOKEN }}
         run: npx --prefix ui tauri build --target x86_64-pc-windows-msvc
 
+      - name: Collect the artifacts
+        run: |
+          mkdir out
+          cp target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe out/
+          cp target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe.sig out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: out/*
+          if-no-files-found: error
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use the runner's toolchain instead of the local Windows setup
+        run: |
+          rm -f .cargo/config.toml
+          rm -f rust-toolchain.toml
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Rust toolchain with both Apple targets
+        run: |
+          rustup toolchain install stable --profile minimal --target aarch64-apple-darwin --target x86_64-apple-darwin
+          rustup default stable
+
+      - name: Install UI dependencies
+        working-directory: app/ui
+        run: npm install --no-audit --no-fund
+
+      - name: Build and sign the universal app
+        working-directory: app
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+          VENDIRA_UPDATE_TOKEN: ${{ secrets.VENDIRA_UPDATE_TOKEN }}
+        run: npx --prefix ui tauri build --target universal-apple-darwin
+
+      - name: Collect the artifacts
+        run: |
+          version=$(jq -r .version app/src-tauri/tauri.conf.json)
+          bundle="target/universal-apple-darwin/release/bundle"
+          mkdir out
+          cp "$bundle"/dmg/*.dmg "out/vendira-designer_${version}_universal.dmg"
+          cp "$bundle"/macos/*.app.tar.gz "out/vendira-designer_${version}_universal.app.tar.gz"
+          cp "$bundle"/macos/*.app.tar.gz.sig "out/vendira-designer_${version}_universal.app.tar.gz.sig"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: out/*
+          if-no-files-found: error
+
+  publish:
+    needs: [windows, macos]
+    if: ${{ !cancelled() && needs.windows.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          bundle="target/x86_64-pc-windows-msvc/release/bundle/nsis"
-          exe=$(ls "$bundle"/*-setup.exe)
-          sig="$exe.sig"
-          gh release create "$GITHUB_REF_NAME" "$exe" "$sig" --repo "$REPO" --title "$GITHUB_REF_NAME" --generate-notes
-          asset_id=$(gh api "repos/$REPO/releases/tags/$GITHUB_REF_NAME" --jq ".assets[] | select(.name == \"$(basename "$exe")\") | .id")
-          notes=$(gh api "repos/$REPO/releases/tags/$GITHUB_REF_NAME" --jq .body)
-          jq -n \
-            --arg version "${GITHUB_REF_NAME#v}" \
-            --arg notes "$notes" \
-            --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --arg url "https://api.github.com/repos/$REPO/releases/assets/$asset_id" \
-            --arg signature "$(cat "$sig")" \
-            '{version: $version, notes: $notes, pub_date: $date, platforms: {"windows-x86_64": {signature: $signature, url: $url}}}' > latest.json
+          if gh release view "$GITHUB_REF_NAME" --repo "$REPO" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/*/* --repo "$REPO" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*/* --repo "$REPO" --title "$GITHUB_REF_NAME" --generate-notes
+          fi
+          assets=$(gh api "repos/$REPO/releases/tags/$GITHUB_REF_NAME")
+          asset_url() { echo "https://api.github.com/repos/$REPO/releases/assets/$(echo "$assets" | jq -r --arg n "$1" '.assets[] | select(.name == $n) | .id')"; }
+          win=$(basename dist/windows/*-setup.exe)
+          notes=$(echo "$assets" | jq -r .body)
+          jq -n             --arg version "${GITHUB_REF_NAME#v}"             --arg notes "$notes"             --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)"             --arg win_url "$(asset_url "$win")"             --arg win_sig "$(cat dist/windows/*-setup.exe.sig)"             '{version: $version, notes: $notes, pub_date: $date, platforms: {"windows-x86_64": {signature: $win_sig, url: $win_url}}}' > latest.json
+          if ls dist/macos/*.app.tar.gz > /dev/null 2>&1; then
+            mac=$(basename dist/macos/*.app.tar.gz)
+            jq --arg url "$(asset_url "$mac")" --arg sig "$(cat dist/macos/*.app.tar.gz.sig)"               '.platforms["darwin-aarch64"] = {signature: $sig, url: $url} | .platforms["darwin-x86_64"] = {signature: $sig, url: $url}' latest.json > latest.tmp
+            mv latest.tmp latest.json
+          fi
 
       - name: Publish latest.json on the updates branch
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "release-bot"
           git config user.email "release-bot@users.noreply.github.com"

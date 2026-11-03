@@ -38,7 +38,6 @@ export interface MenuDef {
 export type ToolWindowId =
   | 'projects'
   | 'services'
-  | 'scm'
   | 'properties'
   | 'navigator'
   | 'output'
@@ -53,7 +52,6 @@ export type ToolWindowId =
 export const TOOL_WINDOWS: { id: ToolWindowId; label: string; panel: PanelId | null }[] = [
   { id: 'projects', label: 'Projects', panel: 'projects' },
   { id: 'services', label: 'Services', panel: 'projects' },
-  { id: 'scm', label: 'Source Control', panel: 'projects' },
   { id: 'properties', label: 'Properties', panel: 'properties' },
   { id: 'navigator', label: 'Navigator', panel: 'navigator' },
   { id: 'output', label: 'Output', panel: 'output' },
@@ -66,7 +64,6 @@ export const TOOL_WINDOWS: { id: ToolWindowId; label: string; panel: PanelId | n
 ]
 
 const FLOAT_ENTRIES: [string, string][] = [
-  ['scm', 'Source Control'],
   ['services', 'Services'],
   ['navigator', 'Navigator'],
   ['properties', 'Properties'],
@@ -476,7 +473,6 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
             later('window.processes', 'Processes'),
             sep(),
             windowItem('problems', 'Problems'),
-            windowItem('scm', 'Source Control', 'Mod+Shift+G'),
           ],
         },
         laterSub('window.reportDesigner', 'Report designer'),
