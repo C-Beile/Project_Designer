@@ -92,5 +92,11 @@ export const editor = {
   setTheme: () => {},
 }
 
+export const languages = {
+  register: () => {},
+  setLanguageConfiguration: () => {},
+  setMonarchTokensProvider: () => {},
+}
+
 export const KeyMod = { Alt: 512, CtrlCmd: 2048, Shift: 1024 }
 export const KeyCode = { Insert: 19 }

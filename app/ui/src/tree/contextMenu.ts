@@ -139,7 +139,7 @@ export function buildTreeMenu(node: TreeNode, ctx: TreeMenuContext): MenuEntry[]
       sep(s++),
       isProject ? entry('transpile.partial', 'Partial Transpile', true) : later('transpile.partial', 'Partial Transpile'),
       isProject ? entry('transpile.full', 'Full Transpile', true) : later('transpile.full', 'Full Transpile'),
-      // Deploy entries are Vendira's way to reach the deploy window from the tree.
+      // Deploy entries are Dito Designer's way to reach the deploy window from the tree.
       isProject ? entry('deploy.project', 'Deploy...', true) : later('deploy.project', 'Deploy...'),
       isProject ? entry('buildDeploy', 'Build and Deploy...', true) : later('buildDeploy', 'Build and Deploy...'),
       sep(s++),

@@ -39,6 +39,8 @@ export function ViewCanvasEditor({ nodeId, tree, api, onTreeChange }: EditorProp
   const references = asArray(field(field(tree, 'children'), 'neonViewReference'))
 
   const [mode, setMode] = useState<'preview' | 'structure'>('preview')
+  // The list of entity fields is a drag source for adding fields; it stays hidden until asked for.
+  const [showFields, setShowFields] = useState(false)
   const index = useProjectIndex()
   const [source, setSource] = useState<{ text: string; read_only: boolean } | null>(null)
   const [menu, setMenu] = useState<{ x: number; y: number; target: { path: string; label: string; view?: string; order: number | null } } | null>(null)
@@ -169,6 +171,11 @@ export function ViewCanvasEditor({ nodeId, tree, api, onTreeChange }: EditorProp
       <button type="button" className={`vp-mode${mode === 'structure' ? ' is-active' : ''}`} aria-pressed={mode === 'structure'} onClick={() => setMode('structure')}>
         Structure
       </button>
+      {mode === 'preview' && entityFields ? (
+        <button type="button" className={`vp-mode vp-fields-toggle${showFields ? ' is-active' : ''}`} aria-pressed={showFields} title="Show the entity fields to drag them into a ViewTemplate" onClick={() => setShowFields((v) => !v)}>
+          Entity fields
+        </button>
+      ) : null}
     </div>
   )
 
@@ -177,7 +184,7 @@ export function ViewCanvasEditor({ nodeId, tree, api, onTreeChange }: EditorProp
       <div className="view-editor">
         {modeBar}
         <div className="vp-split">
-          {entityFields ? (
+          {entityFields && showFields ? (
             <aside className="vp-entity-list" aria-label="Entity fields">
               <h3>Entity fields</h3>
               {[...entityFields.entries()].map(([fieldName, meta]) => (

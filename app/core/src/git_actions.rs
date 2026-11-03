@@ -69,12 +69,13 @@ pub fn overview(dir: &Path) -> Result<GitOverview, String> {
     let root = repo_root(dir)?;
     let git = CommandGitOperations::new();
     let status = git.status(&root).map_err(|e| e.to_string())?;
+    let files = expand_untracked_dirs(&root, status.files);
     let branches = git.list_branches(&root).map_err(|e| e.to_string())?;
     let commits = git.log(&root, HISTORY_LIMIT).map_err(|e| e.to_string())?;
     let remote_branches = remote_branch_names(&root);
     let user_name = git_config(&root, "user.name");
     let user_email = git_config(&root, "user.email");
-    Ok(GitOverview { root: root.to_string_lossy().into_owned(), branch: status.branch, files: status.files, branches, remote_branches, commits, user_name, user_email })
+    Ok(GitOverview { root: root.to_string_lossy().into_owned(), branch: status.branch, files, branches, remote_branches, commits, user_name, user_email })
 }
 
 fn git_config(root: &Path, key: &str) -> Option<String> {
@@ -120,11 +121,11 @@ pub fn commit(dir: &Path, message: &str, paths: &[String]) -> Result<GitOutput, 
     let msg = validate_message(message)?;
     let root = repo_root(dir)?;
     let git = CommandGitOperations::new();
-    let status = git.status(&root).map_err(|e| e.to_string())?;
+    let status_files = expand_untracked_dirs(&root, git.status(&root).map_err(|e| e.to_string())?.files);
     if paths.is_empty() {
         return Err("No files selected.".into());
     }
-    if let Some(bad) = paths.iter().find(|p| !status.files.iter().any(|f| &f.path == *p)) {
+    if let Some(bad) = paths.iter().find(|p| !status_files.iter().any(|f| &f.path == *p)) {
         return Err(format!("{bad} has no pending change."));
     }
     git.commit_paths(&root, &msg, paths).map(outcome).map_err(|e| e.to_string())
@@ -283,4 +284,87 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         let _ = fs::remove_dir_all(&remote);
     }
+}
+
+/// `git status` lists a new folder as one entry ("dir/"); the commit window needs every file in it.
+fn expand_untracked_dirs(root: &Path, files: Vec<GitFileStatus>) -> Vec<GitFileStatus> {
+    let mut out = Vec::new();
+    for f in files {
+        if !f.path.ends_with('/') {
+            out.push(f);
+            continue;
+        }
+        let listed = platform::console::command("git")
+            .args(["ls-files", "--others", "--exclude-standard", "--", &f.path])
+            .current_dir(root)
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).lines().map(str::to_string).collect::<Vec<_>>())
+            .unwrap_or_default();
+        if listed.is_empty() {
+            out.push(f);
+        } else {
+            out.extend(listed.into_iter().map(|path| GitFileStatus { code: f.code.clone(), path }));
+        }
+    }
+    out
+}
+
+fn parse_log(text: &str) -> Vec<GitCommit> {
+    text.lines()
+        .filter_map(|l| {
+            let mut p = l.split('\u{1f}');
+            Some(GitCommit { hash: p.next()?.to_string(), author: p.next()?.to_string(), date: p.next()?.to_string(), subject: p.next()?.to_string() })
+        })
+        .collect()
+}
+
+const LOG_FORMAT: &str = "--format=%H%x1f%an%x1f%aI%x1f%s";
+
+fn has_upstream(root: &Path) -> bool {
+    platform::console::command("git")
+        .args(["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
+        .current_dir(root)
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
+fn log_range(root: &Path, args: &[&str]) -> Vec<GitCommit> {
+    let mut all = vec!["log", LOG_FORMAT];
+    all.extend_from_slice(args);
+    platform::console::command("git").args(all).current_dir(root).output().map(|o| parse_log(&String::from_utf8_lossy(&o.stdout))).unwrap_or_default()
+}
+
+/// Local commits that are not on the remote yet, newest first (read-only).
+pub fn unpushed(dir: &Path) -> Result<Vec<GitCommit>, String> {
+    prepare();
+    let root = repo_root(dir)?;
+    Ok(if has_upstream(&root) { log_range(&root, &["@{u}..HEAD"]) } else { log_range(&root, &["HEAD", "--not", "--remotes"]) })
+}
+
+/// Commits on the remote that a pull would bring in, newest first. Fetches first (changes no file).
+pub fn incoming(dir: &Path) -> Result<Vec<GitCommit>, String> {
+    prepare();
+    let root = repo_root(dir)?;
+    let fetch = platform::console::command("git").args(["fetch"]).current_dir(&root).output().map_err(|e| e.to_string())?;
+    if !fetch.status.success() {
+        return Err(String::from_utf8_lossy(&fetch.stderr).trim().to_string());
+    }
+    Ok(if has_upstream(&root) { log_range(&root, &["HEAD..@{u}"]) } else { Vec::new() })
+}
+
+/// Pushes the current branch up to the chosen local commit (and the commits before it). The commit
+/// must be one of the unpushed ones.
+pub fn push_up_to(dir: &Path, hash: &str) -> Result<GitOutput, String> {
+    prepare();
+    let root = repo_root(dir)?;
+    if !unpushed(dir)?.iter().any(|c| c.hash == hash) {
+        return Err("This commit is not waiting to be pushed.".into());
+    }
+    let status = CommandGitOperations::new().status(&root).map_err(|e| e.to_string())?;
+    let branch = status.branch.ok_or("There is no current branch (detached HEAD).")?;
+    let refspec = format!("{hash}:refs/heads/{branch}");
+    let out = platform::console::command("git").args(["push", "origin", &refspec]).current_dir(&root).output().map_err(|e| e.to_string())?;
+    let text = format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr)).trim().to_string();
+    Ok(GitOutput { ok: out.status.success(), text })
 }

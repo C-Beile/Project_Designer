@@ -114,7 +114,7 @@ function PendingDialog({ pending }: { pending: Pending }) {
   const [first, ...rest] = pending.message.split(String.fromCharCode(10, 10))
   return (
     <Modal
-      title={pending.title ?? 'Vendira Designer'}
+      title={pending.title ?? 'Dito Designer'}
       onClose={() => answer(pending, null)}
       onEnter={submit}
       footer={

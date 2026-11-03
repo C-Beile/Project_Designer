@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Problem } from '../problems/problemStore'
 import { normId } from '../problems/problemStore'
+import { Chevron, SeverityIcon } from './SeverityIcon'
 
 // Scan Services window (manual 10.5, screenshot 170): errors and warnings of the whole project as
 // a tree - type, object, file, message - with a button bar on the left: refresh, structure,
@@ -58,6 +59,43 @@ export function groupProblems(problems: Problem[], by: 'type' | 'severity'): Gro
     }))
 }
 
+function ToolIcon({ kind }: { kind: 'refresh' | 'structure' | 'ignored' | 'expand' | 'collapse' }) {
+  const p = { width: 16, height: 16, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const
+  switch (kind) {
+    case 'refresh':
+      return (
+        <svg {...p}>
+          <path d="M13 8a5 5 0 1 1-1.6-3.7M13 2.5v3h-3" />
+        </svg>
+      )
+    case 'structure':
+      return (
+        <svg {...p}>
+          <path d="M2.5 3.5h4M5.5 8h4M8.5 12.5h5M2.5 3.5v4.5h3M5.5 8v4.5h3" />
+        </svg>
+      )
+    case 'ignored':
+      return (
+        <svg {...p}>
+          <path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" />
+          <path d="M3 13L13 3" />
+        </svg>
+      )
+    case 'expand':
+      return (
+        <svg {...p}>
+          <path d="M4 6l4-3 4 3M4 10l4 3 4-3" />
+        </svg>
+      )
+    default:
+      return (
+        <svg {...p}>
+          <path d="M4 3l4 3 4-3M4 13l4-3 4 3" />
+        </svg>
+      )
+  }
+}
+
 export function ScanServicesPanel({ problems, scanning, onRefresh, onOpen }: { problems: Problem[]; scanning: boolean; onRefresh: () => void; onOpen: (p: Problem) => void }) {
   const [ignored, setIgnored] = useState<Set<string>>(loadIgnored)
   const [showIgnored, setShowIgnored] = useState(false)
@@ -111,19 +149,19 @@ export function ScanServicesPanel({ problems, scanning, onRefresh, onOpen }: { p
     <div className="forge-scan">
       <div className="forge-scan-bar" role="toolbar" aria-label="Scan Services actions" aria-orientation="vertical">
         <button type="button" aria-label="Refresh" title="Refresh all Scan Services for the complete project" onClick={onRefresh} disabled={scanning}>
-          ↻
+          <ToolIcon kind="refresh" />
         </button>
         <button type="button" aria-label="Structure" title="Choose what is shown and how the tree is structured" aria-pressed={structureOpen} onClick={() => setStructureOpen((v) => !v)}>
-          ▦
+          <ToolIcon kind="structure" />
         </button>
         <button type="button" aria-label="Show ignored tasks" title="Show the tasks marked as ignored" aria-pressed={showIgnored} onClick={() => setShowIgnored((v) => !v)}>
-          ⊖
+          <ToolIcon kind="ignored" />
         </button>
         <button type="button" aria-label="Expand all" title="Expand all nodes" onClick={() => setOpen(new Set(allKeys()))}>
-          ⤢
+          <ToolIcon kind="expand" />
         </button>
         <button type="button" aria-label="Collapse all" title="Collapse all nodes" onClick={() => setOpen(new Set())}>
-          ⤡
+          <ToolIcon kind="collapse" />
         </button>
       </div>
       <div className="forge-scan-main">
@@ -153,7 +191,7 @@ export function ScanServicesPanel({ problems, scanning, onRefresh, onOpen }: { p
           <button type="button" disabled={selectedTasks.length !== 1} onClick={() => selectedTasks[0] && onOpen(selectedTasks[0])}>
             Open in editor
           </button>
-          <span className="forge-field-hint">
+          <span className="forge-field-hint forge-scan-summary">
             {scanning ? 'Scanning the project…' : visible.length === 0 ? 'No tasks found.' : `${errors} error(s), ${visible.length - errors} warning(s)`}
           </span>
         </div>
@@ -163,7 +201,9 @@ export function ScanServicesPanel({ problems, scanning, onRefresh, onOpen }: { p
             return (
               <li key={g.key} role="treeitem" aria-expanded={open.has(gk)}>
                 <button type="button" className="forge-scan-node" onClick={() => toggle(gk)}>
-                  <span aria-hidden="true">{open.has(gk) ? '⌄' : '›'}</span> {g.label} ({g.count})
+                  <Chevron open={open.has(gk)} />
+                  <span className="forge-scan-label">{g.label}</span>
+                  <span className="forge-count">{g.count}</span>
                 </button>
                 {open.has(gk) ? (
                   <ul role="group">
@@ -173,13 +213,16 @@ export function ScanServicesPanel({ problems, scanning, onRefresh, onOpen }: { p
                       return (
                         <li key={o.key} role="treeitem" aria-expanded={open.has(ok)}>
                           <button type="button" className="forge-scan-node" onClick={() => toggle(ok)}>
-                            <span aria-hidden="true">{open.has(ok) ? '⌄' : '›'}</span> {o.label} ({o.tasks.length})
+                            <Chevron open={open.has(ok)} />
+                            <span className="forge-scan-label">{o.label}</span>
+                            <span className="forge-count">{o.tasks.length}</span>
                           </button>
                           {open.has(ok) ? (
                             <ul role="group">
                               <li role="treeitem" aria-expanded={open.has(fk)}>
                                 <button type="button" className="forge-scan-node" onClick={() => toggle(fk)}>
-                                  <span aria-hidden="true">{open.has(fk) ? '⌄' : '›'}</span> {o.file}
+                                  <Chevron open={open.has(fk)} />
+                                  <span className="forge-scan-label is-file">{o.file}</span>
                                 </button>
                                 {open.has(fk) ? (
                                   <ul role="group">
@@ -200,10 +243,10 @@ export function ScanServicesPanel({ problems, scanning, onRefresh, onOpen }: { p
                                         onDoubleClick={() => onOpen(t)}
                                       >
                                         <span className="forge-scan-icon" aria-label={t.severity}>
-                                          {t.severity === 'Error' ? '●' : '▲'}
+                                          <SeverityIcon severity={t.severity} />
                                         </span>
-                                        {t.message}
-                                        {t.line ? <span className="forge-field-hint"> [{t.line}]</span> : null}
+                                        <span className="forge-scan-message">{t.message}</span>
+                                        {t.line ? <span className="forge-scan-line">{t.line}</span> : null}
                                       </li>
                                     ))}
                                   </ul>

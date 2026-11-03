@@ -5,7 +5,7 @@ import { Modal } from './Dialogs'
 import { getOptions } from '../settings/options'
 
 // Help > Local Data (manual chapter 12, screenshot 185): where the Designer keeps its local files.
-// Shows Vendira's own data folder and, read-only, the version folders of the original Designer
+// Shows Dito Designer's own data folder and, read-only, the version folders of the original Designer
 // under %APPDATA%\.aditodesigner with their disk usage; "Run Janitor Now" marks the folders that
 // were not used longer than the threshold. Nothing is deleted here - remove folders in Explorer.
 
@@ -52,7 +52,7 @@ export function LocalDataDialog({ api, onClose }: { api: ForgeApi; onClose: () =
         {!info && !error ? <p className="forge-field-hint">Please Wait…</p> : null}
         {info ? (
           <>
-            <h3>Vendira Designer</h3>
+            <h3>Dito Designer</h3>
             <p>
               Data folder: <code data-testid="forge-data-dir">{info.forge_data_dir}</code>
               <br />
@@ -130,12 +130,12 @@ export function LocalDataDialog({ api, onClose }: { api: ForgeApi; onClose: () =
               <p role="status">
                 {outdated.length === 0
                   ? 'No outdated version folder found.'
-                  : `${outdated.length} version folder(s) were not used for more than ${threshold} days and could free ${formatBytes(outdatedSize)}. Vendira Designer does not delete them; remove them in Windows Explorer if you no longer need them.`}
+                  : `${outdated.length} version folder(s) were not used for more than ${threshold} days and could free ${formatBytes(outdatedSize)}. Dito Designer does not delete them; remove them in Windows Explorer if you no longer need them.`}
               </p>
             ) : null}
             <h3>Designer configuration</h3>
             <p className="forge-field-hint">
-              Vendira Designer has no ADITOdesigner.conf: memory, DB timeout and start project are not configurable, and the application folder is {info.exe_dir}.
+              Dito Designer has no ADITOdesigner.conf: memory, DB timeout and start project are not configurable, and the application folder is {info.exe_dir}.
             </p>
           </>
         ) : null}

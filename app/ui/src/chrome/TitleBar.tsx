@@ -19,7 +19,7 @@ import {
 // bridge (drag-to-move, double-click-to-maximize) without any JS on our side. The theme switch moved
 // to View > Theme (P8), so the title bar carries only the window name and window buttons.
 
-export function TitleBar({ title = 'Vendira Designer' }: { title?: string }) {
+export function TitleBar({ title = 'Dito Designer' }: { title?: string }) {
   const [maximized, setMaximized] = useState(false)
   const [focused, setFocused] = useState(true)
 

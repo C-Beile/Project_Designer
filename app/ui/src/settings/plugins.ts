@@ -1,5 +1,5 @@
 // Plugin list of Tools > Plugins (manual chapter 14). The original Designer loads NetBeans
-// modules (nbm); Vendira Designer has no such plugin loader. Its plugins are built-in components,
+// modules (nbm); Dito Designer has no such plugin loader. Its plugins are built-in components,
 // so the dialog shows them with their real state: active, deactivated by the user, or not
 // implemented yet. Only components that can be switched off safely may be deactivated.
 
@@ -27,7 +27,7 @@ export const PLUGINS: PluginInfo[] = [
     category: 'ADITO / AsciiDoc',
     version: '-',
     author: 'ADITO Software GmbH',
-    description: 'Preview tab for adoc files (manual 14.3). Not implemented in Vendira Designer yet.',
+    description: 'Preview tab for adoc files (manual 14.3). Not implemented in Dito Designer yet.',
     implemented: false,
     switchable: false,
     notes: [],
@@ -101,7 +101,7 @@ export const PLUGINS: PluginInfo[] = [
   {
     id: 'sql',
     name: 'Execute SQL',
-    category: 'Vendira / Database',
+    category: 'Dito / Database',
     version: VERSION,
     author: AUTHOR,
     description: 'SQL window of the Services tab with result tabs, history and export.',
@@ -112,7 +112,7 @@ export const PLUGINS: PluginInfo[] = [
   {
     id: 'deploy',
     name: 'Deploy',
-    category: 'Vendira / Database',
+    category: 'Dito / Database',
     version: VERSION,
     author: AUTHOR,
     description: 'Deploy of the project into the system database.',
@@ -123,7 +123,7 @@ export const PLUGINS: PluginInfo[] = [
   {
     id: 'catalog',
     name: 'Property Catalog',
-    category: 'Vendira / Core',
+    category: 'Dito / Core',
     version: VERSION,
     author: AUTHOR,
     description: 'Reads the property definitions out of the installed ADITO Designer.',
@@ -134,7 +134,7 @@ export const PLUGINS: PluginInfo[] = [
   {
     id: 'modifications',
     name: 'Modifications',
-    category: 'Vendira / Core',
+    category: 'Dito / Core',
     version: VERSION,
     author: AUTHOR,
     description: 'Edits of module objects are written as modifications of the project.',
@@ -145,7 +145,7 @@ export const PLUGINS: PluginInfo[] = [
   {
     id: 'transpiler',
     name: 'Transpiler',
-    category: 'Vendira / Core',
+    category: 'Dito / Core',
     version: VERSION,
     author: AUTHOR,
     description: 'Partial and full transpile with the official ADITO transpiler or the experimental own engine.',

@@ -1,9 +1,10 @@
 import { useState, useSyncExternalStore } from 'react'
 import { Modal } from './Dialogs'
+import { PluginStateIcon } from './optionIcons'
 import { PLUGINS, getPluginPrefs, pluginState, setPluginPrefs, subscribePluginPrefs, type PluginInfo } from '../settings/plugins'
 
 // Tools > Plugins (manual 14.1, screenshot 202): tabs Updates, Available Plugins, Downloaded,
-// Installed (n) and Settings. Vendira's plugins are built-in components, so there is no catalog and
+// Installed (n) and Settings. Dito Designer's plugins are built-in components, so there is no catalog and
 // no nbm import; the Installed tab shows what exists and what is still missing.
 
 type Tab = 'updates' | 'available' | 'downloaded' | 'installed' | 'settings'
@@ -20,7 +21,7 @@ function StateDot({ state }: { state: ReturnType<typeof pluginState> }) {
   const label = state === 'active' ? 'Active' : state === 'deactivated' ? 'Deactivated' : 'Not implemented'
   return (
     <span className={`forge-plugin-dot is-${state}`} role="img" aria-label={label} title={label}>
-      {state === 'active' ? '✔' : state === 'deactivated' ? '■' : '●'}
+      <PluginStateIcon state={state} />
     </span>
   )
 }
@@ -73,14 +74,14 @@ export function PluginsDialog({ onClose }: { onClose: () => void }) {
             </button>
           ))}
         </div>
-        {tab === 'updates' ? <p className="forge-field-hint forge-plugins-note">All installed plugins are up to date. Vendira plugins are part of the application and are updated with it.</p> : null}
-        {tab === 'available' ? <p className="forge-field-hint forge-plugins-note">There is no online plugin catalog for Vendira Designer. Components that are not implemented yet are listed as dimmed entries under Installed.</p> : null}
+        {tab === 'updates' ? <p className="forge-field-hint forge-plugins-note">All installed plugins are up to date. Dito Designer plugins are part of the application and are updated with it.</p> : null}
+        {tab === 'available' ? <p className="forge-field-hint forge-plugins-note">There is no online plugin catalog for Dito Designer. Components that are not implemented yet are listed as dimmed entries under Installed.</p> : null}
         {tab === 'downloaded' ? (
           <div className="forge-plugins-note">
             <button type="button" disabled>
               Add Plugins…
             </button>
-            <p className="forge-field-hint">nbm files of the original Designer cannot be loaded: Vendira Designer has no NetBeans plugin loader.</p>
+            <p className="forge-field-hint">nbm files of the original Designer cannot be loaded: Dito Designer has no NetBeans plugin loader.</p>
           </div>
         ) : null}
         {tab === 'settings' ? (
@@ -88,7 +89,7 @@ export function PluginsDialog({ onClose }: { onClose: () => void }) {
             <label className="forge-opt-row">
               <span className="forge-opt-label">Source</span>
               <span className="forge-opt-control">
-                <input type="text" readOnly value="Built into Vendira Designer" aria-label="Plugin source" />
+                <input type="text" readOnly value="Built into Dito Designer" aria-label="Plugin source" />
               </span>
             </label>
             <label className="forge-opt-row">

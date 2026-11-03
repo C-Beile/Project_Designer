@@ -301,7 +301,7 @@ export function NavigatorPanel({
 }
 
 // Entries of the Navigator context menu. The Manual does not describe this menu; Set to Default was asked for,
-// Copy Name is Vendira's own choice. Entries without a function stay visible, dimmed, with the reason.
+// Copy Name is Dito Designer's own choice. Entries without a function stay visible, dimmed, with the reason.
 function menuEntries(node: NavNode, canReset: boolean, canActivate: boolean, readOnlyHint: string): MenuEntry[] {
   const isElement = !!node.path && node.path !== '$' && node.icon !== 'folder'
   let hint = ''

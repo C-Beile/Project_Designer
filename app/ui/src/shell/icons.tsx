@@ -115,20 +115,19 @@ export const IconOpenModel = () => (
 
 export const IconCommit = () => (
   <Svg>
-    <path d="M2 8h3.5M10.5 8H14" stroke="var(--accent)" />
-    <circle cx="8" cy="8" r="2.5" stroke="var(--success)" />
+    <path d="M3 8.5 6.5 12 13 4.5" stroke="var(--success)" />
   </Svg>
 )
 
 export const IconPull = () => (
   <Svg>
-    <path d="M8 2v9M4.8 8 8 11.2 11.2 8M3 13.5h10" stroke="var(--accent)" />
+    <path d="M3.5 3.5 8 8l4.5-4.5M3.5 8 8 12.5 12.5 8" stroke="var(--accent)" />
   </Svg>
 )
 
 export const IconPush = () => (
   <Svg>
-    <path d="M8 11V2M4.8 5 8 1.8 11.2 5M3 13.5h10" stroke="var(--accent)" />
+    <path d="M3.5 12.5 8 8l4.5 4.5M3.5 8 8 3.5 12.5 8" stroke="var(--accent)" />
   </Svg>
 )
 

@@ -5,12 +5,12 @@ import { Modal } from './Dialogs'
 
 // System Table Control Center (manual 13.2, screenshot 192), read-only: the ASYS_ tables of the
 // connected system database with the version information of ASYS_VERSIONHISTORY. Creating,
-// upgrading and deleting need the table structures of the ADITO platform, which Vendira Designer
+// upgrading and deleting need the table structures of the ADITO platform, which Dito Designer
 // does not have (manual appendix B), so those buttons stay dimmed. Nothing is written.
 
 // Tables the server needs to start (manual 13.2.5) plus the user table; missing ones show red.
 const REQUIRED = ['ASYS_ALIASCONFIG', 'ASYS_SYSTEM', 'ASYS_USERS']
-const NOT_AVAILABLE = 'Needs the table structures of the ADITO platform, which Vendira Designer does not have'
+const NOT_AVAILABLE = 'Needs the table structures of the ADITO platform, which Dito Designer does not have'
 
 interface Row {
   name: string
@@ -154,7 +154,7 @@ export function TableCenterDialog({ api, db, onClose }: { api: ForgeApi; db: DbS
                         <dt>User</dt>
                         <dd>{current.user}</dd>
                       </dl>
-                      <p className="forge-field-hint">The available version is not known to Vendira Designer.</p>
+                      <p className="forge-field-hint">The available version is not known to Dito Designer.</p>
                     </>
                   ) : (
                     <p className="forge-field-hint">{problems > 0 ? `${problems} required table(s) are missing.` : 'Select a table.'}</p>

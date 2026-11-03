@@ -7,25 +7,26 @@ import { ENGINE_LABELS, EXPERIMENTAL_WARNING, type TranspilerEngineId } from '..
 import { getEditorPrefs, setEditorPref, type EditorPrefs } from '../theme/editorPrefs'
 import type { ThemeName } from '../theme/useTheme'
 import { formatShortcut, isMacPlatform } from './shortcuts'
+import { OptionIcon } from './optionIcons'
 
 // Tools > Options (manual 4.8.3, screenshots 037/038): an icon bar with the categories General,
 // Editor, Fonts & Colors, Keymap, Team, Appearance, Miscellaneous, ADITO and iReport; categories
-// with several pages show them as tabs below. Vendira-specific settings (Designer installation,
+// with several pages show them as tabs below. Dito-specific settings (Designer installation,
 // transpiler) live on ADITO > General. Pages whose feature does not exist yet keep their
 // controls visible but dimmed, with the reason.
 
 type Category = 'general' | 'editor' | 'fonts' | 'keymap' | 'team' | 'appearance' | 'misc' | 'adito' | 'ireport'
 
-const CATEGORIES: { id: Category; label: string; glyph: string }[] = [
-  { id: 'general', label: 'General', glyph: '🔧' },
-  { id: 'editor', label: 'Editor', glyph: '✎' },
-  { id: 'fonts', label: 'Fonts & Colors', glyph: '🖌' },
-  { id: 'keymap', label: 'Keymap', glyph: '⌨' },
-  { id: 'team', label: 'Team', glyph: '👥' },
-  { id: 'appearance', label: 'Appearance', glyph: '▭' },
-  { id: 'misc', label: 'Miscellaneous', glyph: '🗂' },
-  { id: 'adito', label: 'ADITO', glyph: 'A' },
-  { id: 'ireport', label: 'iReport', glyph: 'R' },
+const CATEGORIES: { id: Category; label: string }[] = [
+  { id: 'general', label: 'General' },
+  { id: 'editor', label: 'Editor' },
+  { id: 'fonts', label: 'Fonts & Colors' },
+  { id: 'keymap', label: 'Keymap' },
+  { id: 'team', label: 'Team' },
+  { id: 'appearance', label: 'Appearance' },
+  { id: 'misc', label: 'Miscellaneous' },
+  { id: 'adito', label: 'ADITO' },
+  { id: 'ireport', label: 'iReport' },
 ]
 
 const PAGES: Partial<Record<Category, { id: string; label: string }[]>> = {
@@ -82,7 +83,7 @@ function Check({ label, checked, onChange, disabled, hint }: { label: string; ch
   )
 }
 
-const LATER = 'Stored for later: the feature itself is not available in Vendira Designer yet.'
+const LATER = 'Stored for later: the feature itself is not available in Dito Designer yet.'
 
 export interface KeymapEntry {
   group: string
@@ -156,7 +157,7 @@ export function OptionsDialog({
     body = (
       <>
         <h3>General</h3>
-        <Check label="Confirm destructive actions (delete, deploy, write statements)" checked={opts.general.confirmDestructive} onChange={(v) => patch('general', { confirmDestructive: v })} disabled hint="Always on: Vendira never deletes or writes without a confirmation." />
+        <Check label="Confirm destructive actions (delete, deploy, write statements)" checked={opts.general.confirmDestructive} onChange={(v) => patch('general', { confirmDestructive: v })} disabled hint="Always on: Dito Designer never deletes or writes without a confirmation." />
         <Check label="Show hints in dialogs" checked={opts.general.showHints} onChange={(v) => patch('general', { showHints: v })} />
         <Row label="Default encoding of new files">
           <input type="text" value="UTF-8" readOnly aria-label="Default encoding" />
@@ -172,6 +173,8 @@ export function OptionsDialog({
         </Row>
         <Check label="Wrap long lines" checked={opts.editor.wordWrap} onChange={(v) => patch('editor', { wordWrap: v })} />
         <Check label="Show minimap" checked={opts.editor.minimap} onChange={(v) => patch('editor', { minimap: v })} />
+        <h4>On Save</h4>
+        <Check label="Format the file when it is saved" checked={opts.editor.formatOnSave} onChange={(v) => patch('editor', { formatOnSave: v })} hint={`Applies to code and text files. Format by hand with ${formatShortcut('Alt+Shift+F')} (Source > Format).`} />
         <h4>Display (View menu)</h4>
         <Check label="Show line numbers" checked={prefs.lineNumbers} onChange={(v) => setPrefs({ ...prefs, lineNumbers: v })} />
         <Check label="Show non-printable characters" checked={prefs.nonPrintable} onChange={(v) => setPrefs({ ...prefs, nonPrintable: v })} />
@@ -267,7 +270,7 @@ export function OptionsDialog({
       body = (
         <>
           <h3>Janitor</h3>
-          <Check label="Run Janitor on Startup" checked={opts.misc.janitorOnStartup} onChange={(v) => patch('misc', { janitorOnStartup: v })} hint="Only reports outdated version folders; Vendira Designer never deletes them itself." />
+          <Check label="Run Janitor on Startup" checked={opts.misc.janitorOnStartup} onChange={(v) => patch('misc', { janitorOnStartup: v })} hint="Only reports outdated version folders; Dito Designer never deletes them itself." />
           <Row label="Removal threshold (number of days)">
             <input type="number" min={1} max={3650} value={opts.misc.janitorDays} aria-label="Removal threshold" onChange={(e) => patch('misc', { janitorDays: Math.max(1, Number(e.target.value) || 30) })} />
           </Row>
@@ -288,7 +291,7 @@ export function OptionsDialog({
     } else if (subPage === 'diff') {
       body = <p className="forge-field-hint">Diff settings are not available yet.</p>
     } else {
-      body = <p className="forge-field-hint">The terminal window is not available in Vendira Designer yet.</p>
+      body = <p className="forge-field-hint">The terminal window is not available in Dito Designer yet.</p>
     }
   } else if (category === 'adito') {
     if (subPage === 'general') {
@@ -400,7 +403,7 @@ export function OptionsDialog({
           <Row label="API key">
             <input type="password" disabled aria-label="API key" placeholder="not stored" />
           </Row>
-          <p className="forge-field-hint">API keys are never stored by Vendira Designer, and automatic translation is not available yet.</p>
+          <p className="forge-field-hint">API keys are never stored by Dito Designer, and automatic translation is not available yet.</p>
         </>
       )
     } else if (subPage === 'debugger') {
@@ -435,7 +438,7 @@ export function OptionsDialog({
       body = (
         <>
           <h3>Data Sharing</h3>
-          <Check label="Share anonymous usage statistics" checked={false} onChange={() => {}} disabled hint="Vendira Designer never sends usage statistics." />
+          <Check label="Share anonymous usage statistics" checked={false} onChange={() => {}} disabled hint="Dito Designer never sends usage statistics." />
         </>
       )
     }
@@ -443,7 +446,7 @@ export function OptionsDialog({
     body = (
       <>
         <h3>{PAGES.ireport?.find((p) => p.id === subPage)?.label ?? 'iReport'}</h3>
-        <p className="forge-field-hint">The report designer (iReport / JasperReports) is not part of Vendira Designer yet, so these settings have no effect.</p>
+        <p className="forge-field-hint">The report designer (iReport / JasperReports) is not part of Dito Designer yet, so these settings have no effect.</p>
       </>
     )
   }
@@ -472,7 +475,7 @@ export function OptionsDialog({
           {CATEGORIES.map((c) => (
             <button key={c.id} type="button" role="tab" aria-selected={category === c.id} className={`forge-opt-cat${category === c.id ? ' is-active' : ''}`} onClick={() => setCategory(c.id)}>
               <span className="forge-opt-glyph" aria-hidden="true">
-                {c.glyph}
+                <OptionIcon id={c.id} />
               </span>
               <span>{c.label}</span>
             </button>

@@ -112,7 +112,8 @@ describe('Problems and Scan Services', () => {
     render(<ProblemsPanel problems={[problem(), problem({ id: 'p2', severity: 'Warning', message: 'Only a warning', line: undefined })]} scanning={false} onOpen={onOpen} />)
     const row = screen.getByText('Field is broken').closest('tr')!
     expect(within(row).getByText('7')).toBeInTheDocument()
-    expect(within(row).getByText('entity/A_entity/A_entity.aod')).toBeInTheDocument()
+    expect(within(row).getByText('entity/A_entity/')).toBeInTheDocument()
+    expect(within(row).getByText('A_entity.aod')).toBeInTheDocument()
     await user.dblClick(row)
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ id: 'p1' }))
     await user.click(screen.getByRole('checkbox', { name: /Warnings/ }))
@@ -316,7 +317,7 @@ describe('Shell - menus and toolbar of round 2', () => {
   it('Help > Check for Updates says when the version is current and shows a failed check', async () => {
     const current = await openUpdates(createMockForgeApi({ projectTree: [], documents: {} }))
     await current.user.click(within(current.dialog).getByRole('button', { name: 'Check for Updates' }))
-    expect(await within(current.dialog).findByText('Vendira Designer is up to date.')).toBeInTheDocument()
+    expect(await within(current.dialog).findByText('Dito Designer is up to date.')).toBeInTheDocument()
     cleanup()
     const failed = await openUpdates(createMockForgeApi({ projectTree: [], documents: {}, updateError: 'no access' }))
     await failed.user.click(within(failed.dialog).getByRole('button', { name: 'Check for Updates' }))

@@ -4,7 +4,7 @@ import type { LocalDataInfo, UpdateInfo } from '../wire/types'
 import { Modal } from './Dialogs'
 
 // Help > Check for Updates (manual chapter 13 / menu Help). Asks the private release repository
-// for a newer Vendira Designer, shows its version and release notes and installs it only after the
+// for a newer Dito Designer, shows its version and release notes and installs it only after the
 // user clicked "Install and restart". It also opens the System Table Control Center, the one
 // maintenance function of chapter 13 that can be read from the system database.
 
@@ -55,7 +55,7 @@ export function UpdatesDialog({ api, onClose, onOpenTableCenter }: { api: ForgeA
             Check for Updates
           </button>
           {state.phase === 'checking' ? <span>Searching for a newer version…</span> : null}
-          {state.phase === 'current' ? <span>Vendira Designer is up to date.</span> : null}
+          {state.phase === 'current' ? <span>Dito Designer is up to date.</span> : null}
           {state.phase === 'error' ? <span role="alert">Update check failed: {state.message}</span> : null}
         </div>
         {state.phase === 'available' || state.phase === 'installing' ? (
@@ -71,7 +71,7 @@ export function UpdatesDialog({ api, onClose, onOpenTableCenter }: { api: ForgeA
         ) : null}
         <h3>Update the ADITO project</h3>
         <p className="forge-field-hint">
-          Upgrading a project to a newer ADITO version (manual 13.1: &quot;Upgrade project…&quot; and &quot;This model is deprecated and has to be converted&quot;) is not available: the upgrade rules of each version are not known to Vendira Designer, so old projects are never changed automatically.
+          Upgrading a project to a newer ADITO version (manual 13.1: &quot;Upgrade project…&quot; and &quot;This model is deprecated and has to be converted&quot;) is not available: the upgrade rules of each version are not known to Dito Designer, so old projects are never changed automatically.
         </p>
         <h3>Update the database</h3>
         <p>The system tables of the connected system database can be checked in the System Table Control Center.</p>

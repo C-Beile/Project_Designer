@@ -2,17 +2,11 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   IconBack,
-  IconBug,
-  IconDependencies,
-  IconExtensionPack,
   IconFind,
   IconCommit,
   IconDeploy,
-  IconDeployOpened,
-  IconDiff,
   IconForward,
   IconHistory,
-  IconLocalChanges,
   IconNew,
   IconOpenProject,
   IconPull,
@@ -32,7 +26,7 @@ import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { formatShortcut } from './shortcuts'
 
 export const DEPLOY_DISABLED_HINT = 'Deploy (open a project first)'
-export const RUN_DISABLED_HINT = 'Not available yet: Vendira Designer cannot start a server or client'
+export const RUN_DISABLED_HINT = 'Not available yet: Dito Designer cannot start a server or client'
 
 // Disabled buttons stay focusable (aria-disabled instead of the disabled attribute) so their
 // tooltip explaining *why* they are unavailable can still be reached.
@@ -146,9 +140,6 @@ export function Toolbar(p: ToolbarProps) {
           <ToolButton label="Reload All from Disk" enabled={p.hasProject} onClick={() => p.onCommand('file.reloadAll')}>
             <IconRefresh />
           </ToolButton>
-          <ToolButton label="Show Dependencies" hint={`Show Dependencies in Projecttree and ${formatShortcut('Mod+O')} dialog (${formatShortcut('Mod+Shift+B')}) - not available yet`} enabled={false}>
-            <IconDependencies />
-          </ToolButton>
           <ToolButton label="Previous" hint={tip('Previous (not available yet)', 'Mod+Alt+ArrowLeft')} enabled={false}>
             <IconBack />
           </ToolButton>
@@ -180,17 +171,8 @@ export function Toolbar(p: ToolbarProps) {
           <ToolButton label="Deploy Project" hint={p.hasProject ? tip('Deploy Project', 'Mod+F8') : DEPLOY_DISABLED_HINT} enabled={p.hasProject} onClick={() => p.onCommand('project.deploy')}>
             <IconDeploy />
           </ToolButton>
-          <ToolButton label="Deploy opened models" hint={tip('Deploy opened models (not available yet)', 'Mod+Alt+F8')} enabled={false}>
-            <IconDeployOpened />
-          </ToolButton>
-          <ToolButton label="Deploy local changes" hint={tip('Deploy local changes (not available yet)', 'Alt+Shift+F8')} enabled={false}>
-            <IconDeployOpened />
-          </ToolButton>
           <ToolButton label="Execute SQL" hint={sqlOn ? 'Execute SQL' : 'Execute SQL (Execute SQL plugin deactivated)'} enabled={sqlOn} onClick={() => p.onCommand('tools.sqlPrompt')}>
             <IconSql />
-          </ToolButton>
-          <ToolButton label="Build and Deploy" hint={p.hasProject ? tip('Build the project, then deploy it to the chosen system', 'Mod+Shift+F9') : DEPLOY_DISABLED_HINT} enabled={p.hasProject} onClick={() => p.onCommand('project.buildDeploy')}>
-            <IconDeploy />
           </ToolButton>
           <Sep />
         </>
@@ -245,20 +227,14 @@ export function Toolbar(p: ToolbarProps) {
       ) : null}
       {g.git ? (
         <>
-          <ToolButton label="Pull" hint={gitHint('Pull')} enabled={gitOn} onClick={() => p.onCommand('team.pull')}>
+          <ToolButton label="Pull" hint={gitHint('Pull: show and merge new commits of the remote')} enabled={gitOn} onClick={() => p.onCommand('team.pullView')}>
             <IconPull />
           </ToolButton>
           <ToolButton label="Commit Changed Files" hint={gitHint('Commit Changed Files')} enabled={gitOn} onClick={() => p.onCommand('team.commit')}>
             <IconCommit />
           </ToolButton>
-          <ToolButton label="Push" hint={gitHint('Push')} enabled={gitOn} onClick={() => p.onCommand('team.push')}>
+          <ToolButton label="Push" hint={gitHint('Push: choose the local commits to push')} enabled={gitOn} onClick={() => p.onCommand('team.pushView')}>
             <IconPush />
-          </ToolButton>
-          <ToolButton label="Diff Local Changes" hint={gitHint('Diff Local Changes')} enabled={gitOn} onClick={() => p.onCommand('team.commit')}>
-            <IconDiff />
-          </ToolButton>
-          <ToolButton label="Show Local Changes" hint={gitHint('Show Local Changes')} enabled={gitOn} onClick={() => p.onCommand('team.commit')}>
-            <IconLocalChanges />
           </ToolButton>
           <ToolButton label="Show Project History" hint={gitHint('Show Project History')} enabled={gitOn} onClick={() => p.onCommand('team.history')}>
             <IconHistory />
@@ -268,20 +244,11 @@ export function Toolbar(p: ToolbarProps) {
       ) : null}
       {g.analytics ? (
         <>
-          <ToolButton label="Send Bug Report" hint="Send Bug Report (not available yet)" enabled={false}>
-            <IconBug />
-          </ToolButton>
           <Sep />
         </>
       ) : null}
       {g.convert ? (
         <>
-          <ToolButton label="Open in Extension Pack" hint={tip('Open in Extension Pack (not available yet)', 'F7')} enabled={false}>
-            <IconExtensionPack />
-          </ToolButton>
-          <ToolButton label="Transfer Extension Pack Changes" hint={tip('Transfer Extension Pack Changes (not available yet)', 'F8')} enabled={false}>
-            <IconExtensionPack />
-          </ToolButton>
           <Sep />
         </>
       ) : null}

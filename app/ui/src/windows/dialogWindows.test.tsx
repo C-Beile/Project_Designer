@@ -24,7 +24,7 @@ async function openMenuItem(user: ReturnType<typeof userEvent.setup>, menu: stri
 
 describe('menu dialogs open as windows of their own', () => {
   const cases: [string, RegExp, string, string][] = [
-    ['Help', /^About Vendira Designer/, 'about', 'About Vendira Designer'],
+    ['Help', /^About Dito Designer/, 'about', 'About Dito Designer'],
     ['Help', /^Check for Updates/, 'updates', 'Check for Updates'],
     ['Tools', /^Local Data/, 'localdata', 'Local Data'],
     ['Tools', /^Plugins/, 'plugins', 'Plugins'],
@@ -61,8 +61,8 @@ describe('menu dialogs open as windows of their own', () => {
   it('without operating-system windows the embedded dialog is used as before', async () => {
     const user = userEvent.setup()
     render(<Shell api={createMockForgeApi({ projectTree: [], documents: {} })} projectRoot="" />)
-    await openMenuItem(user, 'Help', /^About Vendira Designer/)
-    expect(await screen.findByRole('dialog', { name: 'About Vendira Designer' })).toBeInTheDocument()
+    await openMenuItem(user, 'Help', /^About Dito Designer/)
+    expect(await screen.findByRole('dialog', { name: 'About Dito Designer' })).toBeInTheDocument()
   })
 })
 

@@ -42,12 +42,14 @@ import { PluginsDialog } from './PluginsDialog'
 import { LocalDataDialog } from './LocalDataDialog'
 import { UpdatesDialog } from './UpdatesDialog'
 import { GitDialog } from './GitDialog'
+import { SyncDialog } from './SyncDialog'
 import { TableCenterDialog } from './TableCenterDialog'
 import { defaultToolbarPrefs, loadToolbarPrefs, saveToolbarPrefs, type ToolbarGroup, type ToolbarPrefs } from './toolbarPrefs'
 import { getEditorPrefs, reloadEditorPrefs, setEditorPref, subscribeEditorPrefs, type EditorPrefs } from '../theme/editorPrefs'
 import { runEditorAction } from '../theme/monacoActions'
 import { getPluginPrefs, isPluginActive, reloadPluginPrefs, subscribePluginPrefs } from '../settings/plugins'
 import { getOptions, reloadOptions } from '../settings/options'
+import { formatBeforeSave } from '../theme/formatOnSave'
 import { buildTreeMenu, objectLayout, type TreeMenuContext } from '../tree/contextMenu'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { ConfirmDeleteDialog, PasteNameDialog, RenameDialog } from '../tree/TreeDialogs'
@@ -218,7 +220,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   const [installDir, setInstallDir] = useState<string | null>(null)
   // Object whose file changed on disk (for example by Git) while it holds unsaved edits; set when a save is refused.
   const [conflict, setConflict] = useState<string | null>(null)
-  const [dialog, setDialog] = useState<'options' | 'about' | 'deploy' | 'openModel' | 'plugins' | 'updates' | 'localData' | 'tableCenter' | 'git' | null>(null)
+  const [dialog, setDialog] = useState<'options' | 'about' | 'deploy' | 'openModel' | 'plugins' | 'updates' | 'localData' | 'tableCenter' | 'git' | 'sync' | null>(null)
   const [gitView, setGitView] = useState<{ tab: 'changes' | 'history' | 'branches'; target: { local?: string; remote?: string } | null }>({ tab: 'changes', target: null })
   // Services tab: connection state (polled, so a dying tunnel shows up) and the text of the open
   // SQL editors, which survives tab switches.
@@ -717,6 +719,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
 
   // Team > Git: the Commit dialog and the history and branch views open as dialogs, Pull and Push run
   // directly from the menu click, as in the original Designer.
+  const [syncMode, setSyncMode] = useState<'pull' | 'push'>('pull')
   const openGit = useCallback((tab: 'changes' | 'history' | 'branches', target: { local?: string; remote?: string } | null = null) => {
     setGitView({ tab, target })
     setDialog('git')
@@ -783,6 +786,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   const prepareSave = useCallback(
     async (id: string): Promise<'object' | 'done' | 'blocked'> => {
       await flushers.current.get(id)?.()
+      if (getOptions().editor.formatOnSave) await formatBeforeSave(id)
       const tab = tabState.tabs.find((t) => t.id === id)
       const draft = drafts.current.get(id)
       if (tab && isFileNode(tab.node)) {
@@ -1639,6 +1643,14 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
           case 'team.commit':
             openGit('changes')
             return
+          case 'team.pullView':
+            setSyncMode('pull')
+            setDialog('sync')
+            return
+          case 'team.pushView':
+            setSyncMode('push')
+            setDialog('sync')
+            return
           case 'team.pull':
             void runGit('Pull', () => api.gitPull(root))
             return
@@ -2158,7 +2170,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     },
     () => setDialog((d) => (d === 'deploy' ? null : d)),
   )
-  useOsDialog<unknown>(dialog === 'about', () => ({ name: 'about', title: 'About Vendira Designer', size: { width: 600, height: 560 }, payload: {} }), () => {}, () => setDialog((d) => (d === 'about' ? null : d)))
+  useOsDialog<unknown>(dialog === 'about', () => ({ name: 'about', title: 'About Dito Designer', size: { width: 600, height: 560 }, payload: {} }), () => {}, () => setDialog((d) => (d === 'about' ? null : d)))
   useOsDialog<unknown>(
     dialog === 'plugins',
     () => ({ name: 'plugins', title: 'Plugins', size: { width: 760, height: 560 }, payload: {} }),
@@ -2286,7 +2298,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
 
   return (
     <div className="forge-shell">
-      <TitleBar title={hasProject ? `Vendira Designer - ${baseName(root)}` : 'Vendira Designer'} />
+      <TitleBar title={hasProject ? `Dito Designer - ${baseName(root)}` : 'Dito Designer'} />
       <MenuBar menus={menus} onCommand={onMenuCommand} />
       <Toolbar
         hasProject={hasProject}
@@ -2512,6 +2524,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       {dialog === 'git' && hasProject && !osWindowsAvailable() ? (
         <GitDialog api={api} projectRoot={root} initialTab={gitView.tab} initialTarget={gitView.target} onClose={() => setDialog(null)} onChanged={() => setReloadToken((t) => t + 1)} />
       ) : null}
+      {dialog === 'sync' && hasProject && !osWindowsAvailable() ? <SyncDialog api={api} projectRoot={root} mode={syncMode} onClose={() => setDialog(null)} onDone={() => setReloadToken((t) => t + 1)} /> : null}
       {dialog === 'updates' && !osWindowsAvailable() ? <UpdatesDialog api={api} onClose={() => setDialog(null)} onOpenTableCenter={() => setDialog('tableCenter')} /> : null}
       {dialog === 'tableCenter' ? <TableCenterDialog api={api} db={db} onClose={() => setDialog(null)} /> : null}
     </div>

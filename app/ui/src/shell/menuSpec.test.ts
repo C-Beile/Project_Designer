@@ -30,7 +30,7 @@ const ctx: MenuContext = {
   engine: 'official',
 }
 
-// Entries of the original that Vendira shows one level deeper (or not at all) on purpose; see ORIGINAL_DELTA.md.
+// Entries of the original that Dito Designer shows one level deeper (or not at all) on purpose; see ORIGINAL_DELTA.md.
 const MOVED: Record<string, string[]> = {
   Tools: ['Re-fresh Native Tools', 'View Native Tools Status', 'Open Native Tools Directory'],
   Help: ['About NetBeans', 'About ADITO'],

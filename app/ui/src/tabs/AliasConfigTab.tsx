@@ -77,10 +77,21 @@ export function AliasConfigTab({ api, path }: { api: ForgeApi; path: string | un
   if (!up) return <p className="forge-field-hint">Connection to the database of {ref.system} unavailable. Open its tunnel in the system editor.</p>
   return (
     <div className="alias-config-tab" aria-label={`${ref.alias} config`}>
+      <div className="alias-config-subtabs" role="tablist" aria-label="Editor views">
+        <button type="button" role="tab" aria-selected="true" className="alias-config-subtab is-active">
+          Editor
+        </button>
+        <button type="button" role="tab" aria-selected="false" className="alias-config-subtab" disabled title="The source of a system config is not available yet">
+          Source
+        </button>
+        <button type="button" role="tab" aria-selected="false" className="alias-config-subtab" disabled title="The history of a system config is not available yet">
+          History
+        </button>
+      </div>
       {error ? <p className="forge-field-error" role="alert">{error}</p> : null}
       {!config && !error ? <p className="forge-field-hint">Please Wait…</p> : null}
       {config ? (
-        <AliasConfigPanel config={config} system={ref.system} editable />
+        <AliasConfigPanel config={config} system={ref.system} editable splitKey="tab" />
       ) : null}
     </div>
   )

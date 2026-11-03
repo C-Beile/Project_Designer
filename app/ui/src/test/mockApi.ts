@@ -307,7 +307,7 @@ export function createMockForgeApi(options: {
       return (
         options.localData ?? {
           app_version: '1.0.0-rc11',
-          exe_dir: 'C:/Program Files/Vendira Designer',
+          exe_dir: 'C:/Program Files/Dito Designer',
           os: 'windows',
           arch: 'x86_64',
           forge_data_dir: 'C:/Users/u/AppData/Roaming/de.threehillsit.vendira-designer',
@@ -522,6 +522,16 @@ export function createMockForgeApi(options: {
     async gitPull(): Promise<GitOutput> {
       gitCalls.push('pull')
       return { ok: true, text: 'Already up to date.' }
+    },
+    async gitUnpushed() {
+      return gitState.commits.slice(0, 2)
+    },
+    async gitIncoming() {
+      return []
+    },
+    async gitPushTo(_root, hash): Promise<GitOutput> {
+      gitCalls.push(`pushTo:${hash}`)
+      return { ok: true, text: 'pushed' }
     },
     async gitPush(): Promise<GitOutput> {
       gitCalls.push('push')

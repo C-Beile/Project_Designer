@@ -20,6 +20,8 @@ export interface MonacoTextHandle {
   getCursorOffset(): number
   /** Runs a built-in editor action (find, comment, indent ...); false if the editor lacks it. */
   runAction(id: string): boolean
+  /** Formats the whole document and waits until it is done. */
+  format(): Promise<void>
   focus(): void
 }
 
@@ -112,6 +114,9 @@ export function MonacoText({
         if (!action) return false
         void action.run()
         return true
+      },
+      format: async () => {
+        await editor.getAction?.('editor.action.formatDocument')?.run()
       },
       focus: () => editor.focus?.(),
     }

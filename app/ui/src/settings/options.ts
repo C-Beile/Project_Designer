@@ -17,7 +17,7 @@ export interface DesignerOptions {
   debugger: { enabled: boolean; showElapsed: boolean }
   cloud: { bufferSize: number }
   encoding: { defaultEncoding: string }
-  editor: { fontSize: number; tabSize: number; wordWrap: boolean; minimap: boolean }
+  editor: { fontSize: number; tabSize: number; wordWrap: boolean; minimap: boolean; formatOnSave: boolean }
   misc: { csvSeparator: ';' | ',' | '\t'; outputMaxLines: number; janitorOnStartup: boolean; janitorDays: number }
 }
 
@@ -29,7 +29,7 @@ export const DEFAULT_OPTIONS: DesignerOptions = {
   debugger: { enabled: false, showElapsed: true },
   cloud: { bufferSize: 128 },
   encoding: { defaultEncoding: 'UTF-8' },
-  editor: { fontSize: 13, tabSize: 2, wordWrap: false, minimap: false },
+  editor: { fontSize: 13, tabSize: 2, wordWrap: false, minimap: false, formatOnSave: false },
   misc: { csvSeparator: ';', outputMaxLines: 5000, janitorOnStartup: true, janitorDays: 30 },
 }
 

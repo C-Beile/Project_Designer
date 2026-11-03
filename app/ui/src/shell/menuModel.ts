@@ -403,7 +403,7 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
           children: [later('tools.refreshNativeTools', 'Re-fresh Native Tools'), later('tools.nativeToolsStatus', 'View Native Tools Status'), later('tools.nativeToolsDirectory', 'Open Native Tools Directory')],
         },
         sep(),
-        // Vendira's own commands have no counterpart in the original menus; they sit in one block above Plugins.
+        // Dito Designer's own commands have no counterpart in the original menus; they sit in one block above Plugins.
         item('file.projectProperties', 'Project Properties', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
         item('project.deploy', 'Deploy...', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
         item('project.buildDeploy', 'Build and Deploy...', ctx.hasProject && !ctx.transpileRunning, { shortcut: 'Mod+Shift+F9', hint: ctx.hasProject ? undefined : noProjectHint }),
@@ -516,7 +516,7 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
         sep(),
         later('help.userGuide', 'Show Documentation'),
         sep(),
-        item('help.about', 'About Vendira Designer', true),
+        item('help.about', 'About Dito Designer', true),
       ],
     },
   ]

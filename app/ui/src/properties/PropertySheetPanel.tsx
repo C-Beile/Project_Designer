@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { KeyboardEvent } from 'react'
+import type { CSSProperties, KeyboardEvent } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { WildcardPicker } from './WildcardPicker'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
 import { PATH_VARIABLE_PROPERTIES, resolvePathVariables } from './pathVariables'
 import { layoutSheet } from './sheetLayout'
+import { useSheetSplit } from './useSheetSplit'
 import { confirmDialog } from '../shell/dialogService'
 import { notify } from '../shell/notifications'
 import type { CodeTarget, ModificationOutcome, PropertySheet, SheetRow, UndoRedoOutcome, WireValue } from '../wire/types'
@@ -213,6 +214,9 @@ export function PropertySheetPanel({
     [api, sheet, projectRoot, target.nodeId, target.path, onEdited, onStatus, onModificationChanged],
   )
 
+  const rowsRef = useRef<HTMLDivElement>(null)
+  const sheetSplit = useSheetSplit('objects', rowsRef, 40)
+
   const openLinked = (row: SheetRow) => {
     if (!sheet) return
     const reference = row.set ? (textOf(row.value) ?? '') : (row.new_reference ?? '')
@@ -241,7 +245,8 @@ export function PropertySheetPanel({
           ))}
         </div>
       ) : null}
-      <div className="psheet-grid" role="grid" aria-label={`${sheet.name} properties`}>
+      <div className="psheet-grid" role="grid" aria-label={`${sheet.name} properties`} style={{ '--sheet-split': `${sheetSplit.split}%` } as CSSProperties}>
+        <div className="psheet-rows" ref={rowsRef}>
         {tabGroups.map((group) => {
           const isCollapsed = collapsed.has(group.key)
           return (
@@ -312,6 +317,21 @@ export function PropertySheetPanel({
             </div>
           )
         })}
+        <div
+          className="sheet-splitter"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Column divider"
+          aria-valuemin={15}
+          aria-valuemax={85}
+          aria-valuenow={Math.round(sheetSplit.split)}
+          tabIndex={0}
+          title="Drag to resize the columns, double-click to reset"
+          onPointerDown={sheetSplit.onPointerDown}
+          onKeyDown={sheetSplit.onKeyDown}
+          onDoubleClick={sheetSplit.reset}
+        />
+        </div>
       </div>
       <div className="psheet-desc" aria-live="polite">
         <strong>{selectedRow ? selectedRow.name : sheet.name}</strong>
@@ -384,7 +404,7 @@ export function PropertySheetPanel({
 }
 
 // Context menu of a property row. The Manual does not describe it; Set to Default was asked for, the other
-// entries are Vendira's own choice. Entries without a function stay visible, dimmed, with the reason.
+// entries are Dito Designer's own choice. Entries without a function stay visible, dimmed, with the reason.
 export function rowMenuEntries(row: SheetRow, moduleWithoutProject: boolean): MenuEntry[] {
   let hint = ''
   if (!row.set) hint = 'Already at its default: the property is not set.'

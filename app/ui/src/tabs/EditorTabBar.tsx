@@ -2,6 +2,7 @@ import { normId } from '../problems/problemStore'
 import { useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { NodeIcon } from '../tree/treeIcons'
+import { TunnelStateIcon } from '../tree/TunnelStateIcon'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { canMoveToWindow } from '../windows/editorWindows'
 import type { EditorTab } from './tabModel'
@@ -153,7 +154,7 @@ export function EditorTabBar({
               <span className="forge-tab-label">{tab.node.label}</span>
               {(() => {
                 const badge = badgeFor?.(tab)
-                return badge ? <span className="tunnel-dot" data-state={badge.state} role="img" aria-label={badge.title} title={badge.title} /> : null
+                return badge ? <TunnelStateIcon state={badge.state} title={badge.title} /> : null
               })()}
               {(problemCounts?.get(normId(tab.id))?.errors ?? 0) > 0 ? (
                 <span className="forge-tab-error" role="img" aria-label="Has errors" title="This object has errors">

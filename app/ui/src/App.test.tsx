@@ -15,6 +15,7 @@ vi.mock('monaco-editor', () => ({
     defineTheme: () => {},
     setTheme: () => {},
   },
+  languages: { register: () => {}, setLanguageConfiguration: () => {}, setMonarchTokensProvider: () => {} },
 }))
 
 function sampleTree(): TreeNode[] {

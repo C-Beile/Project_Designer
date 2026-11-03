@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { MonacoText, type MonacoTextHandle } from './MonacoText'
+import { MarkdownPreview } from './MarkdownPreview'
+import { GITATTRIBUTES_LANGUAGE, IGNORE_LANGUAGE } from '../theme/monacoLanguages'
 import { applyJditoTypes } from '../theme/monacoJdito'
+import { registerFormatter } from '../theme/formatOnSave'
 import { useScm } from '../scm/scmStore'
 import type { Gutter } from '../wire/types'
 
@@ -22,10 +25,34 @@ const LANGUAGES: Record<string, string> = {
   html: 'html',
 }
 
-export function languageForFile(label: string): string {
-  const dot = label.lastIndexOf('.')
-  return (dot >= 0 && LANGUAGES[label.slice(dot + 1).toLowerCase()]) || 'plaintext'
+// Dot files are recognised by their whole name: they have no extension Monaco could use.
+const FILE_NAMES: Record<string, string> = {
+  '.gitignore': IGNORE_LANGUAGE,
+  '.npmignore': IGNORE_LANGUAGE,
+  '.dockerignore': IGNORE_LANGUAGE,
+  '.eslintignore': IGNORE_LANGUAGE,
+  '.prettierignore': IGNORE_LANGUAGE,
+  '.transpilerignore': IGNORE_LANGUAGE,
+  '.gitattributes': GITATTRIBUTES_LANGUAGE,
+  '.gitmodules': 'ini',
+  '.gitconfig': 'ini',
+  '.npmrc': 'ini',
+  '.editorconfig': 'ini',
 }
+
+export function languageForFile(label: string): string {
+  const name = label.replace(/^.*[\\/]/, '').toLowerCase()
+  if (FILE_NAMES[name]) return FILE_NAMES[name]
+  const dot = name.lastIndexOf('.')
+  return (dot > 0 && LANGUAGES[name.slice(dot + 1)]) || 'plaintext'
+}
+
+type MarkdownView = 'source' | 'split' | 'preview'
+const MARKDOWN_VIEWS: [MarkdownView, string][] = [
+  ['source', 'Source'],
+  ['split', 'Split'],
+  ['preview', 'Preview'],
+]
 
 export function TextFileEditor({
   api,
@@ -50,8 +77,11 @@ export function TextFileEditor({
   const [loaded, setLoaded] = useState<{ initial: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const handle = useRef<MonacoTextHandle | null>(null)
+  useEffect(() => registerFormatter(path, async () => void (await handle.current?.format())), [path])
   const scm = useScm()
   const [gutter, setGutter] = useState<Gutter | null>(null)
+  const [mdView, setMdView] = useState<MarkdownView>('split')
+  const [mdText, setMdText] = useState('')
 
   // Changed lines against HEAD; read again whenever the Git status was refreshed (after a save, a Git action).
   useEffect(() => {
@@ -72,6 +102,7 @@ export function TextFileEditor({
     setError(null)
     if (isNew) {
       setLoaded({ initial: drafts.get(path) ?? '' })
+      setMdText(drafts.get(path) ?? '')
       return () => {
         cancelled = true
       }
@@ -82,6 +113,7 @@ export function TextFileEditor({
       .then((text) => {
         if (cancelled) return
         setLoaded({ initial: drafts.get(path) ?? text })
+        setMdText(drafts.get(path) ?? text)
       })
       .catch((e) => {
         if (!cancelled) setError(String(e instanceof Error ? e.message : e))
@@ -106,19 +138,34 @@ export function TextFileEditor({
           Read-only: this file belongs to an installed module.
         </div>
       ) : null}
-      <MonacoText
-        initial={loaded.initial}
-        language={language}
-        modelPath={language === 'javascript' ? path : undefined}
-        gutter={gutter}
-        readOnly={readOnly}
-        label={label}
-        handleRef={handle}
-        onChange={(text) => {
-          drafts.set(path, text)
-          onDirty(path, true)
-        }}
-      />
+      {language === 'markdown' ? (
+        <div className="forge-md-switch" role="tablist" aria-label="Markdown view">
+          {MARKDOWN_VIEWS.map(([id, text]) => (
+            <button key={id} type="button" role="tab" aria-selected={mdView === id} className={`forge-md-tab${mdView === id ? ' is-active' : ''}`} onClick={() => setMdView(id)}>
+              {text}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <div className={`forge-md-body${language === 'markdown' ? ` is-${mdView}` : ''}`}>
+        <div className="forge-md-source">
+          <MonacoText
+            initial={loaded.initial}
+            language={language}
+            modelPath={language === 'javascript' ? path : undefined}
+            gutter={gutter}
+            readOnly={readOnly}
+            label={label}
+            handleRef={handle}
+            onChange={(text) => {
+              drafts.set(path, text)
+              if (language === 'markdown') setMdText(text)
+              onDirty(path, true)
+            }}
+          />
+        </div>
+        {language === 'markdown' && mdView !== 'source' ? <MarkdownPreview text={mdText} /> : null}
+      </div>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
 import { getEditorStatus, goToLine, subscribeEditorStatus, toggleOvertype } from '../theme/monacoActions'
 import type { GitOverview } from '../wire/types'
+import { TunnelStateIcon } from '../tree/TunnelStateIcon'
 import { TUNNEL_PHASE_LABEL, type TunnelPhase } from '../services/tunnelState'
 
 // Status bar. Layout from the original (reference shots 58, 59, 60): notification and task icons,
@@ -191,7 +192,7 @@ export function StatusBar({
       </button>
       {tunnel === null ? null : (
         <button type="button" className="forge-status-btn forge-status-tunnel" data-state={tunnelPhase ?? (tunnel ? 'on' : 'off')} title={`SSH tunnel (${TUNNEL_PHASE_LABEL[tunnelPhase ?? (tunnel ? 'on' : 'off')]})${tunnelDetail ? `: ${tunnelDetail}` : ''}${openTunnels && openTunnels.length > 0 ? `: ${openTunnels.join(', ')}` : ''} - click for the tunnel overview`} onClick={tunnelMenu}>
-          Tunnel: {tunnelPhase === 'connecting' ? <><span className="forge-spinner" aria-hidden="true" /> Connecting...{tunnelDetail ? ` ${tunnelDetail.replace(/^.*\((\d+ s)\)$/, '$1')}` : ''}</> : tunnelPhase === 'error' ? 'error' : tunnelPhase === 'open' ? 'open' : tunnel ? (openTunnels && openTunnels.length > 1 ? `on (${openTunnels.length})` : 'on') : 'off'}
+          <TunnelStateIcon state={tunnelPhase ?? (tunnel ? 'on' : 'off')} /> Tunnel: {tunnelPhase === 'connecting' ? <>Connecting...{tunnelDetail ? ` ${tunnelDetail.replace(/^.*\((\d+ s)\)$/, '$1')}` : ''}</> : tunnelPhase === 'error' ? 'error' : tunnelPhase === 'open' ? 'open' : tunnel ? (openTunnels && openTunnels.length > 1 ? `on (${openTunnels.length})` : 'on') : 'off'}
         </button>
       )}
       <button type="button" className="forge-status-btn forge-status-notify" title="Notifications (click to open the Notifications tab)" aria-label="Notifications" onClick={onShowNotifications}>

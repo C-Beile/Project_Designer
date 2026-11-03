@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import type { AliasConfigDto } from '../wire/types'
+import { CONFIG_DESCRIPTIONS } from './configDescriptions.generated'
+import { useSheetSplit } from './useSheetSplit'
 import { isConfigurationAlias, sectionLabel, sectionSheet, useConfigSection, type SheetGroup } from './configSections'
 
 // Property sheet of an alias config (original Designer, shots 83, 84, 98, 102544): type aliasConfig,
@@ -17,15 +20,32 @@ function plainGroups(config: AliasConfigDto): SheetGroup[] {
   }))
 }
 
-export function AliasConfigPanel({ config, system, editable = false }: { config: AliasConfigDto; system: string; editable?: boolean }) {
+export function AliasConfigPanel({ config, system, editable = false, splitKey = 'panel' }: { config: AliasConfigDto; system: string; editable?: boolean; splitKey?: string }) {
   const section = useConfigSection()
+  const rowsRef = useRef<HTMLDivElement>(null)
+  const { split, onPointerDown, onKeyDown, reset } = useSheetSplit(splitKey, rowsRef)
+  const [selected, setSelected] = useState<string | null>(null)
   const byConfig = isConfigurationAlias(config.name)
   const [draft, setDraft] = useState<Record<string, string>>({})
   useEffect(() => setDraft({}), [config.name, system])
+  useEffect(() => setSelected(null), [config.name, section])
   const sheet = useMemo(() => (byConfig ? sectionSheet(config, section) : { groups: plainGroups(config), defined: true }), [byConfig, config, section])
   const changes = Object.keys(draft).length
+  const selectedName = selected ? selected.slice(selected.indexOf('/') + 1) : null
+  const selectedText = selectedName ? CONFIG_DESCRIPTIONS[selectedName] : undefined
+  const hint =
+    changes > 0 ? (
+      <p className="forge-field-hint" role="status">
+        Draft: {changes} change{changes === 1 ? '' : 's'}, not written. Writing to the system database needs the confirmed write path with the deploy diff (not built).{' '}
+        <button type="button" onClick={() => setDraft({})}>
+          Discard
+        </button>
+      </p>
+    ) : (
+      <p className="forge-field-hint">{editable ? 'Changes stay a draft; nothing is written yet.' : 'Read-only: the values are not written back yet.'}</p>
+    )
   return (
-    <div className="forge-props alias-config-panel" aria-label={`${config.name} properties`}>
+    <div className="forge-props alias-config-panel" aria-label={`${config.name} properties`} style={{ '--sheet-split': `${split}%` } as CSSProperties}>
       {byConfig ? null : (
         <>
           <div className="forge-props-row">
@@ -42,6 +62,7 @@ export function AliasConfigPanel({ config, system, editable = false }: { config:
           </div>
         </>
       )}
+      <div className="alias-sheet-rows" ref={rowsRef}>
       {sheet.groups.map((g) => (
         <details key={g.label} open className="alias-group">
           <summary className="alias-group-label">{g.label}</summary>
@@ -51,7 +72,7 @@ export function AliasConfigPanel({ config, system, editable = false }: { config:
             const changed = id in draft
             const unset = !r.set && !changed
             return (
-              <div key={r.name} className={`forge-props-row${changed ? ' is-draft' : ''}`}>
+              <div key={r.name} className={`forge-props-row${changed ? ' is-draft' : ''}${selected === id ? ' is-selected' : ''}`} aria-selected={selected === id} onClick={() => setSelected(id)}>
                 <span className={`forge-props-name${unset ? ' is-unset' : ''}`}>{r.name}</span>
                 {r.secret ? (
                   <span className="forge-props-value">{r.set ? '•'.repeat(12) : ''}</span>
@@ -80,20 +101,29 @@ export function AliasConfigPanel({ config, system, editable = false }: { config:
           })}
         </details>
       ))}
+      <div
+        className="sheet-splitter"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Column divider"
+        aria-valuemin={15}
+        aria-valuemax={85}
+        aria-valuenow={Math.round(split)}
+        tabIndex={0}
+        title="Drag to resize the columns, double-click to reset"
+        onPointerDown={onPointerDown}
+        onKeyDown={onKeyDown}
+        onDoubleClick={reset}
+      />
+      </div>
       {byConfig && !sheet.defined ? <p className="forge-field-hint">The properties of this section are not known yet (needs a screenshot or the property list of the config).</p> : null}
-      {changes > 0 ? (
-        <p className="forge-field-hint" role="status">
-          Draft: {changes} change{changes === 1 ? '' : 's'}, not written. Writing to the system database needs the confirmed write path with the deploy diff (not built).{' '}
-          <button type="button" onClick={() => setDraft({})}>
-            Discard
-          </button>
-        </p>
-      ) : (
-        <p className="forge-field-hint">{editable ? 'Changes stay a draft; nothing is written yet.' : 'Read-only: the values are not written back yet.'}</p>
-      )}
+      {byConfig ? null : hint}
       {byConfig ? (
         <div className="alias-config-desc" aria-label="Description">
-          <strong>{sectionLabel(section)}</strong>
+          <strong>{selectedName ?? sectionLabel(section)}</strong>
+          <span className="alias-config-state" aria-hidden="true" />
+          {hint}
+          {selectedText ? <p className="alias-config-text">{selectedText}</p> : null}
         </div>
       ) : null}
     </div>

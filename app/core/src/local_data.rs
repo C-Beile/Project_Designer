@@ -1,4 +1,4 @@
-//! Local data of the Designer (manual chapter 12): Vendira's own data folder and, read-only, the
+//! Local data of the Designer (manual chapter 12): Dito Designer's own data folder and, read-only, the
 //! per-version folders the original ADITO Designer keeps under `%APPDATA%\.aditodesigner`. The
 //! scan never changes or deletes anything; cleaning up old version folders stays a manual step.
 

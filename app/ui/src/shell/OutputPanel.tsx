@@ -8,7 +8,7 @@ import type { Problem } from '../problems/problemStore'
 
 // Bottom tool window (manual chapter 7, screenshot 082). Like the original, a vertical button bar
 // sits left of the console (start, stop, exit, clear cache) - these four act on a server instance,
-// which Vendira cannot start yet, so they stay dimmed. Added on top: clear log, copy, wrap, a
+// which Dito Designer cannot start yet, so they stay dimmed. Added on top: clear log, copy, wrap, a
 // text/level filter and automatic scrolling. Problems takes over the validation findings.
 
 export type OutputMainTab = 'output' | 'scanservices' | 'search' | 'notifications' | 'refactoring' | 'problems'
@@ -69,7 +69,7 @@ export function OutputTabs({
   )
 }
 
-const NOT_AVAILABLE_SERVER = 'Needs a running server instance - Vendira Designer cannot start one yet'
+const NOT_AVAILABLE_SERVER = 'Needs a running server instance - Dito Designer cannot start one yet'
 
 function SideButton({ label, title, disabled, pressed, onClick, children }: { label: string; title: string; disabled?: boolean; pressed?: boolean; onClick?: () => void; children: string }) {
   return (

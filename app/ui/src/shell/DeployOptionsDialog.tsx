@@ -6,7 +6,7 @@ import { resolvePathVariables } from '../properties/pathVariables'
 import { systemKey } from '../services/tunnelState'
 
 // First dialog of a deploy (original Designer, manual chapter 11, picture 178): Project, System and
-// the three check boxes. Added by Vendira: "Build before deploy" (Build and Deploy) and the tunnel
+// the three check boxes. Added by Dito Designer: "Build before deploy" (Build and Deploy) and the tunnel
 // check - the plan of the next step is read from the system database, so the tunnel to the chosen
 // system has to stand. The write step keeps its own explicit confirmation in the following dialog.
 
@@ -57,7 +57,8 @@ export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: For
   const [system, setSystem] = useState(payload.defaultSystem || payload.systems[0]?.name || '')
   const [checkScan, setCheckScan] = useState(payload.checkScan)
   const [force, setForce] = useState(false)
-  const [build, setBuild] = useState(payload.buildFirst)
+  // A deploy writes the transpiled result, so the build runs first unless it is switched off here.
+  const [build, setBuild] = useState(true)
   const [connected, setConnected] = useState<string | null>(payload.connectedSystem)
   const [opened, setOpened] = useState<string[]>(payload.openSystems ?? (payload.connectedSystem ? [payload.connectedSystem] : []))
   const [opening, setOpening] = useState(false)
@@ -91,7 +92,7 @@ export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: For
 
   return (
     <Modal
-      title={build ? 'Build and Deploy' : 'Deploy'}
+      title={payload.buildFirst ? 'Build and Deploy' : 'Deploy'}
       onClose={onCancel}
       footer={
         <>
@@ -151,22 +152,29 @@ export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: For
             {error}
           </p>
         ) : null}
-        <label className="forge-check">
-          <input type="checkbox" checked={checkScan} onChange={(e) => setCheckScan(e.target.checked)} />
-          <span>Check Scan Services (Errors, Warnings)</span>
-        </label>
-        <label className="forge-check">
-          <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />
-          <span>Force deploy</span>
-        </label>
-        <label className="forge-check" title="Deploying the userhelp is not available yet">
-          <input type="checkbox" disabled />
-          <span>Deploy Userhelp</span>
-        </label>
-        <label className="forge-check">
-          <input type="checkbox" checked={build} onChange={(e) => setBuild(e.target.checked)} />
-          <span>Build (transpile) before the deploy</span>
-        </label>
+        <fieldset className="forge-opt-group">
+          <legend>Steps</legend>
+          <label className="forge-check">
+            <input type="checkbox" checked={build} onChange={(e) => setBuild(e.target.checked)} />
+            <span>Build (transpile) before the deploy</span>
+          </label>
+          <span className="forge-check-hint">The project is transpiled first; the deploy then writes the transpiled result.</span>
+          <label className="forge-check">
+            <input type="checkbox" checked={checkScan} onChange={(e) => setCheckScan(e.target.checked)} />
+            <span>Check Scan Services (Errors, Warnings)</span>
+          </label>
+        </fieldset>
+        <fieldset className="forge-opt-group">
+          <legend>Options</legend>
+          <label className="forge-check">
+            <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />
+            <span>Force deploy</span>
+          </label>
+          <label className="forge-check" title="Deploying the userhelp is not available yet">
+            <input type="checkbox" disabled />
+            <span>Deploy Userhelp</span>
+          </label>
+        </fieldset>
       </div>
     </Modal>
   )

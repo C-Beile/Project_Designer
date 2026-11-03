@@ -15,6 +15,12 @@ const FOCUSABLE = 'input:not([disabled]), button:not([disabled]), select:not([di
 export function Modal({ title, onClose, children, footer, onEnter }: { title: string; onClose: () => void; children: ReactNode; footer: ReactNode; onEnter?: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
   const inWindow = useContext(OsWindowContext)
+  // The confirming button of every dialog (OK, Save, Deploy ...) is drawn as the primary one.
+  useEffect(() => {
+    const buttons = [...(ref.current?.querySelectorAll<HTMLButtonElement>('.forge-modal-footer button') ?? [])]
+    if (buttons.some((b) => b.classList.contains('is-primary'))) return
+    buttons.find((b) => /^(OK|Save|Deploy|Update|Apply|Open|Finish|Create|Commit|Yes|Delete|Install and restart|Export|Import|Add|Connect)\b/i.test(b.textContent?.trim() ?? ''))?.classList.add('is-primary')
+  })
   useEffect(() => {
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null
     ref.current?.querySelector<HTMLElement>('input, button, select')?.focus()
@@ -92,7 +98,7 @@ export function AboutDialog({ api, onClose }: { api?: ForgeApi; onClose: () => v
   ]
   return (
     <Modal
-      title="About Vendira Designer"
+      title="About Dito Designer"
       onClose={onClose}
       footer={
         <button type="button" onClick={onClose}>
@@ -109,9 +115,9 @@ export function AboutDialog({ api, onClose }: { api?: ForgeApi; onClose: () => v
       </div>
       {tab === 'version' ? (
         <div className="forge-about">
-          <img className="forge-about-icon" src={appIcon256} alt="Vendira logo" />
-          <img className="forge-about-wordmark" src={wordmarkWhite} alt="Vendira" />
-          <p className="forge-about-title">Vendira Designer</p>
+          <img className="forge-about-icon" src={appIcon256} alt="Dito Designer logo" />
+          <img className="forge-about-wordmark" src={wordmarkWhite} alt="Dito Designer" />
+          <p className="forge-about-title">Dito Designer</p>
           <p className="forge-about-by">by 3HillsIT</p>
           <p className="forge-about-version">Version {shownVersion ?? 'development build'}</p>
           <p className="forge-field-hint">A rebuild of the designer for low-code CRM projects.</p>
@@ -119,7 +125,7 @@ export function AboutDialog({ api, onClose }: { api?: ForgeApi; onClose: () => v
       ) : null}
       {tab === 'licence' ? (
         <div className="forge-about-licence">
-          <p>Vendira Designer is a product of 3HillsIT. No separate licence file is shipped with this build.</p>
+          <p>Dito Designer is a product of 3HillsIT. No separate licence file is shipped with this build.</p>
           <p className="forge-field-hint">Third-party parts: the Montserrat font (SIL Open Font License 1.1, from @fontsource/montserrat 5.3.0; the licence text lies next to the font files) and the Monaco editor (MIT).</p>
         </div>
       ) : null}

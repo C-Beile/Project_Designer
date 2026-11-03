@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Vendira Designer",
+  "productName": "Dito Designer",
   "mainBinaryName": "vendira-designer",
-  "version": "1.0.0-rc14",
+  "version": "1.0.0-rc15",
   "identifier": "de.threehillsit.vendira-designer",
   "build": {
     "frontendDist": "../ui/dist",
@@ -13,7 +13,7 @@
   "app": {
     "windows": [
       {
-        "title": "Vendira Designer",
+        "title": "Dito Designer",
         "width": 1280,
         "height": 800,
         "minWidth": 960,

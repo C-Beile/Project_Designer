@@ -52,6 +52,16 @@ describe('DeployOptionsDialog', () => {
     expect(onOk).toHaveBeenCalledWith({ project: 'C:/p/FZ', system: 'dev1', checkScan: true, force: true, userhelp: false, build: true, connectedSystem: systemKey('C:/p/FZ', 'dev1') })
   })
 
+  it('transpiles first by default, even for a plain Deploy, and draws OK as the primary button', async () => {
+    setup({ buildFirst: false })
+    expect(screen.getByRole('dialog', { name: 'Deploy' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Build (transpile) before the deploy')).toBeChecked()
+    expect(screen.getByRole('button', { name: 'OK' })).toHaveClass('is-primary')
+    expect(screen.getByRole('button', { name: 'Cancel' })).not.toHaveClass('is-primary')
+    expect(screen.getByRole('group', { name: 'Steps' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Options' })).toBeInTheDocument()
+  })
+
   it('an open tunnel of another system does not count', async () => {
     setup({ connectedSystem: 'qs' })
     expect(screen.getByRole('button', { name: 'OK' })).toBeDisabled()

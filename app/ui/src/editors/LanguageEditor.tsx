@@ -67,6 +67,7 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
   const [editing, setEditing] = useState<{ file: number; col: 'name' | 'value'; seed?: string } | null>(null)
   const [menu, setMenu] = useState<{ x: number; y: number; file: number | null } | null>(null)
   const [scrollTop, setScrollTop] = useState(0)
+  const [viewport, setViewport] = useState(420)
   const box = useRef<HTMLDivElement | null>(null)
   const busy = useRef(false)
   const cancelled = useRef(false)
@@ -120,7 +121,17 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
     [api, nodeId, onTreeChange, source],
   )
 
-  const viewport = box.current?.clientHeight || 420
+  // The visible height of the list: rows are only drawn for this window, so it follows the real size of the panel.
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const measure = () => setViewport(el.clientHeight || 420)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
   const first = Math.max(0, Math.floor(scrollTop / ROW_H) - 6)
   const last = Math.min(shown.length, Math.ceil((scrollTop + viewport) / ROW_H) + 6)
 
@@ -349,6 +360,9 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
           </button>
         ))}
       </div>
+      {shown.length === 0 ? (
+        <p className="forge-field-hint lang-empty">{rows.length === 0 ? 'This language file has no entries yet. Use + to add one.' : 'No entries match the search.'}</p>
+      ) : null}
       <div
         className="lang-body"
         role="grid"

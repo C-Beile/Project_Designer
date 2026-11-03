@@ -1,166 +1,285 @@
-"""Regenerates every Vendira logo/icon asset from the vector logo.
+"""Regenerates every Dito Designer logo/icon asset.
 
-Source: branding/source/vendira-logo-color.svg (the V mark with its three gradients, viewBox
-861x620) and branding/source/wordmark-white.png (white wordmark on transparent background).
-The SVG is not edited; its three paths are rasterised as masks (PyMuPDF) and filled with the
-SVG's own linear gradients here, because the SVG renderer used does not resolve the gradients.
+The mark is a friendly, round shape-shifting blob (a copy-cat that can become anything, like this
+Designer imitates the original). It is drawn from a handful of control points joined by a smooth
+spline, with a gradient body, a darker rim, a glossy highlight, big shiny eyes, blush, a small
+open mouth and a soft ground shadow. The same shapes are written as a real vector file
+(source/dito-logo.svg). Every icon size is drawn natively from the shapes with heavy
+anti-aliasing (not shrunk from one big picture), and sizes up to 64 px use a simpler, larger
+drawing without the small ornaments, so the mark stays round and clean in the taskbar.
 
-    python branding/generate_brand_assets.py          (needs: pip install pymupdf pillow)
+    python branding/generate_brand_assets.py          (needs: pip install pillow)
 
-Outputs: src-tauri/icons/* and ui/src/assets/brand/* (app icon 1024 px master on a dark rounded
-tile, dark-mode icon, NSIS header/sidebar bitmaps). The wordmark is copied as it is.
+Outputs: src-tauri/icons/* and ui/src/assets/brand/* (app icon master on a dark rounded tile,
+dark-mode icon, NSIS header/sidebar bitmaps, white wordmark).
 """
+import math
 import os
-import re
 import shutil
-import pymupdf
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "source")
 ICONS = os.path.join(HERE, "..", "src-tauri", "icons")
 BRAND = os.path.join(HERE, "..", "ui", "src", "assets", "brand")
-SVG = os.path.join(SRC, "vendira-logo-color.svg")
 
-svg_text = open(SVG, encoding="utf-8").read()
-VB_W, VB_H = [float(v) for v in re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', svg_text).groups()]
+TOP, BOTTOM = (160, 214, 255), (112, 104, 238)
+RIM = (74, 72, 196)
+INK = (24, 28, 70)
+BLUSH = (255, 140, 186)
+TONGUE = (255, 120, 150)
+
+# Closed outline of the body in a 1000 x 1000 box (clockwise from the top): a round, slightly
+# squashed drop with a flat belly, no bumps.
+BODY_POINTS = [(500, 186), (690, 228), (822, 358), (868, 540), (812, 718), (664, 824), (500, 850),
+               (336, 824), (188, 718), (132, 540), (178, 358), (310, 228)]
+EYES = [((366, 508), 54, 66), ((634, 508), 54, 66)]  # centre, rx, ry
+BLUSHES = [((256, 636), 56, 32), ((744, 636), 56, 32)]
+HIGHLIGHT = ((352, 322), 96, 42, -30)  # centre, rx, ry, angle in degrees
+MOUTH_CENTRE, MOUTH_R = (500, 622), 46
+SHADOW = ((500, 896), 270, 30)
 
 
-def gradient_stops(gid):
-    block = re.search(r'<linearGradient id="%s"[^>]*>(.*?)</linearGradient>' % gid, svg_text, re.S).group(1)
-    attrs = re.search(r'<linearGradient id="%s"([^>]*)>' % gid, svg_text).group(1)
-    xy = [float(re.search(r'%s="([-\d.]+)"' % k, attrs).group(1)) for k in ("x1", "y1", "x2", "y2")]
-    stops = []
-    for m in re.finditer(r'<stop offset="([\d.]+)" stop-color="#([0-9a-fA-F]{6})"(?: stop-opacity="([\d.]+)")?', block):
-        c = m.group(2)
-        stops.append((float(m.group(1)), (int(c[0:2], 16), int(c[2:4], 16), int(c[4:6], 16)), float(m.group(3) or 1)))
-    return xy, stops
-
-
-def paths():
-    out = {}
-    for m in re.finditer(r'<path class="(cls-\d)" d="([^"]+)"', svg_text):
-        out[m.group(1)] = m.group(2)
+def spline(points, steps=18):
+    """Closed Catmull-Rom spline through the points as a dense list of vertices."""
+    n = len(points)
+    out = []
+    for i in range(n):
+        p0, p1, p2, p3 = points[(i - 1) % n], points[i], points[(i + 1) % n], points[(i + 2) % n]
+        for s in range(steps):
+            t = s / steps
+            t2, t3 = t * t, t * t * t
+            out.append(tuple(0.5 * ((2 * p1[k]) + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3) for k in (0, 1)))
     return out
 
 
-def mask_of(d, width, supersample=2):
-    k = width / VB_W
-    svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %s %s"><path d="%s" fill="#000"/></svg>' % (VB_W, VB_H, d)
-    doc = pymupdf.open(stream=svg.encode(), filetype="svg")
-    zoom = k * supersample
-    pix = doc[0].get_pixmap(matrix=pymupdf.Matrix(zoom, zoom), alpha=True)
-    img = Image.frombytes("RGBA", (pix.width, pix.height), pix.samples)
-    a = img.getchannel("A")
-    return a.resize((round(VB_W * k), round(VB_H * k)), Image.LANCZOS)
+def bezier_path(points):
+    """The same closed spline as cubic Bezier segments, for the SVG."""
+    n = len(points)
+    d = "M%.1f,%.1f" % points[0]
+    for i in range(n):
+        p0, p1, p2, p3 = points[(i - 1) % n], points[i], points[(i + 1) % n], points[(i + 2) % n]
+        c1 = (p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6)
+        c2 = (p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6)
+        d += " C%.1f,%.1f %.1f,%.1f %.1f,%.1f" % (*c1, *c2, *p2)
+    return d + " Z"
 
 
-def lerp_stops(stops, t):
-    t = max(0.0, min(1.0, t))
-    if t <= stops[0][0]:
-        return stops[0][1], stops[0][2]
-    for (o0, c0, a0), (o1, c1, a1) in zip(stops, stops[1:]):
-        if t <= o1:
-            f = 0 if o1 == o0 else (t - o0) / (o1 - o0)
-            return tuple(c0[i] + (c1[i] - c0[i]) * f for i in range(3)), a0 + (a1 - a0) * f
-    return stops[-1][1], stops[-1][2]
+OUTLINE = spline(BODY_POINTS)
 
 
-def gradient_fill(size, k, gid):
-    (x1, y1, x2, y2), stops = gradient_stops(gid)
-    dx, dy = x2 - x1, y2 - y1
-    den = dx * dx + dy * dy
-    img = Image.new("RGBA", size)
-    data = []
-    for py in range(size[1]):
-        for px in range(size[0]):
-            ux, uy = (px + 0.5) / k, (py + 0.5) / k
-            t = ((ux - x1) * dx + (uy - y1) * dy) / den
-            c, a = lerp_stops(stops, t)
-            data.append((int(c[0]), int(c[1]), int(c[2]), int(a * 255)))
-    img.putdata(data)
-    return img
+def ellipse_points(cx, cy, rx, ry, angle=0.0, n=96):
+    a = math.radians(angle)
+    pts = []
+    for i in range(n):
+        t = 2 * math.pi * i / n
+        x, y = rx * math.cos(t), ry * math.sin(t)
+        pts.append((cx + x * math.cos(a) - y * math.sin(a), cy + x * math.sin(a) + y * math.cos(a)))
+    return pts
 
 
-def mark(width):
-    """The V mark with its gradients; the dark shade layer uses the SVG's multiply blend at 40 %."""
-    k = width / VB_W
-    p = paths()
-    size = (round(VB_W * k), round(VB_H * k))
-    out = Image.new("RGBA", size, (0, 0, 0, 0))
-    for cls, gid in (("cls-3", "Unbenannter_Verlauf_199"), ("cls-2", "Unbenannter_Verlauf_230")):
-        layer = gradient_fill(size, k, gid)
-        layer.putalpha(Image.composite(layer.getchannel("A"), Image.new("L", size, 0), mask_of(p[cls], width)))
-        out = Image.alpha_composite(out, layer)
-    shade = gradient_fill(size, k, "Unbenannter_Verlauf_275")
-    shade_mask = mask_of(p["cls-4"], width).point(lambda v: int(v * 0.4))
-    base = out.copy()
-    px_base, px_shade = base.load(), shade.load()
-    sm = shade_mask.load()
-    res = out.load()
-    for y in range(size[1]):
-        for x in range(size[0]):
-            r, g, b, a = px_base[x, y]
-            if a == 0:
-                continue
-            sr, sg, sb, sa = px_shade[x, y]
-            w = (sm[x, y] / 255.0) * (sa / 255.0)
-            if w <= 0:
-                continue
-            mr, mg, mb = r * sr / 255.0, g * sg / 255.0, b * sb / 255.0
-            res[x, y] = (int(r + (mr - r) * w), int(g + (mg - g) * w), int(b + (mb - b) * w), a)
-    return out
+def supersample(size):
+    """More anti-aliasing for small icons, where every edge pixel counts."""
+    return max(4, min(16, math.ceil(2400 / size)))
+
+
+def mark(size, detail=True):
+    k = size / 1000.0
+    ss = supersample(size)
+    big = size * ss
+
+    def sc(pts):
+        return [(x * k * ss, y * k * ss) for x, y in pts]
+
+    def canvas():
+        return Image.new("RGBA", (big, big), (0, 0, 0, 0))
+
+    # Soft ground shadow
+    out = canvas()
+    if detail:
+        (sx, sy), srx, sry = SHADOW
+        ImageDraw.Draw(out).polygon(sc(ellipse_points(sx, sy, srx, sry)), fill=(0, 0, 0, 105))
+
+    # Body: vertical gradient clipped to the outline, then the rim
+    mask = Image.new("L", (big, big), 0)
+    ImageDraw.Draw(mask).polygon(sc(OUTLINE), fill=255)
+    ys = [y for _, y in OUTLINE]
+    y0, y1 = min(ys) * k * ss, max(ys) * k * ss
+    body = canvas()
+    bd = ImageDraw.Draw(body)
+    for y in range(big):
+        f = min(1.0, max(0.0, (y - y0) / (y1 - y0)))
+        bd.line([(0, y), (big, y)], fill=tuple(int(TOP[i] + (BOTTOM[i] - TOP[i]) * f) for i in range(3)) + (255,))
+    body.putalpha(mask)
+    out = Image.alpha_composite(out, body)
+
+    # Glossy highlight, kept inside the body
+    inner = canvas()
+    idr = ImageDraw.Draw(inner)
+    (hx, hy), hrx, hry, ha = HIGHLIGHT
+    idr.polygon(sc(ellipse_points(hx, hy, hrx, hry, ha)), fill=(255, 255, 255, 150 if detail else 120))
+    if detail:
+        idr.polygon(sc(ellipse_points(hx + 128, hy + 52, 14, 14)), fill=(255, 255, 255, 150))
+    inner.putalpha(Image.composite(inner.getchannel("A"), Image.new("L", (big, big), 0), mask))
+    out = Image.alpha_composite(out, inner)
+    rim = canvas()
+    ImageDraw.Draw(rim).line(sc(OUTLINE + OUTLINE[:1]), fill=RIM + (255,), width=max(2, round((15 if detail else 22) * k * ss)), joint="curve")
+    rim_inner = Image.composite(rim.getchannel("A"), Image.new("L", (big, big), 0), mask)
+    rim.putalpha(rim_inner.point(lambda v: int(v * 0.55)))
+    out = Image.alpha_composite(out, rim)
+
+    # Face (small sizes: bigger eyes and blush, no mouth detail)
+    face = canvas()
+    fd = ImageDraw.Draw(face)
+    grow = 1.0 if detail else 1.22
+    for (cx, cy), rx, ry in BLUSHES:
+        fd.polygon(sc(ellipse_points(cx, cy, rx * grow, ry * grow)), fill=BLUSH + (150,))
+    for (cx, cy), rx, ry in EYES:
+        fd.polygon(sc(ellipse_points(cx, cy, rx * grow, ry * grow)), fill=INK + (255,))
+        fd.polygon(sc(ellipse_points(cx - rx * 0.28 * grow, cy - ry * 0.34 * grow, rx * 0.4 * grow, rx * 0.4 * grow)), fill=(255, 255, 255, 255))
+        if detail:
+            fd.polygon(sc(ellipse_points(cx + rx * 0.34, cy + ry * 0.36, rx * 0.17, rx * 0.17)), fill=(255, 255, 255, 235))
+    mx, my = MOUTH_CENTRE
+    mr = MOUTH_R * (1.0 if detail else 1.2)
+    mouth = [(mx + mr * math.cos(math.pi * i / 36), my + mr * 0.95 * math.sin(math.pi * i / 36)) for i in range(37)]
+    fd.polygon(sc(mouth), fill=INK + (255,))
+    out = Image.alpha_composite(out, face)
+    if detail:
+        tongue = Image.new("L", (big, big), 0)
+        ImageDraw.Draw(tongue).polygon(sc(ellipse_points(mx, my + mr * 0.92, mr * 0.55, mr * 0.42)), fill=255)
+        mouth_mask = Image.new("L", (big, big), 0)
+        ImageDraw.Draw(mouth_mask).polygon(sc(mouth), fill=255)
+        tongue_layer = canvas()
+        ImageDraw.Draw(tongue_layer).rectangle([0, 0, big, big], fill=TONGUE + (255,))
+        tongue_layer.putalpha(Image.composite(tongue, Image.new("L", (big, big), 0), mouth_mask))
+        out = Image.alpha_composite(out, tongue_layer)
+    return out.resize((size, size), Image.LANCZOS)
 
 
 def tile(size, top, bottom, radius_ratio=0.225):
-    grad = Image.new("RGBA", (size, size))
+    ss = supersample(size)
+    big = size * ss
+    grad = Image.new("RGBA", (big, big))
     d = ImageDraw.Draw(grad)
-    for y in range(size):
-        f = y / (size - 1)
-        d.line([(0, y), (size, y)], fill=tuple(int(top[i] + (bottom[i] - top[i]) * f) for i in range(3)) + (255,))
-    m = Image.new("L", (size * 4, size * 4), 0)
-    ImageDraw.Draw(m).rounded_rectangle((0, 0, size * 4 - 1, size * 4 - 1), int(size * 4 * radius_ratio), fill=255)
-    grad.putalpha(m.resize((size, size), Image.LANCZOS))
-    return grad
+    for y in range(big):
+        f = y / (big - 1)
+        d.line([(0, y), (big, y)], fill=tuple(int(top[i] + (bottom[i] - top[i]) * f) for i in range(3)) + (255,))
+    m = Image.new("L", (big, big), 0)
+    ImageDraw.Draw(m).rounded_rectangle((0, 0, big - 1, big - 1), int(big * radius_ratio), fill=255)
+    grad.putalpha(m)
+    return grad.resize((size, size), Image.LANCZOS)
+
+
+def sparkle(draw, cx, cy, r, ss, fill):
+    pts = []
+    for i in range(8):
+        a = math.pi * i / 4
+        rr = r if i % 2 == 0 else r * 0.28
+        pts.append(((cx + rr * math.sin(a)) * ss, (cy - rr * math.cos(a)) * ss))
+    draw.polygon(pts, fill=fill)
 
 
 def icon(size, top, bottom):
+    small = size <= 64
     t = tile(size, top, bottom)
-    v = mark(round(size * 0.62))
-    # Optical centre: the V's visual weight sits slightly above the geometric middle.
-    t.alpha_composite(v, ((size - v.width) // 2, (size - v.height) // 2 + round(size * 0.015)))
+    m = mark(round(size * (0.9 if small else 0.8)), detail=not small)
+    t.alpha_composite(m, ((size - m.width) // 2, (size - m.height) // 2 - (0 if small else round(size * 0.01))))
+    if not small:
+        ss = supersample(size)
+        sp = Image.new("RGBA", (size * ss, size * ss), (0, 0, 0, 0))
+        sd = ImageDraw.Draw(sp)
+        sparkle(sd, size * 0.80, size * 0.2, size * 0.055, ss, (200, 228, 255, 235))
+        sparkle(sd, size * 0.88, size * 0.31, size * 0.03, ss, (200, 228, 255, 200))
+        sparkle(sd, size * 0.15, size * 0.78, size * 0.026, ss, (200, 228, 255, 170))
+        t.alpha_composite(sp.resize((size, size), Image.LANCZOS))
     return t
 
 
-# Brand guide dark tile (installer artwork uses the same (11,18,28)).
-master = icon(1024, (16, 27, 42), (9, 15, 24))
-dark_master = icon(1024, (24, 52, 82), (14, 30, 48))
+def write_svg(path):
+    ys = [y for _, y in BODY_POINTS]
+    (hx, hy), hrx, hry, ha = HIGHLIGHT
+    eyes = "".join(
+        '<ellipse cx="%d" cy="%d" rx="%d" ry="%d" fill="#%02x%02x%02x"/><circle cx="%.1f" cy="%.1f" r="%.1f" fill="#fff"/><circle cx="%.1f" cy="%.1f" r="%.1f" fill="#fff" opacity=".92"/>'
+        % (cx, cy, rx, ry, *INK, cx - rx * 0.28, cy - ry * 0.34, rx * 0.4, cx + rx * 0.34, cy + ry * 0.36, rx * 0.17)
+        for (cx, cy), rx, ry in EYES
+    )
+    blush = "".join('<ellipse cx="%d" cy="%d" rx="%d" ry="%d" fill="#%02x%02x%02x" opacity=".59"/>' % (cx, cy, rx, ry, *BLUSH) for (cx, cy), rx, ry in BLUSHES)
+    mx, my = MOUTH_CENTRE
+    mouth = "M%.1f,%.1f A%.1f,%.1f 0 0 0 %.1f,%.1f Z" % (mx - MOUTH_R, my, MOUTH_R, MOUTH_R * 0.95, mx + MOUTH_R, my)
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">'
+        '<defs><linearGradient id="body" gradientUnits="userSpaceOnUse" x1="0" y1="%d" x2="0" y2="%d"><stop offset="0" stop-color="#%02x%02x%02x"/><stop offset="1" stop-color="#%02x%02x%02x"/></linearGradient>'
+        '<clipPath id="clip"><path d="%s"/></clipPath><clipPath id="mouth"><path d="%s"/></clipPath></defs>'
+        '<ellipse cx="%d" cy="%d" rx="%d" ry="%d" fill="#000" opacity=".41"/>'
+        '<path d="%s" fill="url(#body)"/>'
+        '<g clip-path="url(#clip)">'
+        '<ellipse cx="%d" cy="%d" rx="%d" ry="%d" transform="rotate(%d %d %d)" fill="#fff" opacity=".59"/><circle cx="%d" cy="%d" r="14" fill="#fff" opacity=".59"/>'
+        '<path d="%s" fill="none" stroke="#%02x%02x%02x" stroke-width="30" opacity=".55"/></g>'
+        '%s%s<path d="%s" fill="#%02x%02x%02x"/>'
+        '<g clip-path="url(#mouth)"><ellipse cx="%d" cy="%.1f" rx="%.1f" ry="%.1f" fill="#%02x%02x%02x"/></g></svg>\n'
+        % (min(ys), max(ys), *TOP, *BOTTOM, bezier_path(BODY_POINTS), mouth, SHADOW[0][0], SHADOW[0][1], SHADOW[1], SHADOW[2],
+           bezier_path(BODY_POINTS), hx, hy, hrx, hry, ha, hx, hy, hx + 128, hy + 52,
+           bezier_path(BODY_POINTS), *RIM, blush, eyes, mouth, *INK,
+           mx, my + MOUTH_R * 0.92, MOUTH_R * 0.55, MOUTH_R * 0.42, *TONGUE)
+    )
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(svg)
 
+
+def wordmark(path):
+    """White 'Dito' on a transparent background (About dialog)."""
+    font = ImageFont.truetype(r"C:\Windows\Fonts\segoeuib.ttf", 200)
+    probe = Image.new("RGBA", (10, 10))
+    box = ImageDraw.Draw(probe).textbbox((0, 0), "Dito", font=font)
+    img = Image.new("RGBA", (box[2] - box[0] + 40, box[3] - box[1] + 40), (0, 0, 0, 0))
+    ImageDraw.Draw(img).text((20 - box[0], 20 - box[1]), "Dito", font=font, fill=(255, 255, 255, 255))
+    img.save(path)
+
+
+DARK_TILE = ((16, 27, 42), (9, 15, 24))
 os.makedirs(ICONS, exist_ok=True)
 os.makedirs(BRAND, exist_ok=True)
+os.makedirs(SRC, exist_ok=True)
+write_svg(os.path.join(SRC, "dito-logo.svg"))
+
+cache = {}
+
+
+def native(size):
+    if size not in cache:
+        cache[size] = icon(size, *DARK_TILE)
+    return cache[size]
+
+
 sizes = {"32x32.png": 32, "128x128.png": 128, "128x128@2x.png": 256, "icon.png": 512,
          "Square30x30Logo.png": 30, "Square44x44Logo.png": 44, "Square71x71Logo.png": 71,
          "Square89x89Logo.png": 89, "Square107x107Logo.png": 107, "Square142x142Logo.png": 142,
          "Square150x150Logo.png": 150, "Square284x284Logo.png": 284, "Square310x310Logo.png": 310,
          "StoreLogo.png": 50}
 for name, s in sizes.items():
-    master.resize((s, s), Image.LANCZOS).save(os.path.join(ICONS, name))
-master.save(os.path.join(ICONS, "icon.ico"), sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+    native(s).save(os.path.join(ICONS, name))
+
+# Windows icon: every size drawn natively, so the taskbar and window icons are crisp
+ico_sizes = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256]
+ico_images = [native(s) for s in ico_sizes]
+ico_images[-1].save(os.path.join(ICONS, "icon.ico"), format="ICO", sizes=[(s, s) for s in ico_sizes], append_images=ico_images[:-1])
+master = icon(1024, *DARK_TILE)
 master.resize((512, 512), Image.LANCZOS).save(os.path.join(ICONS, "icon.icns"))
 master.save(os.path.join(SRC, "app-icon.png"))
-master.resize((256, 256), Image.LANCZOS).save(os.path.join(BRAND, "app-icon-256.png"))
-master.resize((64, 64), Image.LANCZOS).save(os.path.join(BRAND, "app-icon-64.png"))
-dark_master.resize((256, 256), Image.LANCZOS).save(os.path.join(BRAND, "dark-mode-icon-256.png"))
+native(256).save(os.path.join(BRAND, "app-icon-256.png"))
+native(64).save(os.path.join(BRAND, "app-icon-64.png"))
+icon(256, (24, 52, 82), (14, 30, 48)).save(os.path.join(BRAND, "dark-mode-icon-256.png"))
+wordmark(os.path.join(SRC, "wordmark-white.png"))
 shutil.copyfile(os.path.join(SRC, "wordmark-white.png"), os.path.join(BRAND, "wordmark-white.png"))
 
 # NSIS installer artwork: header 150x57, sidebar 164x314 (BMP, 24-bit)
 bg = (11, 18, 28)
 hdr = Image.new("RGB", (150, 57), bg)
-ic = master.resize((41, 41), Image.LANCZOS)
+ic = native(41)
 hdr.paste(ic, (104, 8), ic)
 hdr.save(os.path.join(BRAND, "installer-header.bmp"))
 side = Image.new("RGB", (164, 314), bg)
-big = master.resize((96, 96), Image.LANCZOS)
+big = native(96)
 side.paste(big, (34, 90), big)
 side.save(os.path.join(BRAND, "installer-sidebar.bmp"))
 print("done")

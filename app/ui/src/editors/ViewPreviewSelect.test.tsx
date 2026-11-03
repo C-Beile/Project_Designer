@@ -197,6 +197,20 @@ describe('inserting into the view', () => {
     return { api, id, onTreeChange }
   }
 
+  // The list of entity fields is hidden until the switch in the bar is pressed.
+  const openFields = async () => {
+    await userEvent.click(await screen.findByRole('button', { name: 'Entity fields' }))
+  }
+
+  it('hides the entity fields until the switch is pressed', async () => {
+    setupWithEntity()
+    const toggle = await screen.findByRole('button', { name: 'Entity fields' })
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.queryByLabelText('Entity fields', { selector: 'aside' })).toBeNull()
+    await userEvent.click(toggle)
+    expect(screen.getByLabelText('Entity fields', { selector: 'aside' })).toBeInTheDocument()
+  })
+
   const transfer = () => {
     const store: Record<string, string> = {}
     return { setData: (k: string, v: string) => (store[k] = v), getData: (k: string) => store[k] ?? '', effectAllowed: '', dropEffect: '', types: [] as string[], store }
@@ -204,6 +218,7 @@ describe('inserting into the view', () => {
 
   it('lists the entity fields at the left and drops one into a Generic template in front of the field it was dropped on', async () => {
     const { api, id } = setupWithEntity()
+    await openFields()
     const item = await screen.findByText('Phone')
     const dt = transfer()
     fireEvent.dragStart(item.closest('.vp-entity-item')!, { dataTransfer: dt })
@@ -218,6 +233,7 @@ describe('inserting into the view', () => {
 
   it('refuses to drop a field that is already in the template and says why', async () => {
     setupWithEntity()
+    await openFields()
     const item = await screen.findByText('Name', { selector: '.vp-entity-item span' })
     const dt = transfer()
     fireEvent.dragStart(item.closest('.vp-entity-item')!, { dataTransfer: dt })
@@ -229,6 +245,7 @@ describe('inserting into the view', () => {
 
   it('module objects cannot take fields: the list items do not drag', async () => {
     setupWithEntity(true)
+    await openFields()
     const item = await screen.findByText('Phone')
     expect(item.closest('.vp-entity-item')).not.toHaveAttribute('draggable', 'true')
   })

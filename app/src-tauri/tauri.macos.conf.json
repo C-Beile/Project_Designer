@@ -2,7 +2,7 @@
   "app": {
     "windows": [
       {
-        "title": "Vendira Designer",
+        "title": "Dito Designer",
         "width": 1280,
         "height": 800,
         "minWidth": 960,
@@ -17,8 +17,8 @@
   "bundle": {
     "targets": ["dmg", "app"],
     "category": "DeveloperTool",
-    "shortDescription": "Vendira Designer",
-    "longDescription": "Editor und Werkzeuge fuer ADITO-Projekte (Vendira Designer, 3Hills IT).",
+    "shortDescription": "Dito Designer",
+    "longDescription": "Editor und Werkzeuge fuer ADITO-Projekte (Dito Designer, 3Hills IT).",
     "macOS": {
       "minimumSystemVersion": "11.0",
       "dmg": {

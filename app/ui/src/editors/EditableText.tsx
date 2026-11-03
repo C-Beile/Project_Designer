@@ -12,10 +12,18 @@ export function EditableText({
   value,
   onCommit,
   ariaLabel,
+  masked,
+  disabled,
+  title,
 }: {
   value: string
   onCommit: (next: string) => void
   ariaLabel: string
+  /** Passwords are drawn as dots; the text is still editable. */
+  masked?: boolean
+  /** Shown but not editable; `title` says why. */
+  disabled?: boolean
+  title?: string
 }) {
   const [draft, setDraft] = useState(value)
 
@@ -40,6 +48,10 @@ export function EditableText({
   return (
     <input
       aria-label={ariaLabel}
+      type={masked ? 'password' : 'text'}
+      readOnly={disabled}
+      title={title}
+      autoComplete="off"
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
       onKeyDown={onKeyDown}

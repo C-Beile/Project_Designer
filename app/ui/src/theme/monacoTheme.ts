@@ -1,4 +1,5 @@
 import * as monaco from 'monaco-editor'
+import { ensureMonacoLanguagesDefined, gitTokenRules } from './monacoLanguages'
 
 // Monaco ships its own theme engine, entirely separate from tokens.css - defining a proper Night
 // Owl theme here closes the one remaining unthemed seam in Forge: without this, the embedded
@@ -24,11 +25,13 @@ let defined = false
 export function ensureMonacoThemesDefined(): void {
   if (defined) return
   defined = true
+  ensureMonacoLanguagesDefined()
 
   monaco.editor.defineTheme(NIGHT_OWL_DARK, {
     base: 'vs-dark',
     inherit: true,
     rules: [
+      ...gitTokenRules('night-owl'),
       { token: 'comment', foreground: '637777', fontStyle: 'italic' },
       { token: 'string', foreground: 'ecc48d' },
       { token: 'number', foreground: 'f78c6c' },
@@ -65,6 +68,7 @@ export function ensureMonacoThemesDefined(): void {
     base: 'vs-dark',
     inherit: true,
     rules: [
+      ...gitTokenRules('lion'),
       { token: 'comment', foreground: '8a8a8a', fontStyle: 'italic' },
       { token: 'string', foreground: 'ce9178' },
       { token: 'number', foreground: 'b5cea8' },
@@ -96,6 +100,7 @@ export function ensureMonacoThemesDefined(): void {
     base: 'vs',
     inherit: true,
     rules: [
+      ...gitTokenRules('light'),
       { token: 'comment', foreground: '989fb1', fontStyle: 'italic' },
       { token: 'string', foreground: '4876d6' },
       { token: 'number', foreground: 'aa0982' },

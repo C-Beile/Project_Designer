@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { GitFileStatus, GitOutput, GitOverview } from '../wire/types'
 import { Modal } from './Dialogs'
+import { CommitDiffDialog } from './CommitDiffDialog'
+import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { Chevron, CollapseAllIcon, ExpandAllIcon, FileIcon, FolderIcon, ListToggleIcon } from './commitIcons'
 
 // Team menu: basic Git on the repository of the active project (commit, pull, push, switch
@@ -60,6 +62,7 @@ interface TreeHandlers {
   onToggleFile: (path: string, on: boolean) => void
   onToggleFolder: (paths: string[], on: boolean) => void
   onToggleCollapse: (path: string) => void
+  onFileMenu?: (path: string, x: number, y: number) => void
 }
 
 function countLabel(n: number): string {
@@ -95,7 +98,7 @@ function FolderNode({ folder, label, handlers }: { folder: TreeFolder; label: st
       {open ? (
         <ul className="forge-commit-tree" role="group">
           {folder.files.map((f) => (
-            <FileRow key={f.path} file={f} label={f.path.split('/').pop() ?? f.path} handlers={{ onToggleFile, checked }} />
+            <FileRow key={f.path} file={f} label={f.path.split('/').pop() ?? f.path} handlers={{ onToggleFile, checked, onFileMenu: handlers.onFileMenu }} />
           ))}
           {folder.folders.map((f) => (
             <FolderNode key={f.path} folder={f} label={f.name} handlers={handlers} />
@@ -106,9 +109,17 @@ function FolderNode({ folder, label, handlers }: { folder: TreeFolder; label: st
   )
 }
 
-function FileRow({ file, label, handlers }: { file: GitFileStatus; label: string; handlers: Pick<TreeHandlers, 'checked' | 'onToggleFile'> }) {
+function FileRow({ file, label, handlers }: { file: GitFileStatus; label: string; handlers: Pick<TreeHandlers, 'checked' | 'onToggleFile' | 'onFileMenu'> }) {
   return (
-    <li role="treeitem" className="forge-commit-row forge-commit-file">
+    <li
+      role="treeitem"
+      className="forge-commit-row forge-commit-file"
+      onContextMenu={(e) => {
+        e.preventDefault()
+        handlers.onFileMenu?.(file.path, e.clientX, e.clientY)
+      }}
+      onDoubleClick={() => handlers.onFileMenu?.(file.path, -1, -1)}
+    >
       <input type="checkbox" aria-label={file.path} checked={handlers.checked.has(file.path)} onChange={(e) => handlers.onToggleFile(file.path, e.target.checked)} />
       <FileIcon json={file.path.endsWith('.json')} />
       <span className={`forge-commit-name ${fileClass(file.code)}`} title={`${file.code.trim() || '?'}  ${file.path}`}>
@@ -150,6 +161,9 @@ export function GitDialog({
   const [newName, setNewName] = useState(initialTarget?.remote ? initialTarget.remote.replace(/^[^/]+\//, '') : '')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const [flat, setFlat] = useState(false)
+  const [fileMenu, setFileMenu] = useState<{ path: string; x: number; y: number } | null>(null)
+  const [diffPath, setDiffPath] = useState<string | null>(null)
+  const [revertPath, setRevertPath] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -302,6 +316,7 @@ export function GitDialog({
                             }
                             return next
                           }),
+                        onFileMenu: (path, x, y) => (x < 0 ? setDiffPath(path) : setFileMenu({ path, x, y })),
                         onToggleCollapse: (path) =>
                           setCollapsed((prev) => {
                             const next = new Set(prev)
@@ -423,6 +438,51 @@ export function GitDialog({
             </pre>
           ) : null}
         </div>
+      ) : null}
+      {fileMenu ? (
+        <TreeContextMenu
+          entries={[
+            { id: 'show', label: 'Show Changes', enabled: true },
+            { id: 'revert', label: 'Revert', enabled: true },
+          ]}
+          x={fileMenu.x}
+          y={fileMenu.y}
+          onClose={() => setFileMenu(null)}
+          onPick={(id) => {
+            const path = fileMenu.path
+            setFileMenu(null)
+            if (id === 'show') setDiffPath(path)
+            else if (id === 'revert') setRevertPath(path)
+          }}
+        />
+      ) : null}
+      {diffPath ? <CommitDiffDialog api={api} root={projectRoot} path={diffPath} onClose={() => setDiffPath(null)} /> : null}
+      {revertPath ? (
+        <Modal
+          title="Revert"
+          onClose={() => setRevertPath(null)}
+          footer={
+            <>
+              <button
+                type="button"
+                className="is-primary"
+                onClick={() => {
+                  const path = revertPath
+                  setRevertPath(null)
+                  void act(() => api.scmDiscard(projectRoot, [path]))
+                }}
+              >
+                Revert
+              </button>
+              <button type="button" onClick={() => setRevertPath(null)}>
+                Cancel
+              </button>
+            </>
+          }
+        >
+          <p>Discard all changes in this file and go back to the committed version? This cannot be undone.</p>
+          <p className="forge-field-hint">{revertPath}</p>
+        </Modal>
       ) : null}
     </Modal>
   )

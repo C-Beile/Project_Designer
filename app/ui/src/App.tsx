@@ -22,7 +22,7 @@ export function App({ api = loggedTauriApi, projectRoot }: { api?: ForgeApi; pro
     <>
       <NativeMenuGuard />
       <CrashListener api={api} />
-      <ErrorBoundary api={api} label="Vendira Designer">
+      <ErrorBoundary api={api} label="Dito Designer">
         <Shell api={api} projectRoot={projectRoot} />
       </ErrorBoundary>
     </>

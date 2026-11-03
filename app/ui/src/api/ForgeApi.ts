@@ -173,6 +173,12 @@ export interface ForgeApi {
   gitCommit(projectRoot: string, message: string, paths: string[]): Promise<GitOutput>
   gitPull(projectRoot: string): Promise<GitOutput>
   gitPush(projectRoot: string): Promise<GitOutput>
+  /** Local commits that are not on the remote yet, newest first. */
+  gitUnpushed(projectRoot: string): Promise<GitCommit[]>
+  /** Commits on the remote that a pull would bring in (fetches first). */
+  gitIncoming(projectRoot: string): Promise<GitCommit[]>
+  /** Pushes the current branch up to this unpushed commit. */
+  gitPushTo(projectRoot: string, hash: string): Promise<GitOutput>
   gitCheckout(projectRoot: string, branch: string): Promise<GitOutput>
   gitCreateBranch(projectRoot: string, name: string, start: string | null): Promise<GitOutput>
   // Source Control panel (local Git). Every writing call is the result of one click.

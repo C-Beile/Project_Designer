@@ -200,7 +200,7 @@ async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     app.restart()
 }
 
-/// Help > Local Data and the Janitor list: Vendira's own data folder plus, read-only, the version
+/// Help > Local Data and the Janitor list: Dito Designer's own data folder plus, read-only, the version
 /// folders of the original Designer. Nothing is changed or deleted.
 #[tauri::command]
 async fn local_data_info(threshold_days: u32, app: tauri::AppHandle) -> Result<forge_app_core::local_data::LocalDataInfo, String> {
@@ -1050,6 +1050,21 @@ async fn git_commit(project_root: String, message: String, paths: Vec<String>) -
 }
 
 #[tauri::command]
+async fn git_unpushed(project_root: String) -> Result<Vec<GitCommit>, String> {
+    tauri::async_runtime::spawn_blocking(move || git_actions::unpushed(&PathBuf::from(project_root))).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+async fn git_incoming(project_root: String) -> Result<Vec<GitCommit>, String> {
+    tauri::async_runtime::spawn_blocking(move || git_actions::incoming(&PathBuf::from(project_root))).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+async fn git_push_to(project_root: String, hash: String) -> Result<GitOutput, String> {
+    tauri::async_runtime::spawn_blocking(move || git_actions::push_up_to(&PathBuf::from(project_root), &hash)).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
 async fn git_pull(project_root: String) -> Result<GitOutput, String> {
     tauri::async_runtime::spawn_blocking(move || git_actions::pull(&PathBuf::from(project_root))).await.map_err(|e| e.to_string())?
 }
@@ -1147,7 +1162,7 @@ async fn scm_gutter(project_root: String, file: String) -> Result<Gutter, String
 fn build_native_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
     use tauri::menu::{MenuBuilder, MenuItemBuilder, SubmenuBuilder};
     let preferences = MenuItemBuilder::with_id("preferences", "Preferences...").accelerator("CmdOrCtrl+,").build(app)?;
-    let app_menu = SubmenuBuilder::new(app, "Vendira Designer")
+    let app_menu = SubmenuBuilder::new(app, "Dito Designer")
         .about(None)
         .separator()
         .item(&preferences)
@@ -1323,6 +1338,9 @@ fn build_native_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             db_schema,
             git_overview,
             git_commit,
+            git_unpushed,
+            git_incoming,
+            git_push_to,
             git_pull,
             git_push,
             git_checkout,

@@ -1,4 +1,4 @@
-# Builds the Vendira Designer for macOS (universal: Apple Silicon + Intel) in GitHub Actions.
+# Builds the Dito Designer for macOS (universal: Apple Silicon + Intel) in GitHub Actions.
 # Prepared on Windows, NOT run yet: the first run on GitHub is the first real test (see
 # PROJECT/MACOS_PORT.md for the steps and the open points).
 #

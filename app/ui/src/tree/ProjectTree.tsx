@@ -3,6 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { KeyboardEvent } from 'react'
 import { isOpenable, type TreeNode } from '../wire/types'
 import { NodeIcon } from './treeIcons'
+import { TunnelStateIcon } from './TunnelStateIcon'
 
 // Projects tree like the original Designer (LAYOUT_SPEC §4.2/§4.4): several project roots, a
 // single click selects (fills Properties/Navigator later), double-click or Enter opens. Keyboard
@@ -332,7 +333,11 @@ export function ProjectTree({
                   setOpen(row, !isExpanded)
                 }}
               >
-                {node.is_leaf ? '' : isExpanded ? '⌄' : '›'}
+                {node.is_leaf ? null : (
+                  <svg width="12" height="12" viewBox="0 0 12 12" className="project-tree-arrow" style={{ transform: isExpanded ? 'rotate(90deg)' : 'none' }}>
+                    <path d="M4 2 L8.5 6 L4 10 Z" fill="currentColor" />
+                  </svg>
+                )}
               </span>
               <span className="project-tree-icon">
                 <NodeIcon node={node} expanded={isExpanded} />
@@ -340,7 +345,7 @@ export function ProjectTree({
               <span className={`project-tree-label${node.bold ? ' is-bold' : ''}`}>{node.label}</span>
               {(() => {
                 const badge = badgeFor?.(node)
-                return badge ? <span className="tunnel-dot" data-state={badge.state} role="img" aria-label={badge.title} title={badge.title} /> : null
+                return badge ? <TunnelStateIcon state={badge.state} title={badge.title} /> : null
               })()}
               {node.type_label ? <span className="project-tree-type is-bold">[{node.type_label}]</span> : null}
               {node.path ? <span className="project-tree-dim">{node.path}</span> : null}

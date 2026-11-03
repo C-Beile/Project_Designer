@@ -212,12 +212,20 @@ select {
 }
 
 .project-tree-toggle {
-  flex: 0 0 12px;
-  width: 12px;
-  text-align: center;
-  color: var(--fg-muted);
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg);
   cursor: pointer;
+  border-radius: 3px;
 }
+.project-tree-toggle:hover { background: color-mix(in srgb, var(--fg) 18%, transparent); }
+.project-tree-arrow { opacity: 0.9; transition: transform 0.1s; }
+.project-tree-row.is-selected .project-tree-toggle,
+[aria-selected="true"] > .project-tree-toggle { color: inherit; }
 
 .project-tree-icon {
   flex: 0 0 16px;
@@ -1496,23 +1504,13 @@ select {
 
 .tunnel-dot {
   display: inline-block;
-  width: 7px;
-  height: 7px;
   margin-left: 6px;
-  border-radius: 50%;
-  background: var(--fg-muted);
+  vertical-align: -2px;
   flex: none;
 }
-.tunnel-dot[data-state='connecting'],
-.tunnel-dot[data-state='open'] {
-  background: var(--warning);
-}
-.tunnel-dot[data-state='on'] {
-  background: #3fb950;
-}
-.tunnel-dot[data-state='error'] {
-  background: var(--error);
-}
+.forge-status-tunnel .tunnel-dot { margin-left: 0; margin-right: 4px; }
+.tunnel-spin { transform-origin: 6px 6px; animation: forge-spin 0.9s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .tunnel-spin { animation: none; } }
 
 .forge-toasts {
   position: fixed;
@@ -3860,7 +3858,6 @@ select {
 .dbb-changelog textarea { width: 100%; font-family: monospace; }
 .forge-spinner { display: inline-block; width: 9px; height: 9px; border: 2px solid var(--warning); border-right-color: transparent; border-radius: 50%; animation: forge-spin 0.8s linear infinite; vertical-align: -1px; }
 @keyframes forge-spin { to { transform: rotate(360deg); } }
-.tunnel-dot[data-state='connecting'] { animation: forge-pulse 1s ease-in-out infinite; }
 @keyframes forge-pulse { 50% { opacity: 0.35; } }
 .forge-props-value.is-unset { color: var(--fg-muted); font-style: italic; }
 .forge-props-row.is-draft .forge-props-input { border-color: var(--warning); }
@@ -4171,3 +4168,553 @@ button.app-issues { background: none; border: none; cursor: pointer; text-decora
   border-color: var(--border);
   color: var(--fg-muted);
 }
+
+/* ---- property sheet like the original Designer: group bars, Name | Value grid, check boxes ---- */
+.alias-config-panel { font-size: 12px; }
+.alias-config-panel .alias-group { border-bottom: 1px solid var(--border); }
+.alias-config-panel .alias-group-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 2px 6px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.alias-config-panel .alias-group-label::-webkit-details-marker { display: none; }
+.alias-config-panel .alias-group-label::before { content: '\25BE'; color: var(--fg-muted); font-size: 10px; width: 10px; }
+.alias-config-panel .alias-group:not([open]) > .alias-group-label::before { content: '\25B8'; }
+.alias-config-panel .forge-props-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 38%) 1fr;
+  align-items: center;
+  min-height: 22px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+.alias-config-panel .forge-props-row:hover { background: color-mix(in srgb, var(--fg) 6%, transparent); }
+.alias-config-panel .forge-props-name {
+  padding: 2px 8px 2px 18px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.alias-config-panel .forge-props-value { padding: 2px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.alias-config-panel .forge-props-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 20px;
+  margin: 1px 4px;
+  padding: 0 6px;
+  background: var(--bg-inset);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+.alias-config-panel .forge-props-input:focus { outline: none; border-color: var(--focus-ring, var(--accent)); }
+.alias-config-panel input[type='checkbox'] { justify-self: start; margin: 0 8px; width: 14px; height: 14px; accent-color: var(--accent); }
+.alias-config-panel .forge-field-hint { margin: 0; padding: 6px 8px; color: var(--fg-muted); font-size: 11px; }
+.alias-config-panel .alias-config-desc { margin-top: 8px; padding: 6px 8px; border-top: 1px solid var(--border); background: var(--bg-panel); }
+.alias-config-tab { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.alias-config-tab .alias-config-panel { flex: 1 1 auto; overflow: auto; min-height: 0; }
+.alias-config-subtabs { display: flex; gap: 2px; padding: 2px 4px 0; border-bottom: 1px solid var(--border); flex: 0 0 auto; }
+.alias-config-subtab { background: none; border: none; border-bottom: 2px solid transparent; color: var(--fg-muted); padding: 2px 10px; font: inherit; cursor: default; }
+.alias-config-subtab.is-active { color: var(--fg); border-bottom-color: var(--accent); }
+.alias-config-subtab:disabled { opacity: 0.55; }
+
+/* ---- Options and Plugins dialogs: one calm style (icon bar, groups, fields, lists) ---- */
+.forge-opt-cats { background: var(--bg-panel); padding: 4px 4px 0; border-radius: 4px 4px 0 0; }
+.forge-opt-cat { border-radius: 4px 4px 0 0; color: var(--fg-muted); font-size: 12px; cursor: pointer; }
+.forge-opt-cat:hover { color: var(--fg); background: color-mix(in srgb, var(--fg) 7%, transparent); }
+.forge-opt-cat.is-active { color: var(--fg); background: var(--bg); border-bottom-color: var(--accent); }
+.forge-opt-glyph { display: flex; align-items: center; justify-content: center; height: 28px; color: var(--accent); }
+.forge-opt-cat:not(.is-active) .forge-opt-glyph { color: var(--fg-muted); }
+.forge-opt-cat.is-active .forge-opt-glyph { color: var(--accent); }
+.forge-opt-pages { padding: 6px 4px 0; }
+.forge-opt-page { cursor: pointer; border-radius: 3px 3px 0 0; }
+.forge-opt-page:hover { color: var(--fg); }
+.forge-opt-page.is-active { border-bottom-color: var(--accent); }
+.forge-opt-body { padding: 14px 8px; gap: 12px; }
+.forge-opt-row { grid-template-columns: 240px 1fr; gap: 4px 16px; min-height: 26px; }
+.forge-opt-label { color: var(--fg); }
+.forge-opt-body input[type='text'],
+.forge-opt-body input[type='number'],
+.forge-opt-body input[type='password'],
+.forge-opt-body input[type='search'],
+.forge-opt-body select,
+.forge-plugins input[type='text'],
+.forge-plugins select {
+  background: var(--bg-inset);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 3px 8px;
+  min-height: 24px;
+  box-sizing: border-box;
+}
+.forge-opt-body input:focus,
+.forge-opt-body select:focus,
+.forge-plugins input:focus,
+.forge-plugins select:focus { outline: none; border-color: var(--focus-ring, var(--accent)); box-shadow: 0 0 0 1px var(--focus-ring, var(--accent)); }
+.forge-opt-body input[type='checkbox'],
+.forge-opt-body input[type='radio'],
+.forge-plugins input[type='checkbox'] { accent-color: var(--accent); }
+.forge-opt-group { border-radius: 4px; border-color: var(--border); background: color-mix(in srgb, var(--bg-panel) 45%, transparent); padding: 8px 12px 10px; gap: 6px; }
+.forge-opt-group > legend { padding: 0 6px; color: var(--fg-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+.forge-opt-body .forge-field-hint { color: var(--fg-muted); font-size: 11px; line-height: 1.45; }
+.forge-opt-scroll { border-radius: 4px; }
+.forge-opt-table tbody tr:nth-child(even) td,
+.forge-plugins-list tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--fg) 3.5%, transparent); }
+.forge-opt-table tbody tr:hover td,
+.forge-plugins-list tbody tr:hover td { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.forge-plugins-note { padding: 14px 8px; display: flex; flex-direction: column; gap: 10px; }
+.forge-plugins-split { height: 400px; gap: 14px; padding-top: 10px; }
+.forge-plugins-list { border: 1px solid var(--border); border-radius: 4px; padding: 0; }
+.forge-plugins-search { padding: 6px 8px; background: var(--bg-panel); border-bottom: 1px solid var(--border); }
+.forge-plugins-list th { text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.04em; padding: 4px 8px; }
+.forge-plugins-list td { padding: 4px 8px; cursor: default; }
+.forge-plugins-list table { flex: 1 1 auto; }
+.forge-plugins-list tr.is-selected td { background: var(--selected-bg); color: var(--selected-fg); }
+.forge-plugin-dot { display: inline-flex; vertical-align: middle; }
+.forge-plugins-actions { padding: 8px; border-top: 1px solid var(--border); background: var(--bg-panel); }
+.forge-plugins-actions button,
+.forge-plugins-note button { border-radius: 3px; padding: 3px 14px; cursor: pointer; }
+.forge-plugins-actions button:not(:disabled):hover,
+.forge-plugins-note button:not(:disabled):hover { background: var(--button-bg, var(--selection)); color: var(--button-fg, #fff); }
+.forge-plugins-detail { padding: 2px 6px 2px 14px; line-height: 1.5; }
+.forge-plugins-detail h3 { margin: 0 0 6px; font-size: 15px; }
+.forge-plugins-detail h4 { margin: 14px 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-muted); }
+.forge-plugins-detail p { margin: 0 0 6px; }
+
+/* ---- Markdown files: Source | Split | Preview and the rendered view ---- */
+.forge-md-switch { display: flex; gap: 2px; padding: 2px 6px 0; border-bottom: 1px solid var(--border); background: var(--bg-panel); flex: 0 0 auto; }
+.forge-md-tab { background: none; border: none; border-bottom: 2px solid transparent; color: var(--fg-muted); padding: 2px 12px; font: inherit; cursor: pointer; }
+.forge-md-tab:hover { color: var(--fg); }
+.forge-md-tab.is-active { color: var(--fg); border-bottom-color: var(--accent); }
+.forge-md-body { display: flex; flex: 1 1 auto; min-height: 0; }
+.forge-md-source { flex: 1 1 50%; min-width: 0; display: flex; flex-direction: column; }
+.forge-md-body.is-split .forge-md { border-left: 1px solid var(--border); }
+.forge-md-body.is-preview .forge-md-source { display: none; }
+.forge-md-body.is-source .forge-md { display: none; }
+.forge-md {
+  flex: 1 1 50%;
+  min-width: 0;
+  overflow: auto;
+  padding: 18px 28px 32px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 1.65;
+}
+.forge-md > :first-child { margin-top: 0; }
+.forge-md h1, .forge-md h2, .forge-md h3, .forge-md h4, .forge-md h5, .forge-md h6 { margin: 1.4em 0 0.5em; line-height: 1.25; font-weight: 650; }
+.forge-md h1 { font-size: 1.9em; padding-bottom: 0.3em; border-bottom: 1px solid var(--border); }
+.forge-md h2 { font-size: 1.5em; padding-bottom: 0.25em; border-bottom: 1px solid var(--border); }
+.forge-md h3 { font-size: 1.2em; }
+.forge-md h4, .forge-md h5, .forge-md h6 { font-size: 1em; color: var(--fg-muted); }
+.forge-md p, .forge-md ul, .forge-md ol, .forge-md blockquote, .forge-md pre, .forge-md table { margin: 0 0 1em; }
+.forge-md ul, .forge-md ol { padding-left: 1.6em; }
+.forge-md li + li { margin-top: 0.2em; }
+.forge-md a { color: var(--accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); }
+.forge-md a:hover { border-bottom-color: var(--accent); }
+.forge-md code { font-family: var(--font-mono, 'Cascadia Code', Consolas, monospace); font-size: 0.9em; padding: 0.15em 0.4em; border-radius: 4px; background: var(--bg-inset); color: var(--warm, var(--fg)); }
+.forge-md pre { padding: 12px 14px; border-radius: 6px; background: var(--bg-inset); border: 1px solid var(--border); overflow: auto; line-height: 1.5; }
+.forge-md pre code { padding: 0; background: none; color: var(--fg); font-size: 0.88em; }
+.forge-md blockquote { padding: 2px 14px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--bg-panel) 60%, transparent); color: var(--fg-muted); border-radius: 0 4px 4px 0; }
+.forge-md blockquote > :last-child { margin-bottom: 0; }
+.forge-md hr { border: none; border-top: 1px solid var(--border); margin: 1.6em 0; }
+.forge-md table { border-collapse: collapse; width: max-content; max-width: 100%; display: block; overflow: auto; }
+.forge-md th, .forge-md td { padding: 5px 12px; border: 1px solid var(--border); text-align: left; }
+.forge-md th { background: var(--bg-panel); font-weight: 600; }
+.forge-md tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--fg) 3.5%, transparent); }
+.forge-md img { max-width: 100%; }
+.forge-md strong { font-weight: 650; }
+.forge-md li input[type='checkbox'] { margin-right: 6px; accent-color: var(--accent); }
+
+/* ---- all dialogs: one structure (title bar, form grid, option groups, footer strip) ---- */
+.forge-modal { border-radius: 6px; overflow: hidden; }
+.forge-modal-title { padding: 8px 14px; background: var(--bg-panel); font-size: 13px; letter-spacing: 0.01em; }
+.forge-modal-body, .forge-os-dialog .forge-modal-body { padding: 16px 18px; }
+.forge-modal-body .forge-deploy,
+.forge-modal-body .forge-dialog-form { display: flex; flex-direction: column; gap: 10px; }
+
+.forge-modal-body .forge-field,
+.forge-os-dialog .forge-field { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 4px 12px; }
+.forge-modal-body .forge-field > :not(:first-child):not(.forge-field-row),
+.forge-os-dialog .forge-field > :not(:first-child):not(.forge-field-row) { min-width: 0; }
+.forge-modal-body .forge-field > .forge-field-hint,
+.forge-modal-body .forge-field > .forge-field-error,
+.forge-os-dialog .forge-field > .forge-field-hint,
+.forge-os-dialog .forge-field > .forge-field-error { grid-column: 2; }
+.forge-modal-body .forge-field > :first-child,
+.forge-os-dialog .forge-field > :first-child { color: var(--fg-muted); }
+
+.forge-modal-body input[type='text'], .forge-modal-body input[type='search'], .forge-modal-body input[type='password'],
+.forge-modal-body input[type='number'], .forge-modal-body select, .forge-modal-body textarea,
+.forge-os-dialog input[type='text'], .forge-os-dialog input[type='search'], .forge-os-dialog input[type='password'],
+.forge-os-dialog input[type='number'], .forge-os-dialog select, .forge-os-dialog textarea {
+  box-sizing: border-box;
+  min-height: 26px;
+  padding: 3px 8px;
+  background: var(--bg-inset);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font: inherit;
+}
+.forge-modal-body select, .forge-os-dialog select { width: 100%; }
+.forge-modal-body input:focus, .forge-modal-body select:focus, .forge-modal-body textarea:focus,
+.forge-os-dialog input:focus, .forge-os-dialog select:focus, .forge-os-dialog textarea:focus {
+  outline: none;
+  border-color: var(--focus-ring, var(--accent));
+  box-shadow: 0 0 0 1px var(--focus-ring, var(--accent));
+}
+.forge-modal-body input[type='checkbox'], .forge-modal-body input[type='radio'],
+.forge-os-dialog input[type='checkbox'], .forge-os-dialog input[type='radio'] { accent-color: var(--accent); width: 14px; height: 14px; margin: 0; flex: none; }
+
+.forge-modal-body .forge-check, .forge-os-dialog .forge-check { display: flex; align-items: center; gap: 8px; min-height: 22px; cursor: default; }
+.forge-modal-body .forge-check:has(input:disabled), .forge-os-dialog .forge-check:has(input:disabled) { opacity: 0.55; }
+.forge-check-hint { display: block; margin: -2px 0 2px 22px; color: var(--fg-muted); font-size: 11px; }
+
+.forge-modal-body .forge-field-error, .forge-os-dialog .forge-field-error {
+  margin: 0;
+  padding: 6px 10px;
+  border-left: 3px solid var(--error);
+  border-radius: 0 3px 3px 0;
+  background: color-mix(in srgb, var(--error) 12%, transparent);
+}
+.forge-modal-body .forge-field-hint, .forge-os-dialog .forge-field-hint { font-size: 12px; line-height: 1.45; }
+
+.forge-modal-footer, .forge-os-dialog .forge-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+}
+.forge-os-dialog .forge-modal-footer { margin: 0 -12px -10px; }
+.forge-modal-footer button, .forge-os-dialog .forge-modal-footer button { min-width: 76px; padding: 4px 14px; border-radius: 3px; font: inherit; cursor: pointer; }
+.forge-modal-footer button:not(:disabled):hover { background: color-mix(in srgb, var(--fg) 10%, var(--bg-panel)); }
+.forge-modal-footer button.is-primary { background: var(--button-bg, var(--selection)); color: var(--button-fg, #fff); border-color: var(--button-bg, var(--selection)); }
+.forge-modal-footer button.is-primary:not(:disabled):hover { filter: brightness(1.12); background: var(--button-bg, var(--selection)); }
+.forge-modal-footer button:focus-visible { outline: 2px solid var(--focus-ring, var(--accent)); outline-offset: 1px; }
+
+/* ---- Problems, Usages and Scan Services: calm tables and tree ---- */
+.forge-problems-bar { gap: 8px; height: 34px; box-sizing: border-box; padding: 0 10px; z-index: 2; background: var(--bg-panel); }
+.forge-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-inset); cursor: pointer; }
+.forge-chip:has(input:checked).is-error { border-color: color-mix(in srgb, var(--error) 55%, var(--border)); background: color-mix(in srgb, var(--error) 10%, var(--bg-inset)); }
+.forge-chip:has(input:checked).is-warning { border-color: color-mix(in srgb, var(--warning) 55%, var(--border)); background: color-mix(in srgb, var(--warning) 10%, var(--bg-inset)); }
+.forge-chip input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+.forge-chip:not(:has(input:checked)) { opacity: 0.55; }
+.forge-chip:has(input:focus-visible) { outline: 2px solid var(--focus-ring, var(--accent)); outline-offset: 1px; }
+.forge-problems-bar input[type='text'] { height: 24px; min-width: 200px; padding: 0 8px; background: var(--bg-inset); border: 1px solid var(--border); border-radius: 3px; }
+.forge-problems-bar input[type='text']:focus { outline: none; border-color: var(--focus-ring, var(--accent)); }
+
+.forge-problems-table { font-size: 12px; border-spacing: 0; }
+.forge-problems-table.is-problems { table-layout: fixed; }
+.forge-problems-table th { top: 34px; padding: 5px 10px; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.05em; font-weight: 600; border-bottom: 1px solid var(--border); background: var(--bg-panel); z-index: 1; }
+.forge-problems-table td { padding: 4px 10px; height: 24px; box-sizing: border-box; border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent); max-width: none; }
+.forge-problems-table tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--fg) 3%, transparent); }
+.forge-problems-table .col-icon { width: 34px; }
+.forge-problems-table .col-object { width: 19%; }
+.forge-problems-table .col-file { width: 26%; }
+.forge-problems-table .col-line { width: 58px; }
+.forge-problems-table .col-source { width: 92px; }
+.forge-problem-icon { text-align: center; padding-left: 12px !important; padding-right: 0 !important; }
+.forge-problem-icon svg { vertical-align: middle; }
+.forge-problem-row { cursor: default; }
+.forge-problem-row:hover td { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.forge-problem-row.is-selected td { background: var(--selected-bg); color: var(--selected-fg); }
+.forge-problem-row.is-selected .forge-file-dir, .forge-problem-row.is-selected .forge-source-badge { color: inherit; }
+.forge-problem-row.is-selected .forge-problem-text { white-space: normal; word-break: break-word; }
+.forge-problem-row:focus-visible { outline: 1px solid var(--focus-ring, var(--accent)); outline-offset: -1px; }
+.forge-problem-row.is-error td:first-child { box-shadow: inset 3px 0 0 var(--error); }
+.forge-problem-row.is-warning td:first-child { box-shadow: inset 3px 0 0 var(--warning); }
+.forge-file-dir { color: var(--fg-muted); }
+.forge-file-name { color: var(--fg); }
+.forge-cell-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--fg-muted); }
+.forge-problems-table th:nth-child(5) { text-align: right; }
+.forge-source-badge { display: inline-block; padding: 0 8px; border: 1px solid var(--border); border-radius: 9px; color: var(--fg-muted); font-size: 11px; line-height: 16px; }
+.forge-refactoring-bar { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: var(--bg-panel); border-bottom: 1px solid var(--border); }
+.forge-refactoring-bar button { padding: 3px 14px; border: 1px solid var(--border-strong); border-radius: 3px; background: var(--bg-inset); color: var(--fg); cursor: pointer; }
+.forge-refactoring-bar button:not(:disabled):hover { background: color-mix(in srgb, var(--fg) 10%, var(--bg-inset)); }
+.forge-refactoring-bar button:disabled { opacity: 0.45; }
+.forge-refactoring-note { padding: 6px 10px; margin: 0; }
+
+.forge-scan-bar { gap: 4px; padding: 6px 4px; background: var(--bg-panel); }
+.forge-scan-bar button { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--fg-muted); border-radius: 4px; cursor: pointer; }
+.forge-scan-bar button:hover:not(:disabled), .forge-scan-bar button[aria-pressed='true'] { color: var(--fg); background: color-mix(in srgb, var(--fg) 10%, transparent); border-color: transparent; }
+.forge-scan-bar button[aria-pressed='true'] { box-shadow: inset 0 0 0 1px var(--accent); }
+.forge-scan-main { padding: 0; }
+.forge-scan-structure { padding: 8px 12px; background: var(--bg-inset); border-bottom: 1px solid var(--border); }
+.forge-scan-actions { padding: 6px 12px; gap: 8px; background: var(--bg-panel); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 2; }
+.forge-scan-actions button { padding: 3px 12px; border-radius: 3px; cursor: pointer; }
+.forge-scan-actions button:not(:disabled):hover { background: color-mix(in srgb, var(--fg) 10%, var(--bg-panel)); }
+.forge-scan-summary { margin-left: auto; }
+.forge-scan-tree { padding: 6px 8px 12px; font-size: 12.5px; }
+.forge-scan-tree ul { margin: 0 0 0 12px; padding: 0 0 0 10px; border-left: 1px solid var(--border); }
+.forge-scan-node { display: flex; align-items: center; gap: 8px; width: 100%; padding: 3px 6px; border-radius: 4px; cursor: pointer; font: inherit; }
+.forge-scan-node:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.forge-chevron { flex: none; color: var(--fg-muted); transition: transform 0.12s; }
+.forge-scan-label { font-weight: 600; }
+.forge-scan-label.is-file { font-weight: 400; color: var(--fg-muted); }
+.forge-count { margin-left: 2px; padding: 0 7px; border-radius: 9px; background: var(--bg-panel); border: 1px solid var(--border); color: var(--fg-muted); font-size: 11px; line-height: 16px; font-variant-numeric: tabular-nums; }
+.forge-scan-task { display: flex; align-items: flex-start; gap: 8px; padding: 4px 8px; margin: 1px 0; border-radius: 4px; }
+.forge-scan-task:hover { background: color-mix(in srgb, var(--fg) 7%, transparent); }
+.forge-scan-task.is-selected { background: var(--selected-bg); color: var(--selected-fg); }
+.forge-scan-icon { display: inline-flex; flex: none; margin: 2px 0 0; }
+.forge-scan-message { flex: 1 1 auto; min-width: 0; line-height: 1.4; word-break: break-word; }
+.forge-scan-line { flex: none; margin-left: auto; padding: 0 7px; border-radius: 9px; border: 1px solid var(--border); color: var(--fg-muted); font-size: 11px; line-height: 16px; font-variant-numeric: tabular-nums; }
+.forge-scan-task.is-selected .forge-scan-line { color: inherit; border-color: color-mix(in srgb, currentColor 40%, transparent); }
+
+/* ---- View editor: calmer canvas (segmented switch, cards, timeline that no longer overlaps) ---- */
+.vp-modebar { display: inline-flex; gap: 0; margin: 0 0 10px; padding: 2px; background: var(--bg-inset); border: 1px solid var(--border); border-radius: 6px; }
+.vp-mode { padding: 3px 14px; border: none; border-radius: 4px; background: transparent; color: var(--fg-muted); font: inherit; cursor: pointer; }
+.vp-mode:hover { color: var(--fg); }
+.vp-mode.is-active { background: var(--selected-bg); color: var(--selected-fg); }
+.vp-fields-toggle { margin-left: 8px; border-left: 1px solid var(--border); border-radius: 0 4px 4px 0; }
+.vp-split { gap: 12px; }
+.vp-root { padding: 16px 18px; background: var(--bg-inset); border-radius: 6px; }
+.vp-stack, .vp-hf-body { gap: 12px; }
+.vp-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+.vp-card-head { margin-bottom: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; color: var(--fg-muted); }
+.vp-frame { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; background: color-mix(in srgb, var(--bg-panel) 55%, transparent); }
+.vp-frame > legend { padding: 0 8px; border-radius: 9px; font-size: 11px; color: var(--fg-muted); background: var(--bg-inset); }
+.vp-tabbar { margin-bottom: 10px; border-bottom: 1px solid var(--border); }
+.vp-tab { padding: 5px 12px; font: inherit; }
+.vp-tab.is-active { border-bottom-color: var(--accent); }
+.vp-form { gap: 10px 16px; }
+.vp-field-label { font-size: 11px; letter-spacing: 0.02em; }
+.vp-field-box { border-radius: 3px; }
+.vp-field-box:not(.is-edit) { background: var(--bg-elevated); }
+.vp-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.vp-timeline-row { grid-template-columns: minmax(96px, 26%) minmax(0, 1fr) auto; gap: 14px; padding: 8px 0; }
+.vp-tl-left { min-width: 0; flex-wrap: wrap; align-items: flex-start; }
+.vp-tl-left .vp-muted { min-width: 0; overflow-wrap: anywhere; font-size: 11px; line-height: 1.35; }
+.vp-timeline-row .vp-tile-text { min-width: 0; }
+.vp-timeline-row .vp-title { overflow-wrap: anywhere; font-size: 14px; }
+.vp-timeline-row .vp-muted { overflow-wrap: anywhere; }
+.vp-tl-right { text-align: right; overflow-wrap: anywhere; max-width: 28ch; }
+
+.vp-entity-list { border-radius: 6px; background: var(--bg-panel); }
+.vp-entity-list h3 { padding: 6px 10px; text-transform: uppercase; letter-spacing: 0.05em; font-size: 10.5px; }
+.vp-entity-item { padding: 4px 10px; }
+.vp-entity-item .vp-type { font-size: 10px; letter-spacing: 0.04em; }
+
+/* ---- Config editor like the original (shots 15/16): plain Name | Value rows, 50 % split, description area ---- */
+.alias-config-panel .forge-props-row { grid-template-columns: minmax(120px, 50%) minmax(0, 1fr); min-height: 20px; font-size: 12px; border-top-color: color-mix(in srgb, var(--border) 38%, transparent); }
+.alias-config-panel .forge-props-name { padding: 1px 6px 1px 16px; }
+.alias-config-panel .forge-props-value { padding: 1px 8px; }
+.alias-config-panel .forge-props-input {
+  height: 18px;
+  margin: 0;
+  padding: 0 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  font: inherit;
+}
+.alias-config-panel .forge-props-row:hover .forge-props-input { border-color: var(--border); background: var(--bg-inset); }
+.alias-config-panel .forge-props-input:focus { background: var(--bg-inset); border-color: var(--focus-ring, var(--accent)); }
+.alias-config-panel .forge-props-row.is-draft .forge-props-input { border-color: var(--warning); background: color-mix(in srgb, var(--warning) 10%, transparent); }
+.alias-config-panel input[type='checkbox'] { margin: 0 8px; }
+.alias-config-panel .alias-config-desc { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 0; padding: 6px 10px; border-top: 1px solid var(--border); background: transparent; }
+.alias-config-panel .alias-config-desc strong { font-size: 12px; }
+.alias-config-panel .alias-config-desc .forge-field-hint { margin-left: auto; padding: 0; font-size: 11px; }
+.alias-config-state { order: 2; margin-left: auto; width: 12px; height: 12px; border-radius: 50%; background: var(--border-strong); }
+.alias-config-desc .forge-field-hint { order: 1; }
+.alias-config-tab .alias-config-panel { display: flex; flex-direction: column; }
+.alias-config-tab .alias-config-panel .alias-config-desc { margin-top: auto; position: sticky; bottom: 0; background: var(--bg); }
+
+/* ---- Commit window: the tree takes the free height, the message sits at the bottom (also in an own window) ---- */
+.forge-modal-body:has(> .forge-git), .forge-os-dialog .forge-modal-body:has(> .forge-git) { display: flex; flex-direction: column; padding: 12px 14px; }
+.forge-git { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.forge-git > .forge-commit { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); }
+.forge-commit-main { min-height: 0; }
+.forge-commit-treebox { flex: 1 1 auto; min-height: 120px; background: var(--bg-inset); border-color: var(--border); border-radius: 3px; }
+.forge-commit-message { flex: 0 0 auto; height: 120px; min-height: 70px; border-radius: 3px; border-color: var(--border); background: var(--bg-inset); }
+.forge-commit-author input { border-radius: 3px; border-color: var(--border); background: var(--bg-inset); }
+.forge-commit-toolbar button { border-radius: 3px; cursor: pointer; }
+.forge-commit-row { min-height: 26px; }
+.forge-os-dialog .forge-modal-footer:has(.is-primary) { background: transparent; border-top: none; }
+
+/* ---- All editors: the same sheet as the config files (group bars, 38/62 label | value rows, plain values, calm tables) ---- */
+.forge-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) { font-size: 12px; }
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) h2 {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 15px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) > label,
+.sheet-group > label {
+  display: grid;
+  grid-template-columns: 38% minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0;
+  min-height: 24px;
+  padding: 0;
+  border-bottom: none;
+  border-top: 1px solid color-mix(in srgb, var(--border) 38%, transparent);
+  font-size: 12px;
+  color: var(--fg-muted);
+  background-image: linear-gradient(to right, transparent calc(38% - 1px), color-mix(in srgb, var(--border) 38%, transparent) calc(38% - 1px), color-mix(in srgb, var(--border) 38%, transparent) 38%, transparent 38%);
+}
+.sheet-group > label { padding-left: 0; text-indent: 16px; }
+.sheet-group > label > input, .sheet-group > label > select { text-indent: 0; }
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) > label:hover,
+.sheet-group > label:hover { background-color: color-mix(in srgb, var(--fg) 5%, transparent); }
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) input:not([type='checkbox']):not([type='radio']),
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) select {
+  box-sizing: border-box;
+  height: 20px;
+  padding: 0 8px;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid transparent;
+  border-radius: 0;
+  font: inherit;
+}
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) :is(label, td):hover > input:not([type='checkbox']):not([type='radio']) { border-color: var(--border); background: var(--bg-inset); }
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) input:not([type='checkbox']):not([type='radio']):focus { outline: none; background: var(--bg-inset); border-color: var(--focus-ring, var(--accent)); }
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) input[type='checkbox'] { accent-color: var(--accent); width: 14px; height: 14px; margin: 0 8px; }
+
+.sheet-group { margin: 0; border-bottom: 1px solid var(--border); }
+.sheet-group-head { display: flex; align-items: center; gap: 6px; margin: 0; padding: 3px 8px; background: var(--bg-panel); border-top: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--fg); }
+.sheet-group-head::before { content: '\25BE'; font-size: 10px; color: var(--fg-muted); }
+
+.sheet-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 12px; margin: 0; }
+.sheet-table .col-name { width: 38%; }
+.sheet-table .col-value { width: 32%; }
+.sheet-table th { padding: 3px 12px; text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-muted); background: color-mix(in srgb, var(--bg-panel) 60%, transparent); border: none; border-top: 1px solid color-mix(in srgb, var(--border) 38%, transparent); }
+.sheet-table td { padding: 2px 12px; height: 24px; box-sizing: border-box; border: none; border-top: 1px solid color-mix(in srgb, var(--border) 38%, transparent); vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-table tbody tr:hover td { background: color-mix(in srgb, var(--fg) 5%, transparent); }
+.sheet-table .sheet-name { padding-left: 16px; color: var(--fg); border-right: 1px solid color-mix(in srgb, var(--border) 38%, transparent); }
+.sheet-table .sheet-desc { color: var(--fg-muted); border-right: 1px solid color-mix(in srgb, var(--border) 38%, transparent); }
+.sheet-table .sheet-value { padding: 0 4px; }
+.sheet-table .sheet-value > input { width: 100%; }
+.sheet-table .sheet-value > span { display: block; padding: 0 8px; }
+.sheet-table .sheet-value .sheet-bool { padding: 0 4px; }
+.sheet-table .sheet-value .sheet-bool input { margin: 0 4px; opacity: 1; }
+
+/* Problems, Refactoring and Scan Services own the whole panel: no outer padding, so rows cannot show above or beside the sticky bars. */
+.forge-output-scroll:has(.forge-problems, .forge-refactoring, .forge-scan) { padding: 0; }
+.forge-problems { background: var(--bg); }
+.forge-problems-bar { position: sticky; top: 0; z-index: 3; box-shadow: 0 1px 0 var(--border); }
+.forge-problems-table th { top: 34px; z-index: 2; background: var(--bg-panel); box-shadow: 0 1px 0 var(--border); }
+.forge-problems-table.is-problems tbody td { background-clip: padding-box; }
+
+/* ---- Property sheet: movable divider, selected row, description of the selected property ---- */
+.alias-sheet-rows { position: relative; }
+.alias-config-panel .forge-props-row { grid-template-columns: var(--sheet-split, 50%) minmax(0, 1fr); cursor: default; }
+.alias-config-panel .forge-props-row.is-selected { background: var(--selected-bg); color: var(--selected-fg); }
+.alias-config-panel .forge-props-row.is-selected .forge-props-name,
+.alias-config-panel .forge-props-row.is-selected .forge-props-value { color: var(--selected-fg); }
+.alias-config-panel .forge-props-row.is-selected .forge-props-input { color: var(--selected-fg); }
+.alias-config-panel .forge-props-row.is-selected .forge-props-name { border-right-color: color-mix(in srgb, var(--selected-fg) 35%, transparent); }
+.sheet-splitter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--sheet-split, 50%);
+  width: 9px;
+  margin-left: -4px;
+  z-index: 3;
+  cursor: col-resize;
+  touch-action: none;
+}
+.sheet-splitter::after { content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: transparent; transition: background 0.1s; }
+.sheet-splitter:hover::after, .sheet-splitter:focus-visible::after, .sheet-splitter:active::after { background: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.sheet-splitter:focus-visible { outline: none; }
+.alias-config-panel .alias-config-desc { align-items: baseline; }
+.alias-config-panel .alias-config-text { order: 3; flex: 1 0 100%; margin: 0; padding: 2px 0 0; color: var(--fg); font-size: 12px; line-height: 1.5; white-space: pre-line; }
+.alias-config-panel .alias-config-desc .forge-field-hint { align-self: center; }
+.psheet-rows { position: relative; }
+.psheet-row { grid-template-columns: var(--sheet-split, 40%) minmax(0, 1fr); }
+.psheet-row.is-selected { background: var(--selected-bg); color: var(--selected-fg); }
+.psheet-row.is-selected .psheet-label { color: var(--selected-fg); border-right-color: color-mix(in srgb, var(--selected-fg) 35%, transparent); }
+
+/* ---- Language file: the toolbar and the column heads stay put, only the list scrolls; calmer grid ---- */
+.language-editor.language-grid { display: flex; flex-direction: column; flex: 1 1 0; height: 100%; min-height: 0; overflow: hidden; padding: 0; }
+.language-grid .lang-toolbar { flex: 0 0 auto; gap: 6px; padding: 6px 10px; background: var(--bg-panel); border-bottom: 1px solid var(--border); }
+.language-grid .lang-toolbar button { width: 26px; height: 24px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: 3px; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+.language-grid .lang-toolbar button:not(:disabled):hover { background: color-mix(in srgb, var(--fg) 12%, transparent); }
+.language-grid .lang-toolbar button:disabled { opacity: 0.35; cursor: default; }
+.language-grid .lang-toolbar button[aria-pressed='true'] { background: color-mix(in srgb, var(--accent) 22%, transparent); border-color: var(--accent); }
+.language-grid .lang-sep { width: 1px; height: 18px; margin: 0 4px; background: var(--border); }
+.language-grid .lang-toolbar input[type='search'] { width: 220px; height: 24px; padding: 0 8px; box-sizing: border-box; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: 3px; }
+.language-grid .lang-toolbar select { height: 24px; padding: 0 6px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: 3px; }
+.language-grid .lang-toolbar input:focus, .language-grid .lang-toolbar select:focus { outline: none; border-color: var(--focus-ring, var(--accent)); }
+.language-grid .lang-count { margin-left: 4px; padding: 0 9px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-inset); font-size: 11px; line-height: 18px; color: var(--fg-muted); }
+.language-grid .lang-fields { flex: 0 0 auto; display: flex; align-items: center; gap: 18px; padding: 5px 10px; border-bottom: 1px solid var(--border); background: color-mix(in srgb, var(--bg-panel) 55%, transparent); }
+.language-grid .lang-fields label { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: none; background: none; min-height: 0; }
+.language-grid .lang-fields input { width: 120px; height: 22px; padding: 0 8px; box-sizing: border-box; background: var(--bg-inset); border: 1px solid var(--border); border-radius: 3px; }
+.language-grid .forge-field-error { flex: 0 0 auto; margin: 0; }
+.language-grid .lang-empty { flex: 0 0 auto; margin: 0; padding: 10px 14px; }
+.lang-head, .lang-row { grid-template-columns: minmax(110px, 16%) minmax(0, 1fr) minmax(0, 1fr); }
+.language-grid .lang-head { flex: 0 0 auto; overflow-y: scroll; scrollbar-color: transparent transparent; pointer-events: auto; background: var(--bg-panel); border-bottom: 1px solid var(--border); }
+.language-grid .lang-head::-webkit-scrollbar { background: transparent; }
+.language-grid .lang-head::-webkit-scrollbar-thumb { background: transparent; }
+.language-grid .lang-head .lang-col { padding: 5px 10px; text-transform: uppercase; font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em; color: var(--fg-muted); border-right: 1px solid color-mix(in srgb, var(--border) 45%, transparent); }
+.language-grid .lang-head .lang-col:hover { color: var(--fg); background: color-mix(in srgb, var(--fg) 6%, transparent); }
+.language-grid .lang-head .lang-col[aria-sort='ascending'], .language-grid .lang-head .lang-col[aria-sort='descending'] { color: var(--fg); }
+.language-grid .lang-body { flex: 1 1 0; min-height: 0; overflow-y: scroll; border: none; background: var(--bg); }
+.language-grid .lang-row { font-size: 12.5px; line-height: 22px; border-bottom: 1px solid color-mix(in srgb, var(--border) 28%, transparent); }
+.language-grid .lang-row:nth-child(odd) { background: transparent; }
+.language-grid .lang-row:nth-child(even) { background: color-mix(in srgb, var(--fg) 3%, transparent); }
+.language-grid .lang-row:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.language-grid .lang-row.is-selected, .language-grid .lang-row.is-selected:hover { background: var(--selected-bg); color: var(--selected-fg); }
+.language-grid .lang-col { padding: 0 10px; }
+.language-grid .lang-row .lang-col-module { color: var(--fg-muted); }
+.language-grid .lang-row.is-selected .lang-col-module { color: inherit; }
+.language-grid .lang-row input { height: 20px; padding: 0 6px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--focus-ring, var(--accent)); border-radius: 0; }
+
+
+/* Preferences editor: selectable rows, readable inputs (never black), clear click affordance */
+.preferences-editor .pref-row { display: grid; grid-template-columns: var(--sheet-split, 40%) 1fr; align-items: center; gap: 8px; padding: 3px 10px; cursor: pointer; border-bottom: 1px solid color-mix(in srgb, var(--fg) 8%, transparent); }
+.preferences-editor .pref-row:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.preferences-editor .pref-row.is-unset .pref-name { opacity: 0.75; }
+.preferences-editor .pref-row input[type="text"],
+.preferences-editor .pref-row input[type="password"],
+.preferences-editor .sheet-value input[type="text"],
+.preferences-editor .sheet-value input[type="password"] { background: color-mix(in srgb, var(--fg) 6%, transparent); border: 1px solid color-mix(in srgb, var(--fg) 22%, transparent); color: var(--fg); border-radius: 3px; padding: 2px 6px; width: 100%; box-sizing: border-box; cursor: text; }
+.preferences-editor input:focus { background: var(--bg-elevated, var(--bg)); outline: 1px solid var(--selected-bg, #3b82f6); }
+.preferences-editor input[readonly] { opacity: 0.6; cursor: not-allowed; }
+.preferences-editor .pref-row.is-selected,
+.preferences-editor tr.is-selected { background: var(--selected-bg); color: var(--selected-fg); }
+.preferences-editor .is-selected input[type="text"],
+.preferences-editor .is-selected input[type="password"] { background: color-mix(in srgb, var(--selected-fg) 14%, transparent); border-color: color-mix(in srgb, var(--selected-fg) 55%, transparent); color: var(--selected-fg); }
+.preferences-editor .is-selected input:focus { background: #fff; color: #111; }
+.preferences-editor tbody tr { cursor: pointer; }
+.preferences-editor tbody tr:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.preferences-editor .sheet-desc { border-top: 1px solid color-mix(in srgb, var(--fg) 20%, transparent); padding: 8px 12px; max-height: 28%; overflow: auto; }
+.preferences-editor .sheet-desc p { margin: 4px 0 0; white-space: pre-wrap; }
+/* Config editor: same, no black flash on click */
+.alias-config-panel .forge-props-input:focus,
+.alias-config-panel .forge-props-row:hover .forge-props-input { background: color-mix(in srgb, var(--fg) 10%, transparent); }
+.alias-config-panel .forge-props-row.is-selected .forge-props-input { background: color-mix(in srgb, var(--selected-fg) 14%, transparent); color: var(--selected-fg); }
+.alias-config-panel .forge-props-row.is-selected .forge-props-input:focus { background: #fff; color: #111; }
+
+
+/* Commit window: diff of one file (HEAD against working copy) */
+.forge-modal:has(.commit-diff) { width: min(1280px, calc(100vw - 32px)); height: min(760px, calc(100vh - 48px)); }
+.commit-diff { display: flex; flex-direction: column; height: 100%; min-height: 480px; gap: 6px; }
+.commit-diff-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.commit-diff-nav { display: inline-flex; gap: 4px; }
+.commit-diff-nav button { width: 26px; height: 24px; padding: 0; line-height: 1; }
+.commit-diff-ws { display: inline-flex; align-items: center; gap: 8px; }
+.commit-diff-heads { display: grid; grid-template-columns: 1fr 1fr; color: var(--fg-muted); font-size: 12px; }
+.commit-diff .forge-monaco-host { flex: 1 1 auto; min-height: 360px; border: 1px solid color-mix(in srgb, var(--fg) 18%, transparent); border-radius: 4px; }
+.forge-commit-file { cursor: default; }
+.forge-commit-file:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
