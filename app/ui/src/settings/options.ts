@@ -17,7 +17,32 @@ export interface DesignerOptions {
   debugger: { enabled: boolean; showElapsed: boolean }
   cloud: { bufferSize: number }
   encoding: { defaultEncoding: string }
-  editor: { fontSize: number; tabSize: number; wordWrap: boolean; minimap: boolean; formatOnSave: boolean }
+  editor: {
+    fontSize: number
+    tabSize: number
+    wordWrap: boolean
+    minimap: boolean
+    formatOnSave: boolean
+    /** Empty: the default code font. */
+    fontFamily: string
+    /** 0: automatic. */
+    lineHeight: number
+    fontLigatures: boolean
+    cursorBlinking: string
+    cursorStyle: string
+    smoothCaret: boolean
+    /** Header of the current function or class stays visible at the top while scrolling. */
+    stickyScroll: boolean
+    smoothScrolling: boolean
+    bracketColors: boolean
+    autoCloseBrackets: boolean
+    folding: boolean
+    scrollBeyondLastLine: boolean
+    insertSpaces: boolean
+    lineHighlight: string
+    /** Id of an imported colour theme; empty: the editor follows the application theme. */
+    colorTheme: string
+  }
   misc: { csvSeparator: ';' | ',' | '\t'; outputMaxLines: number; janitorOnStartup: boolean; janitorDays: number }
 }
 
@@ -29,7 +54,28 @@ export const DEFAULT_OPTIONS: DesignerOptions = {
   debugger: { enabled: false, showElapsed: true },
   cloud: { bufferSize: 128 },
   encoding: { defaultEncoding: 'UTF-8' },
-  editor: { fontSize: 13, tabSize: 2, wordWrap: false, minimap: false, formatOnSave: false },
+  editor: {
+    fontSize: 13,
+    tabSize: 2,
+    wordWrap: false,
+    minimap: false,
+    formatOnSave: false,
+    fontFamily: '',
+    lineHeight: 0,
+    fontLigatures: false,
+    cursorBlinking: 'smooth',
+    cursorStyle: 'line',
+    smoothCaret: false,
+    stickyScroll: true,
+    smoothScrolling: true,
+    bracketColors: true,
+    autoCloseBrackets: true,
+    folding: true,
+    scrollBeyondLastLine: false,
+    insertSpaces: true,
+    lineHighlight: 'line',
+    colorTheme: '',
+  },
   misc: { csvSeparator: ';', outputMaxLines: 5000, janitorOnStartup: true, janitorDays: 30 },
 }
 

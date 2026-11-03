@@ -31,6 +31,9 @@ pub struct TableDump {
     /// Columns that exist in the table but are never shown.
     pub hidden_columns: Vec<String>,
     pub truncated: bool,
+    /// Key of every row where the rows stand for something with an identity (the user name of the
+    /// Users tab); empty for plain dumps.
+    pub row_keys: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -111,7 +114,7 @@ pub fn sanitize(result: &SqlResult, secrets: &[&str]) -> TableDump {
                 .collect()
         })
         .collect();
-    TableDump { columns: keep.iter().map(|&i| result.columns[i].clone()).collect(), rows, hidden_columns, truncated: result.truncated }
+    TableDump { columns: keep.iter().map(|&i| result.columns[i].clone()).collect(), rows, hidden_columns, truncated: result.truncated, row_keys: Vec::new() }
 }
 
 fn dump(manager: &DbManager, sql: &str) -> Result<TableDump, String> {
@@ -152,11 +155,84 @@ pub fn pivot_users(columns: &[String], rows: &[Vec<Option<String>>], truncated: 
             shown.push(k.clone());
         }
     }
-    let mut extra: Vec<(&String, &usize)> = counts.iter().filter(|(k, _)| !shown.contains(k)).collect();
-    extra.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
-    shown.extend(extra.into_iter().take(4).map(|(k, _)| k.clone()));
-    let out_rows = order.iter().map(|u| shown.iter().map(|k| per_user[u].get(k).cloned()).collect()).collect();
-    Some(TableDump { columns: shown, rows: out_rows, hidden_columns: Vec::new(), truncated })
+    // Like the original Designer the list has exactly these columns, sorted by title.
+    if shown.is_empty() {
+        let mut extra: Vec<(&String, &usize)> = counts.iter().collect();
+        extra.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
+        shown.extend(extra.into_iter().take(4).map(|(k, _)| k.clone()));
+    }
+    let title_col = shown.iter().position(|c| c.eq_ignore_ascii_case("title"));
+    let mut entries: Vec<(String, Vec<Option<String>>)> = order.iter().map(|u| (u.clone(), shown.iter().map(|k| per_user[u].get(k).cloned()).collect())).collect();
+    if let Some(t) = title_col {
+        entries.sort_by(|a, b| a.1[t].as_deref().unwrap_or("").cmp(b.1[t].as_deref().unwrap_or("")));
+    }
+    let row_keys = entries.iter().map(|e| e.0.clone()).collect();
+    let out_rows = entries.into_iter().map(|e| e.1).collect();
+    Some(TableDump { columns: shown, rows: out_rows, hidden_columns: Vec::new(), truncated, row_keys })
+}
+
+/// One property of a user (one row of ASYS_USERS). Secret-looking properties are listed with their
+/// name only: no value, not editable.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct UserProperty {
+    pub id: String,
+    pub group: String,
+    pub key: String,
+    pub value: Option<String>,
+    pub editable: bool,
+}
+
+const USER_VALUE_LIMIT: usize = 1024;
+
+fn is_safe_word(s: &str, max: usize) -> bool {
+    !s.is_empty() && s.len() <= max && s.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '.' | '@'))
+}
+
+fn sql_text(v: &str) -> String {
+    v.replace('\\', "\\\\").replace('\'', "''")
+}
+
+/// All properties of one user (every group), for the property list next to the Users tab.
+pub fn read_user_properties(manager: &DbManager, user: &str) -> Result<Vec<UserProperty>, String> {
+    if !is_safe_word(user, 63) {
+        return Err("The user name contains characters that are not allowed.".into());
+    }
+    let sql = format!("SELECT ID, GROUPID, PROPKEY, PROPVAL FROM ASYS_USERS WHERE NAME = '{}' ORDER BY GROUPID, PROPKEY", sql_text(user));
+    let result = manager.query(&sql, false)?;
+    let mut out = Vec::new();
+    for row in &result.rows {
+        let (Some(Some(id)), Some(Some(key))) = (row.first(), row.get(2)) else { continue };
+        let secret = is_secret_key(key);
+        out.push(UserProperty {
+            id: id.clone(),
+            group: row.get(1).cloned().flatten().unwrap_or_default(),
+            key: key.clone(),
+            value: if secret { None } else { row.get(3).cloned().flatten().map(|v| redact_text(&v)) },
+            editable: !secret,
+        });
+    }
+    Ok(out)
+}
+
+/// Changes the value of one user property. Only called after the user confirmed; a secret property
+/// or an unknown row is refused, and only that one row is touched.
+pub fn update_user_property(manager: &DbManager, id: &str, value: &str) -> Result<(), String> {
+    let is_id = id.len() == 36 && id.chars().all(|c| c.is_ascii_hexdigit() || c == '-');
+    if !is_id {
+        return Err("The property id is not valid.".into());
+    }
+    if value.len() > USER_VALUE_LIMIT {
+        return Err(format!("The value is longer than {USER_VALUE_LIMIT} characters."));
+    }
+    let found = manager.query(&format!("SELECT PROPKEY FROM ASYS_USERS WHERE ID = '{id}'"), false)?;
+    let Some(Some(key)) = found.rows.first().and_then(|r| r.first()) else {
+        return Err("This property does not exist (anymore). Reload the list.".into());
+    };
+    if is_secret_key(key) {
+        return Err("Passwords and keys are not changed here.".into());
+    }
+    manager.query(&format!("UPDATE ASYS_USERS SET PROPVAL = '{}', DATE_EDIT = NOW() WHERE ID = '{id}'", sql_text(value)), true)?;
+    Ok(())
 }
 
 /// Users tab of the system editor: one row per user, no credential column.
@@ -165,7 +241,7 @@ pub fn read_users(manager: &DbManager) -> Result<TableDump, String> {
     let mut rows: Vec<Vec<Option<String>>> = Vec::new();
     let mut truncated = false;
     for page in 0..USER_PAGES {
-        let sql = format!("SELECT * FROM ASYS_USERS WHERE GROUPID = 'BASIC' ORDER BY ID LIMIT {} OFFSET {}", crate::db_session::MAX_ROWS, page * crate::db_session::MAX_ROWS);
+        let sql = format!("SELECT * FROM ASYS_USERS WHERE PROPKEY IN ('isActive', 'title', 'email', 'firstname', 'lastname') ORDER BY ID LIMIT {} OFFSET {}", crate::db_session::MAX_ROWS, page * crate::db_session::MAX_ROWS);
         let Ok(result) = manager.query(&sql, false) else {
             if page == 0 {
                 return dump(manager, "SELECT * FROM ASYS_USERS");
@@ -797,5 +873,27 @@ mod alias_rank_tests {
         let order = rank_server_ids(&r, &[]);
         assert_eq!(r[order[0]].0, "dev");
         assert_eq!(r[order[2]].0, "default");
+    }
+}
+
+#[cfg(test)]
+mod user_property_tests {
+    use super::*;
+
+    #[test]
+    fn quotes_text_and_accepts_only_plain_user_names() {
+        assert_eq!(sql_text("it's a\\b"), "it''s a\\\\b");
+        assert!(is_safe_word("___USER_7df12a4c-890f", 63));
+        assert!(!is_safe_word("x' OR '1'='1", 63));
+        assert!(!is_safe_word("", 63));
+    }
+
+    #[test]
+    fn the_user_list_carries_the_user_name_of_every_row() {
+        let columns: Vec<String> = ["NAME", "PROPKEY", "PROPVAL"].iter().map(|s| s.to_string()).collect();
+        let row = |n: &str, k: &str, v: &str| vec![Some(n.to_string()), Some(k.to_string()), Some(v.to_string())];
+        let table = pivot_users(&columns, &[row("u1", "title", "A"), row("u2", "title", "B"), row("u1", "password", "x")], false).unwrap();
+        assert_eq!(table.row_keys, vec!["u1".to_string(), "u2".to_string()]);
+        assert!(!table.columns.iter().any(|c| c.eq_ignore_ascii_case("password")));
     }
 }

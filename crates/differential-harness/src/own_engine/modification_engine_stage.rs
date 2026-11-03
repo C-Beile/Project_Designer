@@ -320,7 +320,7 @@ const INSERT_PAYLOAD_SOURCE_DEPTH: usize = 5;
 /// internal text content is never whitespace-only, so this only ever matches genuine indentation
 /// runs between sibling tags).
 fn indent_depth_of(bytes: &[u8]) -> Option<usize> {
-    let spaces = bytes.strip_prefix(b"\r\n")?;
+    let spaces = bytes.strip_prefix(b"\r\n").or_else(|| bytes.strip_prefix(b"\n"))?;
     if !spaces.is_empty() && spaces.iter().all(|&b| b == b' ') {
         Some(spaces.len() / 2)
     } else {
@@ -426,6 +426,11 @@ fn tag_name_of(raw: &[u8]) -> String {
 /// Applies one already-parsed modification to `doc`, rebuilding `doc`'s index fresh each call
 /// (mandatory after any patch - `aod-io`'s own module docs: a patch shifts every later event
 /// index). Returns the [`Operation`] actually performed, for the report.
+/// Names that denote a collection the base object may not carry yet (as opposed to a keyed item).
+fn is_container_name(seg: &str) -> bool {
+    !seg.is_empty() && seg.chars().all(|c| c.is_ascii_alphabetic()) && seg.chars().next().is_some_and(|c| c.is_ascii_lowercase())
+}
+
 fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation, String> {
     let index = build_index(doc);
     let root = root_path(doc).ok_or_else(|| "target document has no root element".to_string())?;
@@ -435,6 +440,26 @@ fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation,
     for (i, seg) in m.path_segments.iter().enumerate() {
         match resolve_step(doc, &index, &current, seg) {
             Some(next) => current = next,
+            None if m.change_type == ChangeType::Insert && is_container_name(seg) => {
+                // The base object has no such collection yet: the reference output creates the
+                // missing containers around the inserted element.
+                let payload = m.payload.clone().ok_or_else(|| "INSERT without a <value> payload".to_string())?;
+                let missing = &m.path_segments[i..];
+                let parent_depth = current.element_depth();
+                let inner = reindent_insert_template(payload.trim_ascii(), parent_depth + 1 + missing.len());
+                let mut template: Vec<u8> = Vec::new();
+                for (k, name) in missing.iter().enumerate() {
+                    template.extend_from_slice(format!("<{name}>").as_bytes());
+                    template.extend_from_slice(&aod_io::patch::standard_indent(parent_depth + 1 + k));
+                }
+                template.extend_from_slice(&inner);
+                for (k, name) in missing.iter().enumerate().rev() {
+                    template.extend_from_slice(&aod_io::patch::standard_indent(parent_depth + k));
+                    template.extend_from_slice(format!("</{name}>").as_bytes());
+                }
+                insert_at(doc, &index, &current, &template, SiblingHint::AppendAsLastChild).map_err(|e| e.to_string())?;
+                return Ok(Operation::ArrayInsert);
+            }
             None if i == last_index && m.change_type == ChangeType::Modify && !seg.contains('.') => {
                 // ASSUMPTION (not verified against the original Designer): a MODIFY of a scalar property
                 // that the base object does not carry yet appends the property to its parent element.
@@ -509,8 +534,34 @@ fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation,
 /// dependency's `<position>` being numerically later - proving position alone is not the rule).
 /// Position-ordering WITHIN a tier (two dependencies, or two project-root modifications,
 /// conflicting with each other) was never observed and stays UNVERIFIED-but-plausible.
+fn normalize_sidecars_to_crlf(dir: &Path) {
+    let Ok(entries) = fs::read_dir(dir) else { return };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            normalize_sidecars_to_crlf(&path);
+            continue;
+        }
+        let is_text = path.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("js") || e.eq_ignore_ascii_case("adoc"));
+        if !is_text {
+            continue;
+        }
+        let Ok(bytes) = fs::read(&path) else { continue };
+        let mut out = Vec::with_capacity(bytes.len() + bytes.len() / 20);
+        for &b in bytes.iter().filter(|&&b| b != b'\r') {
+            if b == b'\n' {
+                out.push(b'\r');
+            }
+            out.push(b);
+        }
+        if out != bytes {
+            let _ = platform::fs::atomic_write(&path, &out);
+        }
+    }
+}
+
 fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report: &mut ModificationEngineReport) {
-    group.sort_by_key(|m| (m.is_project_root, m.position));
+    group.sort_by_key(|m| (m.is_project_root, m.position, m.source_file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()));
 
     let bytes = match fs::read(target) {
         Ok(b) => b,
@@ -543,7 +594,19 @@ fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report:
         }
     }
 
-    let out_bytes = aod_io::serialize(&doc);
+    let out_bytes = {
+        // The reference writes a modified object with CRLF throughout, also where an inserted
+        // fragment came from a modification file with LF endings.
+        let raw = aod_io::serialize(&doc);
+        let mut crlf = Vec::with_capacity(raw.len() + raw.len() / 30);
+        for (i, &b) in raw.iter().enumerate() {
+            if b == LF_BYTE && (i == 0 || raw[i - 1] != CR_BYTE) {
+                crlf.push(CR_BYTE);
+            }
+            crlf.push(b);
+        }
+        crlf
+    };
     if let Err(source) = platform::fs::atomic_write(target, &out_bytes) {
         for m in &group {
             report.failures.push((m.source_file.clone(), format!("write-back failed: {source}")));
@@ -580,7 +643,16 @@ pub fn run_modification_phase(graph: &ModuleGraph, output_dir: &Path) -> Result<
 
     for ((model_type, model_name), group) in by_target {
         let target = output_dir.join(&model_type).join(&model_name).join(format!("{model_name}.aod"));
+        let existed = target.is_file();
         apply_all_to_file(&target, group, &mut report);
+        // The reference transpiler writes a modified object completely new: the scripts and
+        // documentation files that belong to it come out with CRLF line endings (verified against
+        // a clean reference run: 45 modified entities all CRLF, 183 untouched ones verbatim).
+        if existed {
+            if let Some(object_dir) = target.parent() {
+                normalize_sidecars_to_crlf(object_dir);
+            }
+        }
     }
 
     Ok(report)
@@ -958,3 +1030,6 @@ mod tests {
         fs::remove_dir_all(&output_dir).ok();
     }
 }
+
+const CR_BYTE: u8 = 13;
+const LF_BYTE: u8 = 10;

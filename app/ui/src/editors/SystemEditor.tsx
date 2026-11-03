@@ -42,6 +42,7 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
   const [showDetails, setShowDetails] = useState(false)
   const [reconnecting, setReconnecting] = useState(false)
   const [reconnectError, setReconnectError] = useState<string | null>(null)
+  const [testResult, setTestResult] = useState<string | null>(null)
   const [diagnosisOpen, setDiagnosisOpen] = useState(false)
   const [outdated, setOutdated] = useState(false)
   const tunnelRef = textField(tree, 'tunnelConfigPath') ?? ''
@@ -51,6 +52,29 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
     api.dbStatus(key).then((s) => (s.connected !== db.connected ? requestSystemReload() : undefined)).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, nodeId])
+
+  // "Test tunnel": only looks whether the tunnel of this system is open; nothing is connected or opened.
+  async function testTunnel() {
+    setReconnecting(true)
+    setReconnectError(null)
+    setShowDetails(true)
+    try {
+      if (!tunnelRef || !reference) throw new Error('tunnelConfigPath and serverConfigPath of this system must be set.')
+      const state = await api.systemTunnelState(projectRoot, tunnelRef, reference)
+      setTestResult(
+        state.db_tunnel_up
+          ? `The tunnel to the database is open${state.target ? ` (${state.target})` : ''}. The database session is opened by itself.`
+          : state.problem
+            ? `No tunnel is open: ${state.problem}`
+            : 'No tunnel is open. Start it in the tunnel manager (tunnel button of this system in the Projects tree).',
+      )
+    } catch (e) {
+      setTestResult(null)
+      setReconnectError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setReconnecting(false)
+    }
+  }
 
   async function reconnect() {
     setReconnecting(true)
@@ -103,10 +127,11 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, projectRoot, reference, name, nodeId, db.connected, tunnel.reload])
 
-  // A tunnel opened elsewhere (tunnel editor) makes this editor read the system database right away.
+  // The tunnel of THIS system, opened elsewhere (tunnel manager), makes this editor read its system
+  // database right away. Another system's tunnel or a plain click on the system never connects.
   const autoTried = useRef(false)
   useEffect(() => {
-    if (!tunnel.forwardsUp && !facts.tunnelOpen) {
+    if (!facts.tunnelOpen) {
       autoTried.current = false
       return
     }
@@ -115,7 +140,7 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
       void reconnect()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tunnel.forwardsUp, facts.tunnelOpen, db.connected])
+  }, [facts.tunnelOpen, db.connected])
 
   const current = configs?.find((c) => c.name === selected) ?? null
 
@@ -152,8 +177,8 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
             <p>Connection to database unavailable.</p>
           )}
           <div className="system-db-buttons">
-            <button type="button" disabled={reconnecting || !!progress || !tunnelRef || !reference} title={!tunnelRef || !reference ? UNCONFIGURED_HINT : undefined} onClick={() => void reconnect()}>
-              {reconnecting || progress ? 'Connecting...' : 'Reconnect'}
+            <button type="button" disabled={reconnecting || !!progress || !tunnelRef || !reference} title={!tunnelRef || !reference ? UNCONFIGURED_HINT : undefined} onClick={() => void testTunnel()}>
+              {reconnecting || progress ? 'Testing...' : 'Test tunnel'}
             </button>
             {progress ? (
               <button type="button" onClick={() => void api.dbCancelConnect()}>
@@ -166,7 +191,7 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
           </div>
           {showDetails ? (
             <pre className="forge-error-detail" aria-label="Connection details">
-              {reconnectError ?? facts.error ?? (facts.tunnelOpen ? 'The tunnel to the database is open; the database session is being opened.' : 'No tunnel is open. Open it with Reconnect, in the Services tab or in the tunnel config editor.')}
+              {reconnectError ?? testResult ?? facts.error ?? (facts.tunnelOpen ? 'The tunnel to the database is open; the database session is being opened.' : 'No tunnel is open. Start it in the tunnel manager (tunnel button of this system in the Projects tree).')}
             </pre>
           ) : null}
         </div>

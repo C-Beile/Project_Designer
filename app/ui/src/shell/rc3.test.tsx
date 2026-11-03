@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMockForgeApi } from '../test/mockApi'
 import { _resetSshKeyCacheForTests, useSshKeyPath } from '../settings/sshKey'
-import { _resetTunnelStateForTests, phaseOf, setSharedDb, setSystemsDb, systemKey, setTunnelError, tunnelConnecting } from '../services/tunnelState'
+import { _resetTunnelStateForTests, phaseOf, setSharedDb, setTunnelError, tunnelConnecting } from '../services/tunnelState'
 import { maskStatement, subscribeOutput, logStatement } from './outputBus'
 import { choiceDialog, confirmDialog, DialogHost, _resetDialogsForTests } from './dialogService'
 import { dismissToast, getNotifications, notify, clearNotifications } from './notifications'
@@ -133,20 +133,15 @@ describe('system editor without a database connection', () => {
     ],
   }
 
-  it('shows the unavailable panel, Details and a working Reconnect that reloads the system tables', async () => {
+  it('shows the unavailable panel and "Test tunnel" only looks at the tunnel without connecting anything', async () => {
     const user = userEvent.setup()
     const api = createMockForgeApi({ projectTree: [], documents: {}, aliasConfigs: {} })
-    const connect = vi.spyOn(api, 'dbConnect').mockImplementation(async () => {
-      const status = { connected: true, tunnel_up: true, database: 'sys', host: 'h' }
-      setSystemsDb([{ system: systemKey('C:/demo', 'dev1'), status, active: true }])
-      return status
-    })
+    const connect = vi.spyOn(api, 'dbConnect')
+    vi.spyOn(api, 'systemTunnelState').mockResolvedValue({ db_tunnel_up: false, target: null, problem: null })
     render(<SystemEditor nodeId="n" projectRoot="C:/demo" tree={tree} api={api} onTreeChange={() => {}} />)
     expect(await screen.findByText('Connection to database unavailable.')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Details...' }))
-    expect(screen.getByLabelText('Connection details')).toHaveTextContent(/No tunnel is open/)
-    await user.click(screen.getByRole('button', { name: 'Reconnect' }))
-    await waitFor(() => expect(connect).toHaveBeenCalledWith('C:/demo/others/t.xml', 'C:/demo/others/s.xml', null, null, expect.any(String)))
-    await waitFor(() => expect(screen.queryByText('Connection to database unavailable.')).toBeNull())
+    await user.click(screen.getByRole('button', { name: 'Test tunnel' }))
+    await waitFor(() => expect(screen.getByLabelText('Connection details')).toHaveTextContent(/No tunnel is open/))
+    expect(connect).not.toHaveBeenCalled()
   })
 })

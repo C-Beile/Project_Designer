@@ -164,7 +164,6 @@ export function GitDialog({
   const [flat, setFlat] = useState(false)
   const [fileMenu, setFileMenu] = useState<{ path: string; x: number; y: number } | null>(null)
   const [diffPath, setDiffPath] = useState<string | null>(null)
-  const [revertPath, setRevertPath] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -183,14 +182,15 @@ export function GitDialog({
     void load()
   }, [load])
 
-  async function act(run: () => Promise<GitOutput>) {
+  // `reloadProject` is off for a revert: only the file is reset and the list updates, the project is not read again.
+  async function act(run: () => Promise<GitOutput>, reloadProject = true) {
     setBusy(true)
     setOutput(null)
     try {
       const result = await run()
       setOutput(result)
       if (result.ok) {
-        onChanged()
+        if (reloadProject) onChanged()
         await load()
       }
     } catch (e) {
@@ -460,38 +460,12 @@ export function GitDialog({
             const path = fileMenu.path
             setFileMenu(null)
             if (id === 'show') showChanges(path)
-            else if (id === 'revert') setRevertPath(path)
+            // Revert goes straight through: the file is reset (a backup is kept) and leaves the change list.
+            else if (id === 'revert') void act(() => api.scmDiscard(projectRoot, [path]), false)
           }}
         />
       ) : null}
       {diffPath ? <CommitDiffDialog api={api} root={projectRoot} path={diffPath} onClose={() => setDiffPath(null)} /> : null}
-      {revertPath ? (
-        <Modal
-          title="Revert"
-          onClose={() => setRevertPath(null)}
-          footer={
-            <>
-              <button
-                type="button"
-                className="is-primary"
-                onClick={() => {
-                  const path = revertPath
-                  setRevertPath(null)
-                  void act(() => api.scmDiscard(projectRoot, [path]))
-                }}
-              >
-                Revert
-              </button>
-              <button type="button" onClick={() => setRevertPath(null)}>
-                Cancel
-              </button>
-            </>
-          }
-        >
-          <p>Discard all changes in this file and go back to the committed version? This cannot be undone.</p>
-          <p className="forge-field-hint">{revertPath}</p>
-        </Modal>
-      ) : null}
     </Modal>
   )
 }

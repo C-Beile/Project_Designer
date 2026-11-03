@@ -51,6 +51,10 @@ import { getEditorPrefs, reloadEditorPrefs, setEditorPref, subscribeEditorPrefs,
 import { runEditorAction } from '../theme/monacoActions'
 import { getPluginPrefs, isPluginActive, reloadPluginPrefs, subscribePluginPrefs } from '../settings/plugins'
 import { getOptions, reloadOptions } from '../settings/options'
+import { reloadCustomThemes } from '../theme/customThemes'
+import { UserPropertiesPanel } from '../services/UserPropertiesPanel'
+import { useUserSelection } from '../services/userSelection'
+import { resolvePathVariables } from '../properties/pathVariables'
 import { formatBeforeSave } from '../theme/formatOnSave'
 import { buildTreeMenu, objectLayout, type TreeMenuContext } from '../tree/contextMenu'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
@@ -1922,12 +1926,15 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
 
   const elementSel = navSel && inspectedObject && navSel.nodeId === inspectedObject.id ? navSel : null
   const focusLabel = elementSel?.label ?? inspected?.label ?? null
-  const propertiesTitle = aliasSel ? `${isConfigurationAlias(aliasSel.config.name) ? sectionLabel(configSection) : aliasSel.config.name} - Properties` : focusLabel ? `${focusLabel} - Properties` : 'Properties'
+  const userSel = useUserSelection()
+  const propertiesTitle = userSel ? `${userSel.title || userSel.user} - Properties` : aliasSel ? `${isConfigurationAlias(aliasSel.config.name) ? sectionLabel(configSection) : aliasSel.config.name} - Properties` : focusLabel ? `${focusLabel} - Properties` : 'Properties'
   const configRef = currentTab && isAliasConfigNode(currentTab.node) ? parseAliasConfigRef(currentTab.node.path) : null
   const configTabOpen = !!configRef && !currentTab?.node.id.startsWith('dbbrowser:') && isConfigurationAlias(configRef.alias)
   const navigatorTitle = configTabOpen ? 'Navigator' : inspectedObject && focusLabel ? `${focusLabel} - Navigator` : 'Navigator'
   const inspectedKind = inspected ? nodeKind(inspected) : null
-  const propertiesBody = aliasSel ? (
+  const propertiesBody = userSel ? (
+    <UserPropertiesPanel api={api} selection={userSel} />
+  ) : aliasSel ? (
     <AliasConfigPanel config={aliasSel.config} system={aliasSel.system} />
   ) : !inspected ? (
     <div className="forge-panel-empty">&lt;No Properties&gt;</div>
@@ -1958,8 +1965,11 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
           ? (name, reference) => {
               if (name === 'tunnelConfigPath') {
                 if (reference) void handleOpen(tunnelTabNode(inspectedObject.id, inspectedObject.label, reference))
+              } else if (reference) {
+                const file = resolvePathVariables('serverConfigPath', reference, { projectHome: projectOfPath(projects, inspectedObject.id) ?? root }).resolved
+                void handleOpen({ id: file, label: baseName(file), object_type: null, kind: 'file', is_leaf: true, children: [] })
               } else {
-                void handleOpen(inspectedObject).then(() => setTabState((prev) => setSubTab(prev, inspectedObject.id, 'editor')))
+                setStatus('serverConfigPath of this system is not set yet. Choose the file with the ... button.')
               }
             }
           : undefined
@@ -2139,6 +2149,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     void openDialogWindow<OptionsWindowResult>('options', 'Options', { width: 860, height: 640 }, { engine, theme, keymap: keymapEntries(menus) }, { modal: true })
       .then((r) => {
         if (!r) return
+        reloadCustomThemes()
         reloadOptions()
         reloadEditorPrefs()
         setInstallDir(r.installDir)

@@ -333,8 +333,8 @@ export function PropertySheetPanel({
                               type="button"
                               className="psheet-btn psheet-pencil"
                               aria-label={`Edit ${row.name}`}
-                              title={row.name === 'tunnelConfigPath' ? 'Open the tunnel manager' : 'Open the alias configs of this system'}
-                              disabled={!row.display && row.name === 'tunnelConfigPath'}
+                              title={row.name === 'tunnelConfigPath' ? 'Open the tunnel manager' : 'Open the server config file'}
+                              disabled={!row.display}
                               onClick={() => onEditConfig(row.name, row.display)}
                             >
                               {row.name === 'tunnelConfigPath' ? <TunnelGlyph /> : '✎'}

@@ -48,3 +48,39 @@ mod tests {
         assert_eq!(list_project_files(&root), vec!["entity/A/A.aod".to_string(), "process/B/process.js".to_string()]);
     }
 }
+
+const THEME_FILE_LIMIT: u64 = 2 * 1024 * 1024;
+
+/// Reads a colour theme file the user picked anywhere on the computer (a VS Code theme). Only
+/// `.json` and `.jsonc` files up to 2 MB are read, as text; nothing is written or executed.
+pub fn read_theme_file(path: &Path) -> Result<String, String> {
+    let ext = path.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase());
+    if !matches!(ext.as_deref(), Some("json") | Some("jsonc")) {
+        return Err("Choose a .json theme file.".into());
+    }
+    let meta = std::fs::metadata(path).map_err(|e| format!("Cannot read the file: {e}"))?;
+    if !meta.is_file() || meta.len() > THEME_FILE_LIMIT {
+        return Err("The theme file must be a file smaller than 2 MB.".into());
+    }
+    let bytes = std::fs::read(path).map_err(|e| format!("Cannot read the file: {e}"))?;
+    let text = String::from_utf8_lossy(&bytes).into_owned();
+    Ok(text.strip_prefix('\u{feff}').map(str::to_string).unwrap_or(text))
+}
+
+#[cfg(test)]
+mod theme_file_tests {
+    use super::*;
+
+    #[test]
+    fn reads_json_and_refuses_other_files() {
+        let dir = std::env::temp_dir().join(format!("forge-theme-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let ok = dir.join("t.json");
+        std::fs::write(&ok, "\u{feff}{\"name\":\"x\"}").unwrap();
+        assert_eq!(read_theme_file(&ok).unwrap(), "{\"name\":\"x\"}");
+        let bad = dir.join("t.exe");
+        std::fs::write(&bad, "x").unwrap();
+        assert!(read_theme_file(&bad).is_err());
+        assert!(read_theme_file(&dir.join("missing.json")).is_err());
+    }
+}

@@ -6,7 +6,7 @@ import type { DbStatus, UndoRedoOutcome, WireValue } from '../wire/types'
 import { HistoryView } from './HistoryView'
 import { ErrorBoundary } from '../shell/errorHandling'
 import { UsersTab } from '../services/UsersTable'
-import { useTunnelState } from '../services/tunnelState'
+import { systemKey, useTunnelState } from '../services/tunnelState'
 import { SUB_TAB_LABELS, isFileNode, isServiceNode, isTunnelNode, isAliasConfigNode, subTabsFor, type EditorTab, type SubTab } from './tabModel'
 
 // Content of the active editor tab: the sub-tab row (Editor | Source | History, plus Users for
@@ -131,7 +131,8 @@ export function ObjectEditorArea({
       </Suspense>
     )
   } else if (sub === 'users') {
-    body = <UsersTab api={api} db={tunnelShared.db.connected ? tunnelShared.db : db} reload={tunnelShared.reload} />
+    const usersKey = systemKey(projectRoot, node.label)
+    body = <UsersTab api={api} db={tunnelShared.bySystem[usersKey]?.connected ? tunnelShared.bySystem[usersKey] : tunnelShared.db.connected ? tunnelShared.db : db} reload={tunnelShared.reload} systemKey={usersKey} systemName={node.label} />
   } else if (Editor && value) {
     body = (
       <div className="forge-editor-host">

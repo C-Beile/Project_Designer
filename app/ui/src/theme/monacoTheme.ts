@@ -1,5 +1,8 @@
 import * as monaco from 'monaco-editor'
 import { ensureMonacoLanguagesDefined, gitTokenRules } from './monacoLanguages'
+import { getOptions, subscribeOptions } from '../settings/options'
+import { findCustomTheme, subscribeCustomThemes } from './customThemes'
+import type { MonacoThemeData } from './vscodeTheme'
 
 // Monaco ships its own theme engine, entirely separate from tokens.css - defining a proper Night
 // Owl theme here closes the one remaining unthemed seam in Forge: without this, the embedded
@@ -133,8 +136,21 @@ export function ensureMonacoThemesDefined(): void {
   })
 }
 
+// Imported themes are registered with Monaco when they are first needed, and again when the same
+// theme was imported anew (the stored object changes then).
+const registeredCustom = new Map<string, MonacoThemeData>()
+
 /** Maps Forge's own theme name (theme/useTheme.ts) to the matching Monaco theme id. */
 export function monacoThemeFor(forgeTheme: 'dark' | 'light' | 'lion'): string {
+  const custom = getOptions().editor.colorTheme ? findCustomTheme(getOptions().editor.colorTheme) : undefined
+  if (custom) {
+    ensureMonacoThemesDefined()
+    if (registeredCustom.get(custom.id) !== custom.data) {
+      monaco.editor.defineTheme(custom.id, custom.data)
+      registeredCustom.set(custom.id, custom.data)
+    }
+    return custom.id
+  }
   if (forgeTheme === 'lion') return LION_DARK
   return forgeTheme === 'light' ? NIGHT_OWL_LIGHT : NIGHT_OWL_DARK
 }
@@ -160,7 +176,15 @@ export function watchForgeThemeForMonaco(onChange: (monacoTheme: string) => void
     return () => {}
   }
   const target = document.documentElement
-  const observer = new MutationObserver(() => onChange(monacoThemeFor(currentForgeTheme())))
+  const apply = () => onChange(monacoThemeFor(currentForgeTheme()))
+  const observer = new MutationObserver(apply)
   observer.observe(target, { attributes: true, attributeFilter: ['data-theme'] })
-  return () => observer.disconnect()
+  // The editor theme can also change through the Options window or a newly imported theme.
+  const offOptions = subscribeOptions(apply)
+  const offThemes = subscribeCustomThemes(apply)
+  return () => {
+    observer.disconnect()
+    offOptions()
+    offThemes()
+  }
 }

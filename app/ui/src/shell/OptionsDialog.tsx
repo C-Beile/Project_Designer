@@ -8,6 +8,8 @@ import { getEditorPrefs, setEditorPref, type EditorPrefs } from '../theme/editor
 import type { ThemeName } from '../theme/useTheme'
 import { formatShortcut, isMacPlatform } from './shortcuts'
 import { OptionIcon } from './optionIcons'
+import { customThemes, removeCustomTheme, saveCustomTheme, subscribeCustomThemes } from '../theme/customThemes'
+import { parseVsCodeTheme } from '../theme/vscodeTheme'
 
 // Tools > Options (manual 4.8.3, screenshots 037/038): an icon bar with the categories General,
 // Editor, Fonts & Colors, Keymap, Team, Appearance, Miscellaneous, ADITO and iReport; categories
@@ -30,6 +32,16 @@ const CATEGORIES: { id: Category; label: string }[] = [
 ]
 
 const PAGES: Partial<Record<Category, { id: string; label: string }[]>> = {
+  editor: [
+    { id: 'general', label: 'General' },
+    { id: 'cursor', label: 'Cursor & Scrolling' },
+    { id: 'code', label: 'Code' },
+    { id: 'save', label: 'On Save' },
+  ],
+  fonts: [
+    { id: 'fonts', label: 'Fonts' },
+    { id: 'themes', label: 'Color Themes' },
+  ],
   misc: [
     { id: 'csv', label: 'CSV Editor' },
     { id: 'diff', label: 'Diff' },
@@ -111,7 +123,7 @@ export function OptionsDialog({
   keymap: KeymapEntry[]
 }) {
   const [category, setCategory] = useState<Category>('adito')
-  const [page, setPage] = useState<Record<string, string>>({ misc: 'csv', adito: 'general', ireport: 'general' })
+  const [page, setPage] = useState<Record<string, string>>({ misc: 'csv', adito: 'general', ireport: 'general', editor: 'general', fonts: 'fonts' })
   const [opts, setOpts] = useState<DesignerOptions>(() => getOptions())
   const [prefs, setPrefs] = useState<EditorPrefs>(() => getEditorPrefs())
   const [engineChoice, setEngineChoice] = useState<TranspilerEngineId>(engine)
@@ -123,6 +135,23 @@ export function OptionsDialog({
   const [detected, setDetected] = useState<string | null | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
   const [keyFilter, setKeyFilter] = useState('')
+  const [themes, setThemes] = useState(() => customThemes())
+  const [themeMessage, setThemeMessage] = useState<{ ok: boolean; text: string } | null>(null)
+  useEffect(() => subscribeCustomThemes(() => setThemes(customThemes())), [])
+
+  async function importTheme() {
+    setThemeMessage(null)
+    const picked = await api.pickFile('Import a VS Code colour theme', 'Theme (JSON)', ['json', 'jsonc']).catch(() => null)
+    if (!picked) return
+    try {
+      const imported = parseVsCodeTheme(await api.readThemeFile(picked), picked.split(/[\\/]/).pop() ?? 'theme')
+      saveCustomTheme(imported)
+      patch('editor', { colorTheme: imported.id })
+      setThemeMessage({ ok: true, text: `Imported "${imported.name}" (${imported.data.rules.length} token colours). It is applied when you press OK.` })
+    } catch (e) {
+      setThemeMessage({ ok: false, text: e instanceof Error ? e.message : String(e) })
+    }
+  }
 
   useEffect(() => {
     api.getSettings().then((s) => { setInstallDir(s.designer_install_dir ?? ''); setSshKey(s.ssh_key_path ?? ''); setAcceptNewHostKeys(!!s.ssh_accept_new_host_keys) }).catch(() => {})
@@ -165,33 +194,127 @@ export function OptionsDialog({
       </>
     )
   } else if (category === 'editor') {
-    body = (
-      <>
-        <h3>Editor</h3>
-        <Row label="Tab size">
-          <input type="number" min={1} max={8} value={opts.editor.tabSize} aria-label="Tab size" onChange={(e) => patch('editor', { tabSize: Math.max(1, Math.min(8, Number(e.target.value) || 2)) })} />
-        </Row>
-        <Check label="Wrap long lines" checked={opts.editor.wordWrap} onChange={(v) => patch('editor', { wordWrap: v })} />
-        <Check label="Show minimap" checked={opts.editor.minimap} onChange={(v) => patch('editor', { minimap: v })} />
-        <h4>On Save</h4>
-        <Check label="Format the file when it is saved" checked={opts.editor.formatOnSave} onChange={(v) => patch('editor', { formatOnSave: v })} hint={`Applies to code and text files. Format by hand with ${formatShortcut('Alt+Shift+F')} (Source > Format).`} />
-        <h4>Display (View menu)</h4>
-        <Check label="Show line numbers" checked={prefs.lineNumbers} onChange={(v) => setPrefs({ ...prefs, lineNumbers: v })} />
-        <Check label="Show non-printable characters" checked={prefs.nonPrintable} onChange={(v) => setPrefs({ ...prefs, nonPrintable: v })} />
-        <Check label="Show indent guide lines" checked={prefs.indentGuides} onChange={(v) => setPrefs({ ...prefs, indentGuides: v })} />
-        <Check label="Show inline hints" checked={prefs.inlineHints} onChange={(v) => setPrefs({ ...prefs, inlineHints: v })} />
-      </>
-    )
+    const sub = page.editor
+    const ed = opts.editor
+    const pick = (key: keyof DesignerOptions['editor']) => (e: { target: { value: string } }) => patch('editor', { [key]: e.target.value } as Partial<DesignerOptions['editor']>)
+    const tog = (key: keyof DesignerOptions['editor']) => (v: boolean) => patch('editor', { [key]: v } as Partial<DesignerOptions['editor']>)
+    body =
+      sub === 'cursor' ? (
+        <>
+          <h3>Cursor &amp; Scrolling</h3>
+          <Row label="Cursor blinking" hint="Smooth fades the cursor in and out instead of switching it on and off.">
+            <select aria-label="Cursor blinking" value={ed.cursorBlinking} onChange={pick('cursorBlinking')}>
+              <option value="smooth">Smooth</option>
+              <option value="blink">Blink</option>
+              <option value="phase">Phase</option>
+              <option value="expand">Expand</option>
+              <option value="solid">Solid (no blinking)</option>
+            </select>
+          </Row>
+          <Row label="Cursor style">
+            <select aria-label="Cursor style" value={ed.cursorStyle} onChange={pick('cursorStyle')}>
+              <option value="line">Line</option>
+              <option value="line-thin">Thin line</option>
+              <option value="block">Block</option>
+              <option value="block-outline">Block outline</option>
+              <option value="underline">Underline</option>
+              <option value="underline-thin">Thin underline</option>
+            </select>
+          </Row>
+          <Check label="Move the cursor smoothly (animated caret)" checked={ed.smoothCaret} onChange={tog('smoothCaret')} />
+          <Check label="Scroll smoothly" checked={ed.smoothScrolling} onChange={tog('smoothScrolling')} />
+          <Check label="Allow scrolling past the last line" checked={ed.scrollBeyondLastLine} onChange={tog('scrollBeyondLastLine')} />
+          <Row label="Highlight the current line">
+            <select aria-label="Line highlight" value={ed.lineHighlight} onChange={pick('lineHighlight')}>
+              <option value="line">Line</option>
+              <option value="gutter">Line numbers</option>
+              <option value="all">Line and line numbers</option>
+              <option value="none">Off</option>
+            </select>
+          </Row>
+        </>
+      ) : sub === 'code' ? (
+        <>
+          <h3>Code</h3>
+          <Check label="Sticky header: keep the current function or class visible at the top" checked={ed.stickyScroll} onChange={tog('stickyScroll')} hint="While you scroll through a long function, its first lines stay pinned at the top of the editor." />
+          <Check label="Colour matching brackets" checked={ed.bracketColors} onChange={tog('bracketColors')} />
+          <Check label="Close brackets and quotes automatically" checked={ed.autoCloseBrackets} onChange={tog('autoCloseBrackets')} />
+          <Check label="Allow folding of code blocks" checked={ed.folding} onChange={tog('folding')} />
+          <Check label="Show inline hints" checked={prefs.inlineHints} onChange={(v) => setPrefs({ ...prefs, inlineHints: v })} />
+        </>
+      ) : sub === 'save' ? (
+        <>
+          <h3>On Save</h3>
+          <Check label="Format the file when it is saved" checked={ed.formatOnSave} onChange={tog('formatOnSave')} hint={`Applies to code and text files. Format by hand with ${formatShortcut('Alt+Shift+F')} (Source > Format).`} />
+        </>
+      ) : (
+        <>
+          <h3>Editor</h3>
+          <Row label="Tab size">
+            <input type="number" min={1} max={8} value={ed.tabSize} aria-label="Tab size" onChange={(e) => patch('editor', { tabSize: Math.max(1, Math.min(8, Number(e.target.value) || 2)) })} />
+          </Row>
+          <Check label="Insert spaces when Tab is pressed" checked={ed.insertSpaces} onChange={tog('insertSpaces')} />
+          <Check label="Wrap long lines" checked={ed.wordWrap} onChange={tog('wordWrap')} />
+          <Check label="Show minimap" checked={ed.minimap} onChange={tog('minimap')} />
+          <h4>Display (View menu)</h4>
+          <Check label="Show line numbers" checked={prefs.lineNumbers} onChange={(v) => setPrefs({ ...prefs, lineNumbers: v })} />
+          <Check label="Show non-printable characters" checked={prefs.nonPrintable} onChange={(v) => setPrefs({ ...prefs, nonPrintable: v })} />
+          <Check label="Show indent guide lines" checked={prefs.indentGuides} onChange={(v) => setPrefs({ ...prefs, indentGuides: v })} />
+        </>
+      )
   } else if (category === 'fonts') {
-    body = (
-      <>
-        <h3>Fonts &amp; Colors</h3>
-        <Row label="Editor font size">
-          <input type="number" min={9} max={28} value={opts.editor.fontSize} aria-label="Editor font size" onChange={(e) => patch('editor', { fontSize: Math.max(9, Math.min(28, Number(e.target.value) || 13)) })} />
-        </Row>
-        <p className="forge-field-hint">The colors follow the Night Owl palette and cannot be changed individually yet.</p>
-      </>
-    )
+    const ed = opts.editor
+    body =
+      page.fonts === 'themes' ? (
+        <>
+          <h3>Color Themes</h3>
+          <Row label="Editor colours" hint="Colours the code editor only. The rest of the window keeps the application theme.">
+            <select aria-label="Editor color theme" value={themes.some((t) => t.id === ed.colorTheme) ? ed.colorTheme : ''} onChange={(e) => patch('editor', { colorTheme: e.target.value })}>
+              <option value="">Follow the application theme</option>
+              {themes.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </Row>
+          <div className="forge-opt-buttons">
+            <button type="button" onClick={() => void importTheme()}>
+              Import VS Code theme...
+            </button>
+            <button
+              type="button"
+              disabled={!themes.some((t) => t.id === ed.colorTheme)}
+              onClick={() => {
+                removeCustomTheme(ed.colorTheme)
+                patch('editor', { colorTheme: '' })
+              }}
+            >
+              Remove selected theme
+            </button>
+          </div>
+          {themeMessage ? (
+            <p className={themeMessage.ok ? 'forge-field-hint' : 'forge-field-error'} role={themeMessage.ok ? 'status' : 'alert'}>
+              {themeMessage.text}
+            </p>
+          ) : null}
+          <p className="forge-field-hint">Choose a theme file of VS Code (a .json file from a theme extension or from Code's theme folder). The token colours and the editor colours are taken over.</p>
+        </>
+      ) : (
+        <>
+          <h3>Fonts</h3>
+          <Row label="Editor font" hint="Name of an installed font, for example JetBrains Mono. Empty uses Consolas.">
+            <input type="text" value={ed.fontFamily} aria-label="Editor font family" placeholder="Consolas" onChange={(e) => patch('editor', { fontFamily: e.target.value })} />
+          </Row>
+          <Row label="Editor font size">
+            <input type="number" min={9} max={28} value={ed.fontSize} aria-label="Editor font size" onChange={(e) => patch('editor', { fontSize: Math.max(9, Math.min(28, Number(e.target.value) || 13)) })} />
+          </Row>
+          <Row label="Line height" hint="0 sets it automatically from the font size.">
+            <input type="number" min={0} max={60} value={ed.lineHeight} aria-label="Line height" onChange={(e) => patch('editor', { lineHeight: Math.max(0, Math.min(60, Number(e.target.value) || 0)) })} />
+          </Row>
+          <Check label="Font ligatures (for fonts that have them, such as Fira Code)" checked={ed.fontLigatures} onChange={(v) => patch('editor', { fontLigatures: v })} />
+        </>
+      )
   } else if (category === 'keymap') {
     const needle = keyFilter.trim().toLowerCase()
     const rows = keymap.filter((k) => !needle || `${k.group} ${k.label} ${k.shortcut}`.toLowerCase().includes(needle))

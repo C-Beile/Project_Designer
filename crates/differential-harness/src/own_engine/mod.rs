@@ -11,12 +11,20 @@
 
 use std::path::Path;
 
+pub mod alias_merge_stage;
 pub mod copy_phase_stage;
 pub mod incremental_stage;
+pub mod extension_point_stage;
+pub mod language_merge_stage;
+pub mod modification_relocate_stage;
 pub mod linked_files_stage;
 pub mod modification_engine_stage;
 pub mod resolver_stage;
 
+pub use alias_merge_stage::{run_alias_merge, AliasMergeReport};
+pub use modification_relocate_stage::{run_modification_relocation, RelocateReport};
+pub use extension_point_stage::{run_extension_point_resolution, ExtensionPointReport};
+pub use language_merge_stage::{run_language_merge, LanguageMergeReport};
 pub use copy_phase_stage::{run_copy_phase, CopyPhaseEngine, CopyPhaseError, CopyPhaseReport};
 pub use incremental_stage::{run_incremental, IncrementalEngine, IncrementalError, IncrementalReport};
 pub use linked_files_stage::{run_linked_files_phase, LinkedFilesEngine, LinkedFilesError, LinkedFilesReport};

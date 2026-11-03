@@ -429,6 +429,12 @@ fn import_config_file(project_root: String, source: String) -> Result<String, St
     forge_app_core::system_config::import_config_file(&PathBuf::from(project_root), &PathBuf::from(source))
 }
 
+/// Reads a colour theme file (.json) chosen in the Options window.
+#[tauri::command]
+async fn read_theme_file(path: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::file_list::read_theme_file(&PathBuf::from(path))).await.map_err(|e| e.to_string())?
+}
+
 /// Quick file search (double Ctrl): the file names of a project.
 #[tauri::command]
 async fn list_project_files(project_root: String) -> Vec<String> {
@@ -652,6 +658,23 @@ async fn db_connect(
 async fn system_users(db: State<'_, std::sync::Arc<DbManager>>) -> Result<forge_app_core::system_db::TableDump, String> {
     let db = db.inner().clone();
     tauri::async_runtime::spawn_blocking(move || forge_app_core::system_db::read_users(&db)).await.map_err(|e| e.to_string())?
+}
+
+/// Properties of one user of the Users tab (secret properties without value).
+#[tauri::command]
+async fn system_user_properties(db: State<'_, std::sync::Arc<DbManager>>, user: String) -> Result<Vec<forge_app_core::system_db::UserProperty>, String> {
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::system_db::read_user_properties(&db, &user)).await.map_err(|e| e.to_string())?
+}
+
+/// Writes one user property into the system database. Refused unless the user confirmed in the UI.
+#[tauri::command]
+async fn system_user_set_property(db: State<'_, std::sync::Arc<DbManager>>, id: String, value: String, confirmed: bool) -> Result<(), String> {
+    if !confirmed {
+        return Err("Changing a user needs your confirmation.".into());
+    }
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::system_db::update_user_property(&db, &id, &value)).await.map_err(|e| e.to_string())?
 }
 
 /// Alias config list of the system editor (ASYS_ALIASCONFIG rows of the given server ids).
@@ -1315,6 +1338,9 @@ fn build_native_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             read_linked_file,
             resolve_import,
             list_project_files,
+            read_theme_file,
+            system_user_properties,
+            system_user_set_property,
             import_config_file,
             open_local_url,
             write_linked_file,

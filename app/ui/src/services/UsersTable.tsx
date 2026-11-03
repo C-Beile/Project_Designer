@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { AliasConfigTable, DbStatus, TableDump } from '../wire/types'
+import { getUserSelection, setUserSelection, useUsersChanged } from './userSelection'
 
 // Users tab and the alias-config list of the system editor, read from the system database
 // (ASYS_USERS, ASYS_ALIASCONFIG). Credential columns are removed by the backend; this view only
@@ -61,17 +62,22 @@ function isTrue(value: string | null): boolean {
 // Users tab (original Designer, manual 6.1.3): one row per user with isActive as a check mark,
 // title, email, firstname and lastname. Sorting by header click, a filter field and pages of 100
 // rows keep large user lists fast.
-function UsersGrid({ dump }: { dump: TableDump }) {
+function UsersGrid({ dump, systemKey, systemName, onReload }: { dump: TableDump; systemKey?: string; systemName?: string; onReload: () => void }) {
+  const [selectedUser, setSelectedUser] = useState<string | null>(() => getUserSelection()?.user ?? null)
+  // Leaving the tab takes the user out of the Properties panel again.
+  useEffect(() => () => setUserSelection(null), [])
   const [filter, setFilter] = useState('')
   const [sort, setSort] = useState<{ col: number; desc: boolean } | null>(null)
   const [page, setPage] = useState(0)
   const needle = filter.trim().toLowerCase()
-  let rows = dump.rows
-  if (needle) rows = rows.filter((r) => r.some((c) => (c ?? '').toLowerCase().includes(needle)))
+  // Every row keeps the user it stands for (the key of the row), also after filtering and sorting.
+  let entries = dump.rows.map((cells, i) => ({ cells, user: dump.row_keys?.[i] ?? null }))
+  if (needle) entries = entries.filter((r) => r.cells.some((c) => (c ?? '').toLowerCase().includes(needle)))
   if (sort) {
     const { col, desc } = sort
-    rows = [...rows].sort((x, y) => (x[col] ?? '').localeCompare(y[col] ?? '', undefined, { sensitivity: 'base', numeric: true }) * (desc ? -1 : 1))
+    entries = [...entries].sort((x, y) => (x.cells[col] ?? '').localeCompare(y.cells[col] ?? '', undefined, { sensitivity: 'base', numeric: true }) * (desc ? -1 : 1))
   }
+  const rows = entries
   const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
   const shown = rows.slice(Math.min(page, pages - 1) * PAGE_SIZE, Math.min(page, pages - 1) * PAGE_SIZE + PAGE_SIZE)
   return (
@@ -88,6 +94,9 @@ function UsersGrid({ dump }: { dump: TableDump }) {
           }}
         />
         <span className="users-count">{rows.length} users</span>
+        <button type="button" className="users-reload" title="Read the users again" aria-label="Reload users" onClick={onReload}>
+          {'↻'}
+        </button>
         {pages > 1 ? (
           <span className="users-pager">
             <button type="button" disabled={page <= 0} onClick={() => setPage(page - 1)} aria-label="Previous page">
@@ -102,6 +111,7 @@ function UsersGrid({ dump }: { dump: TableDump }) {
           </span>
         ) : null}
       </div>
+      <div className="users-list">
       <table className="forge-users-table users-grid" aria-label="Users">
         <thead>
           <tr>
@@ -116,9 +126,13 @@ function UsersGrid({ dump }: { dump: TableDump }) {
           </tr>
         </thead>
         <tbody>
-          {shown.map((row, r) => (
-            <tr key={r}>
-              {row.map((cell, i) => (
+          {shown.map((entry, r) => (
+            <tr key={r} className={entry.user !== null && entry.user === selectedUser ? 'is-selected' : undefined} aria-selected={entry.user !== null && entry.user === selectedUser} onClick={() => {
+                if (entry.user === null) return
+                setSelectedUser(entry.user)
+                setUserSelection({ systemKey: systemKey ?? '', systemName: systemName ?? '', user: entry.user, title: entry.cells[dump.columns.indexOf('title')] ?? entry.user })
+              }}>
+              {entry.cells.map((cell, i) => (
                 <td key={i} className={dump.columns[i].toLowerCase() === 'isactive' ? 'users-check' : undefined}>
                   {dump.columns[i].toLowerCase() === 'isactive' ? <input type="checkbox" checked={isTrue(cell)} readOnly aria-label={isTrue(cell) ? 'active' : 'inactive'} /> : (cell ?? '')}
                 </td>
@@ -128,12 +142,21 @@ function UsersGrid({ dump }: { dump: TableDump }) {
         </tbody>
       </table>
       {dump.truncated ? <p className="forge-field-hint">Only the first users are shown.</p> : null}
+      </div>
     </>
   )
 }
 
-export function UsersTab({ api, db, reload = 0 }: { api: ForgeApi; db: DbStatus; reload?: number }) {
-  const { data, error } = useRemote<TableDump>(db, () => api.systemUsers(), reload)
+export function UsersTab({ api, db, reload = 0, systemKey, systemName }: { api: ForgeApi; db: DbStatus; reload?: number; systemKey?: string; systemName?: string }) {
+  const [tick, setTick] = useState(0)
+  const { data, error } = useRemote<TableDump>(
+    db,
+    async () => {
+      if (systemKey) await api.dbActivate(systemKey).catch(() => false)
+      return api.systemUsers()
+    },
+    reload + tick + useUsersChanged(),
+  )
   return (
     <div className="forge-users" aria-label="Users">
       {!db.connected ? <p className="forge-field-hint">Open the tunnel in the Services tab to read the users from ASYS_USERS.</p> : null}
@@ -143,7 +166,7 @@ export function UsersTab({ api, db, reload = 0 }: { api: ForgeApi; db: DbStatus;
         </p>
       ) : null}
       {db.connected && !data && !error ? <p className="forge-field-hint">Please Wait…</p> : null}
-      {data ? <UsersGrid dump={data} /> : null}
+      {data ? <UsersGrid dump={data} systemKey={systemKey} systemName={systemName} onReload={() => setTick((n) => n + 1)} /> : null}
     </div>
   )
 }

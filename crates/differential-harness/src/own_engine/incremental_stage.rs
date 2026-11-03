@@ -48,7 +48,6 @@ use std::time::UNIX_EPOCH;
 use module_graph::{ModuleDefinition, ModuleGraph};
 
 use crate::own_engine::copy_phase_stage::run_copy_phase;
-use crate::own_engine::linked_files_stage::run_linked_files_phase;
 use crate::own_engine::modification_engine_stage::run_modification_phase;
 use crate::own_engine::resolver_stage::resolve_module_graph;
 use crate::own_engine::{OwnEngine, OwnEngineError};
@@ -76,6 +75,9 @@ pub struct IncrementalReport {
     /// How many files the manifest walk inspected (diagnostic only).
     pub manifest_files_scanned: usize,
 }
+
+/// Raised whenever the output of the engine changes for the same sources (new or changed stage).
+const ENGINE_REVISION: u32 = 10;
 
 fn cache_dir(project_home: &Path) -> PathBuf {
     project_home.join(CACHE_DIR_NAME)
@@ -128,6 +130,8 @@ fn compute_manifest(graph: &ModuleGraph, project_home: &Path, output_dir: &Path)
     let count = lines.len();
 
     let mut hasher = DefaultHasher::new();
+    // A new version of the engine itself must not be answered from the cache of an older one.
+    ENGINE_REVISION.hash(&mut hasher);
     for line in &lines {
         line.hash(&mut hasher);
     }
@@ -211,8 +215,22 @@ pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<Increme
     }
 
     run_copy_phase(&graph, output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
-    run_modification_phase(&graph, output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
-    let _linked_files_report = run_linked_files_phase(output_dir);
+    let mod_report = run_modification_phase(&graph, output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    if std::env::var_os("FORGE_TRANSPILE_TRACE").is_some() {
+        eprintln!("modifications: found {} applied {} failed {}", mod_report.modifications_found, mod_report.modifications_applied, mod_report.modifications_failed);
+        for (file, reason) in &mod_report.failures {
+            eprintln!("  modification failure {}: {reason}", file.display());
+        }
+    }
+    crate::own_engine::run_extension_point_resolution(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    crate::own_engine::run_modification_relocation(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    // The modification files are consumed: the reference output has no `modification/` folder.
+    let _ = fs::remove_dir_all(output_dir.join("modification"));
+    crate::own_engine::run_alias_merge(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    crate::own_engine::run_language_merge(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    // The reference transpiler of this ADITO version keeps the `%aditoprj%/...` references in the
+    // `.aod` files as they are (verified against a clean reference run), so nothing is inlined.
+    // `run_linked_files_phase` stays available for the older behaviour.
 
     let cache_root = cache_dir(project_home);
     fs::create_dir_all(&cache_root).map_err(|source| IncrementalError::Cache { path: cache_root.clone(), source })?;

@@ -198,6 +198,9 @@ export function createMockForgeApi(options: {
       return `$PROJECTHOME/others/cloud/${source.split(/[\\/]/).pop()}`
     },
     async openLocalUrl() {},
+    async readThemeFile() {
+      return '{}'
+    },
     async listProjectFiles() {
       return ['entity/Person_entity/Person_entity.aod', 'process/Utils_lib/process.js']
     },
@@ -441,6 +444,10 @@ export function createMockForgeApi(options: {
     async dbSchema() {
       return options.dbTables ?? []
     },
+    async systemUserProperties() {
+      return []
+    },
+    async systemUserSetProperty() {},
     async systemUsers() {
       if (!db.connected) throw new Error('Not connected.')
       return options.systemUsers ?? { columns: [], rows: [], hidden_columns: [], truncated: false }

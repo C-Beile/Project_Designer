@@ -204,7 +204,10 @@ fn copy_recursive(
                 source,
             })?;
             let name = entry.file_name();
-            if ignore.contains(&name.to_string_lossy().to_string()) {
+            // Changelog data below `.liquibase` is part of the result even though a module's own
+            // `data` folder is not.
+            let liquibase_data = name == "data" && src.components().any(|c| c.as_os_str() == ".liquibase");
+            if ignore.contains(&name.to_string_lossy().to_string()) && !liquibase_data {
                 continue;
             }
             if FORGE_OWNED_DIR_NAMES.contains(&name.to_string_lossy().as_ref()) {

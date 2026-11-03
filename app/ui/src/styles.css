@@ -4862,3 +4862,51 @@ button.app-issues { background: none; border: none; cursor: pointer; text-decora
 .tp-info b { color: var(--fg); font-weight: 600; }
 .tp-info code { color: var(--fg); }
 .tp-target { display: block; color: var(--fg-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Language editor: the list always has room, also when the surrounding panel has no fixed height */
+.language-grid { min-height: 320px; }
+.lang-body { flex: 1 1 0; min-height: 240px; }
+
+/* Problems: the selected row keeps its selection colour on striped (even) rows too, so its dark text stays readable */
+.forge-problems-table tbody tr.forge-problem-row.is-selected td,
+.forge-problems-table tbody tr.forge-problem-row.is-selected:nth-child(even) td { background: var(--selected-bg); color: var(--selected-fg); }
+.forge-problems-table tbody tr.forge-problem-row.is-selected .forge-file-dir,
+.forge-problems-table tbody tr.forge-problem-row.is-selected .forge-file-name,
+.forge-problems-table tbody tr.forge-problem-row.is-selected .forge-source-badge { color: inherit; }
+
+/* Users tab: list on the left, the properties of the selected user on the right */
+.users-split { display: flex; gap: 12px; align-items: flex-start; min-height: 0; }
+.users-list { flex: 1 1 auto; min-width: 0; overflow: auto; }
+.users-grid tbody tr { cursor: default; }
+.users-grid tbody tr.is-selected td { background: var(--selected-bg); color: var(--selected-fg); }
+.users-reload { height: 24px; min-width: 26px; }
+.users-props { flex: 0 0 340px; max-width: 42%; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-panel); padding: 8px 10px; max-height: calc(100vh - 220px); overflow: auto; }
+.users-props-head { display: flex; align-items: center; gap: 8px; justify-content: space-between; margin-bottom: 6px; }
+.users-props-head strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.users-props-actions { display: inline-flex; gap: 6px; flex: none; }
+.users-props h4 { margin: 10px 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-muted); }
+.users-prop { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 8px; align-items: center; padding: 2px 0; }
+.users-prop > span { color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.users-prop input { box-sizing: border-box; width: 100%; min-height: 24px; padding: 2px 6px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: 3px; font: inherit; }
+.users-prop.is-changed input { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+/* System rows: the state, tunnel and Git icons sit at the right edge of the row */
+.project-tree-tail { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding-left: 8px; flex: none; }
+
+/* Properties panel of a user (Users tab), laid out like the original Designer */
+.user-props { padding: 0 0 8px; font-size: 12px; }
+.user-props-tabs { display: flex; align-items: center; gap: 2px; padding: 4px 6px 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--bg-panel); z-index: 2; }
+.user-props-tabs > button[role='tab'] { background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 4px 10px; color: var(--fg-muted); cursor: pointer; }
+.user-props-tabs > button[role='tab'].is-active { color: var(--fg); border-bottom-color: var(--accent); }
+.user-props-actions { margin-left: auto; display: inline-flex; gap: 6px; padding-bottom: 3px; }
+.user-props section { margin-top: 6px; }
+.user-props h4 { margin: 0; padding: 3px 8px; background: color-mix(in srgb, var(--fg) 7%, transparent); font-size: 12px; font-weight: 600; }
+.up-row { display: grid; grid-template-columns: minmax(90px, 40%) minmax(0, 1fr); align-items: center; min-height: 22px; border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent); }
+.up-name { padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.up-name.is-unset { color: var(--fg-muted); font-style: italic; }
+.up-value { padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--fg-muted); }
+.up-row input[type='text'] { box-sizing: border-box; width: 100%; min-height: 20px; padding: 1px 6px; background: transparent; color: var(--fg); border: 0; border-left: 1px solid var(--border); font: inherit; }
+.up-row input[type='text']:focus { outline: none; background: var(--bg-inset); box-shadow: inset 0 0 0 1px var(--focus-ring, var(--accent)); }
+.up-row input[type='text']:read-only { color: var(--fg-muted); }
+.up-row input[type='checkbox'] { margin: 0 8px; accent-color: var(--accent); }
+.up-row.is-changed { background: color-mix(in srgb, var(--accent) 14%, transparent); }

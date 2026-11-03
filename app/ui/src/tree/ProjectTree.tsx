@@ -50,6 +50,27 @@ function flatten(
   }
 }
 
+const EXPANDED_STORE = 'forge.tree.expanded'
+const ROOTS_STORE = 'forge.tree.knownRoots'
+
+function readSet(key: string): Set<string> {
+  try {
+    const raw = window.localStorage.getItem(key)
+    const parsed: unknown = raw ? JSON.parse(raw) : []
+    return new Set(Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function writeSet(key: string, value: Set<string>) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify([...value]))
+  } catch {
+    /* storage unavailable: the tree simply starts fresh next time */
+  }
+}
+
 function fullText(node: TreeNode): string {
   const parts = [node.label]
   if (node.type_label) parts.push(`[${node.type_label}]`)
@@ -92,7 +113,7 @@ export function ProjectTree({
   /** Ctrl+X, Ctrl+C, Ctrl+V and Delete on a file or folder row. */
   onFileKey?: (key: 'cut' | 'copy' | 'paste' | 'delete', node: TreeNode, project: TreeNode) => void
 }) {
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
+  const [expanded, setExpanded] = useState<Set<string>>(() => readSet(EXPANDED_STORE))
   const [loaded, setLoaded] = useState<Map<string, TreeNode[]>>(() => new Map())
   const [focusedKey, setFocusedKey] = useState<string | null>(null)
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
@@ -100,7 +121,8 @@ export function ProjectTree({
   const [viewHeight, setViewHeight] = useState(FALLBACK_VIEWPORT)
   const viewportRef = useRef<HTMLDivElement>(null)
   const itemRefs = useRef<Map<string, HTMLLIElement>>(new Map())
-  const knownRoots = useRef<Set<string>>(new Set())
+  const knownRoots = useRef<Set<string>>(readSet(ROOTS_STORE))
+  const loadRequested = useRef<Set<string>>(new Set())
   const focusFromKeyboard = useRef(false)
   const typeahead = useRef({ text: '', at: 0 })
   const scrollFrame = useRef<number | null>(null)
@@ -112,7 +134,8 @@ export function ProjectTree({
     flatten(roots, 0, null, null, new Set(), new Map(), rootRows)
     for (const r of rootRows) keys.add(r.key)
     const fresh = [...keys].filter((k) => !knownRoots.current.has(k))
-    knownRoots.current = keys
+    knownRoots.current = new Set([...knownRoots.current, ...keys])
+    writeSet(ROOTS_STORE, knownRoots.current)
     if (fresh.length === 0) return
     setExpanded((prev) => {
       const next = new Set(prev)
@@ -120,6 +143,11 @@ export function ProjectTree({
       return next
     })
   }, [roots])
+
+  // What the user opened or closed stays that way for the next start of the app.
+  useEffect(() => {
+    writeSet(EXPANDED_STORE, expanded)
+  }, [expanded])
 
   const rows = useMemo(() => {
     const out: FlatRow[] = []
@@ -158,13 +186,22 @@ export function ProjectTree({
 
   const ensureLoaded = useCallback(
     (node: TreeNode) => {
-      if (!node.lazy || loaded.has(node.id) || !loadChildren) return
+      if (!node.lazy || loaded.has(node.id) || !loadChildren || loadRequested.current.has(node.id)) return
+      loadRequested.current.add(node.id)
       loadChildren(node)
         .then((children) => setLoaded((prev) => new Map(prev).set(node.id, children)))
         .catch(() => setLoaded((prev) => new Map(prev).set(node.id, [])))
     },
     [loaded, loadChildren],
   )
+
+  // Rows restored as open load their children once, as if the user had just opened them.
+  useEffect(() => {
+    for (const row of rows) {
+      if (row.node.is_leaf || !row.node.lazy || !expanded.has(row.key)) continue
+      ensureLoaded(row.node)
+    }
+  }, [rows, expanded, loaded, ensureLoaded])
 
   const setOpen = useCallback(
     (row: FlatRow, open: boolean) => {
@@ -304,6 +341,52 @@ export function ProjectTree({
           const { node } = row
           const isExpanded = expanded.has(row.key)
           const isFocused = index === focusedIndex
+          const statusIcons = (
+            <>
+              {(() => {
+                const badge = badgeFor?.(node)
+                return badge ? <TunnelStateIcon state={badge.state} title={badge.title} /> : null
+              })()}
+              {onSystemTunnel && node.object_type === 'system' && !node.id.startsWith('missing:') ? (
+                <button
+                  type="button"
+                  className="project-tree-tunnel-btn"
+                  aria-label={`Tunnel manager of ${node.label}`}
+                  title="Open the tunnel manager"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onSystemTunnel(node)
+                  }}
+                  onDoubleClick={(e) => e.stopPropagation()}
+                >
+                  <TunnelGlyph size={13} />
+                </button>
+              ) : null}
+            </>
+          )
+          const trailIcons = (
+            <>
+              {(() => {
+                const g = gitFor?.(node)
+                return g ? <span className="git-badge" data-git={g.code} role="img" aria-label={g.title} title={g.title}>{g.code}</span> : null
+              })()}
+              {(() => {
+                const c = problemCounts?.get(normId(node.id))
+                if (!c || (c.errors === 0 && c.warnings === 0)) return null
+                return (
+                  <span
+                    className={`project-tree-problem ${c.errors > 0 ? 'is-error' : 'is-warning'}`}
+                    role="img"
+                    aria-label={c.errors > 0 ? `${c.errors} errors` : `${c.warnings} warnings`}
+                    title={`${c.errors} error(s), ${c.warnings} warning(s)`}
+                  >
+                    {c.errors > 0 ? '●' : '▲'}
+                  </span>
+                )
+              })()}
+            </>
+          )
+          const onRight = node.object_type === 'system'
           return (
             <li
               key={row.key}
@@ -362,47 +445,12 @@ export function ProjectTree({
                 <NodeIcon node={node} expanded={isExpanded} />
               </span>
               <span className={`project-tree-label${node.bold ? ' is-bold' : ''}`}>{node.label}</span>
-              {(() => {
-                const badge = badgeFor?.(node)
-                return badge ? <TunnelStateIcon state={badge.state} title={badge.title} /> : null
-              })()}
-              {onSystemTunnel && node.object_type === 'system' && !node.id.startsWith('missing:') ? (
-                <button
-                  type="button"
-                  className="project-tree-tunnel-btn"
-                  aria-label={`Tunnel manager of ${node.label}`}
-                  title="Open the tunnel manager"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onSystemTunnel(node)
-                  }}
-                  onDoubleClick={(e) => e.stopPropagation()}
-                >
-                  <TunnelGlyph size={13} />
-                </button>
-              ) : null}
+              {onRight ? null : statusIcons}
               {node.type_label ? <span className="project-tree-type is-bold">[{node.type_label}]</span> : null}
               {node.path ? <span className="project-tree-dim">{node.path}</span> : null}
               {node.origin && node.kind !== 'module' ? <span className="project-tree-dim project-tree-origin">{node.origin}</span> : null}
               {node.overrides?.length ? <span className="project-tree-dim">({node.overrides.join(', ')})</span> : null}
-              {(() => {
-                const g = gitFor?.(node)
-                return g ? <span className="git-badge" data-git={g.code} role="img" aria-label={g.title} title={g.title}>{g.code}</span> : null
-              })()}
-              {(() => {
-                const c = problemCounts?.get(normId(node.id))
-                if (!c || (c.errors === 0 && c.warnings === 0)) return null
-                return (
-                  <span
-                    className={`project-tree-problem ${c.errors > 0 ? 'is-error' : 'is-warning'}`}
-                    role="img"
-                    aria-label={c.errors > 0 ? `${c.errors} errors` : `${c.warnings} warnings`}
-                    title={`${c.errors} error(s), ${c.warnings} warning(s)`}
-                  >
-                    {c.errors > 0 ? '●' : '▲'}
-                  </span>
-                )
-              })()}
+              {onRight ? <span className="project-tree-tail">{statusIcons}{trailIcons}</span> : trailIcons}
             </li>
           )
         })}

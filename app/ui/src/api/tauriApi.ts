@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import type { ForgeApi } from './ForgeApi'
-import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The real implementation - a pure pass-through to the Tauri commands in
 // app/src-tauri/src/lib.rs, one call each, no business logic (architecture.md §1
@@ -33,6 +33,7 @@ export const tauriForgeApi: ForgeApi = {
   importConfigFile: (projectRoot, source) => invoke<string>('import_config_file', { projectRoot, source }),
   openLocalUrl: (url) => invoke<void>('open_local_url', { url }),
   listProjectFiles: (projectRoot) => invoke<string[]>('list_project_files', { projectRoot }),
+  readThemeFile: (path) => invoke<string>('read_theme_file', { path }),
   resolveImport: (projectRoot, spec, fromFile) => invoke<string | null>('resolve_import', { projectRoot, spec, fromFile }),
   readLinkedFile: (projectRoot, reference) =>
     invoke<string>('read_linked_file', { projectRoot, reference }),
@@ -92,6 +93,8 @@ export const tauriForgeApi: ForgeApi = {
   dbQuery: (sql, allowWrite) => invoke<SqlResult>('db_query', { sql, allowWrite }),
   dbSchema: () => invoke<SchemaTable[]>('db_schema'),
   systemUsers: () => invoke<TableDump>('system_users'),
+  systemUserProperties: (user) => invoke<UserPropertyDto[]>('system_user_properties', { user }),
+  systemUserSetProperty: (id, value, confirmed) => invoke<void>('system_user_set_property', { id, value, confirmed }),
   systemAliasConfigs: () => invoke<AliasConfigTable>('system_alias_configs'),
   systemAliasList: (serverIds) => invoke<AliasConfigDto[]>('system_alias_list', { serverIds }),
   systemServerIds: (configReference, systemName) => invoke<string[]>('system_server_ids', { configReference, systemName }),

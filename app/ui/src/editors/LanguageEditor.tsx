@@ -360,7 +360,11 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
           </button>
         ))}
       </div>
-      {shown.length === 0 ? (
+      {source === null && !error ? (
+        <p className="forge-field-hint lang-empty" role="status">
+          <span className="forge-spinner" aria-hidden="true" /> Loading the language entries...
+        </p>
+      ) : shown.length === 0 ? (
         <p className="forge-field-hint lang-empty">{rows.length === 0 ? 'This language file has no entries yet. Use + to add one.' : 'No entries match the search.'}</p>
       ) : null}
       <div

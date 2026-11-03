@@ -47,6 +47,8 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+          # The UI bundle (Monaco and its languages) needs more than Node's default heap on the runners.
+          NODE_OPTIONS: --max-old-space-size=6144
           VENDIRA_UPDATE_TOKEN: ${{ secrets.VENDIRA_UPDATE_TOKEN }}
         run: npx --prefix ui tauri build --target x86_64-pc-windows-msvc
 
@@ -90,6 +92,8 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+          # The UI bundle (Monaco and its languages) needs more than Node's default heap on the runners.
+          NODE_OPTIONS: --max-old-space-size=6144
           VENDIRA_UPDATE_TOKEN: ${{ secrets.VENDIRA_UPDATE_TOKEN }}
         run: npx --prefix ui tauri build --target universal-apple-darwin
 

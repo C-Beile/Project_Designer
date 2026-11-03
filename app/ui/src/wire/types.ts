@@ -252,6 +252,16 @@ export interface TableDump {
   rows: (string | null)[][]
   hidden_columns: string[]
   truncated: boolean
+  /** Identity of each row (the user name of the Users tab); empty for plain dumps. */
+  row_keys?: string[]
+}
+
+export interface UserPropertyDto {
+  id: string
+  group: string
+  key: string
+  value: string | null
+  editable: boolean
 }
 
 export interface AliasConfigTable {

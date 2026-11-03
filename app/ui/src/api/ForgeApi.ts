@@ -1,4 +1,4 @@
-import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The frontend's one seam onto the generic Tauri command surface (architecture.md §6: "Commands
 // sind generisch ... nicht pro Editor-Typ dupliziert"). Every editor component talks to this
@@ -42,6 +42,8 @@ export interface ForgeApi {
   openLocalUrl(url: string): Promise<void>
   /** File names of a project (relative, forward slashes) for the quick file search. */
   listProjectFiles(projectRoot: string): Promise<string[]>
+  /** Text of a colour theme file (.json) chosen anywhere on the computer. */
+  readThemeFile(path: string): Promise<string>
   /** File behind an import of a script (project or module process), or null. */
   resolveImport(projectRoot: string, spec: string, fromFile: string): Promise<string | null>
   writeLinkedFile(projectRoot: string, reference: string, content: string): Promise<void>
@@ -148,6 +150,10 @@ export interface ForgeApi {
   dbSchema(): Promise<SchemaTable[]>
   // System-DB reads for the system editor; credential columns are removed in the backend.
   systemUsers(): Promise<TableDump>
+  /** Properties of one user of the system database; secret ones without value. */
+  systemUserProperties(user: string): Promise<UserPropertyDto[]>
+  /** Writes one user property; only with `confirmed` set after the user said yes. */
+  systemUserSetProperty(id: string, value: string, confirmed: boolean): Promise<void>
   systemAliasConfigs(): Promise<AliasConfigTable>
   // Alias config list of the system editor (one entry per alias, secrets never included).
   systemAliasList(serverIds: string[]): Promise<AliasConfigDto[]>
