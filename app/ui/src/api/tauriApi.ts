@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import type { ForgeApi } from './ForgeApi'
-import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployPlan, TableDump, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The real implementation - a pure pass-through to the Tauri commands in
 // app/src-tauri/src/lib.rs, one call each, no business logic (architecture.md §1
@@ -30,6 +30,10 @@ export const tauriForgeApi: ForgeApi = {
   readTunnelConfig: (projectRoot, reference) => invoke<TunnelRowDto[]>('read_tunnel_config', { projectRoot, reference }),
   addTunnelRow: (projectRoot, reference, row) => invoke<TunnelRowDto[]>('add_tunnel_row', { projectRoot, reference, row }),
   deleteTunnelRow: (projectRoot, reference, index) => invoke<TunnelRowDto[]>('delete_tunnel_row', { projectRoot, reference, index }),
+  importConfigFile: (projectRoot, source) => invoke<string>('import_config_file', { projectRoot, source }),
+  openLocalUrl: (url) => invoke<void>('open_local_url', { url }),
+  listProjectFiles: (projectRoot) => invoke<string[]>('list_project_files', { projectRoot }),
+  resolveImport: (projectRoot, spec, fromFile) => invoke<string | null>('resolve_import', { projectRoot, spec, fromFile }),
   readLinkedFile: (projectRoot, reference) =>
     invoke<string>('read_linked_file', { projectRoot, reference }),
   writeLinkedFile: (projectRoot, reference, content) =>
@@ -78,7 +82,7 @@ export const tauriForgeApi: ForgeApi = {
   pickFile: (title, label, extensions) => invoke<string | null>('pick_file', { title, label, extensions }),
   dbConnect: (tunnelConfig, serverConfig, keyFile, tunnelPassword, system) => invoke<DbStatus>('db_connect', { tunnelConfig, serverConfig, keyFile, tunnelPassword: tunnelPassword ?? null, system: system ?? null }),
   systemTunnelState: (projectRoot, tunnelRef, serverRef) => invoke('system_tunnel_state', { projectRoot, tunnelRef, serverRef }),
-  dbConnectAlias: (system, alias, tunnelConfig) => invoke<DbStatus>('db_connect_alias', { system, alias, tunnelConfig }),
+  dbConnectAlias: (system, alias, tunnelConfig, serverIds) => invoke<DbStatus>('db_connect_alias', { system, alias, tunnelConfig, serverIds }),
   dbCancelConnect: () => invoke<void>('db_cancel_connect'),
   cancelBuild: () => invoke<boolean>('cancel_build'),
   dbDisconnect: (system) => invoke<void>('db_disconnect', { system: system ?? null }),
@@ -91,6 +95,7 @@ export const tauriForgeApi: ForgeApi = {
   systemAliasConfigs: () => invoke<AliasConfigTable>('system_alias_configs'),
   systemAliasList: (serverIds) => invoke<AliasConfigDto[]>('system_alias_list', { serverIds }),
   systemServerIds: (configReference, systemName) => invoke<string[]>('system_server_ids', { configReference, systemName }),
+  deployOverview: (projectRoot) => invoke<DeployOverview>('deploy_overview', { projectRoot }),
   deployPlan: (projectRoot, force, mapping) => invoke<DeployPlan>('deploy_plan', { projectRoot, force, mapping }),
   deployShowChanges: (projectRoot, key, mapping) => invoke<DeployChangeView>('deploy_show_changes', { projectRoot, key, mapping }),
   deployExecute: (projectRoot, keys, force, mapping, confirmed) => invoke<DeployOutcome>('deploy_execute', { projectRoot, keys, force, mapping, confirmed }),

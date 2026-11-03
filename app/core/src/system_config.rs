@@ -623,3 +623,70 @@ mod tests {
         assert!(alias_db_connection("<c><host>db</host></c>").is_none());
     }
 }
+
+/// Takes over a config file chosen anywhere on the computer (for example a tunnel config from the
+/// download folder) and returns the path to write into the system, in the form the Designer uses
+/// (`$PROJECTHOME/...`). A file inside the project is referenced where it is; any other file is
+/// copied to `others/cloud`, replacing an older copy with the same name, so the project always
+/// points at the chosen file's content. Only XML files up to 5 MB are accepted.
+pub fn import_config_file(project_root: &Path, source: &Path) -> Result<String, String> {
+    let name = source.file_name().and_then(|n| n.to_str()).ok_or("The chosen file has no name.")?;
+    if !name.to_ascii_lowercase().ends_with(".xml") {
+        return Err("Choose an XML file.".into());
+    }
+    if name.contains(['/', '\\']) || name.starts_with('.') {
+        return Err("The file name is not allowed.".into());
+    }
+    let meta = std::fs::metadata(source).map_err(|e| format!("The file cannot be read: {e}"))?;
+    if !meta.is_file() || meta.len() > 5 * 1024 * 1024 {
+        return Err("Choose an XML file smaller than 5 MB.".into());
+    }
+    if let Ok(rel) = source.strip_prefix(project_root) {
+        return Ok(format!("$PROJECTHOME/{}", rel.to_string_lossy().replace('\\', "/")));
+    }
+    let folder = project_root.join("others").join("cloud");
+    std::fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
+    let target = folder.join(name);
+    if target != source {
+        std::fs::copy(source, &target).map_err(|e| format!("The file could not be copied into the project: {e}"))?;
+    }
+    Ok(format!("$PROJECTHOME/others/cloud/{name}"))
+}
+
+#[cfg(test)]
+mod import_config_tests {
+    use super::*;
+
+    #[test]
+    fn copies_a_config_into_others_cloud_and_replaces_an_older_copy() {
+        let root = std::env::temp_dir().join(format!("forge-cfg-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let outside = std::env::temp_dir().join(format!("forge-cfg-out-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+        let src = outside.join("t.xml");
+        std::fs::write(&src, "<a/>").unwrap();
+        assert_eq!(import_config_file(&root, &src).unwrap(), "$PROJECTHOME/others/cloud/t.xml");
+        std::fs::write(&src, "<b/>").unwrap();
+        import_config_file(&root, &src).unwrap();
+        assert_eq!(std::fs::read_to_string(root.join("others/cloud/t.xml")).unwrap(), "<b/>");
+    }
+
+    #[test]
+    fn references_a_config_that_is_already_inside_the_project() {
+        let root = std::env::temp_dir().join(format!("forge-cfg3-{}", std::process::id()));
+        std::fs::create_dir_all(root.join("others/cloud")).unwrap();
+        let src = root.join("others/cloud/in.xml");
+        std::fs::write(&src, "<a/>").unwrap();
+        assert_eq!(import_config_file(&root, &src).unwrap(), "$PROJECTHOME/others/cloud/in.xml");
+    }
+
+    #[test]
+    fn refuses_other_file_types() {
+        let root = std::env::temp_dir().join(format!("forge-cfg2-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let src = root.join("x.txt");
+        std::fs::write(&src, "x").unwrap();
+        assert!(import_config_file(&root, &src).is_err());
+    }
+}

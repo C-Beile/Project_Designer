@@ -1,4 +1,4 @@
-import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOutcome, DeployPlan, TableDump, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The frontend's one seam onto the generic Tauri command surface (architecture.md §6: "Commands
 // sind generisch ... nicht pro Editor-Typ dupliziert"). Every editor component talks to this
@@ -36,6 +36,14 @@ export interface ForgeApi {
   /** Writes a frontend error to the log file; resolves to the log file path. */
   logClientError(message: string): Promise<string | null>
   readLinkedFile(projectRoot: string, reference: string): Promise<string>
+  /** Copies a chosen config file into the project (others/cloud) and returns the relative path for the system. */
+  importConfigFile(projectRoot: string, source: string): Promise<string>
+  /** Opens an address of this computer (127.0.0.1:port) in the default browser. */
+  openLocalUrl(url: string): Promise<void>
+  /** File names of a project (relative, forward slashes) for the quick file search. */
+  listProjectFiles(projectRoot: string): Promise<string[]>
+  /** File behind an import of a script (project or module process), or null. */
+  resolveImport(projectRoot: string, spec: string, fromFile: string): Promise<string | null>
   writeLinkedFile(projectRoot: string, reference: string, content: string): Promise<void>
   // System editor: alias configs and tunnel list of the system's export files (`$PROJECTHOME/...`
   // reference); passwords and keys are never returned.
@@ -126,7 +134,7 @@ export interface ForgeApi {
   // Stops a connect that still waits for the tunnel or the database.
   dbCancelConnect(): Promise<void>
   // Read-only session to another database alias of a system (Data_alias ...) for the database browser.
-  dbConnectAlias(system: string, alias: string, tunnelConfig: string): Promise<DbStatus>
+  dbConnectAlias(system: string, alias: string, tunnelConfig: string, serverIds: string[]): Promise<DbStatus>
   // Is the forward to this system's database open? Looked up from its tunnel and server config.
   systemTunnelState(projectRoot: string, tunnelRef: string, serverRef: string): Promise<{ db_tunnel_up: boolean; target: string | null; problem: string | null }>
   dbDisconnect(system?: string | null): Promise<void>
@@ -146,6 +154,7 @@ export interface ForgeApi {
   systemServerIds(configReference: string, systemName: string): Promise<string[]>
   // Deploy into ASYS_SYSTEM: `deployPlan` and `deployShowChanges` only read; `deployExecute` writes
   // in one transaction and only with `confirmed` set by the user's explicit click.
+  deployOverview(projectRoot: string): Promise<DeployOverview>
   deployPlan(projectRoot: string, force: boolean, mapping: DeployMapping | null): Promise<DeployPlan>
   deployShowChanges(projectRoot: string, key: string, mapping: DeployMapping | null): Promise<DeployChangeView>
   deployExecute(projectRoot: string, keys: string[], force: boolean, mapping: DeployMapping | null, confirmed: boolean): Promise<DeployOutcome>

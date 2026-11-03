@@ -43,6 +43,8 @@ import { LocalDataDialog } from './LocalDataDialog'
 import { UpdatesDialog } from './UpdatesDialog'
 import { GitDialog } from './GitDialog'
 import { SyncDialog } from './SyncDialog'
+import { TabSwitcher } from './TabSwitcher'
+import { QuickFileSearch, useDoubleCtrl } from './QuickFileSearch'
 import { TableCenterDialog } from './TableCenterDialog'
 import { defaultToolbarPrefs, loadToolbarPrefs, saveToolbarPrefs, type ToolbarGroup, type ToolbarPrefs } from './toolbarPrefs'
 import { getEditorPrefs, reloadEditorPrefs, setEditorPref, subscribeEditorPrefs, type EditorPrefs } from '../theme/editorPrefs'
@@ -171,6 +173,20 @@ function timestamp(): string {
 function baseName(path: string): string {
   const parts = path.split(/[\\/]/).filter(Boolean)
   return parts[parts.length - 1] ?? path
+}
+
+/** A system and its background system (dev1 and dev1_bg) count as one tunnel in the status bar. */
+export function groupOpenTunnels(names: string[]): string[] {
+  const suffix = /_bg(?= \(|$)/i
+  const bgOf = (n: string) => n.replace(suffix, '')
+  const mains = names.filter((n) => !suffix.test(n))
+  const bgs = names.filter((n) => suffix.test(n))
+  const out = mains.map((m) => {
+    const withBg = bgs.some((b) => bgOf(b) === m)
+    return withBg ? m.replace(/^([^ ]+)/, '$1 + bg') : m
+  })
+  for (const b of bgs) if (!mains.includes(bgOf(b))) out.push(b)
+  return out
 }
 
 export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string }) {
@@ -321,15 +337,25 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       .catch(() => {})
   }, [api])
 
+  const [loadingProjects, setLoadingProjects] = useState<Set<string>>(() => new Set())
+
   useEffect(() => {
     for (const p of projects) {
       // Blank entries never reach the scanner (R41); each project is scanned once per refresh.
       if (!p.trim() || loadedWith.current[p] === reloadToken) continue
       loadedWith.current[p] = reloadToken
+      setLoadingProjects((prev) => new Set(prev).add(p))
       api
         .openProject(p)
         .then((t) => setTrees((prev) => ({ ...prev, [p]: t })))
         .catch((e) => setStatus(String(e)))
+        .finally(() =>
+          setLoadingProjects((prev) => {
+            const next = new Set(prev)
+            next.delete(p)
+            return next
+          }),
+        )
     }
   }, [api, projects, reloadToken])
 
@@ -585,13 +611,17 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     [api, activateNode, projectOf, root],
   )
 
-  // Opens a new SQL editor tab with the given statement (Services tab).
+  // Opens the SQL editor with the given statement (Services tab). There is one SQL tab that is reused:
+  // a click on a table replaces its statement instead of opening yet another tab.
+  const [sqlNonce, setSqlNonce] = useState(0)
   const openSql = useCallback(
     (sql: string) => {
-      sqlCount.current += 1
-      const n = sqlCount.current
-      const node: TreeNode = { id: `sql:${n}`, label: `SQL ${n}`, object_type: null, is_leaf: true, children: [], kind: 'service' }
-      sqlTexts.current.set(node.id, sql)
+      if (sqlCount.current === 0) sqlCount.current = 1
+      const node: TreeNode = { id: 'sql:1', label: 'SQL', object_type: null, is_leaf: true, children: [], kind: 'service' }
+      if (sql !== '' || !sqlTexts.current.has(node.id)) {
+        sqlTexts.current.set(node.id, sql)
+        setSqlNonce((n) => n + 1)
+      }
       void handleOpen(node)
     },
     [handleOpen],
@@ -720,6 +750,8 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   // Team > Git: the Commit dialog and the history and branch views open as dialogs, Pull and Push run
   // directly from the menu click, as in the original Designer.
   const [syncMode, setSyncMode] = useState<'pull' | 'push'>('pull')
+  const [quickSearch, setQuickSearch] = useState(false)
+  useDoubleCtrl(() => setQuickSearch(true))
   const openGit = useCallback((tab: 'changes' | 'history' | 'branches', target: { local?: string; remote?: string } | null = null) => {
     setGitView({ tab, target })
     setDialog('git')
@@ -1825,7 +1857,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       {currentTab ? (
         <ProjectIndexContext.Provider value={projectIndex}>
         <ObjectEditorArea
-          key={currentTab.id}
+          key={currentTab.id + (currentTab.id.startsWith('sql:') ? `#${sqlNonce}` : '')}
           tab={currentTab}
           api={api}
           value={value}
@@ -1846,6 +1878,10 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
           onApplied={applyOutcome}
           registerFlush={registerFlush}
           onFileDirty={markUnsaved}
+          onOpenFileAt={(path, line) => {
+            void handleOpen({ id: path, label: baseName(path), object_type: null, kind: 'file', is_leaf: true, children: [] })
+            setReveal({ nodeId: path, line, token: Date.now() })
+          }}
           db={db}
           sqlTexts={sqlTexts.current}
           onDbChange={changeDb}
@@ -2221,12 +2257,23 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
           <div className="projects-panel">
             <ProjectTree
               roots={tree}
+              loading={loadingProjects.size > 0}
               onSelect={handleTreeSelect}
               onOpen={handleOpen}
               loadChildren={(n) => api.listTreeChildren(n.id)}
               onContextMenu={(node, top, x, y) => setCtxMenu({ node, top, x, y })}
               problemCounts={problemCounts}
               badgeFor={systemBadge}
+              onSystemTunnel={(node) =>
+                void api
+                  .getPropertyTree(node.id)
+                  .then((t) => {
+                    const reference = textField(t, 'tunnelConfigPath') ?? ''
+                    if (reference) void handleOpen(tunnelTabNode(node.id, node.label, reference))
+                    else setStatus(`${node.label} has no tunnelConfigPath yet. Choose the tunnel config in its properties (the ... button).`)
+                  })
+                  .catch((e) => setStatus(e instanceof Error ? e.message : String(e)))
+              }
               gitFor={gitFor}
               onFileKey={(key, node, top) => runTreeAction(key === 'cut' ? 'file.cut' : key === 'copy' ? 'file.copy' : key === 'paste' ? 'file.paste' : 'file.delete', node, top)}
             />
@@ -2347,7 +2394,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         tunnel={db.tunnel_up || tunnelState.phase === 'on'}
         tunnelPhase={tunnelState.phase}
         tunnelDetail={Object.entries(tunnelState.progressBy).map(([k, v]) => `${systemNameOf(k)}: ${v.phase} (${Math.round((Date.now() - v.startedAt) / 1000)} s)`).join('; ')}
-        openTunnels={Object.entries(tunnelState.bySystem).filter(([k, v]) => k !== '' && !k.includes('|alias:') && (v.connected || v.tunnel_up)).map(([k]) => (projects.length > 1 ? `${systemNameOf(k)} (${baseName(k.slice(0, k.lastIndexOf('|')))})` : systemNameOf(k)))}
+        openTunnels={groupOpenTunnels(Object.entries(tunnelState.bySystem).filter(([k, v]) => k !== '' && !k.includes('|alias:') && (v.connected || v.tunnel_up)).map(([k]) => (projects.length > 1 ? `${systemNameOf(k)} (${baseName(k.slice(0, k.lastIndexOf('|')))})` : systemNameOf(k))))}
         errors={totalErrors}
         onShowProblems={() => showToolWindow('problems')}
         onShowOutput={() => showToolWindow('output')}
@@ -2458,6 +2505,20 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
             } catch (e) {
               setStatus(e instanceof Error ? e.message : String(e))
             }
+          }}
+        />
+      ) : null}
+      <TabSwitcher tabs={tabState.tabs} activeId={tabState.activeId} dirtyIds={unsaved} onActivate={handleActivateTab} />
+      {quickSearch && hasProject ? (
+        <QuickFileSearch
+          api={api}
+          projectRoots={projects.length > 0 ? projects : [root]}
+          onClose={() => setQuickSearch(false)}
+          onOpen={(path) => {
+            // An object file opens as the object, any other file as a plain file.
+            const m = /\/([^/]+)\/([^/]+)\/\2\.aod$/i.exec(path)
+            const object = m ? findObject(tree, m[1], m[2]) : null
+            void handleOpen(object ?? { id: path, label: baseName(path), object_type: null, kind: 'file', is_leaf: true, children: [] })
           }}
         />
       ) : null}

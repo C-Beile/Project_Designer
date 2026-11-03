@@ -50,7 +50,9 @@ export function DbBrowserTab({ api, path }: { api: ForgeApi; path: string | unde
     ;(async () => {
       if (!isSystemAlias && !tunnel.bySystem[sessionKey]?.connected) {
         if (!ref.tunnelConfig) throw new Error('The tunnel config of this system is not known; open the browser from the system editor.')
-        await api.dbConnectAlias(ref.key, ref.alias, ref.tunnelConfig)
+        // The alias has one config per server id; the one of this system must win over `default` (localhost).
+        const serverIds = await api.systemServerIds(ref.reference, ref.system).catch(() => [] as string[])
+        await api.dbConnectAlias(ref.key, ref.alias, ref.tunnelConfig, serverIds)
         setSystemsDb(await api.dbSystems())
       }
       await api.dbActivate(sessionKey).catch(() => false)

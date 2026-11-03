@@ -7,79 +7,55 @@ import { ServicesPanel } from './ServicesPanel'
 import { UsersTab, SystemAliasConfigs } from './UsersTable'
 import { newUuid } from '../shell/uuid'
 import { createMockForgeApi } from '../test/mockApi'
-import type { AliasConfigTable, DbStatus, DeployPlan, TableDump } from '../wire/types'
+import type { AliasConfigTable, DbStatus, DeployOverview, TableDump } from '../wire/types'
 
 vi.mock('monaco-editor', () => import('../test/monacoMock'))
 
 const ON: DbStatus = { connected: true, tunnel_up: true, database: '_____systemalias', host: 'adito-db.svc' }
 const OFF: DbStatus = { connected: false, tunnel_up: false, database: null, host: null }
 
-const PLAN: DeployPlan = {
+const OVERVIEW: DeployOverview = {
   target: '_____systemalias @ adito-db.svc',
-  outdated: true,
-  mapping: { table: 'ASYS_SYSTEM', name_column: 'NAME', content_column: 'CONTENT' },
-  items: [
-    { op: 'I', key: 'entity/BrandNew', extra_files: 0, selected_by_default: true },
-    { op: 'U', key: 'entity/Changed', extra_files: 2, selected_by_default: true },
-    { op: 'D', key: 'entity/Gone', extra_files: 0, selected_by_default: false },
+  last_deploy: { author: 'ClemensBeile', time_ms: 1793695345880, designer_version: '6.5.0' },
+  changed: [
+    { key: 'preferences/_____PREFERENCES_PROJECT', files: [{ path: 'preferences/_____PREFERENCES_PROJECT/_____PREFERENCES_PROJECT.aod', changed_ms: 1793695661283 }] },
+    { key: 'language/_____LANGUAGE_de', files: [{ path: 'language/_____LANGUAGE_de/_____LANGUAGE_de.aod', changed_ms: 1793695661000 }] },
   ],
+  other_files: [],
 }
 
-function makeApi(over: { deployPlan?: DeployPlan; systemUsers?: TableDump; systemAliasConfigs?: AliasConfigTable; pickedFiles?: string[] } = {}) {
+function makeApi(over: { deployOverview?: DeployOverview; systemUsers?: TableDump; systemAliasConfigs?: AliasConfigTable; pickedFiles?: string[] } = {}) {
   return createMockForgeApi({ projectTree: [], documents: {}, ...over })
 }
 
 describe('DeployDialog', () => {
-  it('shows the outdated hint and plan, preselects I/U but not D, and writes nothing before confirmation', async () => {
-    const user = userEvent.setup()
-    const mock = makeApi({ deployPlan: PLAN })
-    const onDeployed = vi.fn()
-    render(<DeployDialog api={mock} projectRoot="C:/p" onClose={vi.fn()} onDeployed={onDeployed} />)
-    expect(await screen.findByText('View is outdated. Deploy necessary.')).toBeInTheDocument()
-    expect(screen.getByLabelText('Insert entity/BrandNew')).toBeChecked()
-    expect(screen.getByLabelText('Update entity/Changed')).toBeChecked()
-    expect(screen.getByLabelText('Delete entity/Gone')).not.toBeChecked()
-    expect(screen.getByText(/2 more file\(s\) not transferred/)).toBeInTheDocument()
-    const deploy = screen.getByRole('button', { name: 'Deploy' })
-    expect(deploy).toBeDisabled()
-    expect(mock.deployCalls.some((c) => c.startsWith('execute'))).toBe(false)
-    await user.click(screen.getByRole('checkbox', { name: /I confirm writing 2 change/ }))
-    await user.click(deploy)
-    await waitFor(() => expect(onDeployed).toHaveBeenCalled())
-    expect(mock.deployCalls).toContain('execute:true:entity/BrandNew,entity/Changed')
-    expect(onDeployed.mock.calls[0][0]).toMatch(/Deploy finished: 2 change/)
+  it('fetches the system and shows the last deploy and the models changed since', async () => {
+    const mock = makeApi({ deployOverview: OVERVIEW })
+    render(<DeployDialog api={mock} projectRoot="C:/p" onClose={vi.fn()} />)
+    expect(await screen.findByText(/by ClemensBeile/)).toBeInTheDocument()
+    expect(screen.getByText('Changed since the last deploy: 2 models')).toBeInTheDocument()
+    expect(screen.getByText('preferences/_____PREFERENCES_PROJECT')).toBeInTheDocument()
+    expect(mock.deployCalls).toEqual(['overview'])
   })
 
-  it('names deletes in the confirmation and shows both sides on Show changes', async () => {
+  it('fetches again on request and never writes: Deploy stays off', async () => {
     const user = userEvent.setup()
-    render(<DeployDialog api={makeApi({ deployPlan: PLAN })} projectRoot="C:/p" onClose={vi.fn()} onDeployed={vi.fn()} />)
-    await user.click(await screen.findByLabelText('Delete entity/Gone'))
-    expect(screen.getByText(/including 1 delete/)).toBeInTheDocument()
-    await user.click(screen.getAllByRole('button', { name: 'Show changes' })[1])
-    expect(await screen.findByText('<local entity/Changed/>')).toBeInTheDocument()
-    expect(screen.getByText('<remote entity/Changed/>')).toBeInTheDocument()
-  })
-
-  it('reports a missing connection without offering a deploy', async () => {
-    render(<DeployDialog api={makeApi()} projectRoot="C:/p" onClose={vi.fn()} onDeployed={vi.fn()} />)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Not connected')
+    const mock = makeApi({ deployOverview: OVERVIEW })
+    render(<DeployDialog api={mock} projectRoot="C:/p" onClose={vi.fn()} />)
+    await screen.findByText(/by ClemensBeile/)
+    await user.click(screen.getByRole('button', { name: 'Fetch again' }))
+    await waitFor(() => expect(mock.deployCalls).toEqual(['overview', 'overview']))
     expect(screen.getByRole('button', { name: 'Deploy' })).toBeDisabled()
+    expect(mock.deployCalls.some((c) => c.startsWith('execute'))).toBe(false)
   })
 
-  it('shows a rolled-back message when the write fails', async () => {
-    const user = userEvent.setup()
-    const mock = makeApi({ deployPlan: PLAN })
-    mock.deployExecute = async () => {
-      throw new Error('query failed: Unknown column')
-    }
-    render(<DeployDialog api={mock} projectRoot="C:/p" onClose={vi.fn()} onDeployed={vi.fn()} />)
-    await user.click(await screen.findByRole('checkbox', { name: /I confirm writing/ }))
-    await user.click(screen.getByRole('button', { name: 'Deploy' }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Nothing was written (rolled back)')
+  it('reports a missing connection', async () => {
+    render(<DeployDialog api={makeApi()} projectRoot="C:/p" onClose={vi.fn()} />)
+    expect(await screen.findByRole('alert')).toHaveTextContent('Not connected')
   })
 
   it('warns when the target looks like a cloud system', async () => {
-    render(<DeployDialog api={makeApi({ deployPlan: { ...PLAN, target: 'sys @ db.dev.htc1.adito.cloud' } })} projectRoot="C:/p" onClose={vi.fn()} onDeployed={vi.fn()} />)
+    render(<DeployDialog api={makeApi({ deployOverview: { ...OVERVIEW, target: 'sys @ db.dev.htc1.adito.cloud' } })} projectRoot="C:/p" onClose={vi.fn()} />)
     expect(await screen.findByText(/looks like a cloud system/)).toBeInTheDocument()
   })
 })

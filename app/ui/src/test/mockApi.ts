@@ -1,5 +1,5 @@
 import type { ForgeApi } from '../api/ForgeApi'
-import type { AliasConfigDto, AliasConfigTable, DeployPlan, TableDump, DbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitCommit, GitOutput, GitOverview, SchemaTable, SqlResult, NavNode, PropKind, PropertySheet, SheetRow, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { AliasConfigDto, AliasConfigTable, DeployOverview, DeployPlan, TableDump, DbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitCommit, GitOutput, GitOverview, SchemaTable, SqlResult, NavNode, PropKind, PropertySheet, SheetRow, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 import { getAt, parseNodePath, setAt } from '../wire/path'
 
 // In-memory stand-in for the real Tauri-backed `ForgeApi` (src/api/tauriApi.ts), mirroring
@@ -48,6 +48,7 @@ export function createMockForgeApi(options: {
   systemAliasConfigs?: AliasConfigTable
   systemAliasList?: AliasConfigDto[]
   deployPlan?: DeployPlan
+  deployOverview?: DeployOverview
   deployError?: string
   pickedFiles?: (string | null)[]
   git?: GitOverview
@@ -192,6 +193,16 @@ export function createMockForgeApi(options: {
       const rows = (options.tunnelRows ??= {})
       rows[reference] = (rows[reference] ?? []).filter((_, i) => i !== index)
       return rows[reference]
+    },
+    async importConfigFile(_root, source) {
+      return `$PROJECTHOME/others/cloud/${source.split(/[\\/]/).pop()}`
+    },
+    async openLocalUrl() {},
+    async listProjectFiles() {
+      return ['entity/Person_entity/Person_entity.aod', 'process/Utils_lib/process.js']
+    },
+    async resolveImport() {
+      return null
     },
     async readLinkedFile() {
       return '// mock linked file content\n'
@@ -444,6 +455,12 @@ export function createMockForgeApi(options: {
     async systemAliasConfigs() {
       if (!db.connected) throw new Error('Not connected.')
       return options.systemAliasConfigs ?? { table: { columns: [], rows: [], hidden_columns: [], truncated: false }, missing_required: [] }
+    },
+    async deployOverview() {
+      deployCalls.push('overview')
+      if (options.deployError) throw new Error(options.deployError)
+      if (!options.deployOverview) throw new Error('Not connected. Open the tunnel in the Services tab first.')
+      return options.deployOverview
     },
     async deployPlan(_root, force, mapping) {
       deployCalls.push(`plan:${force}:${mapping?.table ?? 'default'}`)

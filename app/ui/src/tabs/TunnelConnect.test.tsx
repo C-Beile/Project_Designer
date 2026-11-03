@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { buildRowMenu, hostPort, TunnelConfigEditor } from './TunnelConfigEditor'
@@ -22,6 +22,8 @@ function setup(extra: { tunnelError?: string } = {}) {
 }
 
 describe('tunnel row menu', () => {
+  beforeEach(() => window.localStorage.setItem('forge.tunnelView', 'table'))
+
   it('right click opens an own menu with the original entries first and prevents the browser menu', async () => {
     setup()
     const cell = await screen.findByText('web.svc')

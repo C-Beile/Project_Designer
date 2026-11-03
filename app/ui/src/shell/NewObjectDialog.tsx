@@ -3,6 +3,7 @@ import type { ForgeApi } from '../api/ForgeApi'
 import type { NewObjectKind } from '../wire/types'
 import { localNameError } from '../tree/nameRules'
 import { Modal } from './Dialogs'
+import { TypeCombo } from './TypeCombo'
 
 // "Create New Model" (DESIGNER_BEHAVIOR_SPEC.md 4.2): project, type and name. The Finish button stays off
 // until the name passes all checks, a project is chosen and the type is supported. A type with a fixed name
@@ -115,17 +116,10 @@ export function NewObjectDialog({
           ))}
         </select>
       </label>
-      <label className="forge-field">
+      <div className="forge-field">
         <span>Type:</span>
-        <select aria-label="Object type" value={folder ?? ''} onChange={(e) => setFolder(e.target.value)}>
-          {kinds.map((k) => (
-            <option key={k.folder} value={k.folder} disabled={!k.enabled} title={k.hint ?? undefined}>
-              {k.label}
-              {k.enabled ? '' : ' (not available yet)'}
-            </option>
-          ))}
-        </select>
-      </label>
+        <TypeCombo kinds={kinds} value={folder} onChange={setFolder} />
+      </div>
       {fixedName ? null : (
         <label className="forge-field">
           <span>Name:</span>

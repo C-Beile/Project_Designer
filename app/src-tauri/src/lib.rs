@@ -380,6 +380,28 @@ fn open_in_file_manager(dir: &std::path::Path) -> Result<(), String> {
     platform::console::command(program).arg(dir).spawn().map(|_| ()).map_err(|e| format!("cannot open {}: {e}", dir.display()))
 }
 
+/// "Open in browser" of the tunnel manager: only an address of this computer (127.0.0.1 or
+/// localhost with a port) is opened in the default browser.
+#[tauri::command(async)]
+fn open_local_url(url: String) -> Result<(), String> {
+    let rest = url.strip_prefix("http://").or_else(|| url.strip_prefix("https://")).ok_or("Only http and https addresses can be opened.")?;
+    let host_port = rest.split('/').next().unwrap_or("");
+    let (host, port) = host_port.rsplit_once(':').ok_or("The address needs a port.")?;
+    if !(host == "127.0.0.1" || host == "localhost") || port.parse::<u16>().is_err() {
+        return Err("Only addresses of this computer can be opened.".into());
+    }
+    if rest.chars().any(|c| c.is_whitespace() || matches!(c, '"' | '<' | '>' | '`' | '^' | '&' | '|')) {
+        return Err("The address contains characters that are not allowed.".into());
+    }
+    #[cfg(windows)]
+    let program = "explorer";
+    #[cfg(target_os = "macos")]
+    let program = "open";
+    #[cfg(all(not(windows), not(target_os = "macos")))]
+    let program = "xdg-open";
+    platform::console::command(program).arg(&url).spawn().map(|_| ()).map_err(|e| format!("cannot open {url}: {e}"))
+}
+
 #[tauri::command(async)]
 fn open_log_folder() -> Result<String, String> {
     let dir = forge_app_core::crashlog::log_dir();
@@ -398,6 +420,25 @@ fn open_backup_folder() -> Result<String, String> {
 #[tauri::command(async)]
 fn log_client_error(message: String) -> Option<String> {
     forge_app_core::crashlog::write_entry("UI-ERROR", &message).map(|p| p.to_string_lossy().into_owned())
+}
+
+/// Takes over a tunnel or server config chosen in the file dialog: copies it into the project
+/// (`others/cloud`) and returns the path to store in the system.
+#[tauri::command]
+fn import_config_file(project_root: String, source: String) -> Result<String, String> {
+    forge_app_core::system_config::import_config_file(&PathBuf::from(project_root), &PathBuf::from(source))
+}
+
+/// Quick file search (double Ctrl): the file names of a project.
+#[tauri::command]
+async fn list_project_files(project_root: String) -> Vec<String> {
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::file_list::list_project_files(&PathBuf::from(project_root))).await.unwrap_or_default()
+}
+
+/// Ctrl+click on an import: the file the module name points to, or nothing.
+#[tauri::command]
+fn resolve_import(project_root: String, spec: String, from_file: String) -> Option<String> {
+    forge_app_core::import_resolve::resolve_import(&PathBuf::from(project_root), &spec, &from_file)
 }
 
 /// Ziel B.3: read a `%aditoprj%`-relative linked file (e.g. an `entityField.valueProcess`
@@ -691,6 +732,15 @@ async fn deploy_show_changes(
         .map_err(|e| e.to_string())?
 }
 
+/// Deploy overview: last deploy of the system and what changed in the project since. Reads only.
+#[tauri::command]
+async fn deploy_overview(project_root: String, db: State<'_, std::sync::Arc<DbManager>>) -> Result<forge_app_core::system_db::DeployOverview, String> {
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::system_db::deploy_overview(&db, &PathBuf::from(project_root)))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 /// The only write path of the deploy; `confirmed` is true only after the user clicked the
 /// confirmation in the deploy dialog.
 #[tauri::command]
@@ -784,13 +834,13 @@ fn db_systems(db: State<'_, std::sync::Arc<DbManager>>) -> Vec<SystemDbStatus> {
 /// Database browser: read-only session to another database alias of a system. The connection data
 /// come from the system database of `system` at this moment and stay in memory.
 #[tauri::command]
-async fn db_connect_alias(system: String, alias: String, tunnel_config: String, db: State<'_, std::sync::Arc<DbManager>>) -> Result<DbStatus, String> {
+async fn db_connect_alias(system: String, alias: String, tunnel_config: String, server_ids: Vec<String>, db: State<'_, std::sync::Arc<DbManager>>) -> Result<DbStatus, String> {
     let db = db.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
         if !db.activate(&system) {
             return Err("Open the database session of the system first.".to_string());
         }
-        let conn = forge_app_core::system_db::read_alias_db(&db, &alias)?;
+        let conn = forge_app_core::system_db::read_alias_db(&db, &alias, &server_ids)?;
         db.connect_alias(&format!("{system}|alias:{alias}"), &PathBuf::from(tunnel_config), &conn)
     })
     .await
@@ -821,7 +871,7 @@ async fn liquibase_target(system: Option<String>, alias: String, db: State<'_, s
     let db = db.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
         let system = liquibase_system(system, &db)?;
-        let conn = forge_app_core::system_db::read_alias_db(&db, &alias)?;
+        let conn = forge_app_core::system_db::read_alias_db(&db, &alias, &[])?;
         Ok(LiquibaseTarget { system, host: conn.host, database: conn.database })
     })
     .await
@@ -837,7 +887,7 @@ async fn liquibase_update(app: tauri::AppHandle, system: Option<String>, alias: 
         use tauri::Emitter;
         let system = liquibase_system(system, &db)?;
         let dir = forge_app_core::liquibase::changelog_dir(&PathBuf::from(&project_root), &alias)?;
-        let conn = forge_app_core::system_db::read_alias_db(&db, &alias)?;
+        let conn = forge_app_core::system_db::read_alias_db(&db, &alias, &[])?;
         let port = db.forward_port_for(&conn.host, conn.port).ok_or_else(|| format!("Open the tunnel to {}:{} first (Services).", conn.host, conn.port))?;
         let configured = settings_file(&app).ok().and_then(|f| settings::load_settings(&f).designer_install_dir);
         let install = configured.filter(|d| !d.trim().is_empty()).or_else(settings::detect_designer_install).ok_or("The Designer installation was not found. Choose it in Tools > Options.")?;
@@ -1263,6 +1313,10 @@ fn build_native_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             open_backup_folder,
             log_client_error,
             read_linked_file,
+            resolve_import,
+            list_project_files,
+            import_config_file,
+            open_local_url,
             write_linked_file,
             pick_project_folder,
             get_recent_project,
@@ -1324,6 +1378,7 @@ fn build_native_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             system_alias_configs,
             system_alias_list,
             system_server_ids,
+            deploy_overview,
             deploy_plan,
             deploy_show_changes,
             deploy_execute,

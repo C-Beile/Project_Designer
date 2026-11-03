@@ -5,6 +5,7 @@ import { addInsertUuidAction } from '../theme/monacoUuid'
 import { trackEditorFocus } from '../theme/monacoActions'
 import { applyEditorPrefs, subscribeEditorPrefs } from '../theme/editorPrefs'
 import { createJavaScriptModel } from '../theme/monacoJdito'
+import { rememberModelPath } from '../theme/monacoImports'
 import type { Gutter } from '../wire/types'
 import { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForgeThemeForMonaco } from '../theme/monacoTheme'
 
@@ -68,6 +69,7 @@ export function MonacoText({
     if (!containerRef.current) return
     ensureMonacoThemesDefined()
     const ownedModel = modelPath && language === 'javascript' ? createJavaScriptModel(initial, modelPath) : null
+    if (ownedModel && modelPath) rememberModelPath(ownedModel.uri.toString(), modelPath)
     const editor = monaco.editor.create(containerRef.current, {
       ...(ownedModel ? { model: ownedModel } : { value: initial, language }),
       readOnly,

@@ -1,3 +1,4 @@
+import { TunnelGlyph } from '../tree/TunnelGlyph'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
@@ -159,6 +160,10 @@ export function PropertySheetPanel({
     return 'modification'
   }, [api, sheet, projectRoot, target.nodeId, onStatus])
 
+  // Takes a config file chosen in the file explorer over into the project and writes its path.
+  const browseConfigRef = useRef<(row: SheetRow) => Promise<void>>(async () => {})
+  const browseConfig = (row: SheetRow) => browseConfigRef.current(row)
+
   const commit = useCallback(
     async (row: SheetRow, value: WireValue) => {
       try {
@@ -187,6 +192,19 @@ export function PropertySheetPanel({
     },
     [api, target.nodeId, target.path, onEdited, onStatus, reportModification, writeMode],
   )
+
+  browseConfigRef.current = async (row: SheetRow) => {
+    if (!projectRoot) return
+    const picked = await api.pickFile(`Choose ${row.name}`, 'XML', ['xml']).catch(() => null)
+    if (!picked) return
+    try {
+      const ref = await api.importConfigFile(projectRoot, picked)
+      await commit(row, { kind: 'text', value: ref })
+      onStatus(`${row.name}: ${ref} (copied into the project)`)
+    } catch (e) {
+      onStatus(e instanceof Error ? e.message : String(e))
+    }
+  }
 
   // Set to Default: the property leaves the file again; for a module object the project's modification of it is deleted.
   const resetRow = useCallback(
@@ -300,16 +318,28 @@ export function PropertySheetPanel({
                           onSearch={() => setPickerRow(row)}
                         />
                         {onEditConfig && target.path === '$' && CONFIG_PATH_ROWS.includes(row.name) ? (
-                          <button
-                            type="button"
-                            className="psheet-btn psheet-pencil"
-                            aria-label={`Edit ${row.name}`}
-                            title={row.name === 'tunnelConfigPath' ? 'Open the tunnel config editor' : 'Open the alias configs of this system'}
-                            disabled={!row.display && row.name === 'tunnelConfigPath'}
-                            onClick={() => onEditConfig(row.name, row.display)}
-                          >
-                            {'✎'}
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              className="psheet-btn"
+                              aria-label={`Choose ${row.name}`}
+                              title="Choose the file in the file explorer; it is copied into the project (others/cloud) and replaces an older copy"
+                              disabled={!projectRoot}
+                              onClick={() => void browseConfig(row)}
+                            >
+                              {'…'}
+                            </button>
+                            <button
+                              type="button"
+                              className="psheet-btn psheet-pencil"
+                              aria-label={`Edit ${row.name}`}
+                              title={row.name === 'tunnelConfigPath' ? 'Open the tunnel manager' : 'Open the alias configs of this system'}
+                              disabled={!row.display && row.name === 'tunnelConfigPath'}
+                              onClick={() => onEditConfig(row.name, row.display)}
+                            >
+                              {row.name === 'tunnelConfigPath' ? <TunnelGlyph /> : '✎'}
+                            </button>
+                          </>
                         ) : null}
                       </span>
                     </div>

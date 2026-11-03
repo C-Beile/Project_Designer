@@ -156,7 +156,7 @@ describe('ProjectTree - Designer structure (LAYOUT_SPEC §4.2/§4.4)', () => {
     expect(screen.getByText('entity_obj').closest('li')!.querySelector('.project-tree-origin')).toBeNull()
   })
 
-  it('single click selects, double click opens', async () => {
+  it('a single click selects and opens what can be opened', async () => {
     const user = userEvent.setup()
     const onSelect = vi.fn()
     const onOpen = vi.fn()
@@ -168,8 +168,6 @@ describe('ProjectTree - Designer structure (LAYOUT_SPEC §4.2/§4.4)', () => {
     await user.click(obj)
     expect(onSelect).toHaveBeenLastCalledWith(expect.objectContaining({ label: 'entity_obj' }), p)
     expect(obj).toHaveAttribute('aria-selected', 'true')
-    expect(onOpen).not.toHaveBeenCalled()
-    await user.dblClick(obj)
     expect(onOpen).toHaveBeenCalledWith(expect.objectContaining({ label: 'entity_obj' }), p)
   })
 

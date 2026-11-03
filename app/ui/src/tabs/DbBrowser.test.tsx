@@ -128,7 +128,7 @@ describe('database browser of another alias', () => {
     const node = aliasConfigTabNode({ key: KEY, system: 'dev1', alias: 'Data_alias', reference: 'r', browse: true, tunnelConfig: 'C:/demo/t.xml' })
     render(<DbBrowserTab api={api} path={node.path} />)
     await user.click(await screen.findByText('ACTIVITY'))
-    expect(connectAlias).toHaveBeenCalledWith(KEY, 'Data_alias', 'C:/demo/t.xml')
+    expect(connectAlias).toHaveBeenCalledWith(KEY, 'Data_alias', 'C:/demo/t.xml', expect.any(Array))
     expect(await screen.findByText('IX_DATE')).toBeInTheDocument()
     expect(await screen.findByText('CONTACT.ID')).toBeInTheDocument()
     await user.click(screen.getByText(/^Procedures/))

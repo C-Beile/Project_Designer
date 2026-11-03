@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Dito Designer",
   "mainBinaryName": "vendira-designer",
-  "version": "1.0.0-rc15",
+  "version": "1.0.1",
   "identifier": "de.threehillsit.vendira-designer",
   "build": {
     "frontendDist": "../ui/dist",
@@ -45,6 +45,7 @@
         "installMode": "currentUser",
         "languages": ["German", "English"],
         "installerIcon": "icons/icon.ico",
+        "template": "windows/installer.nsi",
         "headerImage": "../ui/src/assets/brand/installer-header.bmp",
         "sidebarImage": "../ui/src/assets/brand/installer-sidebar.bmp"
       }

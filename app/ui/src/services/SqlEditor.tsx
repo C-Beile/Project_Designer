@@ -6,6 +6,7 @@ import { MonacoText, type MonacoTextHandle } from '../tabs/MonacoText'
 import { logOutput, requestShell } from '../shell/outputBus'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { getOptions } from '../settings/options'
+import { setSystemsDb, systemNameOf, useTunnelState } from './tunnelState'
 import {
   buildDelete,
   buildInsert,
@@ -80,6 +81,20 @@ export function SqlEditor({
   const [history, setHistory] = useState<string[] | null>(null)
   const gridRun = useRef<(() => Promise<void>) | null>(null)
 
+  const shared = useTunnelState()
+  const sessions = Object.entries(shared.bySystem)
+    .filter(([k, v]) => k !== '' && v.connected && !/_bg$/i.test(systemNameOf(k.split('|alias:')[0])))
+    .map(([k, v]) => {
+      const i = k.indexOf('|alias:')
+      const system = systemNameOf(i < 0 ? k : k.slice(0, i))
+      return { key: k, label: `${system} · ${i < 0 ? 'System_alias' : k.slice(i + 7)} - ${v.database ?? ''} @ ${v.host ?? ''}` }
+    })
+    .sort((a, b) => a.label.localeCompare(b.label))
+  const activeKey = shared.connectedSystem && sessions.some((s) => s.key === shared.connectedSystem) ? shared.connectedSystem : ''
+  async function switchSession(key: string) {
+    await api.dbActivate(key).catch(() => false)
+    setSystemsDb(await api.dbSystems().catch(() => []))
+  }
   const connectionLabel = db.connected ? `${db.database ?? ''} @ ${db.host ?? ''}` : ''
 
   async function runStatements(statements: string[], allowWrite: boolean) {
@@ -170,9 +185,20 @@ export function SqlEditor({
       <div className="forge-sql-conn-row">
         <label>
           <span>Connection:</span>
-          <select aria-label="Connection" value={db.connected ? 'current' : ''} disabled={!db.connected} onChange={() => {}}>
-            {db.connected ? <option value="current">{connectionLabel}</option> : <option value="">&lt;not connected&gt;</option>}
-          </select>
+          {sessions.length > 1 ? (
+            <select aria-label="Connection" value={activeKey} disabled={!db.connected} onChange={(e) => void switchSession(e.target.value)}>
+              {activeKey === '' ? <option value="">{connectionLabel}</option> : null}
+              {sessions.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <select aria-label="Connection" value={db.connected ? 'current' : ''} disabled={!db.connected} onChange={() => {}}>
+              {db.connected ? <option value="current">{connectionLabel}</option> : <option value="">&lt;not connected&gt;</option>}
+            </select>
+          )}
         </label>
         <label className="forge-sql-write">
           <input

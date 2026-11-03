@@ -8,6 +8,17 @@ import type { MenuEntry } from '../tree/contextMenu'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { confirmDialog, promptDialog } from '../shell/dialogService'
 import type { DbStatus, ForwardStatusDto, TunnelRowDto } from '../wire/types'
+import { TunnelPorts } from './TunnelPorts'
+
+const VIEW_KEY = 'forge.tunnelView'
+
+function savedView(): 'ports' | 'table' {
+  try {
+    return window.localStorage.getItem(VIEW_KEY) === 'table' ? 'table' : 'ports'
+  } catch {
+    return 'ports'
+  }
+}
 
 // Tunnel config editor (original Designer, shot 56): the tunnels of a system's tunnel config as a
 // table. Connect opens a local SSH port forward for one row (free local port, plink); the forward
@@ -80,6 +91,15 @@ export function TunnelConfigEditor({
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const [keyFile, setKeyFile] = useSshKeyPath(api)
   const [password, setPassword] = useState(credentials.password)
+  const [view, setViewState] = useState<'ports' | 'table'>(savedView)
+  const setView = (v: 'ports' | 'table') => {
+    setViewState(v)
+    try {
+      window.localStorage.setItem(VIEW_KEY, v)
+    } catch {
+      // the choice only lasts for this session
+    }
+  }
 
   const refreshForwards = useCallback(async () => {
     const list = await api.tunnelList().catch(() => [])
@@ -292,6 +312,14 @@ export function TunnelConfigEditor({
         <button type="button" aria-label="Refresh" title="Reload the file and the tunnel states" onClick={refresh}>
           {'↻'}
         </button>
+        <span className="tunnel-view" role="group" aria-label="View">
+          <button type="button" aria-pressed={view === 'ports'} className={view === 'ports' ? 'is-active' : undefined} onClick={() => setView('ports')}>
+            Ports
+          </button>
+          <button type="button" aria-pressed={view === 'table'} className={view === 'table' ? 'is-active' : undefined} onClick={() => setView('table')}>
+            Table
+          </button>
+        </span>
         <span className="tunnel-auth">
           <input
             aria-label="SSH key file"
@@ -322,7 +350,19 @@ export function TunnelConfigEditor({
           {error}
         </p>
       ) : null}
-      {rows ? (
+      {rows && view === 'ports' ? (
+        <TunnelPorts
+          rows={rows}
+          stateOf={stateOf}
+          localPorts={localPorts}
+          errors={rowErrors}
+          onConnect={(list) => void (async () => { for (const r of list) await connectRow(r) })()}
+          onDisconnect={(list) => void (async () => { for (const r of list) await disconnectRow(r) })()}
+          onCopy={copy}
+          onBrowser={(url) => void api.openLocalUrl(url).catch((e) => setError(e instanceof Error ? e.message : String(e)))}
+        />
+      ) : null}
+      {rows && view === 'table' ? (
         <table className="tunnel-table" aria-label="Tunnels">
           <thead>
             <tr>

@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { isMacPlatform } from '../shell/shortcuts'
 import type { ReactNode } from 'react'
 import { useSshKeyPath } from '../settings/sshKey'
-import { setTunnelError, tunnelConnecting } from './tunnelState'
+import { setTunnelError, tunnelConnecting, useTunnelState } from './tunnelState'
+import { ServicesTree } from './ServicesTree'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { DbStatus, SchemaTable } from '../wire/types'
 import { Modal } from '../shell/Dialogs'
@@ -69,6 +70,8 @@ export function ServicesPanel({
   onDbChange: (status: DbStatus) => void
   onOpenSql: (sql: string) => void
 }) {
+  const tunnels = useTunnelState()
+  const hasSessions = Object.entries(tunnels.bySystem).some(([k, v]) => k !== '' && v.connected)
   const [tunnelConfig, setTunnelConfig] = useState('')
   const [serverConfig, setServerConfig] = useState('')
   const [keyFile, setKeyFile] = useSshKeyPath(api)
@@ -169,7 +172,8 @@ export function ServicesPanel({
           {error}
         </p>
       ) : null}
-      <ul className="forge-services-tree" role="tree" aria-label="Services tree">
+      {hasSessions ? <ServicesTree api={api} onOpenSql={onOpenSql} /> : null}
+      <ul className="forge-services-tree" role="tree" aria-label="Services tree" hidden={hasSessions}>
         <li role="treeitem" aria-expanded="true">
           <span className="forge-services-group">Databases</span>
           {db.connected ? (

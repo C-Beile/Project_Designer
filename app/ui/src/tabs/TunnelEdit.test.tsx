@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TunnelConfigEditor } from './TunnelConfigEditor'
@@ -23,6 +23,8 @@ function setup(rows: TunnelRowDto[]) {
 const base: TunnelRowDto = { tunnel_host: 'ssh.example', tunnel_port: 22, target_host: 'db.svc', target_port: 3306, user: 'dev-user' }
 
 describe('Add and Delete Tunnel', () => {
+  beforeEach(() => window.localStorage.setItem('forge.tunnelView', 'table'))
+
   afterEach(() => _resetDialogsForTests())
 
   it('Add Tunnel asks for the target and takes jump host and user from the selected tunnel', async () => {

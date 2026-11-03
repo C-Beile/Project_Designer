@@ -19,7 +19,28 @@ interface SystemRefs {
 }
 
 export const SYSTEM_TUNNEL_POLL_MS = 3000
+/** The paths of a system are read again after this time, so a changed or replaced tunnel config is picked up. */
+export const SYSTEM_REFS_TTL_MS = 5000
 const RETRY_AFTER_FAILURE_MS = 15000
+
+/**
+ * Opens a read-only session for every further database alias of a system (Data_alias ...), so the
+ * Services tab shows them without a click. The system session stays the active one.
+ */
+async function connectDataAliases(api: ForgeApi, key: string, systemName: string, reference: string, tunnelConfig: string): Promise<void> {
+  const before = (await api.dbSystems().catch(() => [])).find((e) => e.active)?.system ?? null
+  try {
+    await api.dbActivate(key).catch(() => false)
+    const ids = await api.systemServerIds(reference, systemName).catch(() => [] as string[])
+    const aliases = await api.systemAliasList(ids)
+    for (const a of aliases) {
+      if (!a.jdbc_url || /systemalias/i.test(a.name)) continue
+      await api.dbConnectAlias(key, a.name, tunnelConfig, ids).catch(() => undefined)
+    }
+  } finally {
+    if (before !== null) await api.dbActivate(before).catch(() => false)
+  }
+}
 
 export function systemNodesOf(tops: TreeNode[]): TreeNode[] {
   const top = tops[0]
@@ -27,8 +48,9 @@ export function systemNodesOf(tops: TreeNode[]): TreeNode[] {
 }
 
 export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Record<string, TreeNode[]>): void {
-  const refsCache = useRef(new Map<string, Promise<SystemRefs | null>>())
+  const refsCache = useRef(new Map<string, { at: number; refs: Promise<SystemRefs | null> }>())
   const failedAt = useRef(new Map<string, number>())
+  const aliasesTried = useRef(new Set<string>())
   const known = useRef<string[]>([])
   const latest = useRef({ projects, trees })
   latest.current = { projects, trees }
@@ -52,15 +74,14 @@ export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Recor
     let busy = false
     const refsOf = (project: string, node: TreeNode): Promise<SystemRefs | null> => {
       const key = systemKey(project, node.label)
-      let p = refsCache.current.get(key)
-      if (!p) {
-        p = api
-          .getPropertyTree(node.id)
-          .then((t) => ({ project, name: node.label, tunnelRef: textField(t, 'tunnelConfigPath') ?? '', serverRef: textField(t, 'serverConfigPath') ?? '' }))
-          .catch(() => null)
-        refsCache.current.set(key, p)
-      }
-      return p
+      const cached = refsCache.current.get(key)
+      if (cached && Date.now() - cached.at < SYSTEM_REFS_TTL_MS) return cached.refs
+      const refs = api
+        .getPropertyTree(node.id)
+        .then((t) => ({ project, name: node.label, tunnelRef: textField(t, 'tunnelConfigPath') ?? '', serverRef: textField(t, 'serverConfigPath') ?? '' }))
+        .catch(() => null)
+      refsCache.current.set(key, { at: Date.now(), refs })
+      return refs
     }
     const tick = async () => {
       if (busy || cancelled) return
@@ -82,6 +103,15 @@ export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Recor
             if (!st || cancelled) continue
             setForwardFor(key, st.db_tunnel_up)
             const session = getTunnelState().bySystem[key]
+            if (st.db_tunnel_up && session?.connected && !aliasesTried.current.has(key)) {
+              aliasesTried.current.add(key)
+              const tunnel = resolvePathVariables('tunnelConfigPath', refs.tunnelRef, { projectHome: project })
+              const server = resolvePathVariables('serverConfigPath', refs.serverRef, { projectHome: project })
+              if (tunnel.unresolved.length === 0 && server.unresolved.length === 0) {
+                await connectDataAliases(api, key, refs.name, server.resolved, tunnel.resolved).catch(() => undefined)
+                if (!cancelled) setSystemsDb(await api.dbSystems().catch(() => []))
+              }
+            }
             if (st.db_tunnel_up && !session?.connected && !(getTunnelState().connectingBy[key] > 0)) {
               const last = failedAt.current.get(key) ?? 0
               if (Date.now() - last < RETRY_AFTER_FAILURE_MS) continue
@@ -101,6 +131,7 @@ export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Recor
               }
             } else if (!st.db_tunnel_up) {
               failedAt.current.delete(key)
+              aliasesTried.current.delete(key)
               if (getTunnelState().errorBy[key]) setTunnelError(null, key)
               if (session && !session.tunnel_up && !st.problem) await api.dbDisconnect(key).catch(() => {})
             }

@@ -272,14 +272,73 @@ icon(256, (24, 52, 82), (14, 30, 48)).save(os.path.join(BRAND, "dark-mode-icon-2
 wordmark(os.path.join(SRC, "wordmark-white.png"))
 shutil.copyfile(os.path.join(SRC, "wordmark-white.png"), os.path.join(BRAND, "wordmark-white.png"))
 
-# NSIS installer artwork: header 150x57, sidebar 164x314 (BMP, 24-bit)
-bg = (11, 18, 28)
-hdr = Image.new("RGB", (150, 57), bg)
-ic = native(41)
-hdr.paste(ic, (104, 8), ic)
-hdr.save(os.path.join(BRAND, "installer-header.bmp"))
-side = Image.new("RGB", (164, 314), bg)
-big = native(96)
-side.paste(big, (34, 90), big)
-side.save(os.path.join(BRAND, "installer-sidebar.bmp"))
+# NSIS installer artwork: header 150x57, sidebar 164x314 (BMP, 24-bit), Night Owl palette
+import random
+from PIL import ImageFilter
+
+NO_BG, NO_BG2, NO_FG, NO_BLUE, NO_PURPLE, NO_GREEN = (1, 22, 39), (11, 41, 66), (214, 222, 235), (130, 170, 255), (126, 87, 194), (173, 219, 103)
+
+
+def night_sky(w, h, seed, stars):
+    """Vertical Night Owl gradient with a few soft stars, drawn at 4x and shrunk."""
+    k = 4
+    img = Image.new("RGB", (w * k, h * k))
+    px = ImageDraw.Draw(img)
+    for y in range(h * k):
+        t = y / (h * k - 1)
+        px.line([(0, y), (w * k, y)], fill=tuple(int(NO_BG[i] + (NO_BG2[i] - NO_BG[i]) * t) for i in range(3)))
+    rnd = random.Random(seed)
+    for _ in range(stars):
+        x, y, r = rnd.randrange(w * k), rnd.randrange(h * k), rnd.choice([1, 1, 2, 3])
+        c = rnd.choice([NO_FG, NO_BLUE, NO_FG])
+        px.ellipse([x - r, y - r, x + r, y + r], fill=c)
+    return img, k
+
+
+def glow(img, k, cx, cy, radius, color):
+    layer = Image.new("RGB", img.size, (0, 0, 0))
+    ImageDraw.Draw(layer).ellipse([(cx - radius) * k, (cy - radius) * k, (cx + radius) * k, (cy + radius) * k], fill=color)
+    layer = layer.filter(ImageFilter.GaussianBlur(radius * k * 0.55))
+    from PIL import ImageChops
+    return ImageChops.add(img, layer)
+
+
+def finish(img, k, w, h):
+    return img.resize((w, h), Image.LANCZOS)
+
+
+# The bitmaps are drawn at 3x: Windows stretches them to the dialog (more on high-DPI screens) and a
+# bigger source stays smooth instead of showing pixels. NSIS scales them down to the control.
+S = 3
+
+# header: sky with the mark on the right
+img, k = night_sky(150 * S, 57 * S, 7, 26 * S * S // 2)
+img = glow(img, k, 124 * S, 28 * S, 24 * S, (44, 30, 82))
+img = finish(img, k, 150 * S, 57 * S)
+ic = mark(46 * S, False)
+img.paste(ic, (100 * S, 5 * S), ic)
+img.save(os.path.join(BRAND, "installer-header.bmp"))
+
+# sidebar: sky, glow, the mark, name and tagline
+img, k = night_sky(164 * S, 314 * S, 21, 90 * S * S)
+img = glow(img, k, 82 * S, 120 * S, 62 * S, (58, 40, 110))
+img = glow(img, k, 82 * S, 300 * S, 90 * S, (8, 52, 84))
+img = finish(img, k, 164 * S, 314 * S)
+big = mark(128 * S, True)
+img.paste(big, (18 * S, 50 * S), big)
+# text on a transparent layer drawn at 2x and shrunk, so the letters are anti-aliased
+layer = Image.new("RGBA", (164 * S * 2, 314 * S * 2), (0, 0, 0, 0))
+d = ImageDraw.Draw(layer)
+bold = ImageFont.truetype(r"C:\Windows\Fonts\segoeuib.ttf", 28 * S * 2)
+light = ImageFont.truetype(r"C:\Windows\Fonts\segoeui.ttf", 13 * S * 2)
+for text, font, y, fill in (("Dito", bold, 192, NO_FG), ("Designer", bold, 220, NO_BLUE)):
+    w = d.textlength(text, font=font)
+    d.text(((164 * S * 2 - w) / 2, y * S * 2), text, font=font, fill=fill + (255,))
+tag = "für ADITO-Projekte"
+w = d.textlength(tag, font=light)
+d.text(((164 * S * 2 - w) / 2, 268 * S * 2), tag, font=light, fill=NO_GREEN + (255,))
+layer = layer.resize((164 * S, 314 * S), Image.LANCZOS)
+img = img.convert("RGBA")
+img.alpha_composite(layer)
+img.convert("RGB").save(os.path.join(BRAND, "installer-sidebar.bmp"))
 print("done")

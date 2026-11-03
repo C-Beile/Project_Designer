@@ -279,6 +279,30 @@ export interface DeployPlan {
   mapping: DeployMapping
 }
 
+export interface LastDeploy {
+  author: string | null
+  time_ms: number | null
+  designer_version: string | null
+}
+
+export interface ChangedFile {
+  path: string
+  changed_ms: number
+}
+
+export interface ChangedModel {
+  key: string
+  files: ChangedFile[]
+}
+
+// Mirrors core::system_db::DeployOverview: read-only view of the last deploy and what changed since.
+export interface DeployOverview {
+  target: string
+  last_deploy: LastDeploy | null
+  changed: ChangedModel[]
+  other_files: ChangedFile[]
+}
+
 export interface DeployChangeView {
   local: string | null
   remote: string | null

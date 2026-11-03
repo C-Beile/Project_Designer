@@ -4,6 +4,7 @@ import { App } from './App'
 import { tauriForgeApi } from './api/tauriApi'
 import { withSqlLog } from './api/sqlLog'
 import { WindowRoot } from './windows/WindowRoot'
+import { installZoomControls } from './settings/zoom'
 import './styles.css'
 
 // Dev-only convenience: a "project" URL parameter can still pre-select a project folder for a
@@ -21,6 +22,8 @@ createRoot(document.getElementById('root')!).render(
     {windowKind ? <WindowRoot api={withSqlLog(tauriForgeApi)} kind={windowKind} name={windowName} /> : <App projectRoot={projectRoot} />}
   </StrictMode>,
 )
+
+installZoomControls()
 
 // Monaco's workers (syntax errors of JDito code) are prepared in the background, before the first editor opens.
 void import('./theme/monacoWorkers').then((m) => m.ensureMonacoWorkers())

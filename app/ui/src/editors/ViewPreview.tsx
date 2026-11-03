@@ -584,6 +584,17 @@ function Template({ child }: { child: Child }) {
           ) : null}
         </Head>
         <SearchBar value={value} />
+        {editable ? (
+          <div className="vp-rowlist" {...dropFor(null)}>
+            {cols.length === 0 ? <span className="vp-muted">No columns</span> : null}
+            {cols.map((c, i) => (
+              <div key={`${c}${i}`} className="vp-rowbar" title={fieldsMeta?.get(c) ? `${c} (${typeLabel(fieldsMeta.get(c)!.type)})` : c} {...dropFor(i)}>
+                <span className="vp-rowbar-label">{label(c)}</span>
+                <span className="vp-field-box is-edit vp-grow" />
+              </div>
+            ))}
+          </div>
+        ) : (
         <table className="vp-table" {...dropFor(null)}>
           <thead>
             <tr>
@@ -608,6 +619,7 @@ function Template({ child }: { child: Child }) {
             ))}
           </tbody>
         </table>
+        )}
         {kind === 'basicTableViewTemplate' ? <div className="vp-pager">‹ 1 2 3 ›</div> : null}
       </section>
     )

@@ -12,6 +12,7 @@ import { PluginsDialog } from '../shell/PluginsDialog'
 import { ProjectZipDialog } from '../shell/ProjectZipDialog'
 import { UpdatesDialog } from '../shell/UpdatesDialog'
 import { GitDialog } from '../shell/GitDialog'
+import { CommitDiffDialog } from '../shell/CommitDiffDialog'
 import { RenameDialog } from '../tree/TreeDialogs'
 import type { ThemeName } from '../theme/useTheme'
 import type { TranspilerEngineId } from '../settings/transpilerEngine'
@@ -141,6 +142,9 @@ export const DIALOG_WINDOWS: Record<string, DialogSpec> = {
   },
   git: {
     render: (api, p, done) => <GitWindow api={api} payload={p} done={done} />,
+  },
+  commitdiff: {
+    render: (api, p, done) => <CommitDiffDialog api={api} root={String(p.root ?? '')} path={String(p.path ?? '')} onClose={() => done(null)} />,
   },
   localdata: {
     render: (api, _p, done) => <LocalDataDialog api={api} onClose={() => done(null)} />,

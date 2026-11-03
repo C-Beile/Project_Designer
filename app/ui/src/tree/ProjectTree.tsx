@@ -4,6 +4,7 @@ import type { KeyboardEvent } from 'react'
 import { isOpenable, type TreeNode } from '../wire/types'
 import { NodeIcon } from './treeIcons'
 import { TunnelStateIcon } from './TunnelStateIcon'
+import { TunnelGlyph } from './TunnelGlyph'
 
 // Projects tree like the original Designer (LAYOUT_SPEC §4.2/§4.4): several project roots, a
 // single click selects (fills Properties/Navigator later), double-click or Enter opens. Keyboard
@@ -67,6 +68,8 @@ export function ProjectTree({
   onContextMenu,
   problemCounts,
   badgeFor,
+  onSystemTunnel,
+  loading,
   gitFor,
   onFileKey,
 }: {
@@ -80,6 +83,10 @@ export function ProjectTree({
   problemCounts?: ReadonlyMap<string, { errors: number; warnings: number }>
   /** Small coloured dot behind the label of a node (the tunnel state of a system); null for none. */
   badgeFor?: (node: TreeNode) => { state: string; title: string } | null
+  /** A project is still being read: a loading note while the tree is empty, a thin progress bar otherwise. */
+  loading?: boolean
+  /** A system node gets a small tunnel button that opens the tunnel manager of that system. */
+  onSystemTunnel?: (node: TreeNode) => void
   /** Git state of a node (colour and letter at the end of the row); null when unchanged. */
   gitFor?: (node: TreeNode) => { code: string; title: string } | null
   /** Ctrl+X, Ctrl+C, Ctrl+V and Delete on a file or folder row. */
@@ -284,6 +291,13 @@ export function ProjectTree({
           setScrollTop(el.scrollTop)
         })
       }}>
+      {loading ? <div className="project-tree-progress" role="progressbar" aria-label="Loading project" /> : null}
+      {loading && rows.length === 0 ? (
+        <div className="project-tree-loading" role="status">
+          <span className="project-tree-spinner" aria-hidden="true" />
+          Loading project...
+        </div>
+      ) : null}
       <ul role="tree" aria-label="Projects" className="project-tree" style={{ height: rows.length * ROW_HEIGHT }}>
         {visible.map((index) => {
           const row = rows[index]
@@ -313,8 +327,13 @@ export function ProjectTree({
               onClick={() => {
                 setFocusedKey(row.key)
                 select(row)
+                // One click opens whatever can be opened in the editor; a folder only gets selected.
+                if (isOpenable(row.node)) onOpen?.(row.node, row.top)
               }}
-              onDoubleClick={() => open(row)}
+              onDoubleClick={() => {
+                if (isOpenable(row.node)) select(row)
+                else open(row)
+              }}
               onContextMenu={(e) => {
                 if (!onContextMenu) return
                 e.preventDefault()
@@ -347,6 +366,21 @@ export function ProjectTree({
                 const badge = badgeFor?.(node)
                 return badge ? <TunnelStateIcon state={badge.state} title={badge.title} /> : null
               })()}
+              {onSystemTunnel && node.object_type === 'system' && !node.id.startsWith('missing:') ? (
+                <button
+                  type="button"
+                  className="project-tree-tunnel-btn"
+                  aria-label={`Tunnel manager of ${node.label}`}
+                  title="Open the tunnel manager"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onSystemTunnel(node)
+                  }}
+                  onDoubleClick={(e) => e.stopPropagation()}
+                >
+                  <TunnelGlyph size={13} />
+                </button>
+              ) : null}
               {node.type_label ? <span className="project-tree-type is-bold">[{node.type_label}]</span> : null}
               {node.path ? <span className="project-tree-dim">{node.path}</span> : null}
               {node.origin && node.kind !== 'module' ? <span className="project-tree-dim project-tree-origin">{node.origin}</span> : null}

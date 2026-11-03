@@ -42,6 +42,8 @@ function Glyph({ type, color }: { type: string; color: string }) {
       return <path d="M6.2 10.6V9.2a1.8 1.8 0 0 1 3.6 0v1.4M5.6 10.6h4.8M7.3 12h1.4" {...line} />
     case 'entity':
       return <path d="M5 7.4h6v4.8H5zM5 9h6M8 9v3.2" {...line} strokeWidth={1} />
+    case 'view':
+      return <path d="M5 7.4h6v4.8H5zM5 9h6M7.2 9v3.2" {...line} strokeWidth={1} />
     case 'dashboard':
       return <path d="M5.6 12.2v-2M8 12.2v-4.2M10.4 12.2v-3" {...line} strokeWidth={1.8} strokeLinecap="butt" />
     case 'renderer':
@@ -187,12 +189,7 @@ function fileIcon(label: string) {
 function objectIcon(objectType: string | null) {
   switch (objectType) {
     case 'neonView':
-      return (
-        <svg {...S}>
-          <rect x="1.5" y="2.5" width="13" height="11" fill="none" stroke="var(--fg-muted)" />
-          <path d="M1.5 5.5h13" stroke="var(--fg-muted)" />
-        </svg>
-      )
+      return <Sheet accent="var(--folder-view)" glyph="view" />
     case 'entity':
       return <Sheet accent="var(--folder-entity)" glyph="entity" />
     case 'neonContext':

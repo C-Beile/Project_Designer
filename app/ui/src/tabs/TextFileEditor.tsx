@@ -5,6 +5,7 @@ import { MarkdownPreview } from './MarkdownPreview'
 import { GITATTRIBUTES_LANGUAGE, IGNORE_LANGUAGE } from '../theme/monacoLanguages'
 import { applyJditoTypes } from '../theme/monacoJdito'
 import { registerFormatter } from '../theme/formatOnSave'
+import { enableImportNavigation } from '../theme/monacoImports'
 import { useScm } from '../scm/scmStore'
 import type { Gutter } from '../wire/types'
 
@@ -63,6 +64,8 @@ export function TextFileEditor({
   drafts,
   onDirty,
   isNew,
+  reveal,
+  onOpenFileAt,
 }: {
   api: ForgeApi
   path: string
@@ -73,10 +76,21 @@ export function TextFileEditor({
   onDirty: (path: string, dirty: boolean) => void
   /** Code property not set yet: the file does not exist and is created on the first save. */
   isNew?: boolean
+  /** Scrolls to a line when `token` changes (Ctrl+click arriving at an export). */
+  reveal?: { line: number; column?: number; token: number } | null
+  /** Ctrl+click on an import: open the file with the export at this line. */
+  onOpenFileAt?: (path: string, line: number) => void
 }) {
   const [loaded, setLoaded] = useState<{ initial: string } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const handle = useRef<MonacoTextHandle | null>(null)
+  const rootRef = useRef(projectRoot)
+  rootRef.current = projectRoot
+  const openAtRef = useRef(onOpenFileAt)
+  openAtRef.current = onOpenFileAt
+  useEffect(() => {
+    if (languageForFile(path) === 'javascript') enableImportNavigation(api, () => rootRef.current, (p, l) => openAtRef.current?.(p, l))
+  }, [api, path])
   useEffect(() => registerFormatter(path, async () => void (await handle.current?.format())), [path])
   const scm = useScm()
   const [gutter, setGutter] = useState<Gutter | null>(null)
@@ -157,6 +171,7 @@ export function TextFileEditor({
             readOnly={readOnly}
             label={label}
             handleRef={handle}
+            reveal={reveal ?? undefined}
             onChange={(text) => {
               drafts.set(path, text)
               if (language === 'markdown') setMdText(text)

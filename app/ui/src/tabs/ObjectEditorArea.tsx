@@ -49,6 +49,7 @@ export function ObjectEditorArea({
   onDbChange,
   problems,
   reveal,
+  onOpenFileAt,
 }: {
   tab: EditorTab
   api: ForgeApi
@@ -71,6 +72,8 @@ export function ObjectEditorArea({
   /** Problems with a line of this object (squiggles in the Source tab). */
   problems?: Problem[]
   reveal?: { line: number; column?: number; token: number } | null
+  /** Ctrl+click on an import of a script: open the file where it is exported, at that line. */
+  onOpenFileAt?: (path: string, line: number) => void
 }) {
   const { node } = tab
   const tunnelShared = useTunnelState()
@@ -116,6 +119,8 @@ export function ObjectEditorArea({
           isNew={node.code?.isNew}
           drafts={drafts}
           onDirty={onFileDirty}
+          reveal={reveal}
+          onOpenFileAt={onOpenFileAt}
         />
       </Suspense>
     )

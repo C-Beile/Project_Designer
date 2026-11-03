@@ -4,6 +4,7 @@ import type { GitFileStatus, GitOutput, GitOverview } from '../wire/types'
 import { Modal } from './Dialogs'
 import { CommitDiffDialog } from './CommitDiffDialog'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
+import { openDialogWindow, osWindowsAvailable } from '../windows/windowService'
 import { Chevron, CollapseAllIcon, ExpandAllIcon, FileIcon, FolderIcon, ListToggleIcon } from './commitIcons'
 
 // Team menu: basic Git on the repository of the active project (commit, pull, push, switch
@@ -199,6 +200,13 @@ export function GitDialog({
     }
   }
 
+  // The changes of one file open as a window of their own, as in the original Designer.
+  const showChanges = (path: string) => {
+    if (osWindowsAvailable()) {
+      void openDialogWindow('commitdiff', `Diff for file ${path}`, { width: 1280, height: 760 }, { root: projectRoot, path }, { modal: false }).catch(() => setDiffPath(path))
+    } else setDiffPath(path)
+  }
+
   const messageIssue = /[\r\n]/.test(message) ? 'The message must be a single line.' : null
   const tree = useMemo(() => buildTree(overview?.files ?? []), [overview])
   const nameIssue = newName.trim() !== '' && !/^[A-Za-z0-9._/-]+$/.test(newName.trim()) ? 'Use letters, digits and _ - . / only.' : null
@@ -316,7 +324,7 @@ export function GitDialog({
                             }
                             return next
                           }),
-                        onFileMenu: (path, x, y) => (x < 0 ? setDiffPath(path) : setFileMenu({ path, x, y })),
+                        onFileMenu: (path, x, y) => (x < 0 ? showChanges(path) : setFileMenu({ path, x, y })),
                         onToggleCollapse: (path) =>
                           setCollapsed((prev) => {
                             const next = new Set(prev)
@@ -451,7 +459,7 @@ export function GitDialog({
           onPick={(id) => {
             const path = fileMenu.path
             setFileMenu(null)
-            if (id === 'show') setDiffPath(path)
+            if (id === 'show') showChanges(path)
             else if (id === 'revert') setRevertPath(path)
           }}
         />

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TunnelConfigEditor, copyText, isTunnelActive } from './TunnelConfigEditor'
@@ -22,6 +22,8 @@ function setup(db: DbStatus, onDbChange = vi.fn()) {
 }
 
 describe('TunnelConfigEditor', () => {
+  beforeEach(() => window.localStorage.setItem('forge.tunnelView', 'table'))
+
   it('shows the six columns and one row per tunnel', async () => {
     setup(down)
     expect(await screen.findByText('db.svc')).toBeInTheDocument()

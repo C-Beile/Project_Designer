@@ -218,18 +218,32 @@ pub fn read_system_alias_list(manager: &DbManager, server_ids: &[String]) -> Res
     Ok(out)
 }
 
+/// Order in which the configs of one alias (one row per server id: `default`, `dev`, `dev-bg` ...)
+/// are tried: the server ids of the system first, then every other specific one, `default` last
+/// (`default` describes the local developer setup, for example localhost).
+pub fn rank_server_ids(rows: &[(String, String)], wanted: &[String]) -> Vec<usize> {
+    let mut order: Vec<usize> = (0..rows.len()).collect();
+    order.sort_by_key(|&i| {
+        let id = rows[i].0.as_str();
+        let rank = wanted.iter().position(|w| w.eq_ignore_ascii_case(id)).unwrap_or(usize::MAX - 1);
+        let default_last = id.eq_ignore_ascii_case("default");
+        (rank, default_last, id.len(), id.to_ascii_lowercase())
+    });
+    order
+}
+
 /// Connection data of one database alias, read from the system database (session of `manager`).
+/// `server_ids` are the server ids of the system; its row wins over the other rows of the alias.
 /// The password stays in memory in the returned value and is never printed.
-pub fn read_alias_db(manager: &DbManager, alias_id: &str) -> Result<crate::db_session::DbAlias, String> {
+pub fn read_alias_db(manager: &DbManager, alias_id: &str, server_ids: &[String]) -> Result<crate::db_session::DbAlias, String> {
     if alias_id.is_empty() || !alias_id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
         return Err("The alias name contains characters that are not allowed.".into());
     }
-    let result = manager.query(&format!("SELECT CAST(XMLDATA AS CHAR) FROM ASYS_ALIASCONFIG WHERE ALIASID = '{alias_id}'"), false)?;
-    for row in &result.rows {
-        if let Some(Some(xml)) = row.first() {
-            if let Some(alias) = crate::system_config::alias_db_connection(xml) {
-                return Ok(alias);
-            }
+    let result = manager.query(&format!("SELECT COALESCE(SERVERID, ''), CAST(XMLDATA AS CHAR) FROM ASYS_ALIASCONFIG WHERE ALIASID = '{alias_id}'"), false)?;
+    let rows: Vec<(String, String)> = result.rows.iter().filter_map(|r| Some((r.first()?.clone().unwrap_or_default(), r.get(1)?.clone()?))).collect();
+    for i in rank_server_ids(&rows, server_ids) {
+        if let Some(alias) = crate::system_config::alias_db_connection(&rows[i].1) {
+            return Ok(alias);
         }
     }
     Err(format!("No connection data (host, database, user) found for {alias_id} in ASYS_ALIASCONFIG."))
@@ -638,5 +652,150 @@ mod tests {
         let bad = DbManager::default();
         bad.attach_connection(Box::new(failing), vec![]);
         assert!(bad.transaction(&statements).is_err());
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Deploy overview (read-only). The original Designer records every deploy in the row
+// `_____DEPLOY_META_INFOS` of ASYS_SYSTEM (author, time, project version) and keeps in
+// `dist/cache.txt` the time of the last transpile of every source file. A file whose time is newer
+// than the last deploy is a change the system does not have yet. The model rows themselves hold the
+// merged model (modules included), which is bigger than the file in `dist`, so `dist` is never
+// compared to those rows and never written into them.
+// ---------------------------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct LastDeploy {
+    pub author: Option<String>,
+    /// Milliseconds since 1970.
+    pub time_ms: Option<i64>,
+    pub designer_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct ChangedFile {
+    pub path: String,
+    pub changed_ms: i64,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct ChangedModel {
+    /// `<type folder>/<model name>`.
+    pub key: String,
+    pub files: Vec<ChangedFile>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct DeployOverview {
+    pub target: String,
+    pub last_deploy: Option<LastDeploy>,
+    pub changed: Vec<ChangedModel>,
+    /// Changed files that belong to no model (Liquibase scripts, configuration).
+    pub other_files: Vec<ChangedFile>,
+}
+
+fn meta_value(xml: &str, key_suffix: &str) -> Option<String> {
+    let mut rest = xml;
+    while let Some(k) = rest.find("<key>") {
+        let after = &rest[k + 5..];
+        let end = after.find("</key>")?;
+        let key = &after[..end];
+        let tail = &after[end + 6..];
+        if key.ends_with(key_suffix) {
+            let v = tail.find("<value>")?;
+            let tail = &tail[v + 7..];
+            let e = tail.find("</value>")?;
+            return Some(tail[..e].trim().to_string());
+        }
+        rest = tail;
+    }
+    None
+}
+
+pub fn parse_last_deploy(xml: &str) -> LastDeploy {
+    LastDeploy {
+        author: meta_value(xml, "deployAuthor"),
+        time_ms: meta_value(xml, "deployTime").and_then(|t| t.parse().ok()),
+        designer_version: meta_value(xml, "designer.project.version"),
+    }
+}
+
+/// Files of `dist/cache.txt` that were transpiled after `since_ms`, grouped by model.
+pub fn changed_since(cache_json: &str, since_ms: i64) -> Result<(Vec<ChangedModel>, Vec<ChangedFile>), String> {
+    let map: BTreeMap<String, i64> = serde_json::from_str(cache_json).map_err(|e| format!("dist/cache.txt is not readable: {e}"))?;
+    let mut models: BTreeMap<String, Vec<ChangedFile>> = BTreeMap::new();
+    let mut other = Vec::new();
+    for (path, ts) in map {
+        if ts <= since_ms {
+            continue;
+        }
+        let norm = path.replace('\\', "/");
+        let file = ChangedFile { path: norm.clone(), changed_ms: ts };
+        let parts: Vec<&str> = norm.split('/').collect();
+        if parts.len() >= 3 && !parts[0].starts_with('.') && !NON_MODEL_DIRS.contains(&parts[0]) {
+            models.entry(format!("{}/{}", parts[0], parts[1])).or_default().push(file);
+        } else {
+            other.push(file);
+        }
+    }
+    Ok((models.into_iter().map(|(key, files)| ChangedModel { key, files }).collect(), other))
+}
+
+/// Reads the last deploy of the connected system and lists what changed in the project since.
+/// Reads only (one SELECT); nothing is written.
+pub fn deploy_overview(manager: &DbManager, project_root: &Path) -> Result<DeployOverview, String> {
+    let target = manager.database_label().ok_or("Not connected. Open the tunnel in the Services tab first.")?;
+    let meta = manager.query("SELECT CAST(XMLDATA AS CHAR) FROM `ASYS_SYSTEM` WHERE `ID` = '_____DEPLOY_META_INFOS'", false)?;
+    let last_deploy = meta.rows.into_iter().next().and_then(|r| r.into_iter().next().flatten()).map(|x| parse_last_deploy(&x));
+    let cache = project_root.join("dist").join("cache.txt");
+    let json = std::fs::read_to_string(&cache).map_err(|_| "The project has no dist/cache.txt yet; run a transpile first.".to_string())?;
+    let since = last_deploy.as_ref().and_then(|l| l.time_ms).unwrap_or(0);
+    let (changed, other_files) = changed_since(&json, since)?;
+    Ok(DeployOverview { target, last_deploy, changed, other_files })
+}
+
+#[cfg(test)]
+mod deploy_overview_tests {
+    use super::*;
+
+    const META: &str = "<infos><entry><key>DefaultDeployMetaInfoProvider.deployAuthor</key>\r\n<value>ClemensBeile</value></entry><entry><key>DefaultDeployMetaInfoProvider.deployTime</key><value>1793695345880</value></entry></infos>";
+
+    #[test]
+    fn reads_author_and_time_of_the_last_deploy() {
+        let l = parse_last_deploy(META);
+        assert_eq!(l.author.as_deref(), Some("ClemensBeile"));
+        assert_eq!(l.time_ms, Some(1793695345880));
+    }
+
+    #[test]
+    fn lists_only_files_changed_after_the_deploy_grouped_by_model() {
+        let json = r#"{"preferences\\P\\P.aod": 1793695661283, "entity\\A\\a.js": 1793695400000, "entity\\B\\b.js": 1000, ".liquibase\\x\\y.xml": 1793695500000}"#;
+        let (models, other) = changed_since(json, 1793695345880).unwrap();
+        assert_eq!(models.iter().map(|m| m.key.as_str()).collect::<Vec<_>>(), vec!["entity/A", "preferences/P"]);
+        assert_eq!(other.len(), 1);
+    }
+}
+
+#[cfg(test)]
+mod alias_rank_tests {
+    use super::*;
+
+    fn rows(ids: &[&str]) -> Vec<(String, String)> {
+        ids.iter().map(|i| (i.to_string(), String::new())).collect()
+    }
+
+    #[test]
+    fn the_server_id_of_the_system_comes_first_and_default_last() {
+        let r = rows(&["default", "dev-bg", "dev"]);
+        let order = rank_server_ids(&r, &["dev".to_string()]);
+        assert_eq!(order.iter().map(|&i| r[i].0.as_str()).collect::<Vec<_>>(), vec!["dev", "dev-bg", "default"]);
+    }
+
+    #[test]
+    fn without_a_known_server_id_a_specific_row_still_beats_default() {
+        let r = rows(&["default", "dev-bg", "dev"]);
+        let order = rank_server_ids(&r, &[]);
+        assert_eq!(r[order[0]].0, "dev");
+        assert_eq!(r[order[2]].0, "default");
     }
 }
