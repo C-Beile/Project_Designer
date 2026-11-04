@@ -1,9 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { App } from './App'
 import { tauriForgeApi } from './api/tauriApi'
 import { withSqlLog } from './api/sqlLog'
-import { WindowRoot } from './windows/WindowRoot'
 import { installZoomControls } from './settings/zoom'
 import './styles.css'
 
@@ -17,13 +15,29 @@ const projectRoot = new URLSearchParams(window.location.search).get('project') ?
 const windowKind = new URLSearchParams(window.location.search).get('window')
 const windowName = new URLSearchParams(window.location.search).get('name') ?? ''
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    {windowKind ? <WindowRoot api={withSqlLog(tauriForgeApi)} kind={windowKind} name={windowName} /> : <App projectRoot={projectRoot} />}
-  </StrictMode>,
-)
+const root = createRoot(document.getElementById('root')!)
+
+// A dialog window only loads what the dialog needs: the whole application (editors, Monaco, the
+// project tree) is fetched by the main window alone, so Commit, Options and the other dialog
+// windows open quickly.
+if (windowKind) {
+  void import('./windows/WindowRoot').then(({ WindowRoot }) => {
+    root.render(
+      <StrictMode>
+        <WindowRoot api={withSqlLog(tauriForgeApi)} kind={windowKind} name={windowName} />
+      </StrictMode>,
+    )
+  })
+} else {
+  void import('./App').then(({ App }) => {
+    root.render(
+      <StrictMode>
+        <App projectRoot={projectRoot} />
+      </StrictMode>,
+    )
+    // Monaco's workers (syntax errors of JDito code) are prepared in the background, before the first editor opens.
+    void import('./theme/monacoWorkers').then((m) => m.ensureMonacoWorkers())
+  })
+}
 
 installZoomControls()
-
-// Monaco's workers (syntax errors of JDito code) are prepared in the background, before the first editor opens.
-void import('./theme/monacoWorkers').then((m) => m.ensureMonacoWorkers())

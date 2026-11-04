@@ -4910,3 +4910,136 @@ button.app-issues { background: none; border: none; cursor: pointer; text-decora
 .up-row input[type='text']:read-only { color: var(--fg-muted); }
 .up-row input[type='checkbox'] { margin: 0 8px; accent-color: var(--accent); }
 .up-row.is-changed { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+
+.up-listbox { position: relative; min-width: 0; }
+.up-list-button { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; min-height: 20px; padding: 1px 6px; background: transparent; color: var(--fg); border: 0; border-left: 1px solid var(--border); font: inherit; text-align: left; cursor: pointer; }
+.up-list-button span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.up-list-menu { position: absolute; left: 0; right: 0; top: 100%; z-index: 20; max-height: 220px; overflow: auto; background: var(--bg-panel); border: 1px solid var(--border); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
+.up-list-menu label { display: flex; align-items: center; gap: 8px; padding: 3px 8px; cursor: pointer; }
+.up-list-menu label:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+.users-reload:disabled { opacity: 0.4; cursor: default; }
+
+/* Code editors in the look of the Designer: flat, square suggestion list with the accent colour, a
+   quiet gutter and a thin scrollbar instead of the VS Code defaults. */
+.monaco-editor .suggest-widget { border-radius: 0; border: 1px solid var(--accent); background: var(--bg-panel); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4); }
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused { background: color-mix(in srgb, var(--accent) 38%, transparent); }
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row { border-radius: 0; }
+.monaco-editor .suggest-widget .details { border-radius: 0; border-color: var(--accent); }
+.monaco-editor .editor-widget, .monaco-editor .monaco-hover { border-radius: 0; }
+.monaco-editor .margin { background: color-mix(in srgb, var(--bg-panel) 70%, var(--bg-inset)); }
+.monaco-editor .line-numbers { color: var(--fg-muted); }
+.monaco-editor .current-line ~ .line-numbers, .monaco-editor .line-numbers.active-line-number { color: var(--accent); }
+.monaco-editor .monaco-scrollable-element > .scrollbar > .slider { border-radius: 0; background: color-mix(in srgb, var(--fg) 22%, transparent); }
+
+/* ADITO variables in script strings and calls, as in the original Designer. */
+.monaco-editor .adito-var { color: #cdbf3a !important; }
+.monaco-editor .adito-call { font-weight: 700; }
+:root[data-theme='light'] .monaco-editor .adito-var { color: #8a7a00 !important; }
+
+.icon-picker {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px;
+  gap: 8px;
+}
+
+.icon-picker-bar {
+  display: flex;
+  gap: 6px;
+}
+
+.icon-picker-bar input {
+  flex: 1;
+  min-width: 0;
+}
+
+.icon-picker-note {
+  margin: 0;
+  color: var(--fg-muted);
+}
+
+.icon-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 4px;
+  overflow: auto;
+  flex: 1;
+  align-content: start;
+}
+
+.icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 2px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.icon-cell:hover,
+.icon-cell.selected {
+  border-color: var(--accent, #4a90d9);
+  background: var(--bg-hover, rgba(255, 255, 255, 0.06));
+}
+
+.icon-cell-art svg {
+  width: 24px;
+  height: 24px;
+}
+
+.icon-cell-name {
+  font-size: 10px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A selected row keeps its selection colours and stays readable while the mouse is over it. */
+.sheet-table tbody tr.is-selected td,
+.sheet-table tbody tr.is-selected:hover td { background: var(--selected-bg); color: var(--selected-fg); }
+.sheet-table tr.is-selected .sheet-name,
+.sheet-table tr.is-selected .sheet-desc-cell,
+.sheet-table tr.is-selected .sheet-desc { color: var(--selected-fg); }
+.sheet-table tr.is-selected .sheet-value input[type="text"],
+.sheet-table tr.is-selected .sheet-value input[type="password"] { color: var(--selected-fg); }
+
+.forge-progress-bar { height: 10px; min-width: 280px; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.forge-progress-bar-fill { height: 100%; background: var(--brand-link); transition: width 0.25s ease; }
+
+/* Readability in every state: a dropdown, its options and the text of a selected or hovered row always keep
+   a readable pair of foreground and background, in every theme. */
+select { color: var(--fg); background-color: var(--bg-inset, var(--bg)); color-scheme: dark light; }
+option, optgroup { color: var(--fg); background-color: var(--bg-elevated, var(--bg)); }
+.preferences-editor .pref-row select { width: 100%; box-sizing: border-box; border: 1px solid color-mix(in srgb, var(--fg) 22%, transparent); border-radius: 3px; padding: 2px 4px; cursor: pointer; }
+.preferences-editor .is-selected select { background-color: color-mix(in srgb, var(--selected-fg) 14%, var(--selected-bg)); color: var(--selected-fg); border-color: color-mix(in srgb, var(--selected-fg) 55%, transparent); }
+.psheet-row.is-selected,
+.nav-row.is-selected,
+.alias-row.is-selected,
+.lang-row.is-selected,
+.tunnel-table tr.is-selected,
+.app-palette li.is-selected { color: var(--selected-fg, #fff); }
+.psheet-row.is-selected :is(.psheet-input, .psheet-ref, .psheet-linked, select),
+.psheet-row.is-selected .psheet-value { color: inherit; }
+.psheet-row.is-selected select { background-color: transparent; }
+.psheet-row.is-selected:hover,
+.nav-row.is-selected:hover,
+.alias-row.is-selected:hover,
+.lang-row.is-selected:hover,
+.preferences-editor .pref-row.is-selected:hover,
+.preferences-editor tbody tr.is-selected:hover { background: var(--selected-bg, var(--selection)); color: var(--selected-fg, #fff); }
+.preferences-editor .pref-row.is-selected:hover .pref-name { color: var(--selected-fg, #fff); }
+
+.icon-combo { position: relative; display: flex; align-items: center; width: 100%; min-width: 0; gap: 4px; }
+.icon-combo input { flex: 1 1 auto; min-width: 0; height: 17px; box-sizing: border-box; background: var(--bg-inset, var(--bg)); color: var(--fg); border: 1px solid var(--border); padding: 0 3px; font: inherit; }
+.icon-combo-art { display: inline-flex; width: 16px; height: 16px; flex: 0 0 16px; color: var(--fg); }
+.icon-combo-art svg { width: 16px; height: 16px; fill: currentColor; }
+.icon-combo-arrow { flex: 0 0 auto; height: 17px; padding: 0 4px; background: var(--bg-elevated, var(--bg)); color: var(--fg); border: 1px solid var(--border); cursor: pointer; }
+.icon-combo-list { position: absolute; z-index: 50; top: 100%; left: 0; right: 0; max-height: 260px; overflow: auto; margin: 0; padding: 0; list-style: none; background: var(--bg-elevated, var(--bg)); color: var(--fg); border: 1px solid var(--border-strong, var(--border)); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); }
+.icon-combo-list li { display: flex; align-items: center; gap: 6px; padding: 2px 6px; cursor: pointer; white-space: nowrap; }
+.icon-combo-list li:hover, .icon-combo-list li[aria-selected='true'] { background: var(--selected-bg); color: var(--selected-fg); }
+.icon-combo-list li:hover .icon-combo-art, .icon-combo-list li[aria-selected='true'] .icon-combo-art { color: var(--selected-fg); }

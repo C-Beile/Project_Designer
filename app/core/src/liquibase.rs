@@ -135,6 +135,15 @@ pub fn jdbc_url(local_port: u16, database: &str) -> String {
     format!("jdbc:mariadb://127.0.0.1:{local_port}/{database}")
 }
 
+/// The alias an alias definition belongs to (`<targetAliasName>`): a project alias such as
+/// `THHIT_Data_alias` is part of `Data_alias`, which owns the database and the master changelog.
+pub fn target_alias_of(aod_text: &str) -> Option<String> {
+    let start = aod_text.find("<targetAliasName>")? + "<targetAliasName>".len();
+    let end = aod_text[start..].find("</targetAliasName>")? + start;
+    let name = aod_text[start..end].trim();
+    if name.is_empty() { None } else { Some(name.to_string()) }
+}
+
 /// A changelog folder of an alias inside the project; the alias name is a plain file name.
 pub fn changelog_dir(project_root: &Path, alias: &str) -> Result<PathBuf, String> {
     if alias.is_empty() || !alias.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
@@ -246,6 +255,14 @@ mod tests {
         assert!(text.contains("password=p@ss\\=1\n"));
         assert!(text.contains("changeLogFile=C\\:/p/.liquibase/Data_alias/changelog.xml\n"));
         assert!(!format!("{target:?}").contains("p@ss"));
+    }
+
+    #[test]
+    fn a_project_alias_belongs_to_its_target_alias() {
+        let aod = "<aliasDefinition><aliasDefinitionSub><aliasDefDb><targetAliasName>Data_alias</targetAliasName></aliasDefDb></aliasDefinitionSub></aliasDefinition>";
+        assert_eq!(target_alias_of(aod).as_deref(), Some("Data_alias"));
+        assert_eq!(target_alias_of("<aliasDefinition/>"), None);
+        assert_eq!(target_alias_of("<a><targetAliasName> </targetAliasName></a>"), None);
     }
 
     #[test]

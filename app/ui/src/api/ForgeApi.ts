@@ -14,6 +14,7 @@ export interface ForgeApi {
   // The open-project list kept in Forge's settings (LAYOUT_SPEC §4.2): restored at start (only
   // folders that still exist), added to by Open Project, removed from by Close Project.
   restoreOpenProjects(): Promise<string[]>
+  listIcons(): Promise<IconDto[]>
   addOpenProject(path: string): Promise<string[]>
   removeOpenProject(path: string): Promise<string[]>
   getPropertyTree(nodeId: string): Promise<WireValue>
@@ -96,9 +97,13 @@ export interface ForgeApi {
   // Local data folders (Help > Local Data, Janitor list); read-only.
   localDataInfo(thresholdDays: number): Promise<LocalDataInfo>
   /** Database a Liquibase update of this alias would change; shown in the confirmation. */
-  liquibaseTarget(system: string | null, alias: string): Promise<LiquibaseTarget>
+  liquibaseTarget(system: string | null, alias: string, connectionAlias?: string | null): Promise<LiquibaseTarget>
+  /** Every database connection of the system, for the connection chooser. */
+  liquibaseConnections(system: string | null): Promise<LiquibaseConnection[]>
   /** Runs the changelogs of `.liquibase/<alias>` against the alias database; output goes to Output > Build. */
-  liquibaseUpdate(system: string | null, alias: string, projectRoot: string): Promise<string>
+  liquibaseUpdate(system: string | null, alias: string, projectRoot: string, connectionAlias?: string | null, useDist?: boolean): Promise<string>
+  /** The alias that owns the database and the master changelog of an alias definition. */
+  liquibasePlan(projectRoot: string, alias: string): Promise<LiquibasePlan>
   /** Newer release in the private update repository, or null when this version is current. */
   checkForUpdate(): Promise<UpdateInfo | null>
   /** Downloads and installs the newer release, then restarts the app. */
@@ -152,8 +157,17 @@ export interface ForgeApi {
   systemUsers(): Promise<TableDump>
   /** Properties of one user of the system database; secret ones without value. */
   systemUserProperties(user: string): Promise<UserPropertyDto[]>
+  systemAssignedRoles(): Promise<string[]>
   /** Writes one user property; only with `confirmed` set after the user said yes. */
   systemUserSetProperty(id: string, value: string, confirmed: boolean): Promise<void>
+  /** Sets one property of a user; a property the user does not have yet is added. */
+  systemUserSet(user: string, key: string, value: string, confirmed: boolean): Promise<void>
+  /** Replaces all values of a list property of a user (roleNames). */
+  systemUserSetList(user: string, key: string, values: string[], confirmed: boolean): Promise<void>
+  /** Adds a user and returns its id. */
+  systemUserCreate(title: string, confirmed: boolean): Promise<string>
+  /** Removes a user that was created in the Designer, with all of its properties. */
+  systemUserDelete(user: string, confirmed: boolean): Promise<void>
   systemAliasConfigs(): Promise<AliasConfigTable>
   // Alias config list of the system editor (one entry per alias, secrets never included).
   systemAliasList(serverIds: string[]): Promise<AliasConfigDto[]>
@@ -208,4 +222,23 @@ export interface ForgeApi {
   scmCommitFiles(projectRoot: string, hash: string): Promise<CommitFile[]>
   scmDiff(projectRoot: string, path: string, side: ScmDiffSide, hash: string | null): Promise<DiffContent>
   scmGutter(projectRoot: string, file: string): Promise<Gutter>
+}
+
+export interface IconDto {
+  id: string
+  svg: string
+}
+
+export interface LiquibaseConnection {
+  alias: string
+  host: string
+  port: number
+  database: string
+  /** A tunnel to the host is open. */
+  reachable: boolean
+}
+
+export interface LiquibasePlan {
+  target_alias: string
+  dist_ready: boolean
 }

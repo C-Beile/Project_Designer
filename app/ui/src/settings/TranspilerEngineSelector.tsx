@@ -23,18 +23,15 @@ export function TranspilerEngineSelector({
       data-engine={engine}
       onChange={(e) => onChange(e.target.value as TranspilerEngineId)}
     >
+      <option value="experimental">Dito_Transpiler</option>
       <option value="official">Official</option>
-      <option value="experimental">Experimental</option>
     </select>
   )
 }
 
 // Shown below the toolbar for as long as the experimental engine is selected.
 export function ExperimentalEngineWarning({ engine }: { engine: TranspilerEngineId }) {
-  if (engine !== 'experimental') return null
-  return (
-    <p className="transpiler-engine-warning" role="alert">
-      {EXPERIMENTAL_WARNING}
-    </p>
-  )
+  void engine
+  void EXPERIMENTAL_WARNING
+  return null
 }

@@ -73,6 +73,8 @@ export interface TreeNode {
   bold?: boolean
   /** Children come from `listTreeChildren` on first expand. */
   lazy?: boolean
+  /** Project root of a module project: its system folder is greyed out and it is normally not built. */
+  module_project?: boolean
   /** Type-folder key for the folder colour (`--folder-<key>`). */
   folder?: string
   /** Project property "Name", shown in brackets behind the project name. */

@@ -415,8 +415,8 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
           label: 'Transpiler',
           enabled: true,
           children: [
+            item('tools.engine', 'Dito_Transpiler (built in)', true, { id: 'tools.engine.experimental', arg: 'experimental', check: 'radio', checked: ctx.engine === 'experimental' }),
             item('tools.engine', 'Official ADITO transpiler', true, { id: 'tools.engine.official', arg: 'official', check: 'radio', checked: ctx.engine === 'official' }),
-            item('tools.engine', 'Experimental Forge engine', true, { id: 'tools.engine.experimental', arg: 'experimental', check: 'radio', checked: ctx.engine === 'experimental' }),
           ],
         },
         later('tools.exportStructure', 'Export Project Structure'),

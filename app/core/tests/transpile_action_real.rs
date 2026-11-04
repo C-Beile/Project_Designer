@@ -66,20 +66,20 @@ fn official_engine_transpiles_the_minimal_project_through_the_installed_app_path
 }
 
 #[test]
-fn missing_engine_param_runs_the_official_engine() {
+fn missing_engine_param_runs_the_built_in_engine() {
     let _serial = serial();
     let project = fresh_fixture_copy("default");
 
     let result = dispatch_action("transpile", project.to_string_lossy().into_owned(), official_params());
 
     assert_eq!(result, Ok(()));
-    assert!(project.join("dist").is_dir(), "the default must be the official engine, which writes dist/");
+    assert!(project.join("dist").is_dir(), "the default is the built-in Dito_Transpiler, which writes dist/");
     assert!(!project.join("_forge_experimental_dist").exists());
     let _ = std::fs::remove_dir_all(project);
 }
 
 #[test]
-fn experimental_engine_writes_its_own_output_and_never_dist() {
+fn built_in_engine_writes_dist_without_the_official_transpiler() {
     let _serial = serial();
     let project = fresh_fixture_copy("experimental");
     let mut params = HashMap::new();
@@ -88,7 +88,7 @@ fn experimental_engine_writes_its_own_output_and_never_dist() {
     let result = dispatch_action("transpile", project.to_string_lossy().into_owned(), params);
 
     assert_eq!(result, Ok(()));
-    assert!(project.join("_forge_experimental_dist").is_dir());
-    assert!(!project.join("dist").exists(), "the experimental engine never starts the official transpiler");
+    assert!(project.join("dist").is_dir());
+    assert!(!project.join("_forge_experimental_dist").exists());
     let _ = std::fs::remove_dir_all(project);
 }

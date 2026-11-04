@@ -1,25 +1,50 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
-import type { ChangedFile, DeployOverview } from '../wire/types'
+import type { DeployChangeView, DeployOverview, DeployPlan, DeployPlanItem } from '../wire/types'
 import { Modal } from './Dialogs'
 
-// Deploy dialog: fetches the system database and shows what the last deploy was and which files of
-// the project changed since, grouped by model. Reading only: the model rows of the system hold the
-// merged model (modules included), which only the original Designer builds, so Dito Designer does
-// not write them and the Deploy button stays off.
+// Deploy review: before anything is written, the window compares the transpiled project (`dist`)
+// with the model table of the system and lists exactly what a deploy would do - models to add,
+// models that changed and models that exist on the system but no longer in the project. Only what
+// differs is ever written (one transaction); unchanged models are not touched. Deleting is never
+// pre-selected because the system may hold models this project does not own.
 
 const when = (ms: number) => new Date(ms).toLocaleString()
 
-function FileList({ files }: { files: ChangedFile[] }) {
+const GROUPS: { op: DeployPlanItem['op']; title: string; hint?: string }[] = [
+  { op: 'I', title: 'Added' },
+  { op: 'U', title: 'Changed' },
+  { op: 'D', title: 'Deleted from the system', hint: 'Not selected by default: the system may hold models that do not belong to this project.' },
+]
+
+/** Lines that exist on one side only, in file order: a compact picture of what changed. */
+export function changedLines(remote: string | null, local: string | null): { removed: string[]; added: string[] } {
+  const lines = (text: string | null) => (text ?? '').split(/\r?\n/)
+  const remoteLines = lines(remote)
+  const localLines = lines(local)
+  const remoteSet = new Set(remoteLines)
+  const localSet = new Set(localLines)
+  return {
+    removed: remoteLines.filter((l) => !localSet.has(l) && l.trim() !== ''),
+    added: localLines.filter((l) => !remoteSet.has(l) && l.trim() !== ''),
+  }
+}
+
+function Changes({ view }: { view: DeployChangeView }) {
+  const { removed, added } = changedLines(view.remote, view.local)
+  const cap = 200
   return (
-    <ul className="forge-deploy-files">
-      {files.map((f) => (
-        <li key={f.path}>
-          <span className="forge-deploy-file">{f.path}</span>
-          <span className="forge-field-hint">{when(f.changed_ms)}</span>
-        </li>
-      ))}
-    </ul>
+    <div className="forge-deploy-diff" aria-label="Changes of the model">
+      {view.remote === null ? <p className="forge-field-hint">New on the system.</p> : null}
+      {view.local === null ? <p className="forge-field-hint">Removed from the project.</p> : null}
+      {removed.length === 0 && added.length === 0 ? <p className="forge-field-hint">No line differs.</p> : null}
+      {removed.length > 0 ? (
+        <pre className="forge-deploy-op-D">{removed.slice(0, cap).map((l) => `- ${l}`).join('\n')}{removed.length > cap ? `\n... ${removed.length - cap} more` : ''}</pre>
+      ) : null}
+      {added.length > 0 ? (
+        <pre className="forge-deploy-op-I">{added.slice(0, cap).map((l) => `+ ${l}`).join('\n')}{added.length > cap ? `\n... ${added.length - cap} more` : ''}</pre>
+      ) : null}
+    </div>
   )
 }
 
@@ -27,8 +52,10 @@ export function DeployDialog({
   api,
   projectRoot,
   systemName,
+  initialForce,
   warning,
   onClose,
+  onDeployed,
 }: {
   api: ForgeApi
   projectRoot: string
@@ -42,42 +69,104 @@ export function DeployDialog({
   onDeployed?: (message: string) => void
 }) {
   const [overview, setOverview] = useState<DeployOverview | null>(null)
+  const [plan, setPlan] = useState<DeployPlan | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [force, setForce] = useState(initialForce === true)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [open, setOpen] = useState<Record<string, DeployChangeView | 'loading'>>({})
 
-  const fetchOverview = useCallback(async () => {
+  const fetchPlan = useCallback(async () => {
     setBusy(true)
     setError(null)
+    setConfirming(false)
+    setOpen({})
     try {
-      setOverview(await api.deployOverview(projectRoot))
+      const [p, o] = await Promise.all([api.deployPlan(projectRoot, force, null), api.deployOverview(projectRoot).catch(() => null)])
+      setPlan(p)
+      setOverview(o)
+      setSelected(new Set(p.items.filter((i) => i.selected_by_default).map((i) => i.key)))
     } catch (e) {
-      setOverview(null)
+      setPlan(null)
       setError(e instanceof Error ? e.message : String(e))
     } finally {
       setBusy(false)
     }
-  }, [api, projectRoot])
+  }, [api, projectRoot, force])
 
   useEffect(() => {
-    void fetchOverview()
-  }, [fetchOverview])
+    void fetchPlan()
+  }, [fetchPlan])
 
-  const cloud = warning ? false : overview ? /cloud/i.test(overview.target) : false
+  const chosen = useMemo(() => (plan ? plan.items.filter((i) => selected.has(i.key)) : []), [plan, selected])
+  const count = (op: DeployPlanItem['op']) => chosen.filter((i) => i.op === op).length
+  const cloud = warning ? false : plan ? /cloud/i.test(plan.target) : false
   const last = overview?.last_deploy ?? null
+
+  const toggle = (key: string) =>
+    setSelected((s) => {
+      const next = new Set(s)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+
+  const showChanges = async (key: string) => {
+    if (open[key] && open[key] !== 'loading') {
+      setOpen(({ [key]: _gone, ...rest }) => rest)
+      return
+    }
+    setOpen((o) => ({ ...o, [key]: 'loading' }))
+    try {
+      const view = await api.deployShowChanges(projectRoot, key, null)
+      setOpen((o) => ({ ...o, [key]: view }))
+    } catch (e) {
+      setOpen(({ [key]: _gone, ...rest }) => rest)
+      setError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  const deploy = async () => {
+    if (!plan) return
+    setBusy(true)
+    setError(null)
+    try {
+      const outcome = await api.deployExecute(projectRoot, chosen.map((i) => i.key), force, null, true)
+      onDeployed?.(`Deployed ${outcome.executed} model${outcome.executed === 1 ? '' : 's'} to ${outcome.target}`)
+      onClose()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+      setConfirming(false)
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <Modal
       title="Deploy"
       onClose={onClose}
       footer={
-        <>
-          <button type="button" disabled title="Not available: the model rows of the system hold the merged model, which only the original Designer can build. Deploy there.">
-            Deploy
-          </button>
-          <button type="button" onClick={onClose}>
-            Cancel
-          </button>
-        </>
+        confirming ? (
+          <>
+            <button type="button" onClick={() => void deploy()} disabled={busy}>
+              {busy ? 'Deploying…' : 'Yes, deploy now'}
+            </button>
+            <button type="button" onClick={() => setConfirming(false)} disabled={busy}>
+              Back
+            </button>
+          </>
+        ) : (
+          <>
+            <button type="button" onClick={() => setConfirming(true)} disabled={busy || chosen.length === 0}>
+              Deploy{chosen.length > 0 ? ` (${chosen.length})` : ''}
+            </button>
+            <button type="button" onClick={onClose}>
+              Cancel
+            </button>
+          </>
+        )
       }
     >
       <div className="forge-deploy">
@@ -91,13 +180,13 @@ export function DeployDialog({
           <label className="forge-field">
             <span>System:</span>
             <select aria-label="System" disabled value="s">
-              <option value="s">{systemName ?? (overview ? overview.target : '…')}</option>
+              <option value="s">{systemName ?? (plan ? plan.target : '…')}</option>
             </select>
           </label>
         </div>
-        {overview ? (
+        {plan ? (
           <p className="forge-deploy-target">
-            System database: <strong>{overview.target}</strong>
+            System database: <strong>{plan.target}</strong>
           </p>
         ) : null}
         {cloud ? (
@@ -116,7 +205,7 @@ export function DeployDialog({
           </p>
         ) : null}
 
-        {overview ? (
+        {plan ? (
           <>
             <section className="forge-deploy-last" aria-label="Last deploy">
               <h4>Last deploy</h4>
@@ -127,51 +216,64 @@ export function DeployDialog({
                   {last.designer_version ? ` (project version ${last.designer_version})` : ''}
                 </p>
               ) : (
-                <p className="forge-field-hint">This system has no deploy information yet; every file counts as changed.</p>
+                <p className="forge-field-hint">This system has no deploy information yet.</p>
               )}
             </section>
 
-            <section aria-label="Changes since the last deploy">
+            <section aria-label="Planned changes">
               <h4>
-                Changed since the last deploy: {overview.changed.length} model{overview.changed.length === 1 ? '' : 's'}
+                {plan.items.length === 0
+                  ? 'Nothing to deploy'
+                  : `Planned changes: ${plan.items.filter((i) => i.op === 'I').length} added, ${plan.items.filter((i) => i.op === 'U').length} changed, ${plan.items.filter((i) => i.op === 'D').length} deleted`}
               </h4>
-              {overview.changed.length === 0 ? (
-                <p className="forge-field-hint">The system database is up to date with your last transpile.</p>
-              ) : (
-                <ul className="forge-deploy-list" aria-label="Changed models">
-                  {overview.changed.map((m) => (
-                    <li key={m.key}>
-                      <details>
-                        <summary>
-                          <span className="forge-deploy-op forge-deploy-op-U">U</span>
-                          <span>{m.key}</span>
-                          <span className="forge-field-hint">
-                            {' '}
-                            {m.files.length} file{m.files.length === 1 ? '' : 's'}
-                          </span>
-                        </summary>
-                        <FileList files={m.files} />
-                      </details>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {overview.other_files.length > 0 ? (
-                <details>
-                  <summary>Other changed files ({overview.other_files.length})</summary>
-                  <FileList files={overview.other_files} />
-                </details>
-              ) : null}
+              {plan.items.length === 0 ? <p className="forge-field-hint">The system already has exactly what your last transpile produced.</p> : null}
+              {GROUPS.map((group) => {
+                const items = plan.items.filter((i) => i.op === group.op)
+                if (items.length === 0) return null
+                return (
+                  <div key={group.op} aria-label={group.title}>
+                    <h4>
+                      {group.title} ({items.length})
+                    </h4>
+                    {group.hint ? <p className="forge-field-hint">{group.hint}</p> : null}
+                    <ul className="forge-deploy-list">
+                      {items.map((item) => (
+                        <li key={item.key}>
+                          <label>
+                            <input type="checkbox" aria-label={item.key} checked={selected.has(item.key)} onChange={() => toggle(item.key)} />
+                            <span className={`forge-deploy-op forge-deploy-op-${item.op}`}>{item.op}</span>
+                            <span>{item.key}</span>
+                          </label>
+                          {item.op !== 'D' ? (
+                            <button type="button" className="forge-link" onClick={() => void showChanges(item.key)} aria-label={`Show changes of ${item.key}`}>
+                              {open[item.key] ? 'Hide changes' : 'Show changes'}
+                            </button>
+                          ) : null}
+                          {open[item.key] && open[item.key] !== 'loading' ? <Changes view={open[item.key] as DeployChangeView} /> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })}
             </section>
           </>
         ) : null}
 
+        {confirming ? (
+          <p className="forge-field-error" role="alert">
+            Deploy {chosen.length} model{chosen.length === 1 ? '' : 's'} ({count('I')} added, {count('U')} changed, {count('D')} deleted) to {plan?.target}? This writes into the system database.
+          </p>
+        ) : null}
+
         <div className="forge-deploy-actions">
-          <button type="button" onClick={() => void fetchOverview()} disabled={busy}>
-            {busy ? 'Fetching…' : 'Fetch again'}
+          <label className="forge-field">
+            <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} disabled={busy} /> <span>Deploy all models, also unchanged ones</span>
+          </label>
+          <button type="button" onClick={() => void fetchPlan()} disabled={busy}>
+            {busy ? 'Comparing…' : 'Compare again'}
           </button>
         </div>
-        <p className="forge-field-hint">Dito Designer shows the changes but does not write into the system database. Deploy with the original Designer.</p>
       </div>
     </Modal>
   )

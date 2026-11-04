@@ -23,6 +23,8 @@ pub mod crashlog;
 pub mod watch;
 pub mod alias_validators;
 pub mod catalog;
+pub mod icons;
+pub mod deploy_encode;
 pub mod db_session;
 pub mod liquibase;
 pub mod system_config;

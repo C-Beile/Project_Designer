@@ -617,6 +617,15 @@ impl DbManager {
     }
 
     pub fn query(&self, sql: &str, allow_write: bool) -> Result<SqlResult, String> {
+        self.query_limited(sql, allow_write, Some(MAX_ROWS))
+    }
+
+    /// A read that returns every row: the deploy has to compare the whole system table, so it must not be cut at the row cap of the SQL window.
+    pub fn query_all(&self, sql: &str) -> Result<SqlResult, String> {
+        self.query_limited(sql, false, None)
+    }
+
+    fn query_limited(&self, sql: &str, allow_write: bool, limit: Option<usize>) -> Result<SqlResult, String> {
         if !allow_write && !is_read_only(sql) {
             return Err("Read-only mode: only a single SELECT, SHOW, DESCRIBE or EXPLAIN statement is allowed. Enable writing explicitly to run other statements.".into());
         }
@@ -626,8 +635,9 @@ impl DbManager {
         let rt = s.runtime.as_ref().ok_or("Not connected.")?;
         let started = Instant::now();
         let result = rt.block_on(s.conn.execute_query(sql)).map_err(|e| scrub(&e.to_string(), &s.secret_refs()))?;
-        let truncated = result.rows.len() > MAX_ROWS;
-        let rows = result.rows.iter().take(MAX_ROWS).map(|r| r.iter().map(display).collect()).collect();
+        let cap = limit.unwrap_or(usize::MAX);
+        let truncated = result.rows.len() > cap;
+        let rows = result.rows.iter().take(cap).map(|r| r.iter().map(display).collect()).collect();
         Ok(SqlResult { columns: result.columns, rows, truncated, elapsed_ms: started.elapsed().as_millis() as u64 })
     }
 

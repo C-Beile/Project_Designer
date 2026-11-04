@@ -77,9 +77,14 @@ pub struct IncrementalReport {
 }
 
 /// Raised whenever the output of the engine changes for the same sources (new or changed stage).
-const ENGINE_REVISION: u32 = 10;
+const ENGINE_REVISION: u32 = 25;
 
 fn cache_dir(project_home: &Path) -> PathBuf {
+    // A test harness can keep the cache outside of the project (read-only repositories, many projects).
+    if let Some(base) = std::env::var_os("FORGE_INCREMENTAL_CACHE_DIR") {
+        let name = project_home.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        return PathBuf::from(base).join(name);
+    }
     project_home.join(CACHE_DIR_NAME)
 }
 
@@ -201,7 +206,9 @@ fn copy_tree_verbatim(src: &Path, dest: &Path) -> std::io::Result<()> {
 /// all. On a miss, runs the full pipeline (identical to `LinkedFilesEngine`) and refreshes the
 /// cache for next time.
 pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<IncrementalReport, IncrementalError> {
+    crate::own_engine::progress::report(1, "Reading the modules");
     let graph = resolve_module_graph(project_home).map_err(|e| IncrementalError::Resolve(e.to_string()))?;
+    crate::own_engine::progress::report(4, "Checking what changed");
     let (manifest, files_scanned) = compute_manifest(&graph, project_home, output_dir)?;
 
     let manifest_file = manifest_file_path(project_home);
@@ -209,6 +216,7 @@ pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<Increme
     let previous_manifest = fs::read_to_string(&manifest_file).ok();
 
     if previous_manifest.as_deref() == Some(manifest.as_str()) && snapshot.is_dir() {
+        crate::own_engine::progress::report(30, "Nothing changed, taking over the last result");
         fs::create_dir_all(output_dir).map_err(|source| IncrementalError::Cache { path: output_dir.to_path_buf(), source })?;
         copy_tree_verbatim(&snapshot, output_dir).map_err(|source| IncrementalError::Cache { path: snapshot.clone(), source })?;
         return Ok(IncrementalReport { cache_hit: true, manifest_files_scanned: files_scanned });
@@ -222,11 +230,18 @@ pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<Increme
             eprintln!("  modification failure {}: {reason}", file.display());
         }
     }
+    crate::own_engine::progress::report(66, "Resolving the extension points");
     crate::own_engine::run_extension_point_resolution(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    crate::own_engine::progress::report(72, "Moving modifications to their objects");
     crate::own_engine::run_modification_relocation(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    crate::own_engine::progress::report(78, "Inlining the services");
+    crate::own_engine::run_service_inline(project_home, output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
     // The modification files are consumed: the reference output has no `modification/` folder.
     let _ = fs::remove_dir_all(output_dir.join("modification"));
+    crate::own_engine::progress::report(90, "Merging the aliases");
     crate::own_engine::run_alias_merge(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    crate::own_engine::run_preferences_merge(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    crate::own_engine::progress::report(94, "Merging the languages");
     crate::own_engine::run_language_merge(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
     // The reference transpiler of this ADITO version keeps the `%aditoprj%/...` references in the
     // `.aod` files as they are (verified against a clean reference run), so nothing is inlined.

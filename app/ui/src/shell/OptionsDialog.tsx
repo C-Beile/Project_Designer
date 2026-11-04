@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { Modal } from './Dialogs'
 import { getOptions, saveOptions, type DesignerOptions } from '../settings/options'
-import { ENGINE_LABELS, EXPERIMENTAL_WARNING, type TranspilerEngineId } from '../settings/transpilerEngine'
+import { ENGINE_LABELS, type TranspilerEngineId } from '../settings/transpilerEngine'
 import { getEditorPrefs, setEditorPref, type EditorPrefs } from '../theme/editorPrefs'
 import type { ThemeName } from '../theme/useTheme'
 import { formatShortcut, isMacPlatform } from './shortcuts'
@@ -472,18 +472,13 @@ export function OptionsDialog({
           <p className="forge-field-hint">Leave empty to use the automatically detected installation for each transpile.</p>
           <fieldset className="forge-opt-group">
             <legend>Transpiler</legend>
-            {(['official', 'experimental'] as const).map((id) => (
+            {(['experimental', 'official'] as const).map((id) => (
               <label key={id} className="forge-check">
                 <input type="radio" name="engine" checked={engineChoice === id} onChange={() => setEngineChoice(id)} />
                 <span>{ENGINE_LABELS[id]}</span>
               </label>
             ))}
-            {engineChoice === 'experimental' ? (
-              <p className="forge-field-error" role="note">
-                {EXPERIMENTAL_WARNING}
-              </p>
-            ) : null}
-            <p className="forge-field-hint">The choice applies to this session only; every start begins with the official transpiler.</p>
+            <p className="forge-field-hint">The Dito_Transpiler works without the ADITO Designer. The choice applies to this session only; every start begins with the Dito_Transpiler.</p>
           </fieldset>
           <fieldset className="forge-opt-group">
             <legend>Dialogs</legend>

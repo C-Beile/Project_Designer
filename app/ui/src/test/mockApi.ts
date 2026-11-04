@@ -111,6 +111,13 @@ export function createMockForgeApi(options: {
     async listTreeChildren(nodeId) {
       return options.lazyChildren?.[nodeId] ?? []
     },
+    async listIcons() {
+      return [
+        { id: 'VAADIN:HOME', svg: '<svg viewBox="0 0 16 16"><path d="M8 1l7 7H1z" fill="currentColor"/></svg>' },
+        { id: 'VAADIN:BELL', svg: '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="currentColor"/></svg>' },
+        { id: 'NEON:IMPORT', svg: '<svg viewBox="0 0 16 16"><rect width="12" height="12" x="2" y="2" fill="currentColor"/></svg>' },
+      ]
+    },
     async restoreOpenProjects() {
       return [...openProjects]
     },
@@ -301,6 +308,12 @@ export function createMockForgeApi(options: {
     async findUsages() {
       return options.usages ?? []
     },
+    async liquibaseConnections() {
+      return [{ alias: 'Data_alias', host: 'db.example', port: 3306, database: 'cloud_data_alias', reachable: true }]
+    },
+    async liquibasePlan(_root, alias) {
+      return { target_alias: alias, dist_ready: true }
+    },
     async liquibaseTarget(system, alias) {
       liquibaseCalls.push(`target:${alias}`)
       return { system: system ?? 'C:/demo|dev1', host: 'db.example', database: 'cloud_data' }
@@ -444,10 +457,19 @@ export function createMockForgeApi(options: {
     async dbSchema() {
       return options.dbTables ?? []
     },
+    async systemAssignedRoles() {
+      return ['INTERNAL_ADMINISTRATOR', 'INTERNAL_EVERYONE', 'INTERNAL_TECHNICAL', 'INTERNAL_WEBSERVICE']
+    },
     async systemUserProperties() {
       return []
     },
     async systemUserSetProperty() {},
+    async systemUserSet() {},
+    async systemUserSetList() {},
+    async systemUserCreate() {
+      return '_____USER_new'
+    },
+    async systemUserDelete() {},
     async systemUsers() {
       if (!db.connected) throw new Error('Not connected.')
       return options.systemUsers ?? { columns: [], rows: [], hidden_columns: [], truncated: false }

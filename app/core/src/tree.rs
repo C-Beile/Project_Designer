@@ -14,7 +14,7 @@
 //! `<neonViewReference>`, `<variants>`, `<publishAsWebservice>`, the modification envelope);
 //! nothing here ever writes, and everything under `node_modules` is reported read-only.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -124,6 +124,9 @@ pub struct TreeNode {
     /// Children are fetched on expand via `list_tree_children` (file trees can be huge).
     #[serde(skip_serializing_if = "is_false")]
     pub lazy: bool,
+    /// Project root of a module project (`adito.type` is `module` in its package.json).
+    #[serde(skip_serializing_if = "is_false")]
+    pub module_project: bool,
     /// Type folder key (`context`, `entity`, ...) for the folder colour.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub folder: Option<String>,
@@ -171,13 +174,14 @@ struct PackageScan {
     incomplete_systems: Vec<(String, PathBuf)>,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 struct ContextInfo {
     entity: Option<String>,
     /// `(reference name, view name)` in file order.
     views: Vec<(String, String)>,
 }
 
+#[derive(Serialize, Deserialize)]
 struct Modification {
     position: i64,
     change: String,
@@ -356,14 +360,221 @@ fn scan_package(pkg: &Package) -> PackageScan {
     scan
 }
 
+// ---------------------------------------------------------------------------------------------
+// Persistent module scan cache
+//
+// Opening a project reads thousands of small files out of its installed modules. Installed modules
+// never change in place (a different version is a different folder state), so their scan result is
+// remembered on disk and only re-read when the module's folder stamps differ. The project's own
+// objects and linked (symlinked) modules are always read fresh.
+
+const SCAN_CACHE_FORMAT: u32 = 1;
+
+#[derive(Serialize, Deserialize)]
+struct StoredScan {
+    objects: Vec<(String, String, String)>,
+    contexts: HashMap<String, ContextInfo>,
+    process_groups: HashMap<String, String>,
+    modifications: Vec<Modification>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct CacheEntry {
+    key: String,
+    scan: StoredScan,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+struct ScanCacheFile {
+    format: u32,
+    entries: HashMap<String, CacheEntry>,
+}
+
+fn store_scan(scan: &PackageScan) -> StoredScan {
+    StoredScan {
+        objects: scan.objects.iter().map(|(f, n, p)| ((*f).to_string(), n.clone(), p.to_string_lossy().into_owned())).collect(),
+        contexts: scan.contexts.clone(),
+        process_groups: scan.process_groups.iter().map(|(k, v)| (k.clone(), (*v).to_string())).collect(),
+        modifications: scan
+            .modifications
+            .iter()
+            .map(|m| Modification {
+                position: m.position,
+                change: m.change.clone(),
+                model_type: m.model_type.clone(),
+                model_name: m.model_name.clone(),
+                path: m.path.clone(),
+                view_reference: m.view_reference.clone(),
+            })
+            .collect(),
+    }
+}
+
+/// None when the stored data names a folder or process group this build does not know.
+fn restore_scan(stored: &StoredScan) -> Option<PackageScan> {
+    let mut scan = PackageScan::default();
+    for (folder, name, aod) in &stored.objects {
+        let folder = SCANNED_FOLDERS.iter().find(|f| *f == folder)?;
+        scan.objects.push((folder, name.clone(), PathBuf::from(aod)));
+    }
+    scan.contexts = stored.contexts.clone();
+    for (name, group) in &stored.process_groups {
+        let group = PROCESS_GROUPS.iter().find(|g| *g == group)?;
+        scan.process_groups.insert(name.clone(), group);
+    }
+    for m in &stored.modifications {
+        scan.modifications.push(Modification {
+            position: m.position,
+            change: m.change.clone(),
+            model_type: m.model_type.clone(),
+            model_name: m.model_name.clone(),
+            path: m.path.clone(),
+            view_reference: m.view_reference.clone(),
+        });
+    }
+    Some(scan)
+}
+
+fn scan_cache_dir() -> Option<PathBuf> {
+    if std::env::var_os("FORGE_TREE_CACHE").is_some_and(|v| v == "off") {
+        return None;
+    }
+    if let Some(dir) = std::env::var_os("FORGE_TREE_CACHE_DIR") {
+        return Some(PathBuf::from(dir));
+    }
+    let base = std::env::var_os("LOCALAPPDATA").or_else(|| std::env::var_os("XDG_CACHE_HOME")).map(PathBuf::from).or_else(|| {
+        std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache"))
+    })?;
+    Some(base.join("DitoDesigner").join("tree-cache"))
+}
+
+fn stable_hash(text: &str) -> u64 {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for b in text.bytes() {
+        hash ^= u64::from(b);
+        hash = hash.wrapping_mul(0x0100_0000_01b3);
+    }
+    hash
+}
+
+fn scan_cache_file(project_root: &Path) -> Option<PathBuf> {
+    let key = forward(project_root).to_lowercase();
+    Some(scan_cache_dir()?.join(format!("scan-{:016x}.json", stable_hash(&key))))
+}
+
+fn load_scan_cache(file: &Path) -> ScanCacheFile {
+    fs::read(file)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice::<ScanCacheFile>(&bytes).ok())
+        .filter(|c| c.format == SCAN_CACHE_FORMAT)
+        .unwrap_or_default()
+}
+
+fn save_scan_cache(file: &Path, cache: &ScanCacheFile) {
+    let Some(dir) = file.parent() else { return };
+    if fs::create_dir_all(dir).is_err() {
+        return;
+    }
+    let Ok(bytes) = serde_json::to_vec(cache) else { return };
+    let tmp = file.with_extension("json.tmp");
+    if fs::write(&tmp, bytes).is_ok() && fs::rename(&tmp, file).is_err() {
+        let _ = fs::remove_file(&tmp);
+    }
+}
+
+fn stamp(path: &Path) -> String {
+    match fs::metadata(path) {
+        Ok(md) => {
+            let nanos = md
+                .modified()
+                .ok()
+                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|d| d.as_nanos())
+                .unwrap_or(0);
+            format!("{}:{nanos}", md.len())
+        }
+        Err(_) => "-".to_string(),
+    }
+}
+
+/// Fingerprint of an installed module; None for anything that must always be read fresh.
+fn package_key(pkg: &Package) -> Option<String> {
+    if pkg.is_project || !is_under_node_modules(&pkg.dir) {
+        return None;
+    }
+    let link = fs::symlink_metadata(&pkg.dir).ok()?;
+    if link.file_type().is_symlink() {
+        return None;
+    }
+    let mut key = format!("{}|{}", pkg.coordinate, stamp(&pkg.dir.join("package.json")));
+    for folder in SCANNED_FOLDERS {
+        key.push('|');
+        key.push_str(&stamp(&pkg.dir.join(folder)));
+    }
+    key.push('|');
+    key.push_str(&stamp(&pkg.dir.join("modification")));
+    Some(key)
+}
+
 /// Scans all packages in parallel - Pichler has ~130 modules and several thousand files to touch.
-fn scan_packages(packages: &[Package]) -> Vec<PackageScan> {
+/// Installed modules whose fingerprint matches the persisted cache are not read again.
+fn scan_packages(project_root: &Path, packages: &[Package]) -> Vec<PackageScan> {
+    let cache_file = scan_cache_file(project_root);
+    let cached = cache_file.as_deref().map(load_scan_cache).unwrap_or_default();
     let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).clamp(1, 16);
     let chunk = packages.len().div_ceil(threads).max(1);
-    std::thread::scope(|s| {
-        let handles: Vec<_> = packages.chunks(chunk).map(|c| s.spawn(move || c.iter().map(scan_package).collect::<Vec<_>>())).collect();
+    let cached_ref = &cached;
+    let results: Vec<(PackageScan, Option<(String, String, StoredScan)>)> = std::thread::scope(|s| {
+        let handles: Vec<_> = packages
+            .chunks(chunk)
+            .map(|c| {
+                s.spawn(move || {
+                    c.iter()
+                        .map(|pkg| {
+                            let dir_key = forward(&pkg.dir);
+                            let key = package_key(pkg);
+                            if let (Some(key), Some(entry)) = (&key, cached_ref.entries.get(&dir_key)) {
+                                if &entry.key == key {
+                                    if let Some(scan) = restore_scan(&entry.scan) {
+                                        return (scan, None);
+                                    }
+                                }
+                            }
+                            let scan = scan_package(pkg);
+                            let fresh = key.map(|k| (dir_key, k, store_scan(&scan)));
+                            (scan, fresh)
+                        })
+                        .collect::<Vec<_>>()
+                })
+            })
+            .collect();
         handles.into_iter().flat_map(|h| h.join().unwrap_or_default()).collect()
-    })
+    });
+
+    let mut scans = Vec::with_capacity(results.len());
+    let mut fresh_entries = Vec::new();
+    for (scan, fresh) in results {
+        scans.push(scan);
+        if let Some(entry) = fresh {
+            fresh_entries.push(entry);
+        }
+    }
+    if let Some(file) = cache_file {
+        if !fresh_entries.is_empty() {
+            let mut next = ScanCacheFile { format: SCAN_CACHE_FORMAT, entries: HashMap::new() };
+            let current: BTreeSet<String> = packages.iter().map(|p| forward(&p.dir)).collect();
+            for (dir, entry) in cached.entries {
+                if current.contains(&dir) {
+                    next.entries.insert(dir, entry);
+                }
+            }
+            for (dir, key, scan) in fresh_entries {
+                next.entries.insert(dir, CacheEntry { key, scan });
+            }
+            save_scan_cache(&file, &next);
+        }
+    }
+    scans
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -640,7 +851,8 @@ pub fn scan_project_tree_with(project_root: &Path, preference_files: &[PathBuf])
     }
 
     let packages = collect_packages(project_root);
-    let scans = scan_packages(&packages);
+    let module_project = module_graph::model::parse_package_json(&project_root.join("package.json")).map(|d| d.adito_type == module_graph::AditoType::Module).unwrap_or(false);
+    let scans = scan_packages(project_root, &packages);
 
     let mut model = Model { packages: &packages, objects: HashMap::new(), modified_by: HashMap::new() };
     let mut contexts: HashMap<String, ContextInfo> = HashMap::new();
@@ -680,7 +892,16 @@ pub fn scan_project_tree_with(project_root: &Path, preference_files: &[PathBuf])
     for (label, disk_folders) in TREE_FOLDERS {
         let id = format!("folder:{root_id}|{label}");
         let node = match *label {
-            "system" => TreeNode::folder(id, label, label, system_nodes(&model, &scans[0], project_root, preference_files)),
+            "system" => {
+                let mut nodes = system_nodes(&model, &scans[0], project_root, preference_files);
+                // A module project is not built or deployed itself: its system folder is shown greyed out.
+                for n in &mut nodes {
+                    n.dimmed |= module_project;
+                }
+                let mut folder = TreeNode::folder(id, label, label, nodes);
+                folder.dimmed |= module_project;
+                folder
+            }
             "context" => TreeNode::folder(id, label, label, context_nodes(&model, &contexts, &ordered_mods)),
             "process" => TreeNode::folder(id.clone(), label, label, process_nodes(&model, &process_groups, &id)),
             "others" => TreeNode::folder(id, label, label, others_nodes(&packages)),
@@ -706,6 +927,7 @@ pub fn scan_project_tree_with(project_root: &Path, preference_files: &[PathBuf])
         children,
         kind: NodeKind::Project,
         bold: true,
+        module_project,
         type_label: project_name(&model),
         path: Some(root_id),
         ..TreeNode::default()

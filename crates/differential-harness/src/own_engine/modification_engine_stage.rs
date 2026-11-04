@@ -296,6 +296,15 @@ fn extract_payload(doc: &AodDocument, index: &EventIndex, root: &EventPath, chan
             // that event slice via aod-io's own `serialize`, reusing the same byte-faithful writer
             // rather than hand-rolling XML.
             match index.get(&inner_value) {
+                // A plain text value inserted into a list of texts (`siblings`, `variants`, ...): each
+                // entry of such a list is an `<element>`.
+                Some(IndexedRange::Element(range)) if range.len() == 3 && matches!(&doc.events[range.start + 1], AodEvent::Text(b) if !b.iter().all(|c| c.is_ascii_whitespace())) => {
+                    let AodEvent::Text(text) = &doc.events[range.start + 1] else { return None };
+                    let mut entry = b"<element>".to_vec();
+                    entry.extend_from_slice(text);
+                    entry.extend_from_slice(b"</element>");
+                    Some((entry, false))
+                }
                 Some(IndexedRange::Element(range)) if range.len() > 2 => {
                     let inner_events = doc.events[range.start + 1..range.end - 1].to_vec();
                     Some((aod_io::serialize(&AodDocument { events: inner_events }), false))
@@ -346,6 +355,115 @@ fn indent_depth_of(bytes: &[u8]) -> Option<usize> {
 /// against the real `dist/` file, same element count (48 `neonViewReference`s on both sides) but
 /// wrong indentation on every inserted element's children.
 fn reindent_insert_template(payload: &[u8], target_root_depth: usize) -> Vec<u8> {
+    canonical_property_order(&reindent_insert_template_raw(payload, target_root_depth))
+}
+
+/// An inserted element is written by the reference with its properties in the schema's order, not in
+/// the order the modification file listed them (`stateProcess` before `mandatoryProcess` in the file,
+/// the other way round in the output). Elements whose children are all distinct, known properties
+/// are sorted; list wrappers (repeated children) and unknown tags keep their order.
+fn canonical_property_order(payload: &[u8]) -> Vec<u8> {
+    let Ok(doc) = aod_io::parse(payload) else { return payload.to_vec() };
+    let events = doc.events;
+    let mut out: Vec<AodEvent> = Vec::with_capacity(events.len());
+    let mut i = 0;
+    while i < events.len() {
+        match &events[i] {
+            AodEvent::Start(_) => {
+                let end = matching_end(&events, i);
+                out.extend(sort_element(&events[i..=end]));
+                i = end + 1;
+            }
+            other => {
+                out.push(other.clone());
+                i += 1;
+            }
+        }
+    }
+    aod_io::serialize(&AodDocument { events: out })
+}
+
+fn matching_end(events: &[AodEvent], start: usize) -> usize {
+    let mut depth = 0usize;
+    for (k, ev) in events.iter().enumerate().skip(start) {
+        match ev {
+            AodEvent::Start(_) => depth += 1,
+            AodEvent::End(_) => {
+                depth -= 1;
+                if depth == 0 {
+                    return k;
+                }
+            }
+            _ => {}
+        }
+    }
+    events.len() - 1
+}
+
+fn is_blank_text(ev: &AodEvent) -> bool {
+    matches!(ev, AodEvent::Text(b) if b.iter().all(|c| c.is_ascii_whitespace()))
+}
+
+/// `element` is a Start..End slice; its children are sorted when that is safe, recursively.
+fn sort_element(element: &[AodEvent]) -> Vec<AodEvent> {
+    let inner = &element[1..element.len() - 1];
+    let mut items: Vec<Vec<AodEvent>> = Vec::new();
+    let mut indent: Option<AodEvent> = None;
+    let mut closing: Option<AodEvent> = None;
+    let mut i = 0;
+    while i < inner.len() {
+        match &inner[i] {
+            ev if is_blank_text(ev) => {
+                if items.is_empty() && indent.is_none() {
+                    indent = Some(ev.clone());
+                }
+                closing = Some(ev.clone());
+                i += 1;
+            }
+            AodEvent::Start(_) => {
+                let end = matching_end(inner, i);
+                items.push(sort_element(&inner[i..=end]));
+                closing = None;
+                i = end + 1;
+            }
+            AodEvent::Empty(_) => {
+                items.push(vec![inner[i].clone()]);
+                closing = None;
+                i += 1;
+            }
+            _ => return element.to_vec(),
+        }
+    }
+    let tag_of = |item: &Vec<AodEvent>| item[0].tag_bytes().map(tag_name_of).unwrap_or_default();
+    let tags: Vec<String> = items.iter().map(tag_of).collect();
+    let distinct = tags.iter().collect::<std::collections::HashSet<_>>().len() == tags.len();
+    let parent_tag = element[0].tag_bytes().map(tag_name_of).unwrap_or_default();
+    if distinct && items.len() > 1 {
+        if let Some(order) = catalog_order(&parent_tag) {
+            if tags.iter().all(|t| order.contains(t)) {
+                let rank = |t: &String| order.iter().position(|o| o == t).unwrap_or(usize::MAX);
+                let mut keyed: Vec<(usize, Vec<AodEvent>)> = items.into_iter().map(|it| (rank(&tag_of(&it)), it)).collect();
+                keyed.sort_by_key(|(r, _)| *r);
+                items = keyed.into_iter().map(|(_, it)| it).collect();
+            }
+        }
+    }
+    let mut out = Vec::with_capacity(element.len());
+    out.push(element[0].clone());
+    for item in items {
+        if let Some(ws) = &indent {
+            out.push(ws.clone());
+        }
+        out.extend(item);
+    }
+    if let Some(ws) = closing {
+        out.push(ws);
+    }
+    out.push(element[element.len() - 1].clone());
+    out
+}
+
+fn reindent_insert_template_raw(payload: &[u8], target_root_depth: usize) -> Vec<u8> {
     let delta = target_root_depth as i64 - INSERT_PAYLOAD_SOURCE_DEPTH as i64;
     if delta == 0 {
         return payload.to_vec();
@@ -373,7 +491,64 @@ fn reindent_insert_template(payload: &[u8], target_root_depth: usize) -> Vec<u8>
 /// `offer_impl`) - confirmed empirically for every path shape in `transpiler.md` §3 and this
 /// stage's own Phase 1 corpus scan. Tries the cheap tag-name match first (a single `index.get`),
 /// falls back to scanning `parent`'s direct children for a matching `<name>` only when needed.
+/// A self-closing element (`<headerFooterLayout />`) that is about to receive children becomes an
+/// open/close pair with the closing tag on its own indented line; returns the refreshed index.
+fn open_if_self_closing(doc: &mut AodDocument, index: EventIndex, container: &EventPath) -> EventIndex {
+    let Some(IndexedRange::Element(range)) = index.get(container) else { return index };
+    let at = range.start;
+    let AodEvent::Empty(raw) = &doc.events[at] else { return index };
+    let mut start = raw.clone();
+    while start.last().is_some_and(|b| b.is_ascii_whitespace()) {
+        start.pop();
+    }
+    if start.last() == Some(&b'/') {
+        start.pop();
+    }
+    while start.last().is_some_and(|b| b.is_ascii_whitespace()) {
+        start.pop();
+    }
+    let name = tag_name_of(&start).into_bytes();
+    let indent = aod_io::patch::standard_indent(container.element_depth().saturating_sub(1));
+    doc.events.splice(at..=at, [AodEvent::Start(start), AodEvent::Text(indent), AodEvent::End(name)]);
+    build_index(doc)
+}
+
 fn resolve_step(doc: &AodDocument, index: &EventIndex, parent: &EventPath, segment: &str) -> Option<EventPath> {
+    if let Some(found) = resolve_step_direct(doc, index, parent, segment) {
+        return Some(found);
+    }
+    // A mixin property holds one concrete sub-object whose own properties are addressed as if they
+    // belonged to the mixin property itself (`layout/header` for `<layout><headerFooterLayout>`).
+    let concrete = mixin_concrete_child(index, parent)?;
+    resolve_step_direct(doc, index, &concrete, segment)
+}
+
+/// Properties whose value is a polymorphic sub-object (the Designer's data-model mixins): a path
+/// never names the concrete sub-object's own tag.
+const MIXIN_CONTAINER_TAGS: &[&str] = &[
+    "layout", "aliasDefinitionSub", "auditSyncConfig", "uiConfiguration", "rendererConfig", "entries",
+    "aliasConfigSub", "company", "aliasSub", "templateSub",
+];
+
+/// The concrete sub-object below a mixin property, when `parent` is one and carries it already.
+fn mixin_concrete_child(index: &EventIndex, parent: &EventPath) -> Option<EventPath> {
+    let Some(PathStep::Child { tag, .. }) = parent.0.last() else { return None };
+    if !MIXIN_CONTAINER_TAGS.contains(&tag.as_str()) {
+        return None;
+    }
+    index
+        .iter()
+        .filter(|(path, range)| {
+            matches!(range, IndexedRange::Element(_))
+                && path.0.len() == parent.0.len() + 1
+                && path.0.starts_with(&parent.0)
+                && matches!(path.0.last(), Some(PathStep::Child { .. }))
+        })
+        .map(|(path, _)| path.clone())
+        .next()
+}
+
+fn resolve_step_direct(doc: &AodDocument, index: &EventIndex, parent: &EventPath, segment: &str) -> Option<EventPath> {
     let tag_candidate = child_path(parent, segment, 0);
     if index.get(&tag_candidate).is_some() {
         return Some(tag_candidate);
@@ -423,14 +598,151 @@ fn tag_name_of(raw: &[u8]) -> String {
     String::from_utf8_lossy(&raw[..len]).into_owned()
 }
 
-/// Applies one already-parsed modification to `doc`, rebuilding `doc`'s index fresh each call
-/// (mandatory after any patch - `aod-io`'s own module docs: a patch shifts every later event
-/// index). Returns the [`Operation`] actually performed, for the report.
+thread_local! {
+    static OUTPUT_DIR: std::cell::RefCell<Option<PathBuf>> = const { std::cell::RefCell::new(None) };
+    static ORDER_CACHE: std::cell::RefCell<std::collections::HashMap<(String, String), Vec<Vec<String>>>> = std::cell::RefCell::new(std::collections::HashMap::new());
+}
+
+/// The child tag sequences that elements `parent_tag` have in the objects of `model_type` already
+/// in the output. A property a modification adds belongs where the objects themselves put it.
+fn learn_child_orders(model_type: &str, parent_tag: &str) -> Vec<Vec<String>> {
+    let key = (model_type.to_string(), parent_tag.to_string());
+    if let Some(found) = ORDER_CACHE.with(|c| c.borrow().get(&key).cloned()) {
+        return found;
+    }
+    let mut sequences: Vec<Vec<String>> = Vec::new();
+    let root = OUTPUT_DIR.with(|d| d.borrow().clone()).map(|d| d.join(model_type));
+    if let Some(root) = root {
+        if let Ok(dirs) = fs::read_dir(&root) {
+            for dir in dirs.flatten() {
+                let Ok(files) = fs::read_dir(dir.path()) else { continue };
+                for file in files.flatten() {
+                    if file.path().extension().is_none_or(|e| e != "aod") {
+                        continue;
+                    }
+                    let Ok(bytes) = fs::read(file.path()) else { continue };
+                    let text = String::from_utf8_lossy(&bytes);
+                    let mut stack: Vec<(String, Vec<String>)> = Vec::new();
+                    for line in text.lines() {
+                        let t = line.trim();
+                        if t.starts_with("<?") || t.is_empty() {
+                            continue;
+                        }
+                        if t.starts_with("</") {
+                            if let Some((tag, kids)) = stack.pop() {
+                                if tag == parent_tag && kids.len() > 1 && !sequences.contains(&kids) {
+                                    sequences.push(kids);
+                                }
+                            }
+                            continue;
+                        }
+                        let Some(rest) = t.strip_prefix('<') else { continue };
+                        let end = rest.find(|c: char| c == '>' || c == ' ' || c == '/').unwrap_or(rest.len());
+                        let tag = rest[..end].to_string();
+                        if let Some((_, kids)) = stack.last_mut() {
+                            if !kids.contains(&tag) {
+                                kids.push(tag.clone());
+                            }
+                        }
+                        let closed_here = t.ends_with("/>") || t.contains(&format!("</{tag}>"));
+                        if !closed_here {
+                            stack.push((tag, Vec::new()));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ORDER_CACHE.with(|c| c.borrow_mut().insert(key, sequences.clone()));
+    sequences
+}
+
+/// The child order the Designer's own schema gives an element, by the element's tag (`entityField`
+/// -> the properties of `entityFieldType` in schema order). Generated from the property catalog.
+fn catalog_order(tag: &str) -> Option<Vec<String>> {
+    static TABLE: std::sync::OnceLock<std::collections::HashMap<String, Vec<String>>> = std::sync::OnceLock::new();
+    TABLE
+        .get_or_init(|| serde_json::from_str(include_str!("child_order.json")).unwrap_or_default())
+        .get(tag)
+        .cloned()
+}
+
+/// Where a new child `seg` goes below `current`: after the nearest sibling that precedes it in the
+/// order the objects use, otherwise before the nearest one that follows it, otherwise last.
+fn order_hint(doc: &AodDocument, index: &EventIndex, current: &EventPath, seg: &str, model_type: &str) -> SiblingHint {
+    let _ = doc;
+    let Some(PathStep::Child { tag: parent_tag, .. }) = current.0.last().cloned() else { return SiblingHint::AppendAsLastChild };
+    let mut present: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for (path, range) in index.iter() {
+        if !matches!(range, IndexedRange::Element(_)) || path.0.len() != current.0.len() + 1 || !path.0.starts_with(&current.0) {
+            continue;
+        }
+        if let Some(PathStep::Child { tag, occurrence }) = path.0.last() {
+            let slot = present.entry(tag.clone()).or_insert(0);
+            *slot = (*slot).max(*occurrence);
+        }
+    }
+    let order = catalog_order(&parent_tag).unwrap_or_else(|| global_order(&learn_child_orders(model_type, &parent_tag)));
+    let Some(seg_rank) = order.iter().position(|t| t == seg) else { return SiblingHint::AppendAsLastChild };
+    let mut before: Option<(usize, &String, usize)> = None;
+    let mut after: Option<(usize, &String)> = None;
+    for (tag, &occurrence) in &present {
+        let Some(rank) = order.iter().position(|t| t == tag) else { continue };
+        if rank < seg_rank {
+            if before.is_none_or(|(r, _, _)| rank > r) {
+                before = Some((rank, tag, occurrence));
+            }
+        } else if rank > seg_rank && after.is_none_or(|(r, _)| rank < r) {
+            after = Some((rank, tag));
+        }
+    }
+    if let Some((_, tag, occurrence)) = before {
+        return SiblingHint::After(child_path(current, tag, occurrence));
+    }
+    if let Some((_, tag)) = after {
+        return SiblingHint::Before(child_path(current, tag, 0));
+    }
+    SiblingHint::AppendAsLastChild
+}
+
+/// One order of all tags seen below a parent: a tag precedes another when most objects put it first.
+fn global_order(sequences: &[Vec<String>]) -> Vec<String> {
+    let mut tags: Vec<String> = Vec::new();
+    for sequence in sequences {
+        for tag in sequence {
+            if !tags.contains(tag) {
+                tags.push(tag.clone());
+            }
+        }
+    }
+    let mut count: std::collections::HashMap<(usize, usize), usize> = std::collections::HashMap::new();
+    for sequence in sequences {
+        let ids: Vec<usize> = sequence.iter().filter_map(|t| tags.iter().position(|x| x == t)).collect();
+        for (i, &a) in ids.iter().enumerate() {
+            for &b in &ids[i + 1..] {
+                *count.entry((a, b)).or_insert(0) += 1;
+            }
+        }
+    }
+    let precedes = |a: usize, b: usize| count.get(&(a, b)).copied().unwrap_or(0) > count.get(&(b, a)).copied().unwrap_or(0);
+    let mut remaining: Vec<usize> = (0..tags.len()).collect();
+    let mut out = Vec::with_capacity(tags.len());
+    while !remaining.is_empty() {
+        let pick = remaining.iter().copied().find(|&c| !remaining.iter().any(|&o| o != c && precedes(o, c))).unwrap_or(remaining[0]);
+        remaining.retain(|&r| r != pick);
+        out.push(tags[pick].clone());
+    }
+    out
+}
+
 /// Names that denote a collection the base object may not carry yet (as opposed to a keyed item).
 fn is_container_name(seg: &str) -> bool {
     !seg.is_empty() && seg.chars().all(|c| c.is_ascii_alphabetic()) && seg.chars().next().is_some_and(|c| c.is_ascii_lowercase())
 }
 
+/// Applies one already-parsed modification to `doc`, rebuilding `doc`'s index fresh each call
+/// (mandatory after any patch - `aod-io`'s own module docs: a patch shifts every later event
+/// index). Returns the [`Operation`] actually performed, for the report.
 fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation, String> {
     let index = build_index(doc);
     let root = root_path(doc).ok_or_else(|| "target document has no root element".to_string())?;
@@ -445,6 +757,8 @@ fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation,
                 // missing containers around the inserted element.
                 let payload = m.payload.clone().ok_or_else(|| "INSERT without a <value> payload".to_string())?;
                 let missing = &m.path_segments[i..];
+                let current = mixin_concrete_child(&index, &current).unwrap_or(current);
+                let index = open_if_self_closing(doc, index, &current);
                 let parent_depth = current.element_depth();
                 let inner = reindent_insert_template(payload.trim_ascii(), parent_depth + 1 + missing.len());
                 let mut template: Vec<u8> = Vec::new();
@@ -460,16 +774,23 @@ fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation,
                 insert_at(doc, &index, &current, &template, SiblingHint::AppendAsLastChild).map_err(|e| e.to_string())?;
                 return Ok(Operation::ArrayInsert);
             }
+            None if i == last_index && m.change_type == ChangeType::Modify && m.payload.is_none() => {
+                // Resetting a property the object does not carry changes nothing.
+                return Ok(Operation::Modify);
+            }
             None if i == last_index && m.change_type == ChangeType::Modify && !seg.contains('.') => {
                 // ASSUMPTION (not verified against the original Designer): a MODIFY of a scalar property
                 // that the base object does not carry yet appends the property to its parent element.
                 let payload = m.payload.clone().ok_or_else(|| "MODIFY without a <value> payload".to_string())?;
+                let current = mixin_concrete_child(&index, &current).unwrap_or(current);
+                let index = open_if_self_closing(doc, index, &current);
                 let template = if m.payload_is_attr {
                     [format!("<{seg} v=\"").as_bytes(), payload.as_slice(), b"\" />"].concat()
                 } else {
                     [format!("<{seg}>").as_bytes(), payload.as_slice(), format!("</{seg}>").as_bytes()].concat()
                 };
-                insert_at(doc, &index, &current, &template, SiblingHint::AppendAsLastChild).map_err(|e| e.to_string())?;
+                let hint = order_hint(doc, &index, &current, seg, &m.model_type);
+                insert_at(doc, &index, &current, &template, hint).map_err(|e| e.to_string())?;
                 return Ok(Operation::Modify);
             }
             None => return Err(format!("path segment {seg:?} not found (full path under {:?})", m.path_segments)),
@@ -477,6 +798,15 @@ fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation,
     }
 
     match m.change_type {
+        ChangeType::Modify if m.payload.is_none() => {
+            // A MODIFY without a value puts the property back to its default: the element goes.
+            let range = match index.get(&current) {
+                Some(IndexedRange::Element(r)) => r.clone(),
+                _ => return Err("MODIFY target is not an element".to_string()),
+            };
+            delete_range(doc, range).map_err(|e| e.to_string())?;
+            Ok(Operation::Modify)
+        }
         ChangeType::Modify => {
             if m.payload_is_attr {
                 if let Some(IndexedRange::Attribute { event, value_bytes }) = index.get(&attribute_path(&current, "v")) {
@@ -506,6 +836,7 @@ fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation,
             // corrects that (see its doc comment for the real-corpus bug this fixes).
             let target_root_depth = current.element_depth() + 1;
             let payload = reindent_insert_template(&payload, target_root_depth);
+            let index = open_if_self_closing(doc, index, &current);
             insert_at(doc, &index, &current, &payload, SiblingHint::AppendAsLastChild).map_err(|e| e.to_string())?;
             Ok(Operation::ArrayInsert)
         }
@@ -534,16 +865,21 @@ fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation,
 /// dependency's `<position>` being numerically later - proving position alone is not the rule).
 /// Position-ordering WITHIN a tier (two dependencies, or two project-root modifications,
 /// conflicting with each other) was never observed and stays UNVERIFIED-but-plausible.
-fn normalize_sidecars_to_crlf(dir: &Path) {
+fn normalize_sidecars_to_crlf(dir: &Path, output_dir: &Path, referenced: &std::collections::HashSet<String>) {
     let Ok(entries) = fs::read_dir(dir) else { return };
     for entry in entries.flatten() {
         let path = entry.path();
         if path.is_dir() {
-            normalize_sidecars_to_crlf(&path);
+            normalize_sidecars_to_crlf(&path, output_dir, referenced);
             continue;
         }
         let is_text = path.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("js") || e.eq_ignore_ascii_case("adoc"));
         if !is_text {
+            continue;
+        }
+        // Only files the model links to are written again; a file nothing refers to stays as copied.
+        let relative = path.strip_prefix(output_dir).map(|r| r.to_string_lossy().replace('\\', "/")).unwrap_or_default();
+        if !referenced.contains(&relative) {
             continue;
         }
         let Ok(bytes) = fs::read(&path) else { continue };
@@ -558,6 +894,20 @@ fn normalize_sidecars_to_crlf(dir: &Path) {
             let _ = platform::fs::atomic_write(&path, &out);
         }
     }
+}
+
+/// The files (relative to the output folder, forward slashes) a model links to with `%aditoprj%/...`.
+fn linked_files_of(aod: &Path) -> std::collections::HashSet<String> {
+    let text = fs::read(aod).map(|b| String::from_utf8_lossy(&b).into_owned()).unwrap_or_default();
+    let mut found = std::collections::HashSet::new();
+    let mut rest = text.as_str();
+    while let Some(at) = rest.find("%aditoprj%/") {
+        let after = &rest[at + "%aditoprj%/".len()..];
+        let end = after.find('<').unwrap_or(after.len());
+        found.insert(after[..end].trim().to_string());
+        rest = &after[end..];
+    }
+    found
 }
 
 fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report: &mut ModificationEngineReport) {
@@ -621,6 +971,8 @@ fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report:
 /// evolving document (see that function's doc comment for why order-within-a-file matters).
 pub fn run_modification_phase(graph: &ModuleGraph, output_dir: &Path) -> Result<ModificationEngineReport, ModificationEngineError> {
     let mut report = ModificationEngineReport::default();
+    OUTPUT_DIR.with(|d| *d.borrow_mut() = Some(output_dir.to_path_buf()));
+    ORDER_CACHE.with(|c| c.borrow_mut().clear());
 
     let mut modules: Vec<(&ModuleDefinition, bool)> = graph.modules.values().map(|m| (m, false)).collect();
     modules.push((&graph.project, true));
@@ -641,7 +993,11 @@ pub fn run_modification_phase(graph: &ModuleGraph, output_dir: &Path) -> Result<
         by_target.entry((m.model_type.clone(), m.model_name.clone())).or_default().push(m);
     }
 
-    for ((model_type, model_name), group) in by_target {
+    let total_targets = by_target.len();
+    for (done, ((model_type, model_name), group)) in by_target.into_iter().enumerate() {
+        if done % 25 == 0 {
+            crate::own_engine::progress::report_between(35, 65, done, total_targets, "Applying the modifications");
+        }
         let target = output_dir.join(&model_type).join(&model_name).join(format!("{model_name}.aod"));
         let existed = target.is_file();
         apply_all_to_file(&target, group, &mut report);
@@ -650,7 +1006,8 @@ pub fn run_modification_phase(graph: &ModuleGraph, output_dir: &Path) -> Result<
         // a clean reference run: 45 modified entities all CRLF, 183 untouched ones verbatim).
         if existed {
             if let Some(object_dir) = target.parent() {
-                normalize_sidecars_to_crlf(object_dir);
+                let referenced = linked_files_of(&target);
+                normalize_sidecars_to_crlf(object_dir, output_dir, &referenced);
             }
         }
     }

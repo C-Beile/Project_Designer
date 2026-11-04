@@ -13,6 +13,7 @@
 //! only the main model file is transferred. The write path is covered by mock tests only.
 
 use crate::db_session::{DbManager, SqlResult};
+use crate::deploy_encode::{self, DEPLOY_META_ID, DEPLOY_META_KIND};
 use crate::system_config::{alias_row_to_dto, is_secret_key, AliasConfigDto};
 use db_layer::{DbValue, TxStatement};
 use serde::{Deserialize, Serialize};
@@ -235,7 +236,142 @@ pub fn update_user_property(manager: &DbManager, id: &str, value: &str) -> Resul
     Ok(())
 }
 
+const USER_PREFIX: &str = "_____USER_";
+
+fn check_user_name(user: &str) -> Result<(), String> {
+    if !is_safe_word(user, 63) {
+        return Err("The user name contains characters that are not allowed.".into());
+    }
+    Ok(())
+}
+
+fn check_property_key(key: &str) -> Result<(), String> {
+    if !is_safe_word(key, 200) {
+        return Err("The property name contains characters that are not allowed.".into());
+    }
+    if is_secret_key(key) {
+        return Err("Passwords and keys are not changed here.".into());
+    }
+    Ok(())
+}
+
+/// The group a property belongs to: the one other users already use for that key, otherwise the
+/// group of its kind, otherwise BASIC.
+fn property_group(manager: &DbManager, key: &str) -> String {
+    let sql = format!("SELECT GROUPID FROM ASYS_USERS WHERE PROPKEY = '{}' AND GROUPID IS NOT NULL LIMIT 1", sql_text(key));
+    if let Ok(found) = manager.query(&sql, false) {
+        if let Some(Some(group)) = found.rows.first().and_then(|r| r.first()) {
+            return group.clone();
+        }
+    }
+    match key {
+        "country" | "language" | "locale" | "timezone" => "LOCALIZATION",
+        "nonWorkdays" | "showWeekend" => "CALENDAR",
+        _ => "BASIC",
+    }
+    .to_string()
+}
+
+fn insert_property(manager: &DbManager, user: &str, key: &str, value: &str, group: &str) -> Result<(), String> {
+    manager.query(
+        &format!(
+            "INSERT INTO ASYS_USERS (ID, DATE_NEW, DATE_EDIT, NAME, GROUPID, PROPKEY, PROPVAL) VALUES (UUID(), NOW(), NOW(), '{}', '{}', '{}', '{}')",
+            sql_text(user),
+            sql_text(group),
+            sql_text(key),
+            sql_text(value)
+        ),
+        true,
+    )?;
+    Ok(())
+}
+
+/// Sets one single-valued property of a user: changes the row when the user has it, otherwise adds it.
+pub fn set_user_property(manager: &DbManager, user: &str, key: &str, value: &str) -> Result<(), String> {
+    check_user_name(user)?;
+    check_property_key(key)?;
+    if value.len() > USER_VALUE_LIMIT {
+        return Err(format!("The value is longer than {USER_VALUE_LIMIT} characters."));
+    }
+    let found = manager.query(&format!("SELECT ID FROM ASYS_USERS WHERE NAME = '{}' AND PROPKEY = '{}'", sql_text(user), sql_text(key)), false)?;
+    if found.rows.len() > 1 {
+        return Err("This property has several values. Use the list editor for it.".into());
+    }
+    if let Some(Some(id)) = found.rows.first().and_then(|r| r.first()) {
+        return update_user_property(manager, id, value);
+    }
+    let group = property_group(manager, key);
+    insert_property(manager, user, key, value, &group)
+}
+
+/// Replaces all values of a list property (roleNames ...): one row per value.
+pub fn set_user_list_property(manager: &DbManager, user: &str, key: &str, values: &[String]) -> Result<(), String> {
+    check_user_name(user)?;
+    check_property_key(key)?;
+    if values.iter().any(|v| v.is_empty() || v.len() > USER_VALUE_LIMIT) {
+        return Err("A value of the list is empty or too long.".into());
+    }
+    let group = property_group(manager, key);
+    manager.query(&format!("DELETE FROM ASYS_USERS WHERE NAME = '{}' AND PROPKEY = '{}'", sql_text(user), sql_text(key)), true)?;
+    for v in values {
+        insert_property(manager, user, key, v, &group)?;
+    }
+    Ok(())
+}
+
+/// Adds a user with its basic properties and returns its id. It has no password yet.
+pub fn create_user(manager: &DbManager, title: &str) -> Result<String, String> {
+    let title = title.trim();
+    if title.is_empty() || title.len() > 200 || title.contains(|c: char| c.is_control()) {
+        return Err("Enter a user name without control characters.".into());
+    }
+    let taken = manager.query(&format!("SELECT ID FROM ASYS_USERS WHERE PROPKEY = 'title' AND PROPVAL = '{}' LIMIT 1", sql_text(title)), false)?;
+    if !taken.rows.is_empty() {
+        return Err("A user with this name exists already.".into());
+    }
+    let uuid = manager.query("SELECT UUID()", false)?;
+    let Some(Some(uuid)) = uuid.rows.first().and_then(|r| r.first()) else {
+        return Err("The database did not return an id.".into());
+    };
+    let user = format!("{USER_PREFIX}{uuid}");
+    insert_property(manager, &user, "name", &user, "BASIC")?;
+    insert_property(manager, &user, "title", title, "BASIC")?;
+    insert_property(manager, &user, "isActive", "true", "BASIC")?;
+    insert_property(manager, &user, "isBlocked", "false", "BASIC")?;
+    Ok(user)
+}
+
+/// Removes a user with all of its properties. Only called after the user confirmed.
+pub fn delete_user(manager: &DbManager, user: &str) -> Result<(), String> {
+    check_user_name(user)?;
+    if !user.starts_with(USER_PREFIX) {
+        return Err("Only users that were created in the Designer can be removed here.".into());
+    }
+    manager.query(&format!("DELETE FROM ASYS_USERS WHERE NAME = '{}'", sql_text(user)), true)?;
+    Ok(())
+}
+
 /// Users tab of the system editor: one row per user, no credential column.
+/// The roles of the platform itself; they are not defined in any project but can be given to a user.
+const BUILT_IN_ROLES: &[&str] = &["INTERNAL_ADMINISTRATOR", "INTERNAL_EVERYONE", "INTERNAL_TECHNICAL", "INTERNAL_WEBSERVICE"];
+
+/// Every role a user of this system can be given besides the project's own roles: the platform's
+/// built-in roles and every role that is already assigned to a user of the system.
+pub fn assigned_roles(manager: &DbManager) -> Result<Vec<String>, String> {
+    let result = manager.query("SELECT DISTINCT PROPVAL FROM ASYS_USERS WHERE PROPKEY = 'roleNames'", false)?;
+    let mut roles: Vec<String> = BUILT_IN_ROLES.iter().map(|r| r.to_string()).collect();
+    for row in result.rows {
+        if let Some(Some(role)) = row.into_iter().next() {
+            let role = role.trim().to_string();
+            if !role.is_empty() && !roles.contains(&role) {
+                roles.push(role);
+            }
+        }
+    }
+    roles.sort_by(|a, b| a.to_lowercase().cmp(&b.to_lowercase()));
+    Ok(roles)
+}
+
 pub fn read_users(manager: &DbManager) -> Result<TableDump, String> {
     let mut columns: Vec<String> = Vec::new();
     let mut rows: Vec<Vec<Option<String>>> = Vec::new();
@@ -345,7 +481,7 @@ pub struct DeployMapping {
 
 impl Default for DeployMapping {
     fn default() -> Self {
-        Self { table: "ASYS_SYSTEM".into(), name_column: "ID".into(), content_column: "CONTENT".into() }
+        Self { table: "ASYS_SYSTEM".into(), name_column: "ID".into(), content_column: "XMLDATA".into() }
     }
 }
 
@@ -354,6 +490,12 @@ fn is_identifier(s: &str) -> bool {
 }
 
 impl DeployMapping {
+    /// The real system table of ADITO: one row per model with its model number and `XMLDATA`.
+    /// Any other mapping is written generically (name and content column only).
+    pub fn is_system_table(&self) -> bool {
+        self.table.eq_ignore_ascii_case("ASYS_SYSTEM") && self.name_column.eq_ignore_ascii_case("ID") && self.content_column.eq_ignore_ascii_case("XMLDATA")
+    }
+
     pub fn validate(&self) -> Result<(), String> {
         for part in [&self.table, &self.name_column, &self.content_column] {
             if !is_identifier(part) {
@@ -383,8 +525,13 @@ pub struct LocalModel {
     /// `<type folder>/<model name>`, e.g. `entity/Person_entity`.
     pub key: String,
     pub main_file: PathBuf,
+    /// What the system table holds for the model (`deploy_encode::encode_model`).
     pub content: String,
-    /// Files next to the main file that are NOT transferred (format unverified).
+    /// Model number of the type (`KIND`).
+    pub kind: i64,
+    pub title: Option<String>,
+    /// Files next to the main file that are not part of the row (linked files are inlined; any other
+    /// file only counts here).
     pub extra_files: usize,
 }
 
@@ -402,6 +549,7 @@ pub fn collect_local_models(project_root: &Path) -> Result<Vec<LocalModel>, Stri
         if NON_MODEL_DIRS.contains(&type_name.as_str()) {
             continue;
         }
+        let Some(kind) = deploy_encode::kind_of(&type_name) else { continue };
         let mut models: Vec<_> = std::fs::read_dir(t.path()).map_err(|e| e.to_string())?.flatten().filter(|e| e.path().is_dir()).collect();
         models.sort_by_key(|e| e.file_name());
         for m in models {
@@ -410,9 +558,10 @@ pub fn collect_local_models(project_root: &Path) -> Result<Vec<LocalModel>, Stri
             if !main_file.is_file() {
                 continue;
             }
-            let content = std::fs::read_to_string(&main_file).map_err(|e| format!("{} is not readable text: {e}", main_file.display()))?;
+            let content = deploy_encode::encode_model(&dist, &main_file)?;
+            let title = deploy_encode::title_of(&content);
             let extra_files = count_files(&m.path()).saturating_sub(1);
-            out.push(LocalModel { key: format!("{type_name}/{name}"), main_file, content, extra_files });
+            out.push(LocalModel { key: format!("{type_name}/{name}"), main_file, content, kind, title, extra_files });
         }
     }
     Ok(out)
@@ -469,6 +618,9 @@ pub fn compute_plan(local: &[LocalModel], remote: &BTreeMap<String, String>, for
 /// Parameterised I/U/D statements for the chosen items. Identifiers were validated beforehand.
 pub fn build_statements(mapping: &DeployMapping, items: &[PlanItem], local: &[LocalModel]) -> Result<Vec<TxStatement>, String> {
     mapping.validate()?;
+    if mapping.is_system_table() {
+        return system_table_statements(items, local);
+    }
     let (t, n, c) = (&mapping.table, &mapping.name_column, &mapping.content_column);
     items
         .iter()
@@ -489,6 +641,77 @@ pub fn build_statements(mapping: &DeployMapping, items: &[PlanItem], local: &[Lo
         .collect()
 }
 
+const DESIGNER_USER: &str = "_____DESIGNERANONYM";
+
+fn model_name(key: &str) -> &str {
+    key.split_once('/').map(|(_, name)| name).unwrap_or(key)
+}
+
+/// The statements the original Designer's deploy amounts to: a model row carries its name as `ID`
+/// and `NAME`, its model number as `KIND`, its `<title>` as `TITLE` and the model as `XMLDATA`.
+fn system_table_statements(items: &[PlanItem], local: &[LocalModel]) -> Result<Vec<TxStatement>, String> {
+    items
+        .iter()
+        .map(|item| {
+            let name = model_name(&item.key).to_string();
+            let find = || local.iter().find(|m| m.key == item.key).ok_or_else(|| format!("{} is not part of the local project.", item.key));
+            Ok(match item.op {
+                DeployOp::I => {
+                    let m = find()?;
+                    TxStatement {
+                        sql: "INSERT INTO `ASYS_SYSTEM` (`ID`, `NAME`, `KIND`, `TITLE`, `USER_NEW`, `DATE_NEW`, `USER_EDIT`, `DATE_EDIT`, `XMLDATA`) VALUES (?, ?, ?, ?, ?, NOW(), ?, NOW(), ?)".into(),
+                        params: vec![
+                            DbValue::Text(name.clone()),
+                            DbValue::Text(name),
+                            DbValue::Int(m.kind),
+                            m.title.clone().map(DbValue::Text).unwrap_or(DbValue::Null),
+                            DbValue::Text(DESIGNER_USER.into()),
+                            DbValue::Text(DESIGNER_USER.into()),
+                            DbValue::Bytes(m.content.clone().into_bytes()),
+                        ],
+                    }
+                }
+                DeployOp::U => {
+                    let m = find()?;
+                    TxStatement {
+                        sql: "UPDATE `ASYS_SYSTEM` SET `XMLDATA` = ?, `TITLE` = ?, `KIND` = ?, `USER_EDIT` = ?, `DATE_EDIT` = NOW() WHERE `ID` = ?".into(),
+                        params: vec![
+                            DbValue::Bytes(m.content.clone().into_bytes()),
+                            m.title.clone().map(DbValue::Text).unwrap_or(DbValue::Null),
+                            DbValue::Int(m.kind),
+                            DbValue::Text(DESIGNER_USER.into()),
+                            DbValue::Text(name),
+                        ],
+                    }
+                }
+                DeployOp::D => TxStatement { sql: "DELETE FROM `ASYS_SYSTEM` WHERE `ID` = ? AND `KIND` = ?".into(), params: vec![DbValue::Text(name), DbValue::Int(deploy_encode::kind_of(item.key.split('/').next().unwrap_or("")).unwrap_or(-1))] },
+            })
+        })
+        .collect()
+}
+
+/// The bookkeeping row of a deploy (who, when, which project version), as the Designer writes it.
+fn deploy_meta_statement(author: &str, time_ms: i64, project_version: &str) -> TxStatement {
+    let xml = format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<deployMetaInfo xmlns=\"http://www.adito.de/2018/ao/Model\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" VERSION=\"1.0.0\" xsi:schemaLocation=\"http://www.adito.de/2018/ao/Model adito://models/xsd/deployMetaInfo/1.0.0\">\r\n  <name>{DEPLOY_META_ID}</name>\r\n  <majorModelMode>COMPACT</majorModelMode>\r\n  <infos>\r\n    <entry>\r\n      <key>DefaultDeployMetaInfoProvider.deployAuthor</key>\r\n      <value>{author}</value>\r\n    </entry>\r\n    <entry>\r\n      <key>de.adito.aditoweb.nbm.deploy.metainfo.ProjectVersionDeployMetaInfoProvider.designer.project.version</key>\r\n      <value>{project_version}</value>\r\n    </entry>\r\n    <entry>\r\n      <key>DefaultDeployMetaInfoProvider.deployTime</key>\r\n      <value>{time_ms}</value>\r\n    </entry>\r\n  </infos>\r\n</deployMetaInfo>\r\n"
+    );
+    TxStatement {
+        sql: "INSERT INTO `ASYS_SYSTEM` (`ID`, `NAME`, `KIND`, `USER_NEW`, `DATE_NEW`, `USER_EDIT`, `DATE_EDIT`, `XMLDATA`) VALUES (?, ?, ?, ?, NOW(), ?, NOW(), ?) ON DUPLICATE KEY UPDATE `XMLDATA` = VALUES(`XMLDATA`), `USER_EDIT` = VALUES(`USER_EDIT`), `DATE_EDIT` = NOW()".into(),
+        params: vec![
+            DbValue::Text(DEPLOY_META_ID.into()),
+            DbValue::Text(DEPLOY_META_ID.into()),
+            DbValue::Int(DEPLOY_META_KIND),
+            DbValue::Text(DESIGNER_USER.into()),
+            DbValue::Text(DESIGNER_USER.into()),
+            DbValue::Bytes(xml.into_bytes()),
+        ],
+    }
+}
+
+fn xml_text(raw: &str) -> String {
+    raw.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+}
+
 fn live_columns(manager: &DbManager, mapping: &DeployMapping) -> Result<Vec<String>, String> {
     let sql = format!("SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = '{}'", mapping.table);
     let r = manager.query(&sql, false)?;
@@ -496,8 +719,27 @@ fn live_columns(manager: &DbManager, mapping: &DeployMapping) -> Result<Vec<Stri
 }
 
 fn remote_models(manager: &DbManager, mapping: &DeployMapping) -> Result<BTreeMap<String, String>, String> {
+    if mapping.is_system_table() {
+        let r = manager.query_all("SELECT `ID`, `KIND`, CAST(`XMLDATA` AS CHAR) FROM `ASYS_SYSTEM`")?;
+        if r.truncated {
+            return Err("The system table has more rows than the plan can compare; refusing to guess.".into());
+        }
+        // Rows of a type this deploy does not write (help pages, the deploy's own row) are not part of the plan.
+        return Ok(r
+            .rows
+            .into_iter()
+            .filter_map(|row| {
+                let mut cells = row.into_iter();
+                let name = cells.next().flatten()?;
+                let kind: i64 = cells.next().flatten()?.parse().ok()?;
+                let content = cells.next().flatten().unwrap_or_default();
+                let folder = deploy_encode::folder_of(kind)?;
+                Some((format!("{folder}/{name}"), content))
+            })
+            .collect());
+    }
     let sql = format!("SELECT `{}`, `{}` FROM `{}`", mapping.name_column, mapping.content_column, mapping.table);
-    let r = manager.query(&sql, false)?;
+    let r = manager.query_all(&sql)?;
     if r.truncated {
         return Err("The system table has more rows than the plan can compare; refusing to guess.".into());
     }
@@ -554,7 +796,13 @@ pub fn execute(manager: &DbManager, project_root: &Path, keys: &[String], force:
         return Err("Nothing selected, or the selection is no longer part of the plan.".into());
     }
     let local = collect_local_models(project_root)?;
-    let statements = build_statements(&current.mapping, &chosen, &local)?;
+    let mut statements = build_statements(&current.mapping, &chosen, &local)?;
+    if current.mapping.is_system_table() {
+        let author = std::env::var("USERNAME").or_else(|_| std::env::var("USER")).unwrap_or_default();
+        let time_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0);
+        let version = std::fs::read_to_string(project_root.join(".aditoprj").join("project.version")).unwrap_or_default();
+        statements.push(deploy_meta_statement(&xml_text(author.trim()), time_ms, &xml_text(version.trim())));
+    }
     manager.transaction(&statements)?;
     Ok(DeployOutcome { executed: statements.len(), target: current.target })
 }
@@ -575,7 +823,7 @@ mod tests {
     }
 
     fn model(key: &str, content: &str) -> LocalModel {
-        LocalModel { key: key.into(), main_file: PathBuf::new(), content: content.into(), extra_files: 0 }
+        LocalModel { key: key.into(), main_file: PathBuf::new(), content: content.into(), kind: 189, title: None, extra_files: 0 }
     }
 
     #[test]
@@ -645,7 +893,7 @@ mod tests {
         let bad = DeployMapping { table: "ASYS_SYSTEM; DROP TABLE x".into(), ..Default::default() };
         assert!(bad.validate().is_err());
         let m = DeployMapping::default();
-        assert!(m.verify_columns(&["id".into(), "content".into()]).is_ok());
+        assert!(m.verify_columns(&["id".into(), "xmldata".into()]).is_ok());
         let err = m.verify_columns(&["NAME".into(), "BLOB".into()]).unwrap_err();
         assert!(err.contains("Existing columns: NAME, BLOB"));
         assert!(m.verify_columns(&[]).unwrap_err().contains("not found"));
@@ -671,12 +919,41 @@ mod tests {
             PlanItem { op: DeployOp::U, key: "entity/B".into(), extra_files: 0, selected_by_default: true },
             PlanItem { op: DeployOp::D, key: "entity/Gone".into(), extra_files: 0, selected_by_default: false },
         ];
-        let s = build_statements(&DeployMapping::default(), &items, &local).unwrap();
+        let generic = DeployMapping { table: "ASYS_SYSTEM".into(), name_column: "ID".into(), content_column: "CONTENT".into() };
+        let s = build_statements(&generic, &items, &local).unwrap();
         assert_eq!(s[0].sql, "INSERT INTO `ASYS_SYSTEM` (`ID`, `CONTENT`) VALUES (?, ?)");
         assert_eq!(s[1].sql, "UPDATE `ASYS_SYSTEM` SET `CONTENT` = ? WHERE `ID` = ?");
         assert_eq!(s[2].sql, "DELETE FROM `ASYS_SYSTEM` WHERE `ID` = ?");
         assert_eq!(s[1].params, vec![DbValue::Text("<b/>".into()), DbValue::Text("entity/B".into())]);
         assert!(!s.iter().any(|x| x.sql.contains("<b/>")), "values are bound, never spliced");
+    }
+
+    #[test]
+    fn the_system_table_rows_carry_name_kind_title_and_content() {
+        let mut m = model("entity/Person_entity", "<entity/>");
+        m.title = Some("Person_Person".into());
+        let items = vec![
+            PlanItem { op: DeployOp::I, key: "entity/Person_entity".into(), extra_files: 0, selected_by_default: true },
+            PlanItem { op: DeployOp::U, key: "entity/Person_entity".into(), extra_files: 0, selected_by_default: true },
+            PlanItem { op: DeployOp::D, key: "entity/Old_entity".into(), extra_files: 0, selected_by_default: false },
+        ];
+        assert!(DeployMapping::default().is_system_table());
+        let s = build_statements(&DeployMapping::default(), &items, &[m]).unwrap();
+        assert!(s[0].sql.starts_with("INSERT INTO `ASYS_SYSTEM` (`ID`, `NAME`, `KIND`, `TITLE`"));
+        assert_eq!(s[0].params[0], DbValue::Text("Person_entity".into()));
+        assert_eq!(s[0].params[2], DbValue::Int(189));
+        assert_eq!(s[0].params[3], DbValue::Text("Person_Person".into()));
+        assert!(s[1].sql.starts_with("UPDATE `ASYS_SYSTEM` SET `XMLDATA` = ?"));
+        assert_eq!(s[2].params, vec![DbValue::Text("Old_entity".into()), DbValue::Int(189)]);
+    }
+
+    #[test]
+    fn the_deploy_row_records_author_time_and_project_version() {
+        let s = deploy_meta_statement("Clemens", 1793696855326, "6.5.0");
+        assert!(s.sql.contains("ON DUPLICATE KEY UPDATE"));
+        let DbValue::Bytes(xml) = &s.params[5] else { panic!("the row is bound as bytes") };
+        let xml = String::from_utf8(xml.clone()).unwrap();
+        assert!(xml.contains("<value>Clemens</value>") && xml.contains("<value>1793696855326</value>") && xml.contains("<value>6.5.0</value>"));
     }
 
     static N: AtomicUsize = AtomicUsize::new(0);

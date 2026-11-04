@@ -64,6 +64,12 @@ fn restore_open_projects(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     Ok(restorable)
 }
 
+/// The icons the icon chooser offers (shipped with the app).
+#[tauri::command(async)]
+fn list_icons() -> Vec<forge_app_core::icons::IconDto> {
+    forge_app_core::icons::bundled_icons()
+}
+
 /// File > Open Project adds, Close Project removes; returns the new list.
 #[tauri::command(async)]
 fn add_open_project(path: String, app: tauri::AppHandle) -> Result<Vec<String>, String> {
@@ -311,9 +317,21 @@ async fn execute_action(
             params.insert("forge_data_dir".to_string(), dir.to_string_lossy().into_owned());
         }
     }
-    tauri::async_runtime::spawn_blocking(move || dispatch_action(&action_id, target_path, params))
+    let is_transpile = action_id == "transpile";
+    if is_transpile {
+        use tauri::Emitter;
+        let handle = app.clone();
+        forge_app_core::transpile_action::set_progress_reporter(Some(std::sync::Arc::new(move |percent: u8, stage: &str| {
+            let _ = handle.emit("forge://transpile-progress", serde_json::json!({ "percent": percent, "stage": stage }));
+        })));
+    }
+    let result = tauri::async_runtime::spawn_blocking(move || dispatch_action(&action_id, target_path, params))
         .await
-        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+    if is_transpile {
+        forge_app_core::transpile_action::set_progress_reporter(None);
+    }
+    result
 }
 
 /// Ziel A.5: undo/redo keyboard commands. Scoped to `node_id` (the currently active editor tab)
@@ -667,6 +685,13 @@ async fn system_user_properties(db: State<'_, std::sync::Arc<DbManager>>, user: 
     tauri::async_runtime::spawn_blocking(move || forge_app_core::system_db::read_user_properties(&db, &user)).await.map_err(|e| e.to_string())?
 }
 
+/// Roles that can be assigned to a user besides the project's own: built-in and already assigned ones.
+#[tauri::command]
+async fn system_assigned_roles(db: State<'_, std::sync::Arc<DbManager>>) -> Result<Vec<String>, String> {
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::system_db::assigned_roles(&db)).await.map_err(|e| e.to_string())?
+}
+
 /// Writes one user property into the system database. Refused unless the user confirmed in the UI.
 #[tauri::command]
 async fn system_user_set_property(db: State<'_, std::sync::Arc<DbManager>>, id: String, value: String, confirmed: bool) -> Result<(), String> {
@@ -675,6 +700,46 @@ async fn system_user_set_property(db: State<'_, std::sync::Arc<DbManager>>, id: 
     }
     let db = db.inner().clone();
     tauri::async_runtime::spawn_blocking(move || forge_app_core::system_db::update_user_property(&db, &id, &value)).await.map_err(|e| e.to_string())?
+}
+
+/// Sets one single-valued property of a user; adds it when the user does not have it yet.
+#[tauri::command]
+async fn system_user_set(db: State<'_, std::sync::Arc<DbManager>>, user: String, key: String, value: String, confirmed: bool) -> Result<(), String> {
+    if !confirmed {
+        return Err("Changing a user needs your confirmation.".into());
+    }
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::system_db::set_user_property(&db, &user, &key, &value)).await.map_err(|e| e.to_string())?
+}
+
+/// Replaces the values of a list property of a user (roleNames).
+#[tauri::command]
+async fn system_user_set_list(db: State<'_, std::sync::Arc<DbManager>>, user: String, key: String, values: Vec<String>, confirmed: bool) -> Result<(), String> {
+    if !confirmed {
+        return Err("Changing a user needs your confirmation.".into());
+    }
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::system_db::set_user_list_property(&db, &user, &key, &values)).await.map_err(|e| e.to_string())?
+}
+
+/// Adds a user and returns its id.
+#[tauri::command]
+async fn system_user_create(db: State<'_, std::sync::Arc<DbManager>>, title: String, confirmed: bool) -> Result<String, String> {
+    if !confirmed {
+        return Err("Adding a user needs your confirmation.".into());
+    }
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::system_db::create_user(&db, &title)).await.map_err(|e| e.to_string())?
+}
+
+/// Removes a user created in the Designer.
+#[tauri::command]
+async fn system_user_delete(db: State<'_, std::sync::Arc<DbManager>>, user: String, confirmed: bool) -> Result<(), String> {
+    if !confirmed {
+        return Err("Removing a user needs your confirmation.".into());
+    }
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::system_db::delete_user(&db, &user)).await.map_err(|e| e.to_string())?
 }
 
 /// Alias config list of the system editor (ASYS_ALIASCONFIG rows of the given server ids).
@@ -888,13 +953,73 @@ fn liquibase_system(system: Option<String>, db: &DbManager) -> Result<String, St
     Ok(key)
 }
 
-/// Where a Liquibase update of this alias would go; shown in the confirmation before anything runs.
+#[derive(serde::Serialize)]
+struct LiquibaseConnection {
+    alias: String,
+    host: String,
+    port: u16,
+    database: String,
+    /// A tunnel to this host is open, so an update can reach it.
+    reachable: bool,
+}
+
+#[derive(serde::Serialize)]
+struct LiquibasePlan {
+    /// The alias that owns the database and the master changelog.
+    target_alias: String,
+    /// The transpiled changelog of the target alias exists in `dist`.
+    dist_ready: bool,
+}
+
+/// An alias definition of the project belongs to a target alias (`THHIT_Data_alias` -> `Data_alias`);
+/// that alias owns the connection and the master changelog the update runs.
 #[tauri::command]
-async fn liquibase_target(system: Option<String>, alias: String, db: State<'_, std::sync::Arc<DbManager>>) -> Result<LiquibaseTarget, String> {
+async fn liquibase_plan(project_root: String, alias: String) -> Result<LiquibasePlan, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = PathBuf::from(&project_root);
+        let read = |base: PathBuf| std::fs::read_to_string(base.join("aliasDefinition").join(&alias).join(format!("{alias}.aod"))).ok();
+        let target = read(root.clone())
+            .or_else(|| read(root.join("dist")))
+            .and_then(|text| forge_app_core::liquibase::target_alias_of(&text))
+            .unwrap_or_else(|| alias.clone());
+        let dist_ready = forge_app_core::liquibase::changelog_dir(&root.join("dist"), &target).is_ok();
+        Ok(LiquibasePlan { target_alias: target, dist_ready })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Every database connection the system knows (ASYS_ALIASCONFIG), for the "Select Database Connection" list.
+#[tauri::command]
+async fn liquibase_connections(system: Option<String>, db: State<'_, std::sync::Arc<DbManager>>) -> Result<Vec<LiquibaseConnection>, String> {
+    let db = db.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        liquibase_system(system, &db)?;
+        let result = db.query("SELECT ALIASID, CAST(XMLDATA AS CHAR) FROM ASYS_ALIASCONFIG ORDER BY ALIASID", false)?;
+        let mut out: Vec<LiquibaseConnection> = Vec::new();
+        for row in result.rows {
+            let mut cells = row.into_iter();
+            let (Some(Some(alias)), Some(Some(xml))) = (cells.next(), cells.next()) else { continue };
+            let Some(conn) = forge_app_core::system_config::alias_db_connection(&xml) else { continue };
+            if !out.iter().any(|c| c.alias == alias && c.host == conn.host && c.database == conn.database) {
+                let reachable = db.forward_port_for(&conn.host, conn.port).is_some();
+                out.push(LiquibaseConnection { alias, host: conn.host, port: conn.port, database: conn.database, reachable });
+            }
+        }
+        Ok(out)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Where a Liquibase update of this alias would go; shown in the confirmation before anything runs.
+/// `connection_alias` names the alias whose connection is used when the alias has none of its own.
+#[tauri::command]
+async fn liquibase_target(system: Option<String>, alias: String, connection_alias: Option<String>, db: State<'_, std::sync::Arc<DbManager>>) -> Result<LiquibaseTarget, String> {
     let db = db.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
         let system = liquibase_system(system, &db)?;
-        let conn = forge_app_core::system_db::read_alias_db(&db, &alias, &[])?;
+        let conn = forge_app_core::system_db::read_alias_db(&db, connection_alias.as_deref().unwrap_or(&alias), &[])?;
         Ok(LiquibaseTarget { system, host: conn.host, database: conn.database })
     })
     .await
@@ -904,13 +1029,15 @@ async fn liquibase_target(system: Option<String>, alias: String, db: State<'_, s
 /// Liquibase > Update of a database alias: runs the changelogs of `.liquibase/<alias>` against the
 /// alias database of the system. Only called after the user confirmed the target.
 #[tauri::command]
-async fn liquibase_update(app: tauri::AppHandle, system: Option<String>, alias: String, project_root: String, db: State<'_, std::sync::Arc<DbManager>>) -> Result<String, String> {
+async fn liquibase_update(app: tauri::AppHandle, system: Option<String>, alias: String, project_root: String, connection_alias: Option<String>, use_dist: bool, db: State<'_, std::sync::Arc<DbManager>>) -> Result<String, String> {
     let db = db.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
         use tauri::Emitter;
         let system = liquibase_system(system, &db)?;
-        let dir = forge_app_core::liquibase::changelog_dir(&PathBuf::from(&project_root), &alias)?;
-        let conn = forge_app_core::system_db::read_alias_db(&db, &alias, &[])?;
+        // The transpiled master changelog of the alias includes the changelogs of every module and project alias.
+        let changelog_root = if use_dist { PathBuf::from(&project_root).join("dist") } else { PathBuf::from(&project_root) };
+        let dir = forge_app_core::liquibase::changelog_dir(&changelog_root, &alias)?;
+        let conn = forge_app_core::system_db::read_alias_db(&db, connection_alias.as_deref().unwrap_or(&alias), &[])?;
         let port = db.forward_port_for(&conn.host, conn.port).ok_or_else(|| format!("Open the tunnel to {}:{} first (Services).", conn.host, conn.port))?;
         let configured = settings_file(&app).ok().and_then(|f| settings::load_settings(&f).designer_install_dir);
         let install = configured.filter(|d| !d.trim().is_empty()).or_else(settings::detect_designer_install).ok_or("The Designer installation was not found. Choose it in Tools > Options.")?;
@@ -1319,6 +1446,8 @@ fn build_native_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             open_project,
             list_tree_children,
             restore_open_projects,
+            list_icons,
+            system_assigned_roles,
             add_open_project,
             remove_open_project,
             get_property_tree,
@@ -1341,6 +1470,10 @@ fn build_native_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             read_theme_file,
             system_user_properties,
             system_user_set_property,
+            system_user_set,
+            system_user_set_list,
+            system_user_create,
+            system_user_delete,
             import_config_file,
             open_local_url,
             write_linked_file,
@@ -1414,6 +1547,8 @@ fn build_native_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             db_cancel_connect,
             db_connect_alias,
             liquibase_target,
+            liquibase_connections,
+            liquibase_plan,
             liquibase_update,
             db_query,
             db_schema,

@@ -159,7 +159,7 @@ pub fn seed_user_dir(designer_profile: &Path, user_dir: &Path) -> Result<(), Str
         let dest = join_rel(user_dir, rel);
         if !dest.exists() {
             copy_tree(&join_rel(designer_profile, rel), &dest)
-                .map_err(|e| format!("could not copy {rel} into the Forge transpiler profile {}: {e}", user_dir.display()))?;
+                .map_err(|e| format!("could not copy {rel} into the Dito_Transpiler profile {}: {e}", user_dir.display()))?;
         }
     }
     Ok(())

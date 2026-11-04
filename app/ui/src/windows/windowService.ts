@@ -34,8 +34,15 @@ export interface WindowBackend {
   listen(event: string, handler: (payload: unknown) => void): Promise<() => void>
 }
 
+function isMacOs(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent || '')
+}
+
 const tauriBackend: WindowBackend = {
-  available: () => isTauriRuntime(),
+  // macOS freezes the app when a second window opens from inside it, so there every dialog and
+  // tool window stays embedded in the main window.
+  available: () => isTauriRuntime() && !isMacOs(),
   async open(req) {
     const { invoke } = await import('@tauri-apps/api/core')
     await invoke('window_open', { req: { ...req, modal: !!req.modal, payload: req.payload === undefined ? null : JSON.stringify(req.payload) } })

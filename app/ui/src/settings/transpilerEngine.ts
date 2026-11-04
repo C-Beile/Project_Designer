@@ -10,15 +10,15 @@
 // consciously choosing it in the current session.
 export type TranspilerEngineId = 'official' | 'experimental'
 
-export const DEFAULT_ENGINE: TranspilerEngineId = 'official'
+export const DEFAULT_ENGINE: TranspilerEngineId = 'experimental'
 
 export const ENGINE_LABELS: Record<TranspilerEngineId, string> = {
-  official: 'Official ADITO transpiler',
-  experimental: 'Experimental Forge engine',
+  official: 'Official ADITO transpiler (needs the ADITO Designer installed)',
+  experimental: 'Dito_Transpiler (built in, no ADITO Designer needed)',
 }
 
 export const EXPERIMENTAL_WARNING =
-  'Experimental: the own Forge transpiler engine does not yet guarantee a byte-exact match with ' +
+  'Experimental: the own Dito_Transpiler engine does not yet guarantee a byte-exact match with ' +
   'the official ADITO transpiler. The last measured match rate against a real project was ' +
   '57.25% (not 100%). Use the official transpiler for any production deployment; pick this engine ' +
   'only to inspect or exercise the own engine itself.'

@@ -45,7 +45,7 @@ pub enum TranspilerEngine {
 
 impl Default for TranspilerEngine {
     fn default() -> Self {
-        TranspilerEngine::Official
+        TranspilerEngine::ExperimentalForge
     }
 }
 
@@ -55,8 +55,8 @@ impl TranspilerEngine {
     /// not an error.
     pub fn from_param(value: Option<&str>) -> Self {
         match value {
-            Some("experimental") => TranspilerEngine::ExperimentalForge,
-            _ => TranspilerEngine::Official,
+            Some("official") => TranspilerEngine::Official,
+            _ => TranspilerEngine::ExperimentalForge,
         }
     }
 }
@@ -66,7 +66,7 @@ impl TranspilerEngine {
 /// app UI is never mistaken for (or clobbered by) a differential-harness corpus run against the
 /// same project copy.
 fn experimental_output_dir(project_home: &Path) -> PathBuf {
-    project_home.join("_forge_experimental_dist")
+    project_home.join("dist")
 }
 
 /// Runs the selected engine against `project_home`. Pure function, no `ActionContext`/
@@ -89,7 +89,12 @@ pub fn cancel_build() -> bool {
     transpiler::cancel_active_run()
 }
 
-pub fn run_transpile(project_home: &Path, engine: TranspilerEngine, install_dir: &Path, user_dir: &Path) -> Result<(), String> {
+/// Receives the progress (0 to 100 and the running stage) of the built-in transpiler while it runs.
+pub fn set_progress_reporter(reporter: Option<std::sync::Arc<dyn Fn(u8, &str) + Send + Sync>>) {
+    differential_harness::own_engine::progress::set_reporter(reporter);
+}
+
+pub fn run_transpile(project_home: &Path, engine: TranspilerEngine, install_dir: &Path, user_dir: &Path, cache_dir: Option<&Path>) -> Result<(), String> {
     match engine {
         TranspilerEngine::Official => {
             let config = TranspilerConfig::new(install_dir.to_path_buf(), user_dir.to_path_buf())
@@ -119,6 +124,10 @@ pub fn run_transpile(project_home: &Path, engine: TranspilerEngine, install_dir:
                 std::fs::remove_dir_all(&output_dir).map_err(|e| e.to_string())?;
             }
             std::fs::create_dir_all(&output_dir).map_err(|e| e.to_string())?;
+            // The engine's cache lives in the app's own data folder, never inside the project.
+            if let Some(dir) = cache_dir {
+                std::env::set_var("FORGE_INCREMENTAL_CACHE_DIR", dir);
+            }
             let own_engine = IncrementalEngine;
             own_engine.run(project_home, &output_dir).map_err(|e| e.to_string())
         }
@@ -141,7 +150,8 @@ impl Action for TranspileAction {
         }
 
         if engine == TranspilerEngine::ExperimentalForge {
-            return run_transpile(&project_home, engine, Path::new(""), Path::new(""))
+            let cache = param("forge_data_dir").map(|d| d.join("transpile-cache"));
+            return run_transpile(&project_home, engine, Path::new(""), Path::new(""), cache.as_deref())
                 .map(|()| Transaction::new(vec![]))
                 .map_err(ActionError::new);
         }
@@ -165,7 +175,7 @@ impl Action for TranspileAction {
             }
         };
 
-        run_transpile(&project_home, engine, &install_dir, &user_dir)
+        run_transpile(&project_home, engine, &install_dir, &user_dir, None)
             .map(|()| Transaction::new(vec![]))
             .map_err(ActionError::new)
     }
@@ -176,15 +186,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn engine_from_param_defaults_to_official_for_missing_or_unknown_values() {
-        assert_eq!(TranspilerEngine::from_param(None), TranspilerEngine::Official);
-        assert_eq!(TranspilerEngine::from_param(Some("")), TranspilerEngine::Official);
-        assert_eq!(TranspilerEngine::from_param(Some("typo")), TranspilerEngine::Official);
-        assert_eq!(TranspilerEngine::default(), TranspilerEngine::Official);
+    fn engine_from_param_defaults_to_the_built_in_engine_for_missing_or_unknown_values() {
+        assert_eq!(TranspilerEngine::from_param(None), TranspilerEngine::ExperimentalForge);
+        assert_eq!(TranspilerEngine::from_param(Some("")), TranspilerEngine::ExperimentalForge);
+        assert_eq!(TranspilerEngine::from_param(Some("typo")), TranspilerEngine::ExperimentalForge);
+        assert_eq!(TranspilerEngine::default(), TranspilerEngine::ExperimentalForge);
     }
 
     #[test]
-    fn engine_from_param_recognises_the_exact_experimental_marker() {
+    fn engine_from_param_recognises_the_official_choice() {
+        assert_eq!(TranspilerEngine::from_param(Some("official")), TranspilerEngine::Official);
         assert_eq!(TranspilerEngine::from_param(Some("experimental")), TranspilerEngine::ExperimentalForge);
     }
 

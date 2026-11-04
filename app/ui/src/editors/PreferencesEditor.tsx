@@ -48,7 +48,20 @@ interface Selected {
   description: string
 }
 
-export function PreferencesEditor({ nodeId, tree, api, onTreeChange }: EditorProps) {
+export function PreferencesEditor({ nodeId, tree, api, projectRoot, onTreeChange }: EditorProps) {
+  // The properties that name an alias (clusterMessagingAlias, defaultDataAlias ...) are chosen from the aliases of the project.
+  const [aliasNames, setAliasNames] = useState<string[]>([])
+  useEffect(() => {
+    if (!projectRoot) return
+    let cancelled = false
+    void api
+      .listProjectModels(projectRoot)
+      .then((models) => !cancelled && setAliasNames(models.filter((m) => m.folder === 'aliasDefinition').map((m) => m.name).sort((a, b) => a.localeCompare(b))))
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [api, projectRoot])
   const [source, setSource] = useState<{ text: string; read_only: boolean } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Selected | null>(null)
@@ -117,6 +130,7 @@ export function PreferencesEditor({ nodeId, tree, api, onTreeChange }: EditorPro
                   tree={tree}
                   selected={selected?.key === `top:${p.name}`}
                   canEditSource={canEditSource}
+                  aliasNames={aliasNames}
                   onSelect={() => select(`top:${p.name}`, p.name, PREFERENCES_DESCRIPTIONS[p.name] ?? '')}
                   onCommitText={(next) => commitScalar(p.name, next)}
                   onCommitTyped={(shape, next) => commitSource((text) => setTopLevelValue(text, p.name, shape, next))}
@@ -164,6 +178,7 @@ function TopRow({
   tree,
   selected,
   canEditSource,
+  aliasNames,
   onSelect,
   onCommitText,
   onCommitTyped,
@@ -172,6 +187,7 @@ function TopRow({
   tree: WireValue
   selected: boolean
   canEditSource: boolean
+  aliasNames: string[]
   onSelect: () => void
   onCommitText: (next: string) => void
   onCommitTyped: (shape: PropertyShape, next: string) => void
@@ -182,6 +198,18 @@ function TopRow({
   let control
   if (shape === 'missing') {
     control = <EditableText value="" ariaLabel={label} disabled title="Not set in this file. Adding a new top-level property is not supported yet." onCommit={() => {}} />
+  } else if (shape === 'text' && /Alias$/.test(prop.name) && aliasNames.length > 0) {
+    const options = text && !aliasNames.includes(text) ? [text, ...aliasNames] : aliasNames
+    control = (
+      <select aria-label={label} value={text} disabled={!canEditSource} onChange={(e) => onCommitText(e.target.value)} style={{ width: '100%' }}>
+        <option value="" />
+        {options.map((name) => (
+          <option key={name} value={name}>
+            {name}
+          </option>
+        ))}
+      </select>
+    )
   } else if (shape === 'text') {
     control = <EditableText value={text} ariaLabel={label} onCommit={onCommitText} />
   } else if (shape === 'bool') {

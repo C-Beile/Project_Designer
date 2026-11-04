@@ -313,7 +313,9 @@ pub fn run_copy_phase(graph: &ModuleGraph, output_dir: &Path) -> Result<CopyPhas
     let mut ordered: Vec<&ModuleDefinition> = graph.modules.values().collect();
     ordered.push(&graph.project);
 
-    for module in ordered {
+    let total = ordered.len();
+    for (done, module) in ordered.into_iter().enumerate() {
+        crate::own_engine::progress::report_between(8, 35, done, total, "Copying the modules");
         let ignore = read_ignore_entries(&module.path)?;
         report.files_copied += copy_module_tree(&module.path, &ignore, output_dir)?;
         report.modules_processed += 1;

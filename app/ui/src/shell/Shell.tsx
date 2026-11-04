@@ -34,6 +34,8 @@ import { Toolbar } from './Toolbar'
 import { AboutDialog, Modal } from './Dialogs'
 import { OptionsDialog } from './OptionsDialog'
 import { DeployDialog } from './DeployDialog'
+import { SelectDatabaseConnectionDialog, type LiquibaseChoice } from './SelectDatabaseConnectionDialog'
+import type { LiquibaseConnection } from '../api/ForgeApi'
 import { DeployOptionsDialog, systemWarning, type DeployOptionsPayload, type DeployOptionsResult, type DeploySystem } from './DeployOptionsDialog'
 import { copyNewUuid } from './uuid'
 import type { RefactoringState } from './RefactoringPanel'
@@ -85,7 +87,7 @@ import { aliasConfigTabNode, parseAliasConfigRef, type AliasConfigRef } from '..
 import { ConfigNavigator } from '../navigator/ConfigNavigator'
 import { isConfigurationAlias, sectionLabel, useConfigSection } from '../properties/configSections'
 import { useSystemTunnels } from '../services/useSystemTunnels'
-import { TranspileProgress } from './TranspileProgress'
+import { TranspileProgress, type BuildProgress } from './TranspileProgress'
 import { getTunnelState, requestSystemReload, setConnectedSystem, setSystemsDb, setProgress, UNCONFIGURED_HINT, systemKey, systemNameOf, projectOfPath, systemPhase, TUNNEL_PHASE_LABEL, useTunnelState } from '../services/tunnelState'
 import { NavigatorPanel } from '../navigator/NavigatorPanel'
 import {
@@ -998,11 +1000,15 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     [api, conflict, tabState, markUnsaved],
   )
 
+  const [connectionPick, setConnectionPick] = useState<{ connections: LiquibaseConnection[]; preferredAlias: string; title: string; resolve: (c: LiquibaseChoice | null) => void; onTranspile: () => Promise<boolean> } | null>(null)
   const busy = useRef(false)
   const transpile = useCallback(
     async (mode: TranspileMode, project: string = root): Promise<boolean> => {
       if (!project.trim() || busy.current) return false
+      // A module is not built on its own: it only needs a transpile when its package.json changed.
+      if (trees[project]?.some((n) => n.module_project) && !(await confirmDialog('This is a module project. A module is normally not built; transpile it only when its package.json changed. Transpile anyway?', { title: 'Transpile module project', okLabel: 'Transpile', cancelLabel: 'Cancel' }))) return false
       busy.current = true
+      setBuildProgress(null)
       setProblems('build', [])
       setTranspileRunning(true)
       showToolWindow('output', false)
@@ -1034,7 +1040,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         setTranspileRunning(false)
       }
     },
-    [api, root, engine, installDir, appendLog, showToolWindow],
+    [api, root, engine, installDir, appendLog, showToolWindow, trees],
   )
 
   // Deploy and Build and Deploy: first dialog (project, system, options) as a window of its own, then
@@ -1244,6 +1250,23 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       stop?.()
     }
   }, [appendLog])
+  // How far the built-in transpiler is: a bar with the percentage in the corner panel.
+  const [buildProgress, setBuildProgress] = useState<BuildProgress | null>(null)
+  useEffect(() => {
+    let stop: (() => void) | null = null
+    let gone = false
+    void getWindowBackend()
+      .listen('forge://transpile-progress', (p) => {
+        const e = p as { percent: number; stage: string }
+        setBuildProgress({ percent: Math.max(0, Math.min(100, Math.round(e.percent))), stage: e.stage })
+      })
+      .then((u) => (gone ? u() : (stop = u)))
+      .catch(() => {})
+    return () => {
+      gone = true
+      stop?.()
+    }
+  }, [])
   // Phases of a connect (Starting ssh/plink, Forwarding the port, Waiting for the database) as they
   // happen: the tree dot, status bar and editors show them, Output > Default gets one line each.
   useEffect(() => {
@@ -1342,27 +1365,43 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         if (!pick) return
         system = pick
       }
+      const log = (level: 'info' | 'error', text: string) => appendLog('build', [{ level, text: `[${timestamp()}] ${text}` }])
       try {
-        const target = await api.liquibaseTarget(system, alias)
-        const ok = await confirmDialog(
-          `Update the database ${target.database} on ${target.host} (system ${systemNameOf(target.system)}) with the changelogs of ${alias}? Changes that are not in the database yet are applied. This cannot be undone.`,
-          { title: 'Liquibase Update', okLabel: 'Update' },
+        // A project alias belongs to a target alias (THHIT_Data_alias -> Data_alias): that one owns the
+        // database and the master changelog, which includes the changelogs of every module and alias.
+        const plan = await api.liquibasePlan(project, alias)
+        const connections = await api.liquibaseConnections(system)
+        const choice = await new Promise<LiquibaseChoice | null>((resolve) =>
+          setConnectionPick({
+            connections,
+            preferredAlias: plan.target_alias,
+            title: `Which database should the changelogs of ${alias === plan.target_alias ? alias : `${alias} (part of ${plan.target_alias})`} update?`,
+            resolve,
+            onTranspile: () => transpile('partial', project),
+          }),
         )
-        if (!ok) return
+        if (!choice) return
         showToolWindow('output', false)
         setOutputSub('build')
-        appendLog('build', [{ level: 'info', text: `[${timestamp()}] Liquibase update of ${alias} started` }])
-        const message = await api.liquibaseUpdate(system, alias, project)
-        notify(message, { kind: 'success' })
-        setStatus(message)
+        log('info', `Liquibase update of ${plan.target_alias} started`)
+        if (!choice.useDist && !(await transpile('partial', project))) {
+          log('error', 'The transpile failed, so the update did not start.')
+          return
+        }
+        const message = await api.liquibaseUpdate(system, plan.target_alias, project, choice.connection.alias, true)
+        const done = `Update successful: ${plan.target_alias} on ${choice.connection.database}`
+        log('info', done)
+        notify(done, { kind: 'success' })
+        setStatus(done)
+        void message
       } catch (e) {
         const text = e instanceof Error ? e.message : String(e)
-        appendLog('build', [{ level: 'error', text: `[${timestamp()}] ${text}` }])
+        log('error', text)
         notify(text, { kind: 'error', timeoutMs: 10000 })
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [api, showToolWindow, appendLog],
+    [api, showToolWindow, appendLog, transpile],
   )
 
   const runTreeAction = useCallback(
@@ -2533,7 +2572,23 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
           }}
         />
       ) : null}
-      {transpileRunning ? <TranspileProgress label={`Transpiling (${engine})...`} onCancel={engine === 'official' ? () => void cancelBuild() : undefined} /> : null}
+      {connectionPick ? (
+        <SelectDatabaseConnectionDialog
+          connections={connectionPick.connections}
+          preferredAlias={connectionPick.preferredAlias}
+          title={connectionPick.title}
+          onTranspile={connectionPick.onTranspile}
+          onOk={(c) => {
+            connectionPick.resolve(c)
+            setConnectionPick(null)
+          }}
+          onCancel={() => {
+            connectionPick.resolve(null)
+            setConnectionPick(null)
+          }}
+        />
+      ) : null}
+      {transpileRunning ? <TranspileProgress label={`Transpiling (${engine})...`} progress={engine === 'official' ? null : buildProgress} onCancel={engine === 'official' ? () => void cancelBuild() : undefined} /> : null}
       {deployOptions ? (
         <DeployOptionsDialog api={api} payload={deployOptions.payload} onOk={(r) => deployOptions.resolve(r)} onCancel={() => deployOptions.resolve(null)} />
       ) : null}

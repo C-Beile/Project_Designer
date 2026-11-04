@@ -5,6 +5,7 @@ import type { ForgeApi } from '../api/ForgeApi'
 import { addInsertUuidAction } from '../theme/monacoUuid'
 import { trackEditorFocus } from '../theme/monacoActions'
 import { ensureMonacoWorkers } from '../theme/monacoWorkers'
+import { attachAditoStyle, registerAditoModel } from '../theme/monacoAdito'
 import { setProblems } from '../problems/problemStore'
 import { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForgeThemeForMonaco } from '../theme/monacoTheme'
 
@@ -56,6 +57,8 @@ export function JDitoCodeField({
     ensureMonacoThemesDefined()
 
     let markerSub: { dispose(): void } | undefined
+    let unregisterAdito: (() => void) | undefined
+    let detachStyle: (() => void) | undefined
     const channel = `js:${ownerNodeId ?? ''}|${reference}`
     ;(isNew ? Promise.resolve('') : api.readLinkedFile(projectRoot, reference))
       .then(async (content) => {
@@ -72,6 +75,8 @@ export function JDitoCodeField({
         editorRef.current.onDidChangeModelContent(() => setDirty(true))
         // Syntax errors found by the language service become entries of the Problems tab.
         const model = editorRef.current.getModel()
+        if (model) unregisterAdito = registerAditoModel(model, { api, projectRoot, ownerNodeId })
+        detachStyle = attachAditoStyle(editorRef.current)
         if (model && typeof monaco.editor.onDidChangeMarkers === 'function') {
           const publish = () => {
             const list = monaco.editor
@@ -102,6 +107,8 @@ export function JDitoCodeField({
     return () => {
       disposed = true
       markerSub?.dispose()
+      unregisterAdito?.()
+      detachStyle?.()
       setProblems(channel, [])
       editorRef.current?.dispose()
       editorRef.current = null

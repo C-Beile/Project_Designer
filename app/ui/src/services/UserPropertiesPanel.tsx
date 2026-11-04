@@ -16,7 +16,9 @@ const SECTIONS: { title: string; keys: string[] }[] = [
 ]
 const KNOWN = new Set(SECTIONS.flatMap((s) => s.keys.map((k) => k.toLowerCase())))
 const BOOLEANS = new Set(['isactive', 'isblocked'])
-const READ_ONLY_KEYS = new Set(['lastmodified', 'name'])
+const READ_ONLY_KEYS = new Set(['lastmodified', 'name', 'lastlogin', 'lastlogout', 'passwordchanged'])
+const SECRET_KEYS = new Set(['password', 'passwordhistory'])
+const LIST_KEYS = new Set(['rolenames'])
 
 type Tab = 'properties' | 'extended' | 'internal'
 
@@ -42,6 +44,10 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
   const [tab, setTab] = useState<Tab>('properties')
   const [props, setProps] = useState<UserPropertyDto[] | null>(null)
   const [edits, setEdits] = useState<Record<string, string>>({})
+  const [listEdits, setListEdits] = useState<Record<string, string[]>>({})
+  const [roles, setRoles] = useState<string[]>([])
+  const [systemRoles, setSystemRoles] = useState<string[]>([])
+  const [openList, setOpenList] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [tick, setTick] = useState(0)
@@ -50,9 +56,12 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
     let cancelled = false
     setProps(null)
     setEdits({})
+    setListEdits({})
+    setOpenList(null)
     setError(null)
     void (async () => {
       await api.dbActivate(systemKey).catch(() => false)
+      void api.systemAssignedRoles().then((r) => !cancelled && setSystemRoles(r)).catch(() => undefined)
       return api.systemUserProperties(user)
     })()
       .then((p) => !cancelled && setProps(p))
@@ -62,20 +71,41 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
     }
   }, [api, user, systemKey, tick])
 
+  useEffect(() => {
+    const root = systemKey.split('|')[0]
+    if (!root) return
+    let cancelled = false
+    api
+      .listProjectModels(root)
+      .then((models) => !cancelled && setRoles(models.filter((m) => m.folder === 'role').map((m) => m.name).sort((a, b) => a.localeCompare(b))))
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [api, systemKey])
+
   const byKey = useMemo(() => fieldsByKey(props ?? []), [props])
-  const changed = (props ?? []).filter((p) => p.editable && edits[p.id] !== undefined && edits[p.id] !== (p.value ?? ''))
+  const currentOf = (key: string): string => byKey.get(key.toLowerCase())?.rows[0]?.value ?? ''
+  const valuesOf = (key: string): string[] => (byKey.get(key.toLowerCase())?.rows ?? []).map((r) => r.value ?? '').filter((v) => v !== '')
+  const changedSingles = Object.entries(edits).filter(([key, value]) => value !== currentOf(key))
+  const changedLists = Object.entries(listEdits).filter(([key, value]) => value.slice().sort().join('\u0000') !== valuesOf(key).slice().sort().join('\u0000'))
+  const changeCount = changedSingles.length + changedLists.length
 
   async function save() {
-    if (changed.length === 0) return
-    const lines = changed.map((p) => `${p.key}: "${p.value ?? ''}" -> "${edits[p.id]}"`).join(String.fromCharCode(10))
+    if (changeCount === 0) return
     const nl = String.fromCharCode(10)
-    const yes = await confirmDialog(`Write ${changed.length} change${changed.length === 1 ? '' : 's'} of ${selection.title || user} into the system database of ${systemName}?${nl}${nl}${lines}`, { title: 'Save user', okLabel: 'Save' })
+    const lines = [
+      ...changedSingles.map(([key, value]) => `${key}: "${currentOf(key)}" -> "${value}"`),
+      ...changedLists.map(([key, value]) => `${key}: [${valuesOf(key).join(', ')}] -> [${value.join(', ')}]`),
+    ].join(nl)
+    const yes = await confirmDialog(`Write ${changeCount} change${changeCount === 1 ? '' : 's'} of ${selection.title || user} into the system database of ${systemName}?${nl}${nl}${lines}`, { title: 'Save user', okLabel: 'Save' })
     if (!yes) return
     setSaving(true)
     setError(null)
     try {
       await api.dbActivate(systemKey).catch(() => false)
-      for (const p of changed) await api.systemUserSetProperty(p.id, edits[p.id], true)
+      for (const [key, value] of changedSingles) await api.systemUserSet(user, key, value, true)
+      for (const [key, value] of changedLists) await api.systemUserSetList(user, key, value, true)
       notifyUsersChanged()
       setTick((n) => n + 1)
     } catch (e) {
@@ -86,45 +116,77 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
   }
 
   const row = (key: string) => {
-    const field = byKey.get(key.toLowerCase())
     const lower = key.toLowerCase()
-    const rows = field?.rows ?? []
-    const secret = rows.some((r) => !r.editable) || lower === 'password' || lower === 'passwordhistory'
-    if (secret) {
+    const field = byKey.get(lower)
+    const isSet = (field?.rows.length ?? 0) > 0
+    if (SECRET_KEYS.has(lower)) {
       return (
         <div className="up-row" key={key}>
-          <span className={`up-name${rows.length ? '' : ' is-unset'}`}>{key}</span>
-          <span className="up-value">{rows.length ? '***' : ''}</span>
-        </div>
-      )
-    }
-    if (rows.length > 1) {
-      return (
-        <div className="up-row" key={key}>
-          <span className="up-name">{key}</span>
-          <span className="up-value" title={rows.map((r) => r.value ?? '').join(', ')}>
-            [{rows.map((r) => r.value ?? '').join(', ')}]
+          <span className={`up-name${isSet ? '' : ' is-unset'}`}>{key}</span>
+          <span className="up-value" title="Passwords are set in the client of the system, not here">
+            {isSet ? '***' : ''}
           </span>
         </div>
       )
     }
-    const p = rows[0]
-    const readOnly = !p || READ_ONLY_KEYS.has(lower)
-    const current = p ? (edits[p.id] ?? p.value ?? '') : ''
-    const isChanged = !!p && edits[p.id] !== undefined && edits[p.id] !== (p.value ?? '')
+    if (LIST_KEYS.has(lower)) {
+      const selected = listEdits[key] ?? valuesOf(key)
+      const options = [...new Set([...systemRoles, ...roles, ...selected])].sort((a, b) => a.localeCompare(b))
+      const isChanged = listEdits[key] !== undefined && changedLists.some(([k]) => k === key)
+      return (
+        <div className={`up-row up-list${isChanged ? ' is-changed' : ''}`} key={key}>
+          <span className={`up-name${isSet ? '' : ' is-unset'}`}>{key}</span>
+          <div className="up-listbox">
+            <button type="button" className="up-list-button" aria-label={key} aria-expanded={openList === key} onClick={() => setOpenList(openList === key ? null : key)}>
+              <span>[{selected.join(', ')}]</span>
+              <span aria-hidden="true">{'▾'}</span>
+            </button>
+            {openList === key ? (
+              <div className="up-list-menu" role="listbox" aria-label={`${key} values`}>
+                {options.length === 0 ? <p className="forge-field-hint">No roles found in the project.</p> : null}
+                {options.map((o) => (
+                  <label key={o}>
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(o)}
+                      onChange={(e) => setListEdits((prev) => ({ ...prev, [key]: e.target.checked ? [...selected, o] : selected.filter((v) => v !== o) }))}
+                    />
+                    <span>{o}</span>
+                  </label>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )
+    }
+    if ((field?.rows.length ?? 0) > 1) {
+      return (
+        <div className="up-row" key={key}>
+          <span className="up-name">{key}</span>
+          <span className="up-value" title={field?.rows.map((r) => r.value ?? '').join(', ')}>
+            [{field?.rows.map((r) => r.value ?? '').join(', ')}]
+          </span>
+        </div>
+      )
+    }
+    const readOnly = READ_ONLY_KEYS.has(lower)
+    const stored = currentOf(key)
+    const current = edits[key] ?? stored
+    const isChanged = edits[key] !== undefined && edits[key] !== stored
     return (
       <div className={`up-row${isChanged ? ' is-changed' : ''}`} key={key}>
-        <span className={`up-name${p ? '' : ' is-unset'}`}>{key}</span>
-        {BOOLEANS.has(lower) && p ? (
-          <input type="checkbox" aria-label={key} checked={current.toLowerCase() === 'true'} onChange={(e) => setEdits((prev) => ({ ...prev, [p.id]: e.target.checked ? 'true' : 'false' }))} />
+        <span className={`up-name${isSet ? '' : ' is-unset'}`}>{key}</span>
+        {BOOLEANS.has(lower) ? (
+          <input type="checkbox" aria-label={key} checked={current.toLowerCase() === 'true'} onChange={(e) => setEdits((prev) => ({ ...prev, [key]: e.target.checked ? 'true' : 'false' }))} />
         ) : (
           <input
             type="text"
             aria-label={key}
             value={lower === 'lastmodified' && current ? formatStamp(current) : current}
             readOnly={readOnly}
-            title={!p ? 'Not set for this user' : undefined}
-            onChange={(e) => p && setEdits((prev) => ({ ...prev, [p.id]: e.target.value }))}
+            title={!isSet && !readOnly ? 'Not set for this user yet' : undefined}
+            onChange={(e) => setEdits((prev) => ({ ...prev, [key]: e.target.value }))}
           />
         )}
       </div>
@@ -146,8 +208,8 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
           <button type="button" title="Read the properties again" aria-label="Reload properties" onClick={() => setTick((n) => n + 1)}>
             {'↻'}
           </button>
-          <button type="button" className="is-primary" disabled={changed.length === 0 || saving} onClick={() => void save()}>
-            {saving ? 'Saving...' : `Save${changed.length ? ` (${changed.length})` : ''}`}
+          <button type="button" className="is-primary" disabled={changeCount === 0 || saving} onClick={() => void save()}>
+            {saving ? 'Saving...' : `Save${changeCount ? ` (${changeCount})` : ''}`}
           </button>
         </span>
       </div>

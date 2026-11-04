@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { AliasConfigTable, DbStatus, TableDump } from '../wire/types'
-import { getUserSelection, setUserSelection, useUsersChanged } from './userSelection'
+import { confirmDialog, promptDialog } from '../shell/dialogService'
+import { getUserSelection, notifyUsersChanged, setUserSelection, useUsersChanged } from './userSelection'
 
 // Users tab and the alias-config list of the system editor, read from the system database
 // (ASYS_USERS, ASYS_ALIASCONFIG). Credential columns are removed by the backend; this view only
@@ -62,14 +63,50 @@ function isTrue(value: string | null): boolean {
 // Users tab (original Designer, manual 6.1.3): one row per user with isActive as a check mark,
 // title, email, firstname and lastname. Sorting by header click, a filter field and pages of 100
 // rows keep large user lists fast.
-function UsersGrid({ dump, systemKey, systemName, onReload }: { dump: TableDump; systemKey?: string; systemName?: string; onReload: () => void }) {
+function UsersGrid({ api, dump, systemKey, systemName, onReload }: { api: ForgeApi; dump: TableDump; systemKey?: string; systemName?: string; onReload: () => void }) {
   const [selectedUser, setSelectedUser] = useState<string | null>(() => getUserSelection()?.user ?? null)
   // Leaving the tab takes the user out of the Properties panel again.
   useEffect(() => () => setUserSelection(null), [])
   const [filter, setFilter] = useState('')
   const [sort, setSort] = useState<{ col: number; desc: boolean } | null>(null)
   const [page, setPage] = useState(0)
+  const [actionError, setActionError] = useState<string | null>(null)
   const needle = filter.trim().toLowerCase()
+
+  async function addUser() {
+    const title = await promptDialog(`Name of the new user in ${systemName ?? 'the system'}:`, { title: 'Add user', label: 'User name', okLabel: 'Add', validate: (v) => (v.trim() ? null : 'Enter a name.') })
+    if (title === null) return
+    const nl = String.fromCharCode(10)
+    const yes = await confirmDialog(`Add the user "${title.trim()}" to the system database of ${systemName ?? 'the system'}?${nl}${nl}The user has no password yet.`, { title: 'Add user', okLabel: 'Add' })
+    if (!yes) return
+    setActionError(null)
+    try {
+      if (systemKey) await api.dbActivate(systemKey).catch(() => false)
+      const created = await api.systemUserCreate(title.trim(), true)
+      setSelectedUser(created)
+      setUserSelection({ systemKey: systemKey ?? '', systemName: systemName ?? '', user: created, title: title.trim() })
+      notifyUsersChanged()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : String(e))
+    }
+  }
+
+  async function removeUser() {
+    const selected = getUserSelection()
+    if (!selected) return
+    const yes = await confirmDialog(`Remove the user "${selected.title || selected.user}" with all of its properties from the system database of ${systemName ?? 'the system'}? This cannot be undone.`, { title: 'Remove user', okLabel: 'Remove' })
+    if (!yes) return
+    setActionError(null)
+    try {
+      if (systemKey) await api.dbActivate(systemKey).catch(() => false)
+      await api.systemUserDelete(selected.user, true)
+      setSelectedUser(null)
+      setUserSelection(null)
+      notifyUsersChanged()
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : String(e))
+    }
+  }
   // Every row keeps the user it stands for (the key of the row), also after filtering and sorting.
   let entries = dump.rows.map((cells, i) => ({ cells, user: dump.row_keys?.[i] ?? null }))
   if (needle) entries = entries.filter((r) => r.cells.some((c) => (c ?? '').toLowerCase().includes(needle)))
@@ -94,6 +131,12 @@ function UsersGrid({ dump, systemKey, systemName, onReload }: { dump: TableDump;
           }}
         />
         <span className="users-count">{rows.length} users</span>
+        <button type="button" className="users-reload" title="Add a user" aria-label="Add user" onClick={() => void addUser()}>
+          +
+        </button>
+        <button type="button" className="users-reload" title="Remove the selected user" aria-label="Remove user" disabled={!selectedUser} onClick={() => void removeUser()}>
+          {'−'}
+        </button>
         <button type="button" className="users-reload" title="Read the users again" aria-label="Reload users" onClick={onReload}>
           {'↻'}
         </button>
@@ -111,6 +154,11 @@ function UsersGrid({ dump, systemKey, systemName, onReload }: { dump: TableDump;
           </span>
         ) : null}
       </div>
+      {actionError ? (
+        <p className="forge-field-error" role="alert">
+          {actionError}
+        </p>
+      ) : null}
       <div className="users-list">
       <table className="forge-users-table users-grid" aria-label="Users">
         <thead>
@@ -166,7 +214,7 @@ export function UsersTab({ api, db, reload = 0, systemKey, systemName }: { api: 
         </p>
       ) : null}
       {db.connected && !data && !error ? <p className="forge-field-hint">Please Wait…</p> : null}
-      {data ? <UsersGrid dump={data} systemKey={systemKey} systemName={systemName} onReload={() => setTick((n) => n + 1)} /> : null}
+      {data ? <UsersGrid api={api} dump={data} systemKey={systemKey} systemName={systemName} onReload={() => setTick((n) => n + 1)} /> : null}
     </div>
   )
 }

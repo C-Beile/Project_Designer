@@ -226,7 +226,7 @@ describe('Shell - toolbar, transpile and options', () => {
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'Run configuration' })).toHaveValue('default'))
   })
 
-  it('transpiles with the official engine, locks the button meanwhile and logs the result in Output - Build', async () => {
+  it('transpiles with the Dito_Transpiler, locks the button meanwhile and logs the result in Output - Build', async () => {
     const user = userEvent.setup()
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     let finish!: () => void
@@ -234,7 +234,7 @@ describe('Shell - toolbar, transpile and options', () => {
     render(<Shell api={api} projectRoot="C:/demo" />)
 
     await user.click(screen.getByRole('button', { name: 'Transpile' }))
-    expect(exec).toHaveBeenCalledWith('transpile', 'C:/demo', { engine: 'official', mode: 'full' })
+    expect(exec).toHaveBeenCalledWith('transpile', 'C:/demo', { engine: 'experimental', mode: 'full' })
     expect(screen.getByRole('button', { name: 'Transpile' })).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByRole('progressbar', { name: /^Transpiling \(/ })).toBeInTheDocument()
 
@@ -243,7 +243,7 @@ describe('Shell - toolbar, transpile and options', () => {
     expect(screen.queryByRole('progressbar')).toBeNull()
   })
 
-  it('Tools > Transpiler > Experimental shows the 57.25 % warning and is used for the next run', async () => {
+  it('Tools > Transpiler > Official is used for the next run', async () => {
     const user = userEvent.setup()
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     const exec = vi.spyOn(api, 'executeAction').mockRejectedValue(new Error('engine exploded'))
@@ -251,19 +251,18 @@ describe('Shell - toolbar, transpile and options', () => {
 
     await user.click(screen.getByRole('menuitem', { name: 'Tools' }))
     await user.hover(screen.getByRole('menuitem', { name: /Transpiler/ }))
-    await user.click(screen.getByRole('menuitemradio', { name: /Experimental/ }))
-    expect(screen.getByRole('alert')).toHaveTextContent('57.25%')
+    await user.click(screen.getByRole('menuitemradio', { name: /Official/ }))
 
     await user.click(screen.getByRole('menuitem', { name: 'Tools' }))
     await user.click(screen.getByRole('menuitem', { name: /Transpile \(Partial\)/ }))
-    expect(exec).toHaveBeenCalledWith('transpile', 'C:/demo', { engine: 'experimental', mode: 'partial' })
+    expect(exec).toHaveBeenCalledWith('transpile', 'C:/demo', { engine: 'official', mode: 'partial' })
     expect(await screen.findByText(/BUILD FAILED: engine exploded/)).toBeInTheDocument()
   })
 
-  it('a fresh start is always back on the official engine', () => {
+  it('a fresh start is always back on the Dito_Transpiler', () => {
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     render(<Shell api={api} projectRoot="" />)
-    expect(screen.getByRole('combobox', { name: 'Transpiler engine' })).toHaveValue('official')
+    expect(screen.getByRole('combobox', { name: 'Transpiler engine' })).toHaveValue('experimental')
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
@@ -286,7 +285,7 @@ describe('Shell - toolbar, transpile and options', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Transpile' }))
-    expect(exec).toHaveBeenCalledWith('transpile', 'C:/demo', { engine: 'official', mode: 'full', install_dir: 'D:/ADITO/designer' })
+    expect(exec).toHaveBeenCalledWith('transpile', 'C:/demo', { engine: 'experimental', mode: 'full', install_dir: 'D:/ADITO/designer' })
   })
 
   it('shows the Git branch and the selected system in the status bar', async () => {

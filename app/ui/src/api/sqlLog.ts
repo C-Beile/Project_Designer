@@ -31,9 +31,9 @@ export function withSqlLog(api: ForgeApi): ForgeApi {
       timed(['SELECT ASYS_ALIASCONFIG.ALIASID, ASYS_ALIASCONFIG.DESCRIPTION, CAST(ASYS_ALIASCONFIG.XMLDATA AS CHAR) FROM ASYS_ALIASCONFIG WHERE ASYS_ALIASCONFIG.SERVERID IN (?)'], () => api.systemAliasList(serverIds)),
     systemAliasConfigs: () => timed(['SELECT * FROM ASYS_ALIASCONFIG'], () => api.systemAliasConfigs()),
     deployPlan: (projectRoot, force, mapping) =>
-      timed([`SELECT \`${mapping?.name_column ?? 'ID'}\`, \`${mapping?.content_column ?? 'CONTENT'}\` FROM \`${mapping?.table ?? 'ASYS_SYSTEM'}\``], () => api.deployPlan(projectRoot, force, mapping)),
+      timed([`SELECT \`${mapping?.name_column ?? 'ID'}\`, \`${mapping?.content_column ?? 'XMLDATA'}\` FROM \`${mapping?.table ?? 'ASYS_SYSTEM'}\``], () => api.deployPlan(projectRoot, force, mapping)),
     deployShowChanges: (projectRoot, key, mapping) =>
-      timed([`SELECT \`${mapping?.content_column ?? 'CONTENT'}\` FROM \`${mapping?.table ?? 'ASYS_SYSTEM'}\` WHERE \`${mapping?.name_column ?? 'ID'}\` = ?`], () => api.deployShowChanges(projectRoot, key, mapping)),
+      timed([`SELECT \`${mapping?.content_column ?? 'XMLDATA'}\` FROM \`${mapping?.table ?? 'ASYS_SYSTEM'}\` WHERE \`${mapping?.name_column ?? 'ID'}\` = ?`], () => api.deployShowChanges(projectRoot, key, mapping)),
     deployExecute: (projectRoot, keys, force, mapping, confirmed) =>
       timed([`TRANSACTION ${mapping?.table ?? 'ASYS_SYSTEM'}: ${keys.length} change(s) (INSERT/UPDATE/DELETE)`], () => api.deployExecute(projectRoot, keys, force, mapping, confirmed)),
   }

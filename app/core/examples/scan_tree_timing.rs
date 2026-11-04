@@ -26,6 +26,9 @@ fn main() {
 
     match result {
         Ok(nodes) => {
+            if let Some(out) = env::args().nth(2) {
+                std::fs::write(out, serde_json::to_string(&nodes).unwrap()).unwrap();
+            }
             println!(
                 "scan_tree OK: {} top-level nodes, elapsed = {:.3} s ({} ms)",
                 nodes.len(),

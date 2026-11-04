@@ -47,7 +47,12 @@ describe('User properties panel', () => {
       { id: '44444444-4444-4444-4444-444444444444', group: 'SECURITY', key: 'password', value: null, editable: false },
       { id: '55555555-5555-5555-5555-555555555555', group: 'CALENDAR', key: 'nonWorkdays', value: '5,6', editable: true },
     ])
-    const write = vi.spyOn(api, 'systemUserSetProperty')
+    const write = vi.spyOn(api, 'systemUserSet')
+    const writeList = vi.spyOn(api, 'systemUserSetList')
+    vi.spyOn(api, 'listProjectModels').mockResolvedValue([
+      { folder: 'role', name: 'PROJECT_Accounting', files: 1, modified_secs: 0, exists: true },
+      { folder: 'role', name: 'PROJECT_Controlling', files: 1, modified_secs: 0, exists: true },
+    ])
     render(
       <>
         <UserPropertiesPanel api={api} selection={{ systemKey: 'p|dev1', systemName: 'dev1', user: 'u-admin', title: 'Admin' }} />
@@ -66,7 +71,15 @@ describe('User properties panel', () => {
     await user.click(screen.getByRole('button', { name: /Save \(1\)/ }))
     expect(write).not.toHaveBeenCalled()
     await user.click(await screen.findByRole('button', { name: 'Save' }))
-    await waitFor(() => expect(write).toHaveBeenCalledWith('11111111-1111-1111-1111-111111111111', 'Boss', true))
+    await waitFor(() => expect(write).toHaveBeenCalledWith('u-admin', 'title', 'Boss', true))
+    expect(writeList).not.toHaveBeenCalled()
+    await user.type(screen.getByRole('textbox', { name: 'firstname' }), 'Anna')
+    await user.click(screen.getByRole('button', { name: 'roleNames' }))
+    await user.click(screen.getByRole('checkbox', { name: 'PROJECT_Accounting' }))
+    await user.click(screen.getByRole('button', { name: /Save \(2\)/ }))
+    await user.click(await screen.findByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(write).toHaveBeenCalledWith('u-admin', 'firstname', 'Anna', true))
+    await waitFor(() => expect(writeList).toHaveBeenCalledWith('u-admin', 'roleNames', ['A', 'B', 'PROJECT_Accounting'], true))
     await user.click(screen.getByRole('tab', { name: 'Extended' }))
     expect(screen.getByText('CALENDAR')).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'nonWorkdays' })).toHaveValue('5,6')

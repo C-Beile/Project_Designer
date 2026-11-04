@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, KeyboardEvent } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { WildcardPicker } from './WildcardPicker'
+import { IconPicker } from './IconPicker'
+import { IconCombo } from './IconCombo'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
 import { PATH_VARIABLE_PROPERTIES, resolvePathVariables } from './pathVariables'
@@ -65,6 +67,7 @@ export function PropertySheetPanel({
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
   const [listRow, setListRow] = useState<SheetRow | null>(null)
   const [pickerRow, setPickerRow] = useState<SheetRow | null>(null)
+  const [iconRow, setIconRow] = useState<SheetRow | null>(null)
   const [reload, setReload] = useState(0)
   const [activeTab, setActiveTab] = useState<string | null>(null)
   const [descriptions, setDescriptions] = useState<Record<string, string> | undefined>(undefined)
@@ -206,6 +209,12 @@ export function PropertySheetPanel({
     }
   }
 
+  // An image property holds a plain file path: the file explorer picks it, nobody has to type it.
+  const browseImage = async (row: SheetRow) => {
+    const picked = await api.pickFile(`Choose ${row.name}`, 'Images', ['png', 'jpg', 'jpeg', 'gif', 'svg', 'ico', 'bmp']).catch(() => null)
+    if (picked) await commit(row, { kind: 'text', value: picked })
+  }
+
   // Set to Default: the property leaves the file again; for a module object the project's modification of it is deleted.
   const resetRow = useCallback(
     async (row: SheetRow) => {
@@ -307,6 +316,14 @@ export function PropertySheetPanel({
                         {row.name}
                       </span>
                       <span role="gridcell" className="psheet-value">
+                        {isIconRow(row) ? (
+                          <IconCombo
+                            api={api}
+                            value={row.display}
+                            disabled={!(row.editable || (!!sheet.read_only && !sheet.modification && !!row.would_edit))}
+                            onCommit={(id) => void commit(row, { kind: 'text', value: id })}
+                          />
+                        ) : (
                         <ValueEditor
                           row={row}
                           canEdit={row.editable || (!!sheet.read_only && !sheet.modification && !!row.would_edit)}
@@ -317,6 +334,31 @@ export function PropertySheetPanel({
                           onGoTo={() => row.reference && onGoTo(row.reference, row.display)}
                           onSearch={() => setPickerRow(row)}
                         />
+                        )}
+                        {isImageRow(row) ? (
+                          <button
+                            type="button"
+                            className="psheet-btn"
+                            aria-label={`Choose ${row.name}`}
+                            title="Choose the image file in the file explorer"
+                            disabled={!(row.editable || (!!sheet.read_only && !sheet.modification && !!row.would_edit))}
+                            onClick={() => void browseImage(row)}
+                          >
+                            {'…'}
+                          </button>
+                        ) : null}
+                        {isIconRow(row) ? (
+                          <button
+                            type="button"
+                            className="psheet-btn"
+                            aria-label={`Choose ${row.name}`}
+                            title="Choose the icon from the icon chooser"
+                            disabled={!(row.editable || (!!sheet.read_only && !sheet.modification && !!row.would_edit))}
+                            onClick={() => setIconRow(row)}
+                          >
+                            {'…'}
+                          </button>
+                        ) : null}
                         {onEditConfig && target.path === '$' && CONFIG_PATH_ROWS.includes(row.name) ? (
                           <>
                             <button
@@ -414,6 +456,20 @@ export function PropertySheetPanel({
           />
         </div>
       ) : null}
+      {iconRow ? (
+        <div className="psheet-overlay">
+          <IconPicker
+            api={api}
+            current={iconRow.display}
+            onClose={() => setIconRow(null)}
+            onPick={(id) => {
+              const row = iconRow
+              setIconRow(null)
+              void commit(row, { kind: 'text', value: id })
+            }}
+          />
+        </div>
+      ) : null}
       {listRow ? (
         <div className="psheet-overlay" role="dialog" aria-label={listRow.name}>
           <div className="psheet-list">
@@ -445,6 +501,16 @@ export function rowMenuEntries(row: SheetRow, moduleWithoutProject: boolean): Me
   if (row.kind === 'linked') entries.push({ id: 'open', label: 'Open in Editor', enabled: row.set || !!row.new_reference, hint: 'No code file is known for this property.' })
   entries.push({ id: 'sep', label: '', enabled: false, separator: true }, { id: 'copy', label: 'Copy Value', enabled: row.display !== '', hint: 'The value is empty.' })
   return entries
+}
+
+// Properties holding an icon id (`iconId`, and `icon` of alias definitions; `VAADIN:HOME`): they get the icon chooser instead of a typed id.
+function isIconRow(row: SheetRow): boolean {
+  return (row.name === 'iconId' || row.name === 'icon') && row.kind !== 'bool' && row.kind !== 'enum' && row.kind !== 'reference' && row.kind !== 'linked'
+}
+
+// The `image` property is a plain path to an image file.
+function isImageRow(row: SheetRow): boolean {
+  return row.name === 'image' && (row.kind === 'text' || row.kind === undefined)
 }
 
 const CONFIG_PATH_ROWS = ['serverConfigPath', 'tunnelConfigPath']

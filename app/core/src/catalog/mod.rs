@@ -474,16 +474,25 @@ pub struct CatalogCache {
     inner: std::sync::Mutex<Option<(String, Option<std::sync::Arc<Catalog>>)>>,
 }
 
+/// The property catalog of a current Designer, shipped with the app: it is what a machine without
+/// an installed ADITO Designer works with.
+const BUNDLED_CATALOG: &str = include_str!("../../assets/property-catalog.json");
+
+pub fn bundled_catalog() -> Option<std::sync::Arc<Catalog>> {
+    static CELL: std::sync::OnceLock<Option<std::sync::Arc<Catalog>>> = std::sync::OnceLock::new();
+    CELL.get_or_init(|| serde_json::from_str::<Catalog>(BUNDLED_CATALOG).ok().map(std::sync::Arc::new)).clone()
+}
+
 impl CatalogCache {
     pub fn get(&self, install_dir: Option<String>, cache_dir: Option<&Path>) -> Option<std::sync::Arc<Catalog>> {
-        let dir = install_dir.filter(|d| !d.trim().is_empty())?;
+        let Some(dir) = install_dir.filter(|d| !d.trim().is_empty()) else { return bundled_catalog() };
         let mut guard = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         if let Some((cached_dir, catalog)) = guard.as_ref() {
             if *cached_dir == dir {
                 return catalog.clone();
             }
         }
-        let catalog = load_catalog(Path::new(&dir), cache_dir).ok().map(std::sync::Arc::new);
+        let catalog = load_catalog(Path::new(&dir), cache_dir).ok().map(std::sync::Arc::new).or_else(bundled_catalog);
         *guard = Some((dir, catalog.clone()));
         catalog
     }
