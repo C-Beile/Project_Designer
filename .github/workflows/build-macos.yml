@@ -81,7 +81,7 @@ jobs:
       - name: Upload the dmg
         uses: actions/upload-artifact@v4
         with:
-          name: vendira-designer-macos-universal-dmg
+          name: dito-designer-macos-universal-dmg
           path: ${{ env.FORGE_DIR }}/target/universal-apple-darwin/release/bundle/dmg/*.dmg
           if-no-files-found: error
           retention-days: 14
@@ -128,7 +128,7 @@ jobs:
       - name: Upload the installer
         uses: actions/upload-artifact@v4
         with:
-          name: vendira-designer-windows-setup
+          name: dito-designer-windows-setup
           path: ${{ env.FORGE_DIR }}/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
           if-no-files-found: error
           retention-days: 14

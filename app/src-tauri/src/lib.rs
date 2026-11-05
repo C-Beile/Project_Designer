@@ -166,7 +166,7 @@ async fn find_usages(project_root: String, object_type: String, name: String) ->
 
 /// Update access token of the private release repository; it is baked in at build time from the
 /// CI secret and is never part of the source tree.
-const UPDATE_TOKEN: Option<&str> = option_env!("VENDIRA_UPDATE_TOKEN");
+const UPDATE_TOKEN: Option<&str> = option_env!("DITO_UPDATE_TOKEN");
 
 #[derive(serde::Serialize)]
 struct UpdateInfo {
@@ -548,6 +548,39 @@ fn set_recent_project(path: String, app: tauri::AppHandle) -> Result<(), String>
     let file = recent_project_file(&app)?;
     let bytes = serde_json::to_vec_pretty(&serde_json::json!({ "path": path })).map_err(|e| e.to_string())?;
     platform::fs::atomic_write(&file, &bytes).map_err(|e| e.to_string())
+}
+
+/// The app data folder carries the identifier of the app. After the rename, settings, logs and backups of the old folder are copied once.
+fn migrate_legacy_data_dir(app: &tauri::AppHandle) {
+    let Ok(dir) = app.path().app_data_dir() else { return };
+    let Some(parent) = dir.parent() else { return };
+    let old = parent.join("de.threehillsit.vendira-designer");
+    if dir.exists() || !old.is_dir() {
+        return;
+    }
+    fn copy_all(from: &std::path::Path, to: &std::path::Path) -> std::io::Result<()> {
+        std::fs::create_dir_all(to)?;
+        for entry in std::fs::read_dir(from)? {
+            let entry = entry?;
+            let target = to.join(entry.file_name());
+            if entry.file_type()?.is_dir() {
+                copy_all(&entry.path(), &target)?;
+            } else {
+                std::fs::copy(entry.path(), target)?;
+            }
+        }
+        Ok(())
+    }
+    let _ = copy_all(&old, &dir);
+    // Copied log files get the new name, too.
+    if let Ok(entries) = std::fs::read_dir(dir.join("logs")) {
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if let Some(rest) = name.strip_prefix("vendira-designer-") {
+                let _ = std::fs::rename(entry.path(), entry.path().with_file_name(format!("dito-designer-{rest}")));
+            }
+        }
+    }
 }
 
 fn settings_file(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -1275,6 +1308,29 @@ async fn git_push(project_root: String) -> Result<GitOutput, String> {
 }
 
 #[tauri::command]
+async fn transpile_compare(reference: String, project_root: String) -> Result<forge_app_core::transpile_compare::CompareReport, String> {
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::transpile_compare::compare_outputs(&PathBuf::from(reference), &PathBuf::from(project_root).join("dist")))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+async fn project_clone(url: String, location: String, name: String, ssh_key: Option<String>, password: Option<String>) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        forge_app_core::project_create::clone_repository(&url, &location, &name, ssh_key.as_deref(), password.as_deref()).map(|p| p.to_string_lossy().into_owned())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+async fn project_create_empty(location: String, name: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::project_create::create_empty_project(&location, &name).map(|p| p.to_string_lossy().into_owned()))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
 async fn git_checkout(project_root: String, branch: String) -> Result<GitOutput, String> {
     tauri::async_runtime::spawn_blocking(move || git_actions::checkout(&PathBuf::from(project_root), &branch))
         .await
@@ -1549,6 +1605,9 @@ fn build_native_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             liquibase_target,
             liquibase_connections,
             liquibase_plan,
+            project_clone,
+            transpile_compare,
+            project_create_empty,
             liquibase_update,
             db_query,
             db_schema,

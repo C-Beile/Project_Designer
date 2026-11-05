@@ -77,7 +77,7 @@ pub struct IncrementalReport {
 }
 
 /// Raised whenever the output of the engine changes for the same sources (new or changed stage).
-const ENGINE_REVISION: u32 = 25;
+const ENGINE_REVISION: u32 = 44;
 
 fn cache_dir(project_home: &Path) -> PathBuf {
     // A test harness can keep the cache outside of the project (read-only repositories, many projects).
@@ -187,18 +187,66 @@ fn collect_manifest_lines(
 /// `output_dir` are already-filtered trees produced by the earlier pipeline stages, this just
 /// duplicates one into the other.
 fn copy_tree_verbatim(src: &Path, dest: &Path) -> std::io::Result<()> {
-    fs::create_dir_all(dest)?;
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
-        let from = entry.path();
-        let to = dest.join(entry.file_name());
-        if entry.metadata()?.is_dir() {
-            copy_tree_verbatim(&from, &to)?;
-        } else {
-            fs::copy(&from, &to)?;
+    // Folders first, then all files at once on several threads: copying 40,000 small files one after the other
+    // is dominated by waiting for the file system and the virus scanner.
+    let mut files: Vec<(PathBuf, PathBuf)> = Vec::new();
+    let mut folders: Vec<(PathBuf, PathBuf)> = vec![(src.to_path_buf(), dest.to_path_buf())];
+    while let Some((from_dir, to_dir)) = folders.pop() {
+        fs::create_dir_all(&to_dir)?;
+        for entry in fs::read_dir(&from_dir)? {
+            let entry = entry?;
+            let from = entry.path();
+            let to = to_dir.join(entry.file_name());
+            if entry.metadata()?.is_dir() {
+                folders.push((from, to));
+            } else {
+                files.push((from, to));
+            }
         }
     }
-    Ok(())
+    crate::own_engine::copy_phase_stage::parallel_try_each(&files, |(from, to)| fs::copy(from, to).map(|_| ()))
+}
+
+/// Number of files below a folder and the time of the newest change among them (file names and times only, no contents are read).
+fn scan_files(dir: &Path) -> (usize, std::time::SystemTime) {
+    let mut count = 0;
+    let mut newest = std::time::UNIX_EPOCH;
+    let mut folders = vec![dir.to_path_buf()];
+    while let Some(folder) = folders.pop() {
+        for entry in fs::read_dir(&folder).into_iter().flatten().flatten() {
+            match entry.metadata() {
+                Ok(meta) if meta.is_dir() => folders.push(entry.path()),
+                Ok(meta) => {
+                    count += 1;
+                    if let Ok(time) = meta.modified() {
+                        newest = newest.max(time);
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+    }
+    (count, newest)
+}
+
+/// Writes down which output folder, which manifest and how many files the output holds right now.
+fn remember_output(state_file: &Path, output_dir: &Path, manifest: &str) {
+    let _ = fs::write(state_file, format!("{}|{}|{manifest}", scan_files(output_dir).0, output_dir.display()));
+}
+
+/// True when the output folder still holds exactly what the last run left there: same manifest, same number of files,
+/// and no file changed since (a file edited or removed by hand is restored from the snapshot).
+fn output_is_current(state_file: &Path, output_dir: &Path, manifest: &str) -> bool {
+    let Ok(saved) = fs::read_to_string(state_file) else { return false };
+    let Ok(written) = fs::metadata(state_file).and_then(|m| m.modified()) else { return false };
+    let (count, newest) = scan_files(output_dir);
+    saved == format!("{count}|{}|{manifest}", output_dir.display()) && newest <= written
+}
+
+/// Empties a folder (its contents are removed on several threads: deleting tens of thousands of files one by one is slow).
+fn clear_dir(dir: &Path) -> std::io::Result<()> {
+    let entries: Vec<PathBuf> = fs::read_dir(dir)?.flatten().map(|e| e.path()).collect();
+    crate::own_engine::copy_phase_stage::parallel_try_each(&entries, |path| if path.is_dir() { fs::remove_dir_all(path) } else { fs::remove_file(path) })
 }
 
 /// Runs the incremental-aware pipeline. On a cache hit, copies the cached snapshot into
@@ -206,23 +254,45 @@ fn copy_tree_verbatim(src: &Path, dest: &Path) -> std::io::Result<()> {
 /// all. On a miss, runs the full pipeline (identical to `LinkedFilesEngine`) and refreshes the
 /// cache for next time.
 pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<IncrementalReport, IncrementalError> {
+    let clock = std::time::Instant::now();
+    let lap = |what: &str| {
+        if std::env::var_os("FORGE_TRANSPILE_TRACE").is_some() {
+            eprintln!("[{:>7.1}s] {what}", clock.elapsed().as_secs_f64());
+        }
+    };
     crate::own_engine::progress::report(1, "Reading the modules");
     let graph = resolve_module_graph(project_home).map_err(|e| IncrementalError::Resolve(e.to_string()))?;
+    lap("modules read");
     crate::own_engine::progress::report(4, "Checking what changed");
     let (manifest, files_scanned) = compute_manifest(&graph, project_home, output_dir)?;
+    lap(&format!("manifest computed ({files_scanned} files)"));
 
     let manifest_file = manifest_file_path(project_home);
     let snapshot = snapshot_dir_path(project_home);
     let previous_manifest = fs::read_to_string(&manifest_file).ok();
 
+    let state_file = cache_dir(project_home).join("output-state");
     if previous_manifest.as_deref() == Some(manifest.as_str()) && snapshot.is_dir() {
+        // The output folder still holds the result of exactly this state: nothing to copy.
+        if output_is_current(&state_file, output_dir, &manifest) {
+            lap("output already up to date");
+            return Ok(IncrementalReport { cache_hit: true, manifest_files_scanned: files_scanned });
+        }
         crate::own_engine::progress::report(30, "Nothing changed, taking over the last result");
+        let _ = fs::remove_file(&state_file);
+        clear_dir(output_dir).map_err(|source| IncrementalError::Cache { path: output_dir.to_path_buf(), source })?;
         fs::create_dir_all(output_dir).map_err(|source| IncrementalError::Cache { path: output_dir.to_path_buf(), source })?;
         copy_tree_verbatim(&snapshot, output_dir).map_err(|source| IncrementalError::Cache { path: snapshot.clone(), source })?;
+        remember_output(&state_file, output_dir, &manifest);
         return Ok(IncrementalReport { cache_hit: true, manifest_files_scanned: files_scanned });
     }
 
+    let _ = fs::remove_file(&state_file);
+    if output_dir.is_dir() {
+        clear_dir(output_dir).map_err(|source| IncrementalError::Cache { path: output_dir.to_path_buf(), source })?;
+    }
     run_copy_phase(&graph, output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    lap("modules copied");
     let mod_report = run_modification_phase(&graph, output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
     if std::env::var_os("FORGE_TRANSPILE_TRACE").is_some() {
         eprintln!("modifications: found {} applied {} failed {}", mod_report.modifications_found, mod_report.modifications_applied, mod_report.modifications_failed);
@@ -230,23 +300,28 @@ pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<Increme
             eprintln!("  modification failure {}: {reason}", file.display());
         }
     }
+    lap("modifications applied");
     crate::own_engine::progress::report(66, "Resolving the extension points");
     crate::own_engine::run_extension_point_resolution(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
     crate::own_engine::progress::report(72, "Moving modifications to their objects");
     crate::own_engine::run_modification_relocation(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    lap("extension points and relocation done");
     crate::own_engine::progress::report(78, "Inlining the services");
     crate::own_engine::run_service_inline(project_home, output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
     // The modification files are consumed: the reference output has no `modification/` folder.
     let _ = fs::remove_dir_all(output_dir.join("modification"));
+    crate::own_engine::run_linked_unshare(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    lap("services inlined and unshared");
     crate::own_engine::progress::report(90, "Merging the aliases");
     crate::own_engine::run_alias_merge(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
-    crate::own_engine::run_preferences_merge(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    crate::own_engine::run_preferences_merge(project_home, output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
     crate::own_engine::progress::report(94, "Merging the languages");
     crate::own_engine::run_language_merge(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
     // The reference transpiler of this ADITO version keeps the `%aditoprj%/...` references in the
     // `.aod` files as they are (verified against a clean reference run), so nothing is inlined.
     // `run_linked_files_phase` stays available for the older behaviour.
 
+    lap("aliases, preferences and languages merged");
     let cache_root = cache_dir(project_home);
     fs::create_dir_all(&cache_root).map_err(|source| IncrementalError::Cache { path: cache_root.clone(), source })?;
     if snapshot.is_dir() {
@@ -254,6 +329,8 @@ pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<Increme
     }
     copy_tree_verbatim(output_dir, &snapshot).map_err(|source| IncrementalError::Cache { path: snapshot.clone(), source })?;
     fs::write(&manifest_file, &manifest).map_err(|source| IncrementalError::Cache { path: manifest_file.clone(), source })?;
+    remember_output(&state_file, output_dir, &manifest);
+    lap("cache snapshot written");
 
     Ok(IncrementalReport { cache_hit: false, manifest_files_scanned: files_scanned })
 }

@@ -19,7 +19,7 @@ pub fn set_backup_dir(dir: PathBuf) {
 
 #[must_use]
 pub fn backup_dir() -> PathBuf {
-    BACKUP_DIR.get().cloned().unwrap_or_else(|| std::env::temp_dir().join("vendira-designer-backups"))
+    BACKUP_DIR.get().cloned().unwrap_or_else(|| std::env::temp_dir().join("dito-designer-backups"))
 }
 
 /// Registers the backup as the before-overwrite hook of every atomic write.

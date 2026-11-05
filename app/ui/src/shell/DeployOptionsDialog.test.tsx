@@ -78,7 +78,7 @@ describe('DeployOptionsDialog', () => {
 
   it('names the reason of the warning', () => {
     expect(systemWarning({ name: 'dev1', tunnelRef: '', serverRef: '', productive: true, cloud: false })).toMatch(/productive/)
-    expect(systemWarning({ name: 'dev1', tunnelRef: '', serverRef: '', productive: false, cloud: true })).toMatch(/cloud/)
+    expect(systemWarning({ name: 'dev1', tunnelRef: '', serverRef: '', productive: false, cloud: true })).toBeNull()
     expect(systemWarning({ name: 'dev1', tunnelRef: '', serverRef: '', productive: false, cloud: false })).toBeNull()
   })
 })

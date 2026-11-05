@@ -49,7 +49,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
           # The UI bundle (Monaco and its languages) needs more than Node's default heap on the runners.
           NODE_OPTIONS: --max-old-space-size=6144
-          VENDIRA_UPDATE_TOKEN: ${{ secrets.VENDIRA_UPDATE_TOKEN }}
+          DITO_UPDATE_TOKEN: ${{ secrets.DITO_UPDATE_TOKEN }}
         run: npx --prefix ui tauri build --target x86_64-pc-windows-msvc
 
       - name: Collect the artifacts
@@ -94,7 +94,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
           # The UI bundle (Monaco and its languages) needs more than Node's default heap on the runners.
           NODE_OPTIONS: --max-old-space-size=6144
-          VENDIRA_UPDATE_TOKEN: ${{ secrets.VENDIRA_UPDATE_TOKEN }}
+          DITO_UPDATE_TOKEN: ${{ secrets.DITO_UPDATE_TOKEN }}
         run: npx --prefix ui tauri build --target universal-apple-darwin
 
       - name: Collect the artifacts
@@ -102,9 +102,9 @@ jobs:
           version=$(jq -r .version app/src-tauri/tauri.conf.json)
           bundle="target/universal-apple-darwin/release/bundle"
           mkdir out
-          cp "$bundle"/dmg/*.dmg "out/vendira-designer_${version}_universal.dmg"
-          cp "$bundle"/macos/*.app.tar.gz "out/vendira-designer_${version}_universal.app.tar.gz"
-          cp "$bundle"/macos/*.app.tar.gz.sig "out/vendira-designer_${version}_universal.app.tar.gz.sig"
+          cp "$bundle"/dmg/*.dmg "out/dito-designer_${version}_universal.dmg"
+          cp "$bundle"/macos/*.app.tar.gz "out/dito-designer_${version}_universal.app.tar.gz"
+          cp "$bundle"/macos/*.app.tar.gz.sig "out/dito-designer_${version}_universal.app.tar.gz.sig"
 
       - uses: actions/upload-artifact@v4
         with:

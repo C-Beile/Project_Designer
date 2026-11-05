@@ -12,6 +12,7 @@
 use std::path::Path;
 
 pub mod alias_merge_stage;
+pub mod linked_unshare_stage;
 pub mod preferences_merge_stage;
 pub mod progress;
 pub mod copy_phase_stage;
@@ -25,6 +26,7 @@ pub mod modification_engine_stage;
 pub mod resolver_stage;
 
 pub use alias_merge_stage::{run_alias_merge, AliasMergeReport};
+pub use linked_unshare_stage::{run_linked_unshare, UnshareReport};
 pub use preferences_merge_stage::{run_preferences_merge, PreferencesMergeReport};
 pub use modification_relocate_stage::{run_modification_relocation, RelocateReport};
 pub use extension_point_stage::{run_extension_point_resolution, ExtensionPointReport};

@@ -123,8 +123,23 @@ pub fn run_modification_relocation(output_dir: &Path) -> io::Result<RelocateRepo
                         dest_rel.push(format!("{tag}.{ext}"));
                         let reference_new = format!("%aditoprj%/{}", dest_rel.to_string_lossy().replace('\\', "/"));
                         let indent = &raw[..raw.len() - raw.trim_start().len()];
-                        out.push(format!("{indent}<{tag}>{reference_new}</{tag}>{cr}"));
-                        moves.push((source_root.join(id).join(source_rel), output_dir.join(&dest_rel)));
+                        let source_file = source_root.join(id).join(source_rel);
+                        // An inserted property whose file is empty, or not there at all, is written empty; an empty file
+                        // is still filed below the object, a missing one is not.
+                        match fs::metadata(&source_file).map(|m| m.len()) {
+                            Ok(0) => {
+                                out.push(format!("{indent}<{tag}></{tag}>{cr}"));
+                                moves.push((source_file, output_dir.join(&dest_rel)));
+                            }
+                            Err(_) => {
+                                out.push(format!("{indent}<{tag}></{tag}>{cr}"));
+                                report.missing_sources += 1;
+                            }
+                            Ok(_) => {
+                                out.push(format!("{indent}<{tag}>{reference_new}</{tag}>{cr}"));
+                                moves.push((source_file, output_dir.join(&dest_rel)));
+                            }
+                        }
                         changed = true;
                         continue;
                     }
@@ -172,5 +187,31 @@ mod tests {
         let text = fs::read_to_string(out.join("serviceDefinition/X_service/X_service.aod")).unwrap();
         assert!(text.contains("<process>%aditoprj%/serviceDefinition/X_service/implementations/impl_one/process.js</process>\r\n"));
         assert_eq!(fs::read(out.join("serviceDefinition/X_service/implementations/impl_one/process.js")).unwrap(), b"a\r\nb");
+    }
+
+    #[test]
+    fn an_inserted_property_with_an_empty_or_missing_file_is_written_empty() {
+        let out = std::env::temp_dir().join(format!("forge-relocate-empty-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&out);
+        fs::create_dir_all(out.join("modification/abc")).unwrap();
+        fs::write(out.join("modification/abc/documentation.adoc"), "").unwrap();
+        fs::create_dir_all(out.join("entity/E_entity")).unwrap();
+        let aod = "<entity>
+  <name>E_entity</name>
+  <entityFields>
+    <entityParameter>
+      <name>P_param</name>
+      <documentation>%aditoprj%/modification/abc/documentation.adoc</documentation>
+      <expression>%aditoprj%/modification/abc/expression.js</expression>
+    </entityParameter>
+  </entityFields>
+</entity>";
+        fs::write(out.join("entity/E_entity/E_entity.aod"), aod).unwrap();
+        run_modification_relocation(&out).unwrap();
+        let text = fs::read_to_string(out.join("entity/E_entity/E_entity.aod")).unwrap();
+        assert!(text.contains("<documentation></documentation>") && text.contains("<expression></expression>"), "{text}");
+        assert!(out.join("entity/E_entity/entityfields/p_param/documentation.adoc").exists());
+        assert!(!out.join("entity/E_entity/entityfields/p_param/expression.js").exists());
+        let _ = fs::remove_dir_all(&out);
     }
 }

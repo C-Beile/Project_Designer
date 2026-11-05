@@ -43,18 +43,39 @@ export interface DeployOptionsResult {
   connectedSystem: string | null
 }
 
+const LAST_KEY = 'dito.deploy.last'
+
+// Project: the one worked in last (the active project). System: the one whose tunnel is open right now;
+// with several open tunnels the system last deployed to wins, without any open tunnel the remembered or default one.
+function rememberedChoice(payload: DeployOptionsPayload): { project: string; system: string } {
+  const project = payload.project
+  const systems = payload.systemsByProject?.[project]?.systems ?? payload.systems
+  const fallback = payload.systemsByProject?.[project]?.defaultSystem || payload.defaultSystem || systems[0]?.name || ''
+  const open = new Set([...(payload.openSystems ?? []), ...(payload.connectedSystem ? [payload.connectedSystem] : [])])
+  const openNames = systems.filter((s) => open.has(systemKey(project, s.name))).map((s) => s.name)
+  let saved: string | undefined
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(LAST_KEY) ?? 'null') as { project?: string; system?: string } | null
+    if (parsed?.project === project) saved = parsed.system
+  } catch {
+    // unreadable storage: the default choice is used
+  }
+  if (openNames.length > 0) return { project, system: saved && openNames.includes(saved) ? saved : openNames[0] }
+  return { project, system: saved && systems.some((s) => s.name === saved) ? saved : fallback }
+}
+
 const baseName = (p: string) => p.split(/[\\/]/).filter(Boolean).pop() ?? p
 
 export function systemWarning(s: DeploySystem | undefined): string | null {
   if (!s) return null
   if (s.productive || /prod/i.test(s.name)) return `${s.name} looks like a productive system. A deploy overwrites its models.`
-  if (s.cloud) return `${s.name} is a cloud system. A deploy overwrites its database.`
   return null
 }
 
 export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: ForgeApi; payload: DeployOptionsPayload; onOk: (r: DeployOptionsResult) => void; onCancel: () => void }) {
-  const [project, setProject] = useState(payload.project)
-  const [system, setSystem] = useState(payload.defaultSystem || payload.systems[0]?.name || '')
+  const [initial] = useState(() => rememberedChoice(payload))
+  const [project, setProject] = useState(initial.project)
+  const [system, setSystem] = useState(initial.system)
   const [checkScan, setCheckScan] = useState(payload.checkScan)
   const [force, setForce] = useState(false)
   // A deploy writes the transpiled result, so the build runs first unless it is switched off here.
@@ -88,7 +109,14 @@ export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: For
     }
   }
 
-  const ok = () => onOk({ project, system, checkScan, force, userhelp: false, build, connectedSystem: tunnelOk ? systemKey(project, system) : connected })
+  const ok = () => {
+    try {
+      window.localStorage.setItem(LAST_KEY, JSON.stringify({ project, system }))
+    } catch {
+      // the choice is just not remembered
+    }
+    onOk({ project, system, checkScan, force, userhelp: false, build, connectedSystem: tunnelOk ? systemKey(project, system) : connected })
+  }
 
   return (
     <Modal

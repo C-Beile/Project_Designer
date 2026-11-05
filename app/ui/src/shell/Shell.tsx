@@ -19,7 +19,7 @@ import {
   type TranspileMode,
   type TranspilerEngineId,
 } from '../settings/transpilerEngine'
-import type { DbStatus, DiagnosticDto, DiffTarget, GitOutput, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { CompareReport, DbStatus, DiagnosticDto, DiffTarget, GitOutput, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 import { boolField, textField } from '../wire/types'
 import { ServicesPanel } from '../services/ServicesPanel'
 import { DockLayout, type PanelContent } from './DockLayout'
@@ -42,6 +42,8 @@ import type { RefactoringState } from './RefactoringPanel'
 import { OpenModelDialog } from './OpenModelDialog'
 import { PluginsDialog } from './PluginsDialog'
 import { LocalDataDialog } from './LocalDataDialog'
+import { NewProjectDialog } from './NewProjectDialog'
+import { TranspileMatchDialog } from './TranspileMatchDialog'
 import { UpdatesDialog } from './UpdatesDialog'
 import { GitDialog } from './GitDialog'
 import { SyncDialog } from './SyncDialog'
@@ -87,7 +89,7 @@ import { aliasConfigTabNode, parseAliasConfigRef, type AliasConfigRef } from '..
 import { ConfigNavigator } from '../navigator/ConfigNavigator'
 import { isConfigurationAlias, sectionLabel, useConfigSection } from '../properties/configSections'
 import { useSystemTunnels } from '../services/useSystemTunnels'
-import { TranspileProgress, type BuildProgress } from './TranspileProgress'
+import { TranspileProgress, TranspileResult, type BuildProgress, type BuildResult } from './TranspileProgress'
 import { getTunnelState, requestSystemReload, setConnectedSystem, setSystemsDb, setProgress, UNCONFIGURED_HINT, systemKey, systemNameOf, projectOfPath, systemPhase, TUNNEL_PHASE_LABEL, useTunnelState } from '../services/tunnelState'
 import { NavigatorPanel } from '../navigator/NavigatorPanel'
 import {
@@ -242,6 +244,33 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   const [installDir, setInstallDir] = useState<string | null>(null)
   // Object whose file changed on disk (for example by Git) while it holds unsaved edits; set when a save is refused.
   const [conflict, setConflict] = useState<string | null>(null)
+  const [newProjectOpen, setNewProjectOpen] = useState(false)
+  const [matchView, setMatchView] = useState<{ report: CompareReport; reference: string; project: string } | null>(null)
+  const referenceKey = (project: string) => `dito.transpile.reference.${project}`
+  const storedReference = (project: string) => {
+    try {
+      return window.localStorage.getItem(referenceKey(project)) ?? ''
+    } catch {
+      return ''
+    }
+  }
+  // Compares the transpiled output with the official output the user named for this project.
+  const compareWithReference = async (project: string, choose: boolean): Promise<CompareReport | null> => {
+    let reference = choose ? '' : storedReference(project)
+    if (!reference) {
+      const picked = await api.pickProjectFolder('Reference output of the official transpiler (dist)').catch(() => null)
+      if (!picked) return null
+      reference = picked
+      try {
+        window.localStorage.setItem(referenceKey(project), reference)
+      } catch {
+        // the choice is just not remembered
+      }
+    }
+    const report = await api.transpileCompare(reference, project)
+    setMatchView({ report, reference, project })
+    return report
+  }
   const [dialog, setDialog] = useState<'options' | 'about' | 'deploy' | 'openModel' | 'plugins' | 'updates' | 'localData' | 'tableCenter' | 'git' | 'sync' | null>(null)
   const [gitView, setGitView] = useState<{ tab: 'changes' | 'history' | 'branches'; target: { local?: string; remote?: string } | null }>({ tab: 'changes', target: null })
   // Services tab: connection state (polled, so a dying tunnel shows up) and the text of the open
@@ -1002,13 +1031,21 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
 
   const [connectionPick, setConnectionPick] = useState<{ connections: LiquibaseConnection[]; preferredAlias: string; title: string; resolve: (c: LiquibaseChoice | null) => void; onTranspile: () => Promise<boolean> } | null>(null)
   const busy = useRef(false)
+  const [buildResult, setBuildResult] = useState<BuildResult | null>(null)
+  useEffect(() => {
+    if (!buildResult?.ok) return
+    const timer = window.setTimeout(() => setBuildResult(null), 25000)
+    return () => window.clearTimeout(timer)
+  }, [buildResult])
   const transpile = useCallback(
     async (mode: TranspileMode, project: string = root): Promise<boolean> => {
       if (!project.trim() || busy.current) return false
       // A module is not built on its own: it only needs a transpile when its package.json changed.
       if (trees[project]?.some((n) => n.module_project) && !(await confirmDialog('This is a module project. A module is normally not built; transpile it only when its package.json changed. Transpile anyway?', { title: 'Transpile module project', okLabel: 'Transpile', cancelLabel: 'Cancel' }))) return false
       busy.current = true
+      setBuildResult(null)
       setBuildProgress(null)
+      lastProgressLog.current = { step: '', percent: -10 }
       setProblems('build', [])
       setTranspileRunning(true)
       showToolWindow('output', false)
@@ -1022,6 +1059,14 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         const secs = ((Date.now() - started) / 1000).toFixed(1)
         appendLog('build', [{ level: 'success', text: `[${timestamp()}] BUILD SUCCESS (${secs} s)` }])
         setStatus('Transpile finished.')
+        setBuildResult({ ok: true, seconds: secs, project })
+        const reference = storedReference(project)
+        if (reference) {
+          void api
+            .transpileCompare(reference, project)
+            .then((r) => setBuildResult((b) => (b && b.project === project ? { ...b, match: r.percent } : b)))
+            .catch(() => {})
+        }
         return true
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e)
@@ -1034,6 +1079,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
             : [{ id: 'build|failed', channel: 'build', source: 'build', severity: 'Error', message: message.split(/\r?\n/)[0].slice(0, 400) }],
         )
         setStatus('Transpile failed, see Output > Build.')
+        setBuildResult({ ok: false, seconds: ((Date.now() - started) / 1000).toFixed(1), project, message: message.split(/\r?\n/)[0].slice(0, 200) })
         return false
       } finally {
         busy.current = false
@@ -1252,13 +1298,22 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   }, [appendLog])
   // How far the built-in transpiler is: a bar with the percentage in the corner panel.
   const [buildProgress, setBuildProgress] = useState<BuildProgress | null>(null)
+  const lastProgressLog = useRef({ step: '', percent: -10 })
   useEffect(() => {
     let stop: (() => void) | null = null
     let gone = false
     void getWindowBackend()
       .listen('forge://transpile-progress', (p) => {
         const e = p as { percent: number; stage: string }
-        setBuildProgress({ percent: Math.max(0, Math.min(100, Math.round(e.percent))), stage: e.stage })
+        const percent = Math.max(0, Math.min(100, Math.round(e.percent)))
+        setBuildProgress({ percent, stage: e.stage })
+        // Output > Build gets a line whenever a new step starts and while a long step moves on (every 5 %).
+        const step = e.stage.replace(/\s*\(.*$/, '')
+        const last = lastProgressLog.current
+        if (e.percent <= 1 || last.step !== step || percent >= last.percent + 5) {
+          lastProgressLog.current = { step, percent }
+          appendLog('build', [{ level: 'info', text: `[${timestamp()}] ${String(percent).padStart(3)} %  ${e.stage}` }])
+        }
       })
       .then((u) => (gone ? u() : (stop = u)))
       .catch(() => {})
@@ -1266,7 +1321,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       gone = true
       stop?.()
     }
-  }, [])
+  }, [appendLog])
   // Phases of a connect (Starting ssh/plink, Forwarding the port, Waiting for the database) as they
   // happen: the tree dot, status bar and editors show them, Output > Default gets one line each.
   useEffect(() => {
@@ -1621,6 +1676,16 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       const node = editNode
       try {
         switch (command) {
+          case 'tools.compareReference':
+            try {
+              await compareWithReference(root, storedReference(root) === '')
+            } catch (e) {
+              notify(e instanceof Error ? e.message : String(e), { kind: 'error', timeoutMs: 10000 })
+            }
+            return
+          case 'file.newProject':
+            setNewProjectOpen(true)
+            return
           case 'file.openProject': {
             const picked = await api.pickProjectFolder()
             if (!picked) return
@@ -2588,6 +2653,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
           }}
         />
       ) : null}
+      {!transpileRunning && buildResult ? <TranspileResult result={buildResult} onClose={() => setBuildResult(null)} onShowMatch={() => void compareWithReference(buildResult.project, false).catch(() => {})} onShowOutput={() => { showToolWindow('output', false); setOutputSub('build') }} onDeploy={() => { setBuildResult(null); void startDeploy(false) }} /> : null}
       {transpileRunning ? <TranspileProgress label={`Transpiling (${engine})...`} progress={engine === 'official' ? null : buildProgress} onCancel={engine === 'official' ? () => void cancelBuild() : undefined} /> : null}
       {deployOptions ? (
         <DeployOptionsDialog api={api} payload={deployOptions.payload} onOk={(r) => deployOptions.resolve(r)} onCancel={() => deployOptions.resolve(null)} />
@@ -2647,6 +2713,31 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         />
       ) : null}
       {dialog === 'plugins' && !osWindowsAvailable() ? <PluginsDialog onClose={() => setDialog(null)} /> : null}
+      {matchView ? (
+        <TranspileMatchDialog
+          report={matchView.report}
+          reference={matchView.reference}
+          onClose={() => setMatchView(null)}
+          onChangeReference={() => {
+            const project = matchView.project
+            setMatchView(null)
+            void compareWithReference(project, true).catch((e) => notify(e instanceof Error ? e.message : String(e), { kind: 'error', timeoutMs: 10000 }))
+          }}
+        />
+      ) : null}
+      {newProjectOpen ? (
+        <NewProjectDialog
+          api={api}
+          currentProject={root}
+          onClose={() => setNewProjectOpen(false)}
+          onCreated={(dir) => {
+            setNewProjectOpen(false)
+            openProjectAt(dir)
+            api.setRecentProject(dir).catch(() => {})
+            setRecent(dir)
+          }}
+        />
+      ) : null}
       {dialog === 'localData' && !osWindowsAvailable() ? <LocalDataDialog api={api} onClose={() => setDialog(null)} /> : null}
       {dialog === 'git' && hasProject && !osWindowsAvailable() ? (
         <GitDialog api={api} projectRoot={root} initialTab={gitView.tab} initialTarget={gitView.target} onClose={() => setDialog(null)} onChanged={() => setReloadToken((t) => t + 1)} />

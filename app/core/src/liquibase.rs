@@ -179,7 +179,7 @@ pub fn run_update(toolchain: &Toolchain, dir: &Path, target: &JdbcTarget, log: &
     let changelog = dir.join("changelog.xml");
     let temp_dir = std::env::temp_dir();
     let unique = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-    let file_name = format!("vendira-liquibase-{}-{unique}.properties", std::process::id());
+    let file_name = format!("dito-liquibase-{}-{unique}.properties", std::process::id());
     let defaults = TempFile(temp_dir.join(&file_name));
     std::fs::write(&defaults.0, defaults_file_text(&changelog, target)).map_err(|e| format!("The Liquibase settings file could not be written: {e}"))?;
 

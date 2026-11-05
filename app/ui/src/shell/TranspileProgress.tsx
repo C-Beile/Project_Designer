@@ -29,3 +29,47 @@ export function TranspileProgress({ label, onCancel, progress }: { label: string
     </div>
   )
 }
+
+export interface BuildResult {
+  ok: boolean
+  seconds: string
+  project: string
+  message?: string
+  /** Share of the reference files the output reproduces (null: no reference chosen or not compared yet). */
+  match?: number | null
+}
+
+// The window after a transpile: it stays in the corner, says in one line how it went and offers the
+// next step (Deploy) or the Output with the details. It closes itself a while after a success.
+export function TranspileResult({ result, onDeploy, onShowOutput, onShowMatch, onClose }: { result: BuildResult; onDeploy: () => void; onShowOutput: () => void; onShowMatch?: () => void; onClose: () => void }) {
+  const name = result.project.split(/[\/]/).filter(Boolean).pop() ?? result.project
+  return (
+    <div className={`forge-build-progress forge-build-result ${result.ok ? 'is-ok' : 'is-failed'}`} role="status" aria-label={result.ok ? 'Transpile finished' : 'Transpile failed'}>
+      <div className="forge-build-progress-head">
+        <strong>{result.ok ? `Transpile finished (${result.seconds} s)` : 'Transpile failed'}</strong>
+        <button type="button" aria-label="Close" onClick={onClose}>
+          {'×'}
+        </button>
+      </div>
+      <p>{result.ok ? `${name} is transpiled. Changes you make now count for the next transpile.` : (result.message ?? 'See the Output for details.')}</p>
+      {result.ok && typeof result.match === 'number' ? (
+        <p>
+          Match with the reference:{' '}
+          <button type="button" className="forge-link" onClick={onShowMatch} aria-label="Show the match with the reference">
+            {result.match.toFixed(2)} %
+          </button>
+        </p>
+      ) : null}
+      <div className="forge-build-result-actions">
+        {result.ok ? (
+          <button type="button" onClick={onDeploy}>
+            Deploy...
+          </button>
+        ) : null}
+        <button type="button" onClick={onShowOutput}>
+          Show Output
+        </button>
+      </div>
+    </div>
+  )
+}

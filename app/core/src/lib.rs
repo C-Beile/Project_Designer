@@ -24,6 +24,8 @@ pub mod watch;
 pub mod alias_validators;
 pub mod catalog;
 pub mod icons;
+pub mod project_create;
+pub mod transpile_compare;
 pub mod deploy_encode;
 pub mod db_session;
 pub mod liquibase;

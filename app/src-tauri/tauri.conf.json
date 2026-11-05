@@ -1,9 +1,9 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Dito Designer",
-  "mainBinaryName": "vendira-designer",
-  "version": "1.0.3",
-  "identifier": "de.threehillsit.vendira-designer",
+  "mainBinaryName": "dito-designer",
+  "version": "1.0.4",
+  "identifier": "de.threehillsit.dito-designer",
   "build": {
     "frontendDist": "../ui/dist",
     "devUrl": "http://localhost:5173",

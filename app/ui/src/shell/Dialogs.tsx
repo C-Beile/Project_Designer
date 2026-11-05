@@ -86,10 +86,10 @@ export function AboutDialog({ api, onClose }: { api?: ForgeApi; onClose: () => v
   }, [api])
   const shownVersion = version ?? info?.app_version ?? null
   const systemRows: [string, string][] = [
-    ['vendira.designer.version', shownVersion ?? 'development build'],
-    ['vendira.designer.home', info?.exe_dir ?? ''],
-    ['vendira.designer.data', info?.forge_data_dir ?? ''],
-    ['vendira.designer.settings', info?.forge_settings_file ?? ''],
+    ['dito.designer.version', shownVersion ?? 'development build'],
+    ['dito.designer.home', info?.exe_dir ?? ''],
+    ['dito.designer.data', info?.forge_data_dir ?? ''],
+    ['dito.designer.settings', info?.forge_settings_file ?? ''],
     ['adito.designer.install', info?.designer_install ?? 'not found'],
     ['adito.designer.roaming', info?.designer_roaming_dir ?? ''],
     ['os.name', info?.os ?? ''],

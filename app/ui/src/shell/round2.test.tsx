@@ -208,7 +208,7 @@ describe('Local Data dialog (manual chapter 12)', () => {
     const user = userEvent.setup()
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     render(<LocalDataDialog api={api} onClose={() => {}} />)
-    expect(await screen.findByTestId('forge-data-dir')).toHaveTextContent('vendira-designer')
+    expect(await screen.findByTestId('forge-data-dir')).toHaveTextContent('dito-designer')
     const versions = screen.getByRole('table', { name: 'Version folders' })
     expect(within(versions).getByText('2020')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Run Janitor Now' }))

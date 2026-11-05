@@ -50,16 +50,24 @@ fn split_entities(lines: &[String]) -> Option<(Vec<String>, Vec<(String, Vec<Str
     let mut i = first;
     let mut last_end = first;
     while i < lines.len() {
-        if lines[i].trim() == "<entityDb>" && indent_of(&lines[i]) == indent {
+        if lines[i].trim() == "<entityDb>" && (indent_of(&lines[i]) == indent || lines[i].starts_with('\t')) {
+            // Entity blocks never nest; the closing tag is the next one, whatever its indentation is (a file can
+            // open a block with tabs and close it with spaces).
             let mut j = i + 1;
-            while j < lines.len() && !(lines[j].trim() == "</entityDb>" && indent_of(&lines[j]) == indent) {
+            while j < lines.len() && lines[j].trim() != "</entityDb>" {
                 j += 1;
             }
             if j >= lines.len() {
                 return None;
             }
             let name = lines[i + 1..j].iter().find_map(|l| l.trim().strip_prefix("<name>").and_then(|r| r.strip_suffix("</name>"))).unwrap_or("").to_string();
-            blocks.push((name, lines[i..=j].to_vec()));
+            let mut block = lines[i..=j].to_vec();
+            if block[0].starts_with('\t') {
+                // The block is written with the indentation of its closing tag.
+                let width = indent_of(&block[block.len() - 1]);
+                block[0] = format!("{}<entityDb>", " ".repeat(width));
+            }
+            blocks.push((name, block));
             last_end = j;
             i = j + 1;
         } else if lines[i].trim() == "</entities>" {
@@ -135,6 +143,55 @@ pub struct AliasMergeReport {
     pub merged_entities: usize,
 }
 
+/// The tags that name the alias an object works on.
+const ALIAS_REFERENCE_TAGS: &[&str] = &["alias", "jDitoRecordAlias", "indexRecordAlias"];
+
+/// Folders that never hold objects that reference an alias.
+const NO_REFERENCES: &[&str] = &["aliasDefinition", ".liquibase", "node_modules", "dist", ".forge-incremental-cache"];
+
+/// An alias that was merged into its target no longer exists: every object that named it now names the target.
+fn redirect_alias_references(output_dir: &Path, renames: &[(String, String)]) -> io::Result<()> {
+    if renames.is_empty() {
+        return Ok(());
+    }
+    let mut stack: Vec<PathBuf> = Vec::new();
+    for entry in fs::read_dir(output_dir)?.flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if entry.path().is_dir() && !NO_REFERENCES.contains(&name.as_str()) {
+            stack.push(entry.path());
+        }
+    }
+    while let Some(dir) = stack.pop() {
+        let Ok(entries) = fs::read_dir(&dir) else { continue };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().is_some_and(|e| e == "aod") {
+                let Ok(bytes) = fs::read(&path) else { continue };
+                if !bytes.windows(7).any(|w| w == b"</alias" || w == b"RecordA") && !bytes.windows(6).any(|w| w == b"</alia") {
+                    continue;
+                }
+                let mut text = String::from_utf8_lossy(&bytes).into_owned();
+                let mut changed = false;
+                for (from, to) in renames {
+                    for tag in ALIAS_REFERENCE_TAGS {
+                        let old = format!("<{tag}>{from}</{tag}>");
+                        if text.contains(&old) {
+                            text = text.replace(&old, &format!("<{tag}>{to}</{tag}>"));
+                            changed = true;
+                        }
+                    }
+                }
+                if changed {
+                    fs::write(&path, text.as_bytes())?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Merges the contributing aliases below `<output_dir>/aliasDefinition` into their target aliases.
 pub fn run_alias_merge(output_dir: &Path) -> io::Result<AliasMergeReport> {
     let root = output_dir.join("aliasDefinition");
@@ -156,6 +213,7 @@ pub fn run_alias_merge(output_dir: &Path) -> io::Result<AliasMergeReport> {
         by_target.entry(target).or_default().push(Contributor { folder: folder.clone(), entities });
     }
 
+    let mut renames: Vec<(String, String)> = Vec::new();
     for (target, contributors) in by_target {
         let base_file = root.join(&target).join(format!("{target}.aod"));
         let Ok(bytes) = fs::read(&base_file) else { continue };
@@ -184,6 +242,7 @@ pub fn run_alias_merge(output_dir: &Path) -> io::Result<AliasMergeReport> {
         fs::write(&base_file, text.as_bytes())?;
 
         for c in &contributors {
+            renames.push((c.folder.clone(), target.clone()));
             let dir = root.join(&c.folder);
             let sub = dir.join("aliasdefinitionsub");
             if sub.is_dir() {
@@ -195,6 +254,7 @@ pub fn run_alias_merge(output_dir: &Path) -> io::Result<AliasMergeReport> {
         normalize_sidecars_to_crlf(&root.join(&target));
         report.merged_targets += 1;
     }
+    redirect_alias_references(output_dir, &renames)?;
     Ok(report)
 }
 

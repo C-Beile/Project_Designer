@@ -1,4 +1,4 @@
-import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The frontend's one seam onto the generic Tauri command surface (architecture.md §6: "Commands
 // sind generisch ... nicht pro Editor-Typ dupliziert"). Every editor component talks to this
@@ -209,6 +209,12 @@ export interface ForgeApi {
   /** Pushes the current branch up to this unpushed commit. */
   gitPushTo(projectRoot: string, hash: string): Promise<GitOutput>
   gitCheckout(projectRoot: string, branch: string): Promise<GitOutput>
+  /** New Project: clones a repository into `<location>/<name>` and returns the project folder. The password is used for this call only. */
+  projectClone(url: string, location: string, name: string, sshKey: string | null, password: string | null): Promise<string>
+  /** New Project: creates an empty project (package.json of type project) and returns its folder. */
+  projectCreateEmpty(location: string, name: string): Promise<string>
+  /** Compares the `dist` of the project with the output of the official transpiler in `reference`. */
+  transpileCompare(reference: string, projectRoot: string): Promise<CompareReport>
   gitCreateBranch(projectRoot: string, name: string, start: string | null): Promise<GitOutput>
   // Source Control panel (local Git). Every writing call is the result of one click.
   scmStatus(projectRoot: string): Promise<ScmOverview>

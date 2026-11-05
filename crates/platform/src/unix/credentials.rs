@@ -7,7 +7,7 @@ use crate::credentials::{Credential, CredentialStore};
 use crate::error::PlatformError;
 
 #[cfg(target_os = "macos")]
-const SERVICE: &str = "de.threehillsit.vendira-designer";
+const SERVICE: &str = "de.threehillsit.dito-designer";
 
 #[derive(Default)]
 pub struct KeychainCredentialStore;

@@ -94,6 +94,88 @@ pub fn set_progress_reporter(reporter: Option<std::sync::Arc<dyn Fn(u8, &str) + 
     differential_harness::own_engine::progress::set_reporter(reporter);
 }
 
+/// Folders of a project that are never part of the snapshot: the dependencies are linked instead of copied,
+/// the output and the tool folders do not influence a transpile.
+const SNAPSHOT_SKIP: &[&str] = &["node_modules", "dist", ".git", ".claude", ".idea", ".vscode", ".forge-cache", ".forge-incremental-cache"];
+
+fn snapshot_root(project_home: &Path, data_dir: &Path) -> PathBuf {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    project_home.hash(&mut hasher);
+    let name = project_home.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "project".into());
+    data_dir.join("transpile-snapshot").join(format!("{:x}", hasher.finish())).join(name)
+}
+
+fn mirror_dir(src: &Path, dst: &Path, top_level: bool, copied: &mut usize) -> std::io::Result<()> {
+    std::fs::create_dir_all(dst)?;
+    let mut present = std::collections::HashSet::new();
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let name = entry.file_name();
+        if top_level && SNAPSHOT_SKIP.iter().any(|s| name.to_string_lossy() == *s) {
+            continue;
+        }
+        present.insert(name.clone());
+        let from = entry.path();
+        let to = dst.join(&name);
+        let meta = entry.metadata()?;
+        if meta.is_dir() {
+            mirror_dir(&from, &to, false, copied)?;
+        } else {
+            let same = std::fs::metadata(&to).ok().is_some_and(|m| m.len() == meta.len() && m.modified().ok() == meta.modified().ok());
+            if !same {
+                std::fs::copy(&from, &to)?;
+                if let Ok(time) = meta.modified() {
+                    if let Ok(file) = std::fs::OpenOptions::new().write(true).open(&to) {
+                        let _ = file.set_modified(time);
+                    }
+                }
+                *copied += 1;
+            }
+        }
+    }
+    for entry in std::fs::read_dir(dst)? {
+        let entry = entry?;
+        let name = entry.file_name();
+        if present.contains(&name) || (top_level && (SNAPSHOT_SKIP.iter().any(|s| name.to_string_lossy() == *s) || name.to_string_lossy().starts_with(".forge"))) {
+            continue;
+        }
+        let path = entry.path();
+        if entry.metadata()?.is_dir() { std::fs::remove_dir_all(&path)?; } else { std::fs::remove_file(&path)?; }
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn link_dir(target: &Path, link: &Path) -> bool {
+    std::process::Command::new("cmd").args(["/C", "mklink", "/J"]).arg(link.to_string_lossy().replace('/', "\\")).arg(target.to_string_lossy().replace('/', "\\")).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status().map(|s| s.success()).unwrap_or(false)
+}
+
+#[cfg(not(windows))]
+fn link_dir(target: &Path, link: &Path) -> bool {
+    std::os::unix::fs::symlink(target, link).is_ok()
+}
+
+/// A consistent copy of the project sources: the transpile reads this copy, so edits made while it runs
+/// only count for the next transpile. Unchanged files are not copied again (same size and time), the
+/// dependencies are linked. Returns the folder the engine reads, or the project itself when no copy is possible.
+pub fn snapshot_project(project_home: &Path, data_dir: &Path) -> PathBuf {
+    try_snapshot_project(project_home, data_dir).unwrap_or_else(|_| project_home.to_path_buf())
+}
+
+/// Like `snapshot_project`, but says why no copy was possible.
+pub fn try_snapshot_project(project_home: &Path, data_dir: &Path) -> Result<PathBuf, String> {
+    let root = snapshot_root(project_home, data_dir);
+    let mut copied = 0;
+    mirror_dir(project_home, &root, true, &mut copied).map_err(|e| format!("copying the project failed: {e}"))?;
+    let modules = project_home.join("node_modules");
+    let link = root.join("node_modules");
+    if modules.is_dir() && !link.exists() && !link_dir(&modules, &link) {
+        return Err("the node_modules folder could not be linked".into());
+    }
+    Ok(root)
+}
+
 pub fn run_transpile(project_home: &Path, engine: TranspilerEngine, install_dir: &Path, user_dir: &Path, cache_dir: Option<&Path>) -> Result<(), String> {
     match engine {
         TranspilerEngine::Official => {
@@ -120,16 +202,19 @@ pub fn run_transpile(project_home: &Path, engine: TranspilerEngine, install_dir:
         }
         TranspilerEngine::ExperimentalForge => {
             let output_dir = experimental_output_dir(project_home);
-            if output_dir.exists() {
-                std::fs::remove_dir_all(&output_dir).map_err(|e| e.to_string())?;
-            }
+            // The engine empties the folder itself when it has to write a new result; an up-to-date result stays untouched.
             std::fs::create_dir_all(&output_dir).map_err(|e| e.to_string())?;
             // The engine's cache lives in the app's own data folder, never inside the project.
             if let Some(dir) = cache_dir {
                 std::env::set_var("FORGE_INCREMENTAL_CACHE_DIR", dir);
             }
+            let data_dir = cache_dir.and_then(|d| d.parent());
+            let source = match data_dir {
+                Some(dir) => snapshot_project(project_home, dir),
+                None => project_home.to_path_buf(),
+            };
             let own_engine = IncrementalEngine;
-            own_engine.run(project_home, &output_dir).map_err(|e| e.to_string())
+            own_engine.run(&source, &output_dir).map_err(|e| e.to_string())
         }
     }
 }

@@ -19,7 +19,7 @@ pub fn set_log_dir(dir: PathBuf) {
 
 #[must_use]
 pub fn log_dir() -> PathBuf {
-    LOG_DIR.get().cloned().unwrap_or_else(|| std::env::temp_dir().join("vendira-designer-logs"))
+    LOG_DIR.get().cloned().unwrap_or_else(|| std::env::temp_dir().join("dito-designer-logs"))
 }
 
 /// Registers what the app does after a panic was logged (show an error dialog to the user).
@@ -97,7 +97,7 @@ pub fn write_entry(kind: &str, message: &str) -> Option<PathBuf> {
     let dir = log_dir();
     let _ = std::fs::create_dir_all(&dir);
     let stamp = timestamp_utc();
-    let file = dir.join(format!("vendira-designer-{}.log", &stamp[..10]));
+    let file = dir.join(format!("dito-designer-{}.log", &stamp[..10]));
     let mut f = std::fs::OpenOptions::new().create(true).append(true).open(&file).ok()?;
     let text = scrub(message);
     writeln!(f, "[{stamp} UTC] [{kind}] version {}\n{text}\n", APP_VERSION.get().map(String::as_str).unwrap_or(env!("CARGO_PKG_VERSION"))).ok()?;

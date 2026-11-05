@@ -114,6 +114,9 @@ struct ParsedModification {
     /// True for boolean/int wrappers: the payload is the `v` attribute value of the inner
     /// `<value v=".." />`, so a MODIFY replaces the typed `v` attribute of the target instead of its text.
     payload_is_attr: bool,
+    /// A MODIFY whose new value is an element (`<drawerLayout />`) and not a text: the official output does not apply it,
+    /// the property keeps its value.
+    structured_modify: bool,
     /// True when this modification's own `modification/` directory is the project root's,
     /// false for a dependency module - the real-corpus-verified precedence tier (see module doc
     /// comment: project root always wins a same-leaf MODIFY conflict, regardless of
@@ -242,6 +245,8 @@ fn parse_modification_file(path: &Path, is_project_root: bool) -> Result<ParsedM
         None => (None, false),
     };
 
+    let structured_modify = change_type == ChangeType::Modify && payload.is_none() && has_element_value(&doc, &index, &root);
+
     Ok(ParsedModification {
         position,
         change_type,
@@ -250,9 +255,21 @@ fn parse_modification_file(path: &Path, is_project_root: bool) -> Result<ParsedM
         path_segments: segments,
         payload,
         payload_is_attr,
+        structured_modify,
         is_project_root,
         source_file: path.to_path_buf(),
     })
+}
+
+/// The inner `<value>` of the envelope holds a child element and not a text.
+fn has_element_value(doc: &AodDocument, index: &EventIndex, root: &EventPath) -> bool {
+    let outer_value = child_path(root, "value", 0);
+    let Some(wrapper_tag) = ["modelValueWrapper", "enumValueWrapper"].into_iter().find(|t| index.get(&child_path(&outer_value, t, 0)).is_some()) else { return false };
+    let inner_value = child_path(&child_path(&outer_value, wrapper_tag, 0), "value", 0);
+    match index.get(&inner_value) {
+        Some(IndexedRange::Element(range)) => range.len() > 2 && doc.events[range.start + 1..range.end - 1].iter().any(|e| matches!(e, AodEvent::Start(_) | AodEvent::Empty(_))),
+        _ => false,
+    }
 }
 
 /// Extracts the INSERT/MODIFY payload bytes from the modification envelope's `<value>` wrapper
@@ -306,7 +323,23 @@ fn extract_payload(doc: &AodDocument, index: &EventIndex, root: &EventPath, chan
                     Some((entry, false))
                 }
                 Some(IndexedRange::Element(range)) if range.len() > 2 => {
-                    let inner_events = doc.events[range.start + 1..range.end - 1].to_vec();
+                    let mut inner_events = doc.events[range.start + 1..range.end - 1].to_vec();
+                    // A modification file does not always indent its payload at the usual depth; the indentation is
+                    // brought to that depth, so that the insert shifts it the right way.
+                    let own_depth = inner_events.iter().find_map(|e| match e {
+                        AodEvent::Text(b) => indent_depth_of(b),
+                        _ => None,
+                    });
+                    if let Some(depth) = own_depth.filter(|d| *d != INSERT_PAYLOAD_SOURCE_DEPTH - 1) {
+                        let delta = (INSERT_PAYLOAD_SOURCE_DEPTH - 1) as i64 - depth as i64;
+                        for ev in inner_events.iter_mut() {
+                            if let AodEvent::Text(bytes) = ev {
+                                if let Some(d) = indent_depth_of(bytes) {
+                                    *bytes = aod_io::patch::standard_indent((d as i64 + delta).max(0) as usize);
+                                }
+                            }
+                        }
+                    }
                     Some((aod_io::serialize(&AodDocument { events: inner_events }), false))
                 }
                 _ => None,
@@ -314,6 +347,16 @@ fn extract_payload(doc: &AodDocument, index: &EventIndex, root: &EventPath, chan
         }
         ChangeType::Delete => unreachable!("handled above"),
     }
+}
+
+/// The `<name>` of the element an insert adds (its first `<name>` child), when it has one of the kind that identifies it
+/// in a list.
+fn inserted_name(payload: &[u8]) -> Option<String> {
+    let text = String::from_utf8_lossy(payload);
+    let start = text.find("<name>")? + "<name>".len();
+    let end = text[start..].find("</name>")? + start;
+    let name = text[start..end].trim();
+    if name.is_empty() || name.contains('<') { None } else { Some(name.to_string()) }
 }
 
 /// Fixed nesting depth, WITHIN THE MODIFICATION FILE ITSELF, at which an INSERT's payload root
@@ -744,6 +787,9 @@ fn is_container_name(seg: &str) -> bool {
 /// (mandatory after any patch - `aod-io`'s own module docs: a patch shifts every later event
 /// index). Returns the [`Operation`] actually performed, for the report.
 fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation, String> {
+    if m.structured_modify {
+        return Ok(Operation::Modify);
+    }
     let index = build_index(doc);
     let root = root_path(doc).ok_or_else(|| "target document has no root element".to_string())?;
 
@@ -836,6 +882,13 @@ fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation,
             // corrects that (see its doc comment for the real-corpus bug this fixes).
             let target_root_depth = current.element_depth() + 1;
             let payload = reindent_insert_template(&payload, target_root_depth);
+            // Two modules can add the very same element (same name) to one list; the object has it once.
+            if let (Some(name), Some(IndexedRange::Element(range))) = (inserted_name(&payload), index.get(&current)) {
+                let container = aod_io::serialize(&AodDocument { events: doc.events[range.clone()].to_vec() });
+                if String::from_utf8_lossy(&container).contains(&format!("<name>{name}</name>")) {
+                    return Ok(Operation::ArrayInsert);
+                }
+            }
             let index = open_if_self_closing(doc, index, &current);
             insert_at(doc, &index, &current, &payload, SiblingHint::AppendAsLastChild).map_err(|e| e.to_string())?;
             Ok(Operation::ArrayInsert)
@@ -883,6 +936,7 @@ fn normalize_sidecars_to_crlf(dir: &Path, output_dir: &Path, referenced: &std::c
             continue;
         }
         let Ok(bytes) = fs::read(&path) else { continue };
+        let bytes = if std::str::from_utf8(&bytes).is_ok() { bytes } else { windows_1252_to_utf8(&bytes) };
         let mut out = Vec::with_capacity(bytes.len() + bytes.len() / 20);
         for &b in bytes.iter().filter(|&&b| b != b'\r') {
             if b == b'\n' {
@@ -890,24 +944,164 @@ fn normalize_sidecars_to_crlf(dir: &Path, output_dir: &Path, referenced: &std::c
             }
             out.push(b);
         }
-        if out != bytes {
+        if fs::read(&path).map(|original| original != out).unwrap_or(true) {
             let _ = platform::fs::atomic_write(&path, &out);
         }
     }
 }
 
+/// A text file that is not UTF-8 is an older Windows file: the official output writes it as UTF-8.
+fn windows_1252_to_utf8(bytes: &[u8]) -> Vec<u8> {
+    const HIGH: [char; 32] = ['\u{20AC}', '\u{81}', '\u{201A}', '\u{192}', '\u{201E}', '\u{2026}', '\u{2020}', '\u{2021}', '\u{2C6}', '\u{2030}', '\u{160}', '\u{2039}', '\u{152}', '\u{8D}', '\u{17D}', '\u{8F}', '\u{90}', '\u{2018}', '\u{2019}', '\u{201C}', '\u{201D}', '\u{2022}', '\u{2013}', '\u{2014}', '\u{2DC}', '\u{2122}', '\u{161}', '\u{203A}', '\u{153}', '\u{9D}', '\u{17E}', '\u{178}'];
+    let text: String = bytes.iter().map(|&b| if (0x80..0xA0).contains(&b) { HIGH[(b - 0x80) as usize] } else { b as char }).collect();
+    text.into_bytes()
+}
+
+/// A rewritten object is indented with two spaces per level; lines a module indented with tabs get that indentation, too.
+fn indent_tab_lines(bytes: &[u8]) -> Vec<u8> {
+    let text = String::from_utf8_lossy(bytes);
+    if !text.contains("\n\t") && !text.starts_with('\t') {
+        return bytes.to_vec();
+    }
+    let mut depth: usize = 0;
+    let lines: Vec<String> = text
+        .split('\n')
+        .map(|line| {
+            let cr = if line.ends_with('\r') { "\r" } else { "" };
+            let body = line.trim_end_matches('\r');
+            let trimmed = body.trim_start();
+            let closing = trimmed.starts_with("</");
+            if closing {
+                depth = depth.saturating_sub(1);
+            }
+            let out = if body.starts_with('\t') { format!("{}{}{}", " ".repeat(depth * 2), trimmed, cr) } else { line.to_string() };
+            // An opening line without its closing tag on the same line opens one level.
+            if trimmed.starts_with('<') && !closing && !trimmed.starts_with("<?") && !trimmed.ends_with("/>") {
+                let tag_end = trimmed.find(|c: char| c == '>' || c.is_whitespace()).unwrap_or(trimmed.len());
+                let tag = &trimmed[1..tag_end];
+                if !trimmed.contains(&format!("</{tag}>")) {
+                    depth += 1;
+                }
+            }
+            out
+        })
+        .collect();
+    lines.join("\n").into_bytes()
+}
+
+/// A modified object is written completely new: a property whose file is empty is written empty, too (an object nothing
+/// modified keeps its link to the empty file).
+fn empty_links_of_modified_object(aod: &Path, output_dir: &Path) {
+    let Ok(bytes) = fs::read(aod) else { return };
+    let text = String::from_utf8_lossy(&bytes);
+    if !text.contains("%aditoprj%/") {
+        return;
+    }
+    let mut changed = false;
+    let lines: Vec<String> = text
+        .split('\n')
+        .map(|line| {
+            let trimmed = line.trim();
+            let Some(rest) = trimmed.strip_prefix('<') else { return line.to_string() };
+            let Some((tag, after)) = rest.split_once('>') else { return line.to_string() };
+            let close = format!("</{tag}>");
+            let Some(link) = after.strip_suffix(close.as_str()).and_then(|v| v.strip_prefix("%aditoprj%/")) else { return line.to_string() };
+            let empty = fs::metadata(output_dir.join(link.trim())).map(|m| m.len() == 0).unwrap_or(false);
+            if !empty {
+                return line.to_string();
+            }
+            changed = true;
+            let indent = &line[..line.len() - line.trim_start().len()];
+            let cr = if line.ends_with('\r') { "\r" } else { "" };
+            format!("{indent}<{tag}></{tag}>{cr}")
+        })
+        .collect();
+    if changed {
+        let _ = fs::write(aod, lines.join("\n").as_bytes());
+    }
+}
+
 /// The files (relative to the output folder, forward slashes) a model links to with `%aditoprj%/...`.
-fn linked_files_of(aod: &Path) -> std::collections::HashSet<String> {
+fn linked_files_of(aod: &Path, output_dir: &Path) -> std::collections::HashSet<String> {
     let text = fs::read(aod).map(|b| String::from_utf8_lossy(&b).into_owned()).unwrap_or_default();
-    let mut found = std::collections::HashSet::new();
+    let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
     let mut rest = text.as_str();
     while let Some(at) = rest.find("%aditoprj%/") {
         let after = &rest[at + "%aditoprj%/".len()..];
         let end = after.find('<').unwrap_or(after.len());
-        found.insert(after[..end].trim().to_string());
+        *counts.entry(after[..end].trim().to_string()).or_insert(0) += 1;
         rest = &after[end..];
     }
-    found
+    // A file that two properties share, or that lies in the folder of another field, is left as it was; the official
+    // output copies it for the field it belongs to.
+    let base = aod.parent().and_then(|p| p.strip_prefix(output_dir).ok()).map(|p| p.to_string_lossy().replace('\\', "/")).unwrap_or_default();
+    let misplaced = super::linked_unshare_stage::misplaced_links(&text, &base);
+    counts.into_iter().filter(|(f, n)| *n == 1 && !misplaced.contains(f)).map(|(f, _)| f).collect()
+}
+
+/// A list of plain texts (`siblings`, `variants`, ...) that modifications added entries to: the entries the object
+/// already had keep their place, the added ones follow in alphabetical order (the reference does not keep the order
+/// in which the modification files were applied).
+fn sort_added_list_entries(original: &[u8], serialized: &[u8]) -> Vec<u8> {
+    let known: std::collections::HashSet<String> = String::from_utf8_lossy(original).lines().map(|l| l.trim().to_string()).collect();
+    let text = String::from_utf8_lossy(serialized).into_owned();
+    let is_entry = |l: &str| {
+        let t = l.trim();
+        t.starts_with("<element>") && t.ends_with("</element>") && t.matches("<element>").count() == 1
+    };
+    let lines: Vec<&str> = text.split("
+").collect();
+    let mut out: Vec<String> = Vec::with_capacity(lines.len());
+    let mut i = 0;
+    while i < lines.len() {
+        if !is_entry(lines[i]) {
+            out.push(lines[i].to_string());
+            i += 1;
+            continue;
+        }
+        let mut j = i;
+        while j < lines.len() && is_entry(lines[j]) {
+            j += 1;
+        }
+        let run = &lines[i..j];
+        let mut old: Vec<&str> = run.iter().copied().filter(|l| known.contains(l.trim())).collect();
+        let mut added: Vec<&str> = run.iter().copied().filter(|l| !known.contains(l.trim())).collect();
+        // Punctuation sorts before letters and case does not decide, as in a culture-aware comparison.
+        let key = |l: &str| l.trim().to_lowercase().replace('_', "\u{0}");
+        added.sort_by(|a, b| key(a).cmp(&key(b)).then_with(|| a.trim().cmp(b.trim())));
+        old.extend(added);
+        out.extend(old.into_iter().map(str::to_string));
+        i = j;
+    }
+    out.join("
+").into_bytes()
+}
+
+/// Properties that hold a script or a text file. When an object is rewritten by modifications, such a property that is
+/// empty in the base object is not written again (an empty title or description stays).
+fn is_file_property(tag: &str) -> bool {
+    tag == "documentation"
+        || tag == "expression"
+        || tag.ends_with("Process")
+        || (tag.len() > 2 && tag.starts_with("on") && tag.chars().nth(2).is_some_and(|c| c.is_ascii_uppercase()))
+}
+
+fn strip_empty_file_properties(bytes: &[u8]) -> Vec<u8> {
+    let text = String::from_utf8_lossy(bytes);
+    if !text.contains("></") {
+        return bytes.to_vec();
+    }
+    let mut changed = false;
+    let kept: Vec<&str> = text
+        .split('\n')
+        .filter(|line| {
+            let t = line.trim();
+            let drop = t.strip_prefix('<').and_then(|r| r.split_once('>')).is_some_and(|(tag, rest)| is_file_property(tag) && rest == format!("</{tag}>"));
+            changed |= drop;
+            !drop
+        })
+        .collect();
+    if changed { kept.join("\n").into_bytes() } else { bytes.to_vec() }
 }
 
 fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report: &mut ModificationEngineReport) {
@@ -923,6 +1117,7 @@ fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report:
             return;
         }
     };
+    let bytes = strip_empty_file_properties(&bytes);
     let mut doc = match aod_io::parse(&bytes) {
         Ok(d) => d,
         Err(e) => {
@@ -944,6 +1139,7 @@ fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report:
         }
     }
 
+    let added_text_entries = group.iter().any(|m| m.change_type == ChangeType::Insert && m.payload.as_deref().is_some_and(|p| p.starts_with(b"<element>")));
     let out_bytes = {
         // The reference writes a modified object with CRLF throughout, also where an inserted
         // fragment came from a modification file with LF endings.
@@ -957,6 +1153,10 @@ fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report:
         }
         crlf
     };
+    let out_bytes = if added_text_entries { sort_added_list_entries(&bytes, &out_bytes) } else { out_bytes };
+    // A rewritten object has no empty file property, wherever it came from.
+    let out_bytes = strip_empty_file_properties(&out_bytes);
+    let out_bytes = indent_tab_lines(&out_bytes);
     if let Err(source) = platform::fs::atomic_write(target, &out_bytes) {
         for m in &group {
             report.failures.push((m.source_file.clone(), format!("write-back failed: {source}")));
@@ -996,7 +1196,7 @@ pub fn run_modification_phase(graph: &ModuleGraph, output_dir: &Path) -> Result<
     let total_targets = by_target.len();
     for (done, ((model_type, model_name), group)) in by_target.into_iter().enumerate() {
         if done % 25 == 0 {
-            crate::own_engine::progress::report_between(35, 65, done, total_targets, "Applying the modifications");
+            crate::own_engine::progress::report_between(35, 65, done, total_targets, &format!("Applying the modifications ({done} of {total_targets} objects)"));
         }
         let target = output_dir.join(&model_type).join(&model_name).join(format!("{model_name}.aod"));
         let existed = target.is_file();
@@ -1006,8 +1206,9 @@ pub fn run_modification_phase(graph: &ModuleGraph, output_dir: &Path) -> Result<
         // a clean reference run: 45 modified entities all CRLF, 183 untouched ones verbatim).
         if existed {
             if let Some(object_dir) = target.parent() {
-                let referenced = linked_files_of(&target);
+                let referenced = linked_files_of(&target, output_dir);
                 normalize_sidecars_to_crlf(object_dir, output_dir, &referenced);
+                empty_links_of_modified_object(&target, output_dir);
             }
         }
     }
@@ -1333,6 +1534,42 @@ mod tests {
     /// modification files are keyed by target, not by which module authored them) ships a
     /// modification/ that patches the base module's own object, the applied result reflects
     /// both.
+    #[test]
+    fn empty_file_properties_of_the_base_object_are_dropped_but_empty_texts_stay() {
+        let base = b"<a>\r\n  <documentation></documentation>\r\n  <valueProcess></valueProcess>\r\n  <title></title>\r\n  <onDBUpdate></onDBUpdate>\r\n</a>";
+        let out = String::from_utf8(strip_empty_file_properties(base)).unwrap();
+        assert_eq!(out, "<a>\r\n  <title></title>\r\n</a>");
+    }
+
+    #[test]
+    fn an_older_windows_text_becomes_utf8() {
+        assert_eq!(windows_1252_to_utf8(&[b'c', 0xF3, b'm', 0x96]), "c\u{f3}m\u{2013}".as_bytes());
+    }
+
+    #[test]
+    fn lines_indented_with_tabs_get_the_indentation_of_their_level() {
+        let text = b"<a>\r\n  <b>\r\n\t\t<c>x</c>\r\n\t</b>\r\n</a>";
+        assert_eq!(String::from_utf8(indent_tab_lines(text)).unwrap(), "<a>\r\n  <b>\r\n    <c>x</c>\r\n  </b>\r\n</a>");
+    }
+
+    #[test]
+    fn added_list_entries_follow_the_existing_ones_in_alphabetical_order() {
+        let original = b"<siblings>
+    <element>Support</element>
+  </siblings>";
+        let after = b"<siblings>
+    <element>Support</element>
+    <element>Order</element>
+    <element>Campaign</element>
+  </siblings>";
+        let sorted = String::from_utf8(sort_added_list_entries(original, after)).unwrap();
+        assert_eq!(sorted, "<siblings>
+    <element>Support</element>
+    <element>Campaign</element>
+    <element>Order</element>
+  </siblings>");
+    }
+
     #[test]
     fn full_pipeline_applies_a_dependency_supplied_modification_onto_a_base_module_object() {
         let base_root = scratch_dir("base-module");

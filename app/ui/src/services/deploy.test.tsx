@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { DeployDialog } from '../shell/DeployDialog'
+import { diffRows } from '../shell/DeployDiffDialog'
 import { ServicesPanel } from './ServicesPanel'
 import { UsersTab, SystemAliasConfigs } from './UsersTable'
 import { newUuid } from '../shell/uuid'
@@ -40,53 +41,52 @@ const PLAN: DeployPlan = {
 }
 
 describe('DeployDialog', () => {
-  it('lists what a deploy would add, change and delete before anything is written', async () => {
+  it('asks the question of the original and lists what a deploy would add, change and delete before anything is written', async () => {
     const mock = makeApi({ deployOverview: OVERVIEW, deployPlan: PLAN })
-    render(<DeployDialog api={mock} projectRoot="C:/p" onClose={vi.fn()} />)
-    expect(await screen.findByText(/by ClemensBeile/)).toBeInTheDocument()
-    expect(screen.getByText('Planned changes: 1 added, 1 changed, 1 deleted')).toBeInTheDocument()
-    expect(screen.getByRole('checkbox', { name: 'entity/BrandNew' })).toBeChecked()
+    render(<DeployDialog api={mock} projectRoot="C:/p" systemName="dev2" onClose={vi.fn()} />)
+    expect(await screen.findByText('Are you sure to deploy into this system?')).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'dev2' })).toBeInTheDocument()
+    expect(await screen.findByRole('checkbox', { name: 'entity/BrandNew' })).toBeChecked()
     expect(screen.getByRole('checkbox', { name: 'entity/Person_entity' })).toBeChecked()
     expect(screen.getByRole('checkbox', { name: 'entity/Old_entity' })).not.toBeChecked()
+    expect(screen.getByText('Double-click to show changes')).toBeInTheDocument()
     expect(mock.deployCalls.some((c) => c.startsWith('execute'))).toBe(false)
   })
 
-  it('shows what changed inside a model on request', async () => {
+  it('shows the DB version beside the Designer version on double-click', async () => {
     const user = userEvent.setup()
     const mock = makeApi({ deployOverview: OVERVIEW, deployPlan: PLAN })
     render(<DeployDialog api={mock} projectRoot="C:/p" onClose={vi.fn()} />)
-    await screen.findByText(/by ClemensBeile/)
-    await user.click(screen.getByRole('button', { name: 'Show changes of entity/Person_entity' }))
-    expect(await screen.findByLabelText('Changes of the model')).toHaveTextContent('- <remote entity/Person_entity/>')
-    expect(screen.getByLabelText('Changes of the model')).toHaveTextContent('+ <local entity/Person_entity/>')
+    await user.dblClick(await screen.findByText('Person_entity'))
+    expect(await screen.findByRole('dialog', { name: 'Diff Deploy Person_entity' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Changes of the model')).toHaveTextContent('<remote entity/Person_entity/>')
+    expect(screen.getByLabelText('Changes of the model')).toHaveTextContent('<local entity/Person_entity/>')
   })
 
-  it('asks for a confirmation and then writes only the selected models', async () => {
+  it('writes only the ticked models when OK is pressed', async () => {
     const user = userEvent.setup()
     const onDeployed = vi.fn()
     const mock = makeApi({ deployOverview: OVERVIEW, deployPlan: PLAN })
     render(<DeployDialog api={mock} projectRoot="C:/p" onClose={vi.fn()} onDeployed={onDeployed} />)
-    await screen.findByText(/by ClemensBeile/)
-    await user.click(screen.getByRole('button', { name: 'Deploy (2)' }))
-    expect(screen.getByRole('alert')).toHaveTextContent('Deploy 2 models (1 added, 1 changed, 0 deleted)')
+    await screen.findByRole('checkbox', { name: 'entity/BrandNew' })
     expect(mock.deployCalls.some((c) => c.startsWith('execute'))).toBe(false)
-    await user.click(screen.getByRole('button', { name: 'Yes, deploy now' }))
+    await user.click(screen.getByRole('button', { name: 'OK' }))
     await waitFor(() => expect(mock.deployCalls).toContain('execute:true:entity/BrandNew,entity/Person_entity'))
     expect(onDeployed).toHaveBeenCalledWith('Deployed 2 models to _____systemalias @ adito-db.svc')
   })
 
-  it('keeps Deploy off while nothing is selected', async () => {
+  it('keeps OK off while nothing is ticked', async () => {
     const user = userEvent.setup()
     render(<DeployDialog api={makeApi({ deployOverview: OVERVIEW, deployPlan: { ...PLAN, items: [PLAN.items[2]] } })} projectRoot="C:/p" onClose={vi.fn()} />)
-    await screen.findByText(/by ClemensBeile/)
-    expect(screen.getByRole('button', { name: 'Deploy' })).toBeDisabled()
+    await screen.findByRole('checkbox', { name: 'entity/Old_entity' })
+    expect(screen.getByRole('button', { name: 'OK' })).toBeDisabled()
     await user.click(screen.getByRole('checkbox', { name: 'entity/Old_entity' }))
-    expect(screen.getByRole('button', { name: 'Deploy (1)' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'OK' })).toBeEnabled()
   })
 
   it('says so when the system is already up to date', async () => {
     render(<DeployDialog api={makeApi({ deployOverview: OVERVIEW, deployPlan: { ...PLAN, items: [], outdated: false } })} projectRoot="C:/p" onClose={vi.fn()} />)
-    expect(await screen.findByText('Nothing to deploy')).toBeInTheDocument()
+    expect(await screen.findByText(/Nothing to deploy/)).toBeInTheDocument()
   })
 
   it('reports a missing connection', async () => {
@@ -94,9 +94,18 @@ describe('DeployDialog', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Not connected')
   })
 
-  it('warns when the target looks like a cloud system', async () => {
+  it('does not warn about a cloud system: a cloud system is the normal target', async () => {
     render(<DeployDialog api={makeApi({ deployOverview: OVERVIEW, deployPlan: { ...PLAN, target: 'sys @ db.dev.htc1.adito.cloud' } })} projectRoot="C:/p" onClose={vi.fn()} />)
-    expect(await screen.findByText(/looks like a cloud system/)).toBeInTheDocument()
+    await screen.findByRole('checkbox', { name: 'entity/BrandNew' })
+    expect(screen.queryByText(/cloud system/)).toBeNull()
+  })
+})
+
+describe('diffRows', () => {
+  it('pairs a changed line, marks lines of one side only and can ignore whitespace', () => {
+    const rows = diffRows('a\n  b\nc', 'a\nb\nd\ne', true)
+    expect(rows.map((r) => r.kind)).toEqual(['same', 'same', 'changed', 'added'])
+    expect(diffRows('  b', 'b', false).map((r) => r.kind)).toEqual(['changed'])
   })
 })
 

@@ -102,7 +102,7 @@ fn find_ssh() -> Option<PathBuf> {
 
 /// Writes the fixed helper that prints the password from the environment; it holds no secret.
 fn askpass_script() -> Result<PathBuf, String> {
-    let path = std::env::temp_dir().join("vendira-ssh-askpass.sh");
+    let path = std::env::temp_dir().join("dito-ssh-askpass.sh");
     std::fs::write(&path, format!("#!/bin/sh\nprintf '%s\\n' \"${PASSWORD_ENV}\"\n")).map_err(|e| format!("ssh password helper could not be written: {e}"))?;
     #[cfg(unix)]
     {

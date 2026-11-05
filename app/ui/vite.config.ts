@@ -15,6 +15,12 @@ export default defineConfig({
   build: {
     outDir: 'dist',
   },
+  // Monaco workers load their parts with relative dynamic imports, which cannot be resolved when the worker is started from a blob:
+  // URL (installed app). One self-contained file per worker avoids that.
+  worker: {
+    format: 'es',
+    rollupOptions: { output: { inlineDynamicImports: true } },
+  },
   test: {
     environment: 'jsdom',
     globals: true,

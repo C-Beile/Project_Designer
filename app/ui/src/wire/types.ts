@@ -344,6 +344,25 @@ export interface GitFileStatus {
   path: string
 }
 
+export interface CompareGroup {
+  folder: string
+  kind: string
+  reason: 'missing' | 'different'
+  count: number
+  example: string
+}
+
+/** The output of the built-in transpiler compared with the official output of the same project. */
+export interface CompareReport {
+  total: number
+  identical: number
+  missing: number
+  different: number
+  own_only: number
+  percent: number
+  groups: CompareGroup[]
+}
+
 export interface GitBranch {
   name: string
   is_current: boolean

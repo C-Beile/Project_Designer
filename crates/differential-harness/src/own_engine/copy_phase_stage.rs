@@ -137,6 +137,7 @@ fn copy_module_tree(
     })?;
 
     let mut files_copied = 0;
+    let mut jobs: Vec<(PathBuf, PathBuf)> = Vec::new();
     let entries = fs::read_dir(module_root).map_err(|source| CopyPhaseError::Read {
         path: module_root.to_path_buf(),
         source,
@@ -153,8 +154,10 @@ fn copy_module_tree(
         }
         let src_path = entry.path();
         let dest_path = output_dir.join(&name);
-        files_copied += copy_recursive(&src_path, &dest_path, ignore, &output_dir_canonical)?;
+        files_copied += copy_recursive(&src_path, &dest_path, ignore, &output_dir_canonical, &mut jobs)?;
     }
+    // Writing a file is dominated by waiting (file system, virus scanner), so many files are written at once.
+    parallel_try_each(&jobs, |(src, dest)| copy_one_file(src, dest))?;
     Ok(files_copied)
 }
 
@@ -177,18 +180,19 @@ fn copy_recursive(
     dest: &Path,
     ignore: &HashSet<String>,
     output_dir_canonical: &Path,
+    jobs: &mut Vec<(PathBuf, PathBuf)>,
 ) -> Result<usize, CopyPhaseError> {
-    if let Ok(src_canonical) = fs::canonicalize(src) {
-        if src_canonical == output_dir_canonical {
-            return Ok(0);
-        }
-    }
-
     let metadata = fs::symlink_metadata(src).map_err(|source| CopyPhaseError::Read {
         path: src.to_path_buf(),
         source,
     })?;
+    // Only a folder can be the output folder itself; resolving the path of every file would cost a system call each.
     if metadata.is_dir() {
+        if let Ok(src_canonical) = fs::canonicalize(src) {
+            if src_canonical == output_dir_canonical {
+                return Ok(0);
+            }
+        }
         fs::create_dir_all(dest).map_err(|source| CopyPhaseError::CreateDir {
             path: dest.to_path_buf(),
             source,
@@ -207,13 +211,16 @@ fn copy_recursive(
             // Changelog data below `.liquibase` is part of the result even though a module's own
             // `data` folder is not.
             let liquibase_data = name == "data" && src.components().any(|c| c.as_os_str() == ".liquibase");
-            if ignore.contains(&name.to_string_lossy().to_string()) && !liquibase_data {
+            // The `scripts` folder a module ignores is its top-level one; a folder of that name further down
+            // (`tools/AditoFaker/scripts`) is part of the result.
+            let nested_scripts = name == "scripts";
+            if ignore.contains(&name.to_string_lossy().to_string()) && !liquibase_data && !nested_scripts {
                 continue;
             }
             if FORGE_OWNED_DIR_NAMES.contains(&name.to_string_lossy().as_ref()) {
                 continue;
             }
-            count += copy_recursive(&entry.path(), &dest.join(&name), ignore, output_dir_canonical)?;
+            count += copy_recursive(&entry.path(), &dest.join(&name), ignore, output_dir_canonical, jobs)?;
         }
         Ok(count)
     } else if is_modification_definition_file(src) {
@@ -230,34 +237,54 @@ fn copy_recursive(
         // stage may need to resolve against `output_dir`.
         Ok(0)
     } else {
-        // `atomic_write` needs its target's parent directory to already exist, which
-        // `copy_module_tree`'s `create_dir_all` calls above (via the directory branch)
-        // guarantee for every file reached through a normal directory walk.
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent).map_err(|source| CopyPhaseError::CreateDir {
-                path: parent.to_path_buf(),
-                source,
-            })?;
-        }
-        let bytes = fs::read(src).map_err(|source| CopyPhaseError::Read {
-            path: src.to_path_buf(),
-            source,
-        })?;
-        // Real-corpus finding (not in the original transpiler.md §4 draft, added to it by
-        // this agent - see p5-copy-phase-notes.md for the byte-level evidence): every `.aod`
-        // file in the reference `dist/` uses CRLF line endings, even when its source module
-        // file (as checked into a dependency's git repo) uses bare LF - `.aod` files authored
-        // directly in the project root already carry CRLF, so this is invisible there, but a
-        // node_modules-sourced module's LF `.aod` gets rewritten. Every OTHER file type
-        // (`.js`, `.adoc`, ...) is copied byte-for-byte verbatim regardless of its own line
-        // endings - confirmed by spot-checking `documentation.adoc` and multiple
-        // `valueProcess.js` files, which match source exactly including files whose source
-        // itself already happened to use CRLF. This is therefore a `.aod`-specific
-        // normalization step, not a general text-mode copy.
-        let bytes = if is_aod_file(dest) { normalize_to_crlf(&bytes) } else { bytes };
-        platform::fs::atomic_write(dest, &bytes)
-            .map_err(|source| CopyPhaseError::Write { path: dest.to_path_buf(), source })?;
+        jobs.push((src.to_path_buf(), dest.to_path_buf()));
         Ok(1)
+    }
+}
+
+/// Copies one file of a module into the output; `.aod` files get CRLF line endings (see below).
+fn copy_one_file(src: &Path, dest: &Path) -> Result<(), CopyPhaseError> {
+    let bytes = fs::read(src).map_err(|source| CopyPhaseError::Read { path: src.to_path_buf(), source })?;
+    // Real-corpus finding: every `.aod` file in the reference `dist/` uses CRLF line endings, even when its source module
+    // file uses bare LF. Every other file type is copied byte-for-byte.
+    let bytes = if is_aod_file(dest) { normalize_to_crlf(&bytes) } else { bytes };
+    // The output folder is a build result: no temporary file and no forced flush per file.
+    let write_error = |source: std::io::Error| CopyPhaseError::Write { path: dest.to_path_buf(), source: platform::PlatformError::AtomicWrite { path: dest.to_path_buf(), source } };
+    if let Err(first) = fs::write(dest, &bytes) {
+        let Some(parent) = dest.parent() else { return Err(write_error(first)) };
+        fs::create_dir_all(parent).map_err(|source| CopyPhaseError::CreateDir { path: parent.to_path_buf(), source })?;
+        fs::write(dest, &bytes).map_err(write_error)?;
+    }
+    Ok(())
+}
+
+/// Runs `work` for every item on several threads (the first error wins).
+pub(crate) fn parallel_try_each<T: Sync, E: Send>(items: &[T], work: impl Fn(&T) -> Result<(), E> + Sync) -> Result<(), E> {
+    if items.len() < 64 {
+        return items.iter().try_for_each(work);
+    }
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let failure: std::sync::Mutex<Option<E>> = std::sync::Mutex::new(None);
+    let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).clamp(4, 16);
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            scope.spawn(|| loop {
+                let i = next.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                if i >= items.len() || failure.lock().map(|f| f.is_some()).unwrap_or(true) {
+                    break;
+                }
+                if let Err(e) = work(&items[i]) {
+                    if let Ok(mut f) = failure.lock() {
+                        f.get_or_insert(e);
+                    }
+                    break;
+                }
+            });
+        }
+    });
+    match failure.into_inner().ok().flatten() {
+        Some(e) => Err(e),
+        None => Ok(()),
     }
 }
 
@@ -315,9 +342,19 @@ pub fn run_copy_phase(graph: &ModuleGraph, output_dir: &Path) -> Result<CopyPhas
 
     let total = ordered.len();
     for (done, module) in ordered.into_iter().enumerate() {
-        crate::own_engine::progress::report_between(8, 35, done, total, "Copying the modules");
+        let label = module.path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        crate::own_engine::progress::report_between(8, 35, done, total, &format!("Copying the modules ({} of {total}): {label}", done + 1));
         let ignore = read_ignore_entries(&module.path)?;
         report.files_copied += copy_module_tree(&module.path, &ignore, output_dir)?;
+        if module.path == graph.project.path {
+            let version = module.path.join(".aditoprj").join("project.version");
+            if let Ok(bytes) = fs::read(&version) {
+                let dest = output_dir.join(".aditoprj");
+                if fs::create_dir_all(&dest).is_ok() && fs::write(dest.join("project.version"), bytes).is_ok() {
+                    report.files_copied += 1;
+                }
+            }
+        }
         report.modules_processed += 1;
     }
 

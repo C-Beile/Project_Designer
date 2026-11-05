@@ -337,8 +337,8 @@ export function createMockForgeApi(options: {
           exe_dir: 'C:/Program Files/Dito Designer',
           os: 'windows',
           arch: 'x86_64',
-          forge_data_dir: 'C:/Users/u/AppData/Roaming/de.threehillsit.vendira-designer',
-          forge_settings_file: 'C:/Users/u/AppData/Roaming/de.threehillsit.vendira-designer/settings.json',
+          forge_data_dir: 'C:/Users/u/AppData/Roaming/de.threehillsit.dito-designer',
+          forge_settings_file: 'C:/Users/u/AppData/Roaming/de.threehillsit.dito-designer/settings.json',
           forge_entries: [{ name: 'settings.json', is_dir: false, size_bytes: 120, modified_unix: 1_700_000_000 }],
           designer_roaming_dir: 'C:/Users/u/AppData/Roaming/.aditodesigner',
           designer_roaming_exists: true,
@@ -582,6 +582,15 @@ export function createMockForgeApi(options: {
     async gitPush(): Promise<GitOutput> {
       gitCalls.push('push')
       return { ok: true, text: 'Everything up-to-date' }
+    },
+    async projectClone(_url, location, name) {
+      return `${location}/${name}`
+    },
+    async transpileCompare() {
+      return { total: 200, identical: 199, missing: 0, different: 1, own_only: 0, percent: 99.5, groups: [{ folder: 'entity', kind: '.aod', reason: 'different', count: 1, example: 'entity/A/A.aod' }] }
+    },
+    async projectCreateEmpty(location, name) {
+      return `${location}/${name}`
     },
     async gitCheckout(_root, branch): Promise<GitOutput> {
       gitCalls.push(`checkout:${branch}`)

@@ -152,7 +152,7 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
       mnemonic: 'f',
       items: [
         item('file.new', 'New', ctx.hasProject, { shortcut: 'Mod+N', hint: ctx.hasProject ? undefined : noProjectHint }),
-        later('file.newProject', 'New Project', { shortcut: 'Mod+Shift+N' }),
+        item('file.newProject', 'New Project', true, { shortcut: 'Mod+Shift+N' }),
         sep(),
         item('file.find', 'Find', ctx.hasProject, { shortcut: 'Mod+O', hint: ctx.hasProject ? undefined : noProjectHint }),
         item('file.openProject', 'Open Project', true, { shortcut: 'Mod+Shift+O' }),
@@ -419,6 +419,7 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
             item('tools.engine', 'Official ADITO transpiler', true, { id: 'tools.engine.official', arg: 'official', check: 'radio', checked: ctx.engine === 'official' }),
           ],
         },
+        item('tools.compareReference', 'Transpile Match with Reference...', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
         later('tools.exportStructure', 'Export Project Structure'),
         {
           id: 'view.theme',

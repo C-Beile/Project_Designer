@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core'
 import type { ForgeApi } from './ForgeApi'
-import type { ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The real implementation - a pure pass-through to the Tauri commands in
 // app/src-tauri/src/lib.rs, one call each, no business logic (architecture.md §1
@@ -131,6 +131,9 @@ export const tauriForgeApi: ForgeApi = {
   gitIncoming: (projectRoot) => invoke<GitCommit[]>('git_incoming', { projectRoot }),
   gitPushTo: (projectRoot, hash) => invoke<GitOutput>('git_push_to', { projectRoot, hash }),
   gitCheckout: (projectRoot, branch) => invoke<GitOutput>('git_checkout', { projectRoot, branch }),
+  projectClone: (url, location, name, sshKey, password) => invoke<string>('project_clone', { url, location, name, sshKey, password }),
+  projectCreateEmpty: (location, name) => invoke<string>('project_create_empty', { location, name }),
+  transpileCompare: (reference, projectRoot) => invoke<CompareReport>('transpile_compare', { reference, projectRoot }),
   gitCreateBranch: (projectRoot, name, start) => invoke<GitOutput>('git_create_branch', { projectRoot, name, start }),
   scmStatus: (projectRoot) => invoke<ScmOverview>('scm_status', { projectRoot }),
   scmStage: (projectRoot, paths) => invoke<GitOutput>('scm_stage', { projectRoot, paths }),

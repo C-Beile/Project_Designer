@@ -46,6 +46,20 @@ fn bytes_to_text(bytes: &[u8]) -> String {
     bytes.iter().map(|&b| b as char).collect()
 }
 
+/// The reverse of `bytes_to_text`: each character was one byte of the file, so it is written back as that byte (the file keeps its own encoding).
+fn text_to_bytes(text: &str) -> Vec<u8> {
+    let mut out = Vec::with_capacity(text.len());
+    for c in text.chars() {
+        if (c as u32) < 256 {
+            out.push(c as u8);
+        } else {
+            let mut buf = [0u8; 4];
+            out.extend_from_slice(c.encode_utf8(&mut buf).as_bytes());
+        }
+    }
+    out
+}
+
 fn collect_files(dir: &Path, aod: &mut Vec<PathBuf>, js: &mut Vec<PathBuf>) {
     let Ok(entries) = fs::read_dir(dir) else { return };
     for entry in entries.flatten() {
@@ -448,19 +462,32 @@ pub fn run_service_inline(project_home: &Path, output_dir: &Path) -> io::Result<
     }
 
     let mut context = Context { output_dir, project_home, owned: &owned, resolved: HashMap::new() };
+    // Every script is taken in with the implementations as they were; the files are written when all are done.
+    let mut rewritten: Vec<(PathBuf, Vec<u8>)> = Vec::new();
     for file in &js {
         let Ok(rel) = file.strip_prefix(output_dir) else { continue };
         let parts: Vec<String> = rel.components().map(|c| c.as_os_str().to_string_lossy().into_owned()).collect();
-        if parts.len() < 3 || parts.iter().any(|p| p == "implementations") {
+        if parts.len() < 3 {
             continue;
         }
         let Ok(bytes) = fs::read(file) else { continue };
         if !bytes.windows(CALL.len()).any(|w| w == CALL.as_bytes()) {
             continue;
         }
+        // The script of a service implementation of an entity takes in the services it calls, except a call of its own
+        // service; the implementations of a global service stay as they are.
+        if let Some(at) = parts.iter().position(|p| p == "implementations") {
+            let own_service = at.checked_sub(1).map(|i| parts[i].as_str()).unwrap_or("");
+            if own_service.is_empty() || parts[0] == "serviceDefinition" || String::from_utf8_lossy(&bytes).contains(&format!("\"{own_service}\"")) {
+                continue;
+            }
+        }
         let owner = format!("{}/{}", parts[0], parts[1]);
         let Some(text) = context.transform(&owner, &bytes_to_text(&bytes)) else { continue };
-        fs::write(file, text.as_bytes())?;
+        rewritten.push((file.clone(), text_to_bytes(&text)));
+    }
+    for (file, bytes) in rewritten {
+        fs::write(file, bytes)?;
         report.scripts_changed += 1;
     }
     report.services_inlined = owned.values().map(HashMap::len).sum();
@@ -475,6 +502,12 @@ mod tests {
         let path = root.join(rel);
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(path, text).unwrap();
+    }
+
+    #[test]
+    fn a_script_keeps_its_own_bytes_when_written_back() {
+        let original = "key\u{2013}value \u{e4}".as_bytes().to_vec();
+        assert_eq!(text_to_bytes(&bytes_to_text(&original)), original);
     }
 
     #[test]

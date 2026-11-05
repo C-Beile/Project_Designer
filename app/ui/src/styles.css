@@ -5043,3 +5043,60 @@ option, optgroup { color: var(--fg); background-color: var(--bg-elevated, var(--
 .icon-combo-list li { display: flex; align-items: center; gap: 6px; padding: 2px 6px; cursor: pointer; white-space: nowrap; }
 .icon-combo-list li:hover, .icon-combo-list li[aria-selected='true'] { background: var(--selected-bg); color: var(--selected-fg); }
 .icon-combo-list li:hover .icon-combo-art, .icon-combo-list li[aria-selected='true'] .icon-combo-art { color: var(--selected-fg); }
+
+.forge-build-result.is-ok { border-left: 3px solid var(--git-added, #81b88b); }
+.forge-build-result.is-failed { border-left: 3px solid var(--git-conflict, #e4676b); }
+.forge-build-result p { color: var(--fg); }
+.forge-build-result-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.forge-deploy-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.forge-deploy-actions .forge-field { margin: 0; }
+
+.forge-newproject { display: flex; flex-direction: column; gap: 8px; min-width: 460px; }
+.forge-newproject .forge-field { display: grid; grid-template-columns: 190px 1fr; align-items: center; gap: 8px; }
+.forge-field-row { display: flex; gap: 6px; }
+.forge-field-row input { flex: 1 1 auto; }
+
+.forge-match { display: flex; flex-direction: column; gap: 8px; min-width: 560px; }
+.forge-match-percent strong { font-size: 20px; }
+.forge-match-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.forge-match-table th, .forge-match-table td { text-align: left; padding: 2px 8px; border-bottom: 1px solid color-mix(in srgb, var(--fg) 12%, transparent); }
+.forge-match-table td:last-child { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Language editor: the host hands its whole area to the grid, so the entry list gets the remaining height */
+.forge-editor-host:has(> .language-grid) { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; padding: 0; overflow: hidden; }
+.forge-editor-host > .language-grid { flex: 1 1 auto; height: auto; }
+
+/* Deploy review (as in the original Designer): question, "Hide dialog", ticked list of models, double-click hint */
+.forge-deploy { min-width: 440px; }
+.forge-deploy-question { margin: 0 0 12px; }
+.forge-deploy-hide { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.forge-deploy-box { list-style: none; margin: 0; padding: 4px 6px; min-height: 260px; max-height: 52vh; overflow: auto; border: 1px solid var(--border); background: var(--bg-inset); }
+.forge-deploy-box li { padding: 3px 4px; border-radius: 2px; }
+.forge-deploy-box li:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.forge-deploy-box label { display: flex; align-items: center; gap: 8px; cursor: default; }
+.forge-deploy-hint { margin: 10px 4px 0; text-align: right; color: var(--fg-muted); font-size: 12px; }
+.forge-deploy-menu { position: fixed; z-index: 3000; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 3px; padding: 2px; box-shadow: 0 4px 14px rgb(0 0 0 / 0.4); }
+.forge-deploy-menu button { display: block; width: 100%; text-align: left; padding: 4px 14px; background: none; border: none; color: var(--fg); cursor: pointer; }
+.forge-deploy-menu button:hover { background: var(--selected-bg); color: var(--selected-fg); }
+
+/* Diff Deploy window: DB version beside the Designer version */
+.forge-modal:has(.forge-ddiff) { width: min(1200px, 94vw); max-width: 94vw; }
+.forge-ddiff { display: flex; flex-direction: column; height: 70vh; min-width: 0; }
+.forge-ddiff-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-bottom: 6px; }
+.forge-ddiff-bar label { display: flex; align-items: center; gap: 8px; }
+.forge-ddiff-head { display: grid; grid-template-columns: 1fr 1fr; padding: 4px 8px; color: var(--fg-muted); font-size: 12px; border-bottom: 1px solid var(--border); }
+.forge-ddiff-head span:last-child { text-align: right; }
+.forge-ddiff-body { flex: 1 1 0; min-height: 0; overflow: auto; background: var(--bg-inset); font-family: var(--font-mono, monospace); font-size: 12px; }
+.forge-ddiff-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px minmax(0, 1fr); line-height: 18px; }
+.forge-ddiff-text { white-space: pre; overflow: hidden; text-overflow: clip; padding: 0 6px; }
+.forge-ddiff-no { text-align: right; padding: 0 6px; color: var(--fg-muted); background: color-mix(in srgb, var(--fg) 5%, transparent); user-select: none; }
+.forge-ddiff-row.is-removed .forge-ddiff-left, .forge-ddiff-row.is-changed .forge-ddiff-left { background: rgb(150 150 150 / 0.28); }
+.forge-ddiff-row.is-added .forge-ddiff-right, .forge-ddiff-row.is-changed .forge-ddiff-right { background: rgb(60 140 70 / 0.45); }
+
+/* Git Branches popup: solid background and full-contrast text in every theme (it was hard to read) */
+.forge-branch-popup { width: 380px; background: var(--bg-panel, #1e1e1e); color: var(--fg, #e6e6e6); border: 1px solid var(--border-strong, #666); font-size: 13px; }
+.forge-branch-popup > header { color: var(--fg-muted, #b0b0b0); padding: 6px 8px; }
+.forge-branch-list h4 { margin: 10px 10px 4px; font-size: 12px; font-weight: 700; color: var(--fg, #e6e6e6); }
+.forge-branch-item { padding: 4px 14px; color: var(--fg, #e6e6e6); line-height: 18px; }
+.forge-branch-item:hover, .forge-branch-item:focus-visible { background: var(--selected-bg, var(--selection, #1d3b53)); color: var(--selected-fg, #fff); }
+.forge-branch-item.is-current { color: var(--accent, var(--fg)); }
