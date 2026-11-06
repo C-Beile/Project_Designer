@@ -12,6 +12,7 @@ import { PluginsDialog } from '../shell/PluginsDialog'
 import { ProjectZipDialog } from '../shell/ProjectZipDialog'
 import { UpdatesDialog } from '../shell/UpdatesDialog'
 import { GitDialog } from '../shell/GitDialog'
+import { SyncDialog, type SyncResult } from '../shell/SyncDialog'
 import { CommitDiffDialog } from '../shell/CommitDiffDialog'
 import { RenameDialog } from '../tree/TreeDialogs'
 import type { ThemeName } from '../theme/useTheme'
@@ -43,6 +44,33 @@ function GitWindow({ api, payload, done }: { api: ForgeApi; payload: Record<stri
         changed.current = true
       }}
       onClose={() => done(changed.current ? { changed: true } : null)}
+    />
+  )
+}
+
+export interface SyncWindowResult {
+  mode: 'pull' | 'push'
+  changed: boolean
+  result: SyncResult
+}
+
+// The Pull and Push window reports what the last run did, so the main window can tell the user and reload its tree.
+function SyncWindow({ api, payload, done }: { api: ForgeApi; payload: Record<string, unknown>; done: Done }) {
+  const changed = useRef(false)
+  const last = useRef<SyncResult | null>(null)
+  const mode = payload.mode === 'push' ? 'push' : 'pull'
+  return (
+    <SyncDialog
+      api={api}
+      projectRoot={String(payload.project ?? '')}
+      mode={mode}
+      onDone={() => {
+        changed.current = true
+      }}
+      onResult={(r) => {
+        last.current = r
+      }}
+      onClose={() => done(last.current ? ({ mode, changed: changed.current, result: last.current } satisfies SyncWindowResult) : null)}
     />
   )
 }
@@ -142,6 +170,9 @@ export const DIALOG_WINDOWS: Record<string, DialogSpec> = {
   },
   git: {
     render: (api, p, done) => <GitWindow api={api} payload={p} done={done} />,
+  },
+  sync: {
+    render: (api, p, done) => <SyncWindow api={api} payload={p} done={done} />,
   },
   commitdiff: {
     render: (api, p, done) => <CommitDiffDialog api={api} root={String(p.root ?? '')} path={String(p.path ?? '')} onClose={() => done(null)} />,

@@ -11,7 +11,29 @@ import { Modal } from './Dialogs'
 
 const when = (iso: string) => iso.slice(0, 16).replace('T', ' ')
 
-export function SyncDialog({ api, projectRoot, mode, onClose, onDone }: { api: ForgeApi; projectRoot: string; mode: 'pull' | 'push'; onClose: () => void; onDone: () => void }) {
+export interface SyncResult {
+  ok: boolean
+  text: string
+  /** Commits that were merged (pull) or pushed (push). */
+  commits: number
+}
+
+export function SyncDialog({
+  api,
+  projectRoot,
+  mode,
+  onClose,
+  onDone,
+  onResult,
+}: {
+  api: ForgeApi
+  projectRoot: string
+  mode: 'pull' | 'push'
+  onClose: () => void
+  onDone: () => void
+  /** Called after every run with what happened, so the caller can tell the user. */
+  onResult?: (result: SyncResult) => void
+}) {
   const [commits, setCommits] = useState<GitCommit[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [count, setCount] = useState(0)
@@ -46,12 +68,15 @@ export function SyncDialog({ api, projectRoot, mode, onClose, onDone }: { api: F
     try {
       const result = mode === 'pull' ? await api.gitPull(projectRoot) : await api.gitPushTo(projectRoot, commits![total - count].hash)
       setOutput(result)
+      onResult?.({ ok: result.ok, text: result.text, commits: mode === 'pull' ? total : count })
       if (result.ok) {
         onDone()
         await load()
       }
     } catch (e) {
-      setOutput({ ok: false, text: e instanceof Error ? e.message : String(e) })
+      const text = e instanceof Error ? e.message : String(e)
+      setOutput({ ok: false, text })
+      onResult?.({ ok: false, text, commits: 0 })
     } finally {
       setBusy(false)
     }

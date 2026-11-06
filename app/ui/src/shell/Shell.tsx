@@ -46,7 +46,7 @@ import { NewProjectDialog } from './NewProjectDialog'
 import { TranspileMatchDialog } from './TranspileMatchDialog'
 import { UpdatesDialog } from './UpdatesDialog'
 import { GitDialog } from './GitDialog'
-import { SyncDialog } from './SyncDialog'
+import { SyncDialog, type SyncResult } from './SyncDialog'
 import { TabSwitcher } from './TabSwitcher'
 import { QuickFileSearch, useDoubleCtrl } from './QuickFileSearch'
 import { TableCenterDialog } from './TableCenterDialog'
@@ -81,7 +81,7 @@ import { useOsDialog } from '../windows/useOsDialog'
 import { useCloseGuard } from '../windows/useCloseGuard'
 import { canMoveToWindow } from '../windows/editorWindows'
 import { getWindowBackend, openDialogWindow, osWindowsAvailable } from '../windows/windowService'
-import type { OptionsWindowResult } from '../windows/DialogWindowApp'
+import type { OptionsWindowResult, SyncWindowResult } from '../windows/DialogWindowApp'
 import { EVENTS, FLOAT_SIZES, type FloatAction, type FloatView, type Geometry, type MainState } from '../windows/protocol'
 import { diffTitle } from '../scm/diffTitle'
 import { decorationFor, indexOf, refreshScm, useScm, GIT_CODE_LABEL } from '../scm/scmStore'
@@ -801,6 +801,15 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   const openGit = useCallback((tab: 'changes' | 'history' | 'branches', target: { local?: string; remote?: string } | null = null) => {
     setGitView({ tab, target })
     setDialog('git')
+  }, [])
+  const notifySync = useCallback((mode: 'pull' | 'push', r: SyncResult) => {
+    const label = mode === 'pull' ? 'Pull' : 'Push'
+    if (r.ok) {
+      const what = mode === 'pull' ? 'merged' : 'pushed'
+      notify(r.commits > 0 ? `${label} finished: ${r.commits} commit${r.commits === 1 ? '' : 's'} ${what}.` : `${label} finished: nothing to ${mode === 'pull' ? 'merge' : 'push'}.`, { kind: 'success' })
+    } else {
+      notify(r.text.split('\n').find((l) => l.trim()) || `${label} failed.`, { kind: 'error', timeoutMs: 12000 })
+    }
   }, [])
   const runGit = useCallback(
     async (label: string, action: () => Promise<GitOutput>) => {
@@ -2359,6 +2368,19 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     () => setDialog((d) => (d === 'git' ? null : d)),
   )
 
+  useOsDialog<SyncWindowResult>(
+    dialog === 'sync' && hasProject,
+    () => ({ name: 'sync', title: syncMode === 'pull' ? 'Pull' : 'Push', size: { width: 900, height: 560 }, payload: { project: root, mode: syncMode } }),
+    (r) => {
+      if (r) {
+        if (r.changed) setReloadToken((t) => t + 1)
+        notifySync(r.mode, r.result)
+      }
+      if (root.trim()) void refreshScm(api, root)
+    },
+    () => setDialog((d) => (d === 'sync' ? null : d)),
+  )
+
   const panels: Record<PanelId, PanelContent> = {
     projects: {
       title: projectsTab === 'projects' ? 'Projects' : 'Services',
@@ -2754,7 +2776,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       {dialog === 'git' && hasProject && !osWindowsAvailable() ? (
         <GitDialog api={api} projectRoot={root} initialTab={gitView.tab} initialTarget={gitView.target} onClose={() => setDialog(null)} onChanged={() => setReloadToken((t) => t + 1)} />
       ) : null}
-      {dialog === 'sync' && hasProject && !osWindowsAvailable() ? <SyncDialog api={api} projectRoot={root} mode={syncMode} onClose={() => setDialog(null)} onDone={() => setReloadToken((t) => t + 1)} /> : null}
+      {dialog === 'sync' && hasProject && !osWindowsAvailable() ? <SyncDialog api={api} projectRoot={root} mode={syncMode} onClose={() => setDialog(null)} onDone={() => setReloadToken((t) => t + 1)} onResult={(r) => notifySync(syncMode, r)} /> : null}
       {dialog === 'updates' && !osWindowsAvailable() ? <UpdatesDialog api={api} onClose={() => setDialog(null)} onOpenTableCenter={() => setDialog('tableCenter')} /> : null}
       {dialog === 'tableCenter' ? <TableCenterDialog api={api} db={db} onClose={() => setDialog(null)} /> : null}
     </div>
