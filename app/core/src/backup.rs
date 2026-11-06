@@ -39,8 +39,18 @@ fn flatten(path: &Path) -> PathBuf {
     out
 }
 
+/// Files the build writes (the `dist` result of a transpile and the folders of its cache) are made again by every run;
+/// a copy of each of them would only slow the transpile down (thousands of files) and fill the backup folder.
+fn is_build_output(path: &Path) -> bool {
+    const BUILD_FOLDERS: [&str; 6] = ["dist", "_own_engine_dist", "_forge_experimental_dist", "transpile-cache", "transpile-snapshot", ".forge-incremental-cache"];
+    path.components().any(|c| BUILD_FOLDERS.iter().any(|f| c.as_os_str().eq_ignore_ascii_case(f)))
+}
+
 /// Copies `path` into the backup folder. Identical content to the previous backup of the same file is not stored twice.
 pub fn backup_file(path: &Path) -> Result<(), String> {
+    if is_build_output(path) {
+        return Ok(());
+    }
     let meta = std::fs::metadata(path).map_err(|e| format!("{}: {e}", path.display()))?;
     if meta.len() > MAX_BACKUP_BYTES {
         return Err(format!("{} is larger than {} MB, refusing to overwrite it without a backup", path.display(), MAX_BACKUP_BYTES / 1024 / 1024));
@@ -70,6 +80,13 @@ pub fn backup_file(path: &Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn files_of_the_build_output_are_not_backed_up() {
+        assert!(is_build_output(Path::new("C:/p/SVB/dist/entity/A_entity/A_entity.aod")));
+        assert!(is_build_output(Path::new("C:/data/transpile-cache/SVB/snapshot/x.aod")));
+        assert!(!is_build_output(Path::new("C:/p/SVB/entity/A_entity/A_entity.aod")));
+    }
 
     #[test]
     fn overwriting_a_file_through_atomic_write_keeps_the_previous_content() {

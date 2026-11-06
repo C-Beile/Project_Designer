@@ -5100,3 +5100,89 @@ option, optgroup { color: var(--fg); background-color: var(--bg-elevated, var(--
 .forge-branch-item { padding: 4px 14px; color: var(--fg, #e6e6e6); line-height: 18px; }
 .forge-branch-item:hover, .forge-branch-item:focus-visible { background: var(--selected-bg, var(--selection, #1d3b53)); color: var(--selected-fg, #fff); }
 .forge-branch-item.is-current { color: var(--accent, var(--fg)); }
+
+/* ===== Buttons: clear states, comfortable click size, busy indicator ===== */
+.forge-modal-footer button, .forge-os-dialog .forge-modal-footer button { min-height: 30px; min-width: 84px; padding: 0 18px; border-radius: 5px; font-weight: 500; cursor: pointer; transition: background-color 0.12s, border-color 0.12s, box-shadow 0.12s, filter 0.12s, transform 0.05s; }
+.forge-modal-footer button:not(:disabled):hover { border-color: var(--accent); }
+.forge-modal-footer button:not(:disabled):active { transform: translateY(1px); filter: brightness(0.94); }
+.forge-modal-footer button:focus-visible { outline: 2px solid var(--focus-ring, var(--accent)); outline-offset: 2px; }
+.forge-modal-footer button:disabled { opacity: 0.45; cursor: not-allowed; }
+.forge-modal-footer button.is-primary { box-shadow: 0 1px 0 rgb(0 0 0 / 0.25); }
+.forge-modal-footer button.is-busy { position: relative; cursor: progress; pointer-events: none; }
+.forge-btn-spinner { display: inline-block; width: 11px; height: 11px; margin-right: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: forge-spin 0.7s linear infinite; vertical-align: -2px; }
+.forge-modal-footer { gap: 10px; }
+
+/* ===== Commit window ===== */
+.forge-commit-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 6px; background: color-mix(in srgb, var(--bg-panel) 70%, transparent); }
+.forge-commit-branch { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--fg); font-weight: 600; font-size: 12px; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.forge-commit-branch::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.forge-commit-selected { color: var(--fg-muted); font-size: 12px; }
+.forge-commit-selected strong { color: var(--fg); }
+.forge-commit-filter { margin-left: auto; width: 200px; height: 24px; padding: 0 8px; box-sizing: border-box; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; }
+.forge-commit-filter:focus { outline: none; border-color: var(--focus-ring, var(--accent)); }
+.forge-commit-badge { margin-left: auto; min-width: 18px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 3px; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; color: #fff; background: #6b7280; }
+.forge-commit-badge.is-added { background: #2f8f46; }
+.forge-commit-badge.is-modified { background: #b7791f; }
+.forge-commit-badge.is-deleted { background: #c0392b; }
+.forge-commit-badge.is-renamed { background: #2b6cb0; }
+.forge-commit-row:hover { background: color-mix(in srgb, var(--fg) 7%, transparent); }
+.forge-commit-message { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; line-height: 1.45; resize: vertical; }
+.forge-commit-message:focus { outline: none; border-color: var(--focus-ring, var(--accent)); box-shadow: 0 0 0 1px var(--focus-ring, var(--accent)); }
+.forge-commit-counter { margin-top: 4px; text-align: right; font-size: 11px; color: var(--fg-muted); }
+.forge-commit-counter.is-long { color: var(--warning); }
+.forge-commit-side { border-left: 1px solid var(--border); padding-left: 14px; }
+.forge-commit-side .forge-titled-rule { margin-top: 14px; }
+
+/* ===== Git Branches popup ===== */
+.forge-branch-popup > header { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; padding: 8px 12px; font-weight: 600; }
+.forge-branch-current { padding: 1px 9px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 25%, transparent); font-size: 11px; font-weight: 600; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.forge-branch-filter { margin: 8px 10px 4px; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 5px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); }
+.forge-branch-filter:focus { outline: none; border-color: var(--focus-ring, var(--accent)); }
+.forge-branch-list h4 { display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.05em; font-size: 10.5px; color: var(--fg-muted); }
+.forge-branch-count { padding: 0 7px; border-radius: 9px; background: color-mix(in srgb, var(--fg) 12%, transparent); font-size: 10px; letter-spacing: 0; }
+.forge-branch-item { align-items: center; border-radius: 4px; margin: 0 4px; width: calc(100% - 8px); }
+.forge-branch-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.forge-branch-check { margin-right: 6px; color: var(--accent); font-weight: 700; }
+.forge-branch-arrow { opacity: 0.4; flex: 0 0 auto; padding-left: 8px; }
+.forge-branch-item:hover .forge-branch-arrow { opacity: 1; }
+
+/* ===== Deploy windows ===== */
+.forge-deploy-question { font-weight: 600; font-size: 14px; }
+.forge-deploy-box li { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; }
+.forge-deploy-op { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 16px; border-radius: 3px; font-size: 10px; font-weight: 700; color: #fff; }
+.forge-deploy-op.forge-deploy-op-I { background: #2f8f46; color: #fff; }
+.forge-deploy-op.forge-deploy-op-U { background: #b7791f; color: #fff; }
+.forge-deploy-op.forge-deploy-op-D { background: #c0392b; color: #fff; }
+.forge-deploy-summary { display: flex; gap: 8px; margin: 0 0 10px; flex-wrap: wrap; }
+.forge-deploy-chip { padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; color: #fff; }
+.forge-deploy-chip.is-I { background: #2f8f46; }
+.forge-deploy-chip.is-U { background: #b7791f; }
+.forge-deploy-chip.is-D { background: #c0392b; }
+.forge-deploy-loading { display: flex; align-items: center; gap: 10px; padding: 18px 8px; color: var(--fg-muted); }
+.forge-ddiff-bar { padding: 6px 2px 8px; }
+.forge-ddiff-head { font-weight: 600; background: color-mix(in srgb, var(--bg-panel) 70%, transparent); }
+
+/* Tunnel state line and action button of the deploy options window */
+.forge-tunnel-state { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px 0 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: color-mix(in srgb, var(--warning) 10%, transparent); font-size: 12.5px; }
+.forge-tunnel-state.is-open { background: color-mix(in srgb, var(--success) 12%, transparent); }
+.forge-tunnel-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warning); flex: 0 0 auto; }
+.forge-tunnel-state.is-open .forge-tunnel-dot { background: var(--success); }
+.forge-action-button { margin-left: auto; min-height: 26px; padding: 0 14px; border-radius: 5px; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--fg); cursor: pointer; font-weight: 500; transition: background-color 0.12s, filter 0.12s; }
+.forge-action-button:not(:disabled):hover { background: color-mix(in srgb, var(--accent) 38%, transparent); }
+.forge-action-button:not(:disabled):active { filter: brightness(0.92); }
+.forge-action-button:disabled { opacity: 0.55; cursor: progress; }
+.forge-action-button:focus-visible { outline: 2px solid var(--focus-ring, var(--accent)); outline-offset: 2px; }
+
+/* Primary action stays clearly recognisable while it waits for the comparison */
+.forge-modal-footer button.is-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg, #fff); font-weight: 600; }
+.forge-modal-footer button.is-primary:disabled { opacity: 0.6; background: color-mix(in srgb, var(--accent) 55%, var(--bg-panel)); border-color: transparent; }
+.forge-modal-footer button.is-primary.is-busy { opacity: 1; }
+
+/* Own icon of a context or entity in the Projects tree */
+.project-tree-icon-art { display: inline-flex; width: 16px; height: 16px; color: var(--folder-context, var(--fg)); }
+.project-tree-icon-art svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* Entity fields and webservice fields side by side, like in the original Designer */
+.webservice-panes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.webservice-pane { border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; min-height: 160px; max-height: 420px; overflow: auto; }
+.webservice-pane h3 { margin: 2px 0 6px; font-size: 12px; font-weight: 600; }

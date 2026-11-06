@@ -124,7 +124,7 @@ export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: For
       onClose={onCancel}
       footer={
         <>
-          <button type="button" onClick={ok} disabled={!tunnelOk || !system}>
+          <button type="button" onClick={ok} disabled={!tunnelOk || !system} title={!tunnelOk ? 'Open the tunnel to the system first' : undefined}>
             OK
           </button>
           <button type="button" onClick={onCancel}>
@@ -167,14 +167,19 @@ export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: For
             {warning}
           </p>
         ) : null}
-        {!tunnelOk ? (
-          <p className="forge-field-hint" role="status">
-            The tunnel to {system || 'the system'} is not open.{' '}
-            <button type="button" className="forge-link-button" onClick={() => void openTunnel()} disabled={opening || !current}>
+        {tunnelOk ? (
+          <p className="forge-tunnel-state is-open" role="status">
+            <span className="forge-tunnel-dot" aria-hidden="true" /> Tunnel to {system} is open
+          </p>
+        ) : (
+          <p className="forge-tunnel-state" role="status">
+            <span className="forge-tunnel-dot" aria-hidden="true" /> The tunnel to {system || 'the system'} is not open.
+            <button type="button" className="forge-action-button" onClick={() => void openTunnel()} disabled={opening || !current} aria-busy={opening}>
+              {opening ? <span className="forge-btn-spinner" aria-hidden="true" /> : null}
               {opening ? 'Opening...' : 'Open tunnel'}
             </button>
           </p>
-        ) : null}
+        )}
         {error ? (
           <p className="forge-field-error" role="alert">
             {error}

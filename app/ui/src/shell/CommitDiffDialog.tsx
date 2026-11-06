@@ -36,7 +36,7 @@ export function CommitDiffDialog({ api, root, path, onClose }: { api: ForgeApi; 
     if (!host || !content || content.binary || content.too_large) return
     let disposed = false
     let cleanup = () => {}
-    void Promise.all([import('monaco-editor'), import('../theme/monacoTheme'), import('../tabs/TextFileEditor')]).then(([monaco, theme, text]) => {
+    void Promise.all([import('monaco-editor'), import('../theme/monacoTheme'), import('../tabs/TextFileEditor'), import('../theme/monacoWorkers').then((w) => w.ensureMonacoWorkers())]).then(([monaco, theme, text]) => {
       const { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForgeThemeForMonaco } = theme
       const { languageForFile } = text
       if (disposed || !hostRef.current) return

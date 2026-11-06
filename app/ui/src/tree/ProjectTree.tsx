@@ -93,6 +93,7 @@ export function ProjectTree({
   loading,
   gitFor,
   onFileKey,
+  iconSvg,
 }: {
   roots: TreeNode[]
   onSelect?: (node: TreeNode, project: TreeNode) => void
@@ -112,6 +113,8 @@ export function ProjectTree({
   gitFor?: (node: TreeNode) => { code: string; title: string } | null
   /** Ctrl+X, Ctrl+C, Ctrl+V and Delete on a file or folder row. */
   onFileKey?: (key: 'cut' | 'copy' | 'paste' | 'delete', node: TreeNode, project: TreeNode) => void
+  /** SVG of an `iconId` (`NEON:IMPORT`); objects with an own icon show it instead of the type symbol. */
+  iconSvg?: (id: string) => string | undefined
 }) {
   const [expanded, setExpanded] = useState<Set<string>>(() => readSet(EXPANDED_STORE))
   const [loaded, setLoaded] = useState<Map<string, TreeNode[]>>(() => new Map())
@@ -442,7 +445,11 @@ export function ProjectTree({
                 )}
               </span>
               <span className="project-tree-icon">
-                <NodeIcon node={node} expanded={isExpanded} />
+                {node.icon && iconSvg?.(node.icon) ? (
+                  <span className="project-tree-icon-art" title={node.icon} dangerouslySetInnerHTML={{ __html: iconSvg(node.icon) ?? '' }} />
+                ) : (
+                  <NodeIcon node={node} expanded={isExpanded} />
+                )}
               </span>
               <span className={`project-tree-label${node.bold ? ' is-bold' : ''}`}>{node.label}</span>
               {onRight ? null : statusIcons}

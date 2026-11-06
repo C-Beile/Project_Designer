@@ -264,6 +264,10 @@ function BranchPopup({
   onPick: (t: { local?: string; remote?: string }) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const [filter, setFilter] = useState('')
+  const needle = filter.trim().toLowerCase()
+  const localBranches = (data?.branches ?? []).filter((b) => !needle || b.name.toLowerCase().includes(needle))
+  const remoteBranches = (data?.remote_branches ?? []).filter((r) => !needle || r.toLowerCase().includes(needle))
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) onClose()
@@ -273,7 +277,7 @@ function BranchPopup({
     }
     window.addEventListener('mousedown', onDown)
     window.addEventListener('keydown', onKey)
-    ref.current?.querySelector<HTMLElement>('button')?.focus()
+    ref.current?.querySelector<HTMLElement>('input, button')?.focus()
     return () => {
       window.removeEventListener('mousedown', onDown)
       window.removeEventListener('keydown', onKey)
@@ -282,7 +286,11 @@ function BranchPopup({
   const left = Math.max(0, Math.min(at.x, window.innerWidth - 330))
   return (
     <div ref={ref} className="forge-branch-popup" role="dialog" aria-label="Git Branches" style={{ left, bottom: window.innerHeight - at.y + 2 }}>
-      <header>Git Branches</header>
+      <header>
+        <span>Git Branches</span>
+        {data?.branch ? <span className="forge-branch-current">{data.branch}</span> : null}
+      </header>
+      {data ? <input type="search" className="forge-branch-filter" placeholder="Filter branches" aria-label="Filter branches" value={filter} onChange={(e) => setFilter(e.target.value)} /> : null}
       {error ? <p className="forge-field-error">{error}</p> : null}
       {!data && !error ? <p className="forge-field-hint">Loading...</p> : null}
       {data ? (
@@ -297,8 +305,11 @@ function BranchPopup({
           >
             + New Branch
           </button>
-          <h4>Local Branches</h4>
-          {data.branches.map((b) => (
+          <h4>
+            Local Branches <span className="forge-branch-count">{localBranches.length}</span>
+          </h4>
+          {localBranches.length === 0 ? <p className="forge-field-hint">No branch matches.</p> : null}
+          {localBranches.map((b) => (
             <button
               key={b.name}
               type="button"
@@ -311,13 +322,15 @@ function BranchPopup({
                 onPick({ local: b.name })
               }}
             >
-              {b.name}
-              <span aria-hidden="true"> &#9656;</span>
+              <span className="forge-branch-name">{b.is_current ? <span className="forge-branch-check" aria-hidden="true">&#10003;</span> : null}{b.name}</span>
+              <span className="forge-branch-arrow" aria-hidden="true">&#9656;</span>
             </button>
           ))}
-          <h4>Remote Branches</h4>
-          {data.remote_branches.length === 0 ? <p className="forge-field-hint">None</p> : null}
-          {data.remote_branches.map((r) => (
+          <h4>
+            Remote Branches <span className="forge-branch-count">{remoteBranches.length}</span>
+          </h4>
+          {remoteBranches.length === 0 ? <p className="forge-field-hint">{data.remote_branches.length === 0 ? 'None' : 'No branch matches.'}</p> : null}
+          {remoteBranches.map((r) => (
             <button
               key={r}
               type="button"
@@ -328,8 +341,8 @@ function BranchPopup({
                 onPick({ remote: r })
               }}
             >
-              {r}
-              <span aria-hidden="true"> &#9656;</span>
+              <span className="forge-branch-name">{r}</span>
+              <span className="forge-branch-arrow" aria-hidden="true">&#9656;</span>
             </button>
           ))}
         </div>

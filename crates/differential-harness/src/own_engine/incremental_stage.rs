@@ -77,7 +77,7 @@ pub struct IncrementalReport {
 }
 
 /// Raised whenever the output of the engine changes for the same sources (new or changed stage).
-const ENGINE_REVISION: u32 = 44;
+const ENGINE_REVISION: u32 = 55;
 
 fn cache_dir(project_home: &Path) -> PathBuf {
     // A test harness can keep the cache outside of the project (read-only repositories, many projects).
@@ -310,7 +310,8 @@ pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<Increme
     crate::own_engine::run_service_inline(project_home, output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
     // The modification files are consumed: the reference output has no `modification/` folder.
     let _ = fs::remove_dir_all(output_dir.join("modification"));
-    crate::own_engine::run_linked_unshare(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
+    let modified: std::collections::HashSet<PathBuf> = mod_report.modified_objects.iter().cloned().collect();
+    crate::own_engine::run_linked_unshare_of(output_dir, Some(&modified)).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;
     lap("services inlined and unshared");
     crate::own_engine::progress::report(90, "Merging the aliases");
     crate::own_engine::run_alias_merge(output_dir).map_err(|e| IncrementalError::Pipeline(e.to_string()))?;

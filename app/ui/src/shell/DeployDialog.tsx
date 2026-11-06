@@ -51,6 +51,7 @@ export function DeployDialog({
   const [menu, setMenu] = useState<{ x: number; y: number; key: string } | null>(null)
   const force = initialForce === true
   const autoDone = useRef(false)
+  const [deploying, setDeploying] = useState(false)
 
   const fetchPlan = useCallback(async () => {
     setBusy(true)
@@ -94,6 +95,7 @@ export function DeployDialog({
   const deploy = useCallback(async () => {
     if (!plan) return
     setBusy(true)
+    setDeploying(true)
     setError(null)
     try {
       const outcome = await api.deployExecute(projectRoot, chosen.map((i) => i.key), force, null, true)
@@ -103,6 +105,7 @@ export function DeployDialog({
       setError(e instanceof Error ? e.message : String(e))
     } finally {
       setBusy(false)
+      setDeploying(false)
     }
   }, [api, projectRoot, plan, chosen, force, onClose, onDeployed])
 
@@ -131,10 +134,11 @@ export function DeployDialog({
         onClose={onClose}
         footer={
           <>
-            <button type="button" onClick={() => void deploy()} disabled={busy || chosen.length === 0}>
-              OK
+            <button type="button" className={`is-primary${deploying ? ' is-busy' : ''}`} onClick={() => void deploy()} disabled={busy || chosen.length === 0} aria-busy={deploying} title={chosen.length === 0 ? 'Tick at least one model' : undefined}>
+              {deploying ? <span className="forge-btn-spinner" aria-hidden="true" /> : null}
+              {deploying ? 'Deploying...' : 'OK'}
             </button>
-            <button type="button" onClick={onClose}>
+            <button type="button" onClick={onClose} disabled={deploying}>
               Cancel
             </button>
           </>
@@ -155,8 +159,27 @@ export function DeployDialog({
               {error}
             </p>
           ) : null}
+          {plan && items.length > 0 ? (
+            <div className="forge-deploy-summary" aria-label="Summary">
+              {(['I', 'U', 'D'] as const).map((op) => {
+                const n = items.filter((i) => i.op === op).length
+                return n > 0 ? (
+                  <span key={op} className={`forge-deploy-chip is-${op}`}>
+                    {n} {op === 'I' ? 'added' : op === 'U' ? 'changed' : 'to delete'}
+                  </span>
+                ) : null
+              })}
+              <span className="forge-commit-selected">
+                <strong>{chosen.length}</strong> of {items.length} selected
+              </span>
+            </div>
+          ) : null}
           <ul className="forge-deploy-list forge-deploy-box" aria-label="Planned changes">
-            {busy && !plan ? <li className="forge-field-hint">Comparing with the system...</li> : null}
+            {busy && !plan ? (
+              <li className="forge-deploy-loading">
+                <span className="forge-btn-spinner" aria-hidden="true" /> Comparing with the system...
+              </li>
+            ) : null}
             {plan && items.length === 0 ? <li className="forge-field-hint">Nothing to deploy: the system already has exactly what your last transpile produced.</li> : null}
             {items.map((item) => (
               <li

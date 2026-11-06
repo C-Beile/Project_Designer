@@ -335,3 +335,28 @@ fn liquibase_changelogs_are_listed_below_their_alias() {
     assert!(data.children[0].lazy, "sub folders load on expand");
     assert!(alias.children.iter().find(|n| n.label == "Other_alias").unwrap().is_leaf);
 }
+
+#[test]
+fn context_shows_its_icon_the_entity_icon_and_its_webservices() {
+    let root = temp_dir("ctx-icon");
+    object(&root, "neonContext", "Imp", "  <icon>NEON:IMPORT</icon>\n  <entity>Imp_entity</entity>\n  <references>\n    <webserviceReference>\n      <name>r1</name>\n      <webservice>Imp_ws</webservice>\n    </webserviceReference>\n  </references>");
+    object(&root, "entity", "Imp_entity", "  <icon>VAADIN:PRINT</icon>");
+    object(&root, "entityWebservice", "Imp_ws", "");
+    object(&root, "entityWebservice", "Other_ws", "");
+    modification(
+        &root,
+        "m1",
+        "INSERT",
+        "neonContext",
+        "Imp",
+        "Imp/references",
+        "<webserviceReference><name>r2</name><webservice>Other_ws</webservice></webserviceReference>",
+    );
+    let tree = scan(&root);
+    let imp = child(child(&tree, "context"), "Imp");
+    assert_eq!(imp.icon.as_deref(), Some("NEON:IMPORT"));
+    let labels: Vec<&str> = imp.children.iter().map(|c| c.label.as_str()).collect();
+    assert_eq!(labels, ["Imp_entity", "Imp_ws", "Other_ws"]);
+    assert_eq!(imp.children[0].icon.as_deref(), Some("VAADIN:PRINT"));
+    assert_eq!(imp.children[1].object_type.as_deref(), Some("entityWebservice"));
+}

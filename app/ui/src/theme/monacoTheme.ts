@@ -63,6 +63,13 @@ export function ensureMonacoThemesDefined(): void {
       'editorWidget.background': '#021320',
       'editorWidget.border': '#5f7e97',
       'editor.lineHighlightBackground': '#0b294280',
+      // Diff view as in the ADITO Designer: added lines in green, removed lines in grey.
+      'diffEditor.insertedLineBackground': '#2e6b3a80',
+      'diffEditor.insertedTextBackground': '#3c8c4a80',
+      'diffEditor.removedLineBackground': '#8080804d',
+      'diffEditor.removedTextBackground': '#80808080',
+      'diffEditorGutter.insertedLineBackground': '#2e6b3a99',
+      'diffEditorGutter.removedLineBackground': '#80808066',
       'focusBorder': '#82aaff',
     },
   })
@@ -95,6 +102,13 @@ export function ensureMonacoThemesDefined(): void {
       'editorWidget.background': '#303030',
       'editorWidget.border': '#8a8a8a',
       'editor.lineHighlightBackground': '#323232',
+      // Diff view as in the ADITO Designer: added lines in green, removed lines in grey.
+      'diffEditor.insertedLineBackground': '#2e6b3a80',
+      'diffEditor.insertedTextBackground': '#3c8c4a80',
+      'diffEditor.removedLineBackground': '#8080804d',
+      'diffEditor.removedTextBackground': '#80808080',
+      'diffEditorGutter.insertedLineBackground': '#2e6b3a99',
+      'diffEditorGutter.removedLineBackground': '#80808066',
       'focusBorder': '#4aa8e8',
     },
   })
@@ -131,6 +145,11 @@ export function ensureMonacoThemesDefined(): void {
       'editorWidget.background': '#f0f0f0',
       'editorWidget.border': '#93a1a1',
       'editor.lineHighlightBackground': '#f6f6f6',
+      // Diff view as in the ADITO Designer: added lines in green, removed lines in grey.
+      'diffEditor.insertedLineBackground': '#b7e0bd80',
+      'diffEditor.insertedTextBackground': '#8fd09a80',
+      'diffEditor.removedLineBackground': '#c8c8c880',
+      'diffEditor.removedTextBackground': '#b0b0b080',
       'focusBorder': '#4070d4',
     },
   })

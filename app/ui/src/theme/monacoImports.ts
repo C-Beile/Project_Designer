@@ -90,12 +90,16 @@ export function enableImportNavigation(api: ForgeApi, projectRoot: () => string,
         const from = modelPaths.get(model.uri.toString()) ?? ''
         const path = await ctx.api.resolveImport(ctx.projectRoot(), target.spec, from).catch(() => null)
         if (!path) return null
-        let line = 1
-        if (!inSpec && word) {
-          const content = await ctx.api.readLinkedFile(ctx.projectRoot(), path).catch(() => '')
-          line = exportLine(content, target.names.get(word.word) ?? '')
-        }
+        const content = await ctx.api.readLinkedFile(ctx.projectRoot(), path).catch(() => '')
+        const line = !inSpec && word ? exportLine(content, target.names.get(word.word) ?? '') : 1
         const uri = monaco.Uri.from({ scheme: SCHEME, path: `/${encodeURIComponent(path)}` })
+        // The go-to-definition preview needs a model for the target; without one Monaco throws "Model not found".
+        const existing = monaco.editor.getModel(uri)
+        if (existing) {
+          if (existing.getValue() !== content) existing.setValue(content)
+        } else {
+          monaco.editor.createModel(content, 'javascript', uri)
+        }
         return [{ uri, range: new monaco.Range(line, 1, line, 1) }]
       },
     })

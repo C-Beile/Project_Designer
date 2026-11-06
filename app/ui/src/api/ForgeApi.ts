@@ -45,6 +45,8 @@ export interface ForgeApi {
   listProjectFiles(projectRoot: string): Promise<string[]>
   /** Text of a colour theme file (.json) chosen anywhere on the computer. */
   readThemeFile(path: string): Promise<string>
+  /** The theme files of a `.vsix`/`.zip` package, an extension folder or a single `.json` file (name inside the package, text). */
+  readThemePack(path: string): Promise<{ name: string; text: string }[]>
   /** File behind an import of a script (project or module process), or null. */
   resolveImport(projectRoot: string, spec: string, fromFile: string): Promise<string | null>
   writeLinkedFile(projectRoot: string, reference: string, content: string): Promise<void>

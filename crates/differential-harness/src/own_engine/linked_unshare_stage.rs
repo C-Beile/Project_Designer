@@ -29,6 +29,8 @@ fn canonical_folder(base: &str, stack: &[(String, Option<String>)]) -> Option<St
         match tag.as_str() {
             "entityFields" => parts.push("entityfields".into()),
             "children" => parts.push("children".into()),
+            "recordContainers" => parts.push("recordcontainers".into()),
+            "recordFieldMappings" => parts.push("recordfieldmappings".into()),
             _ => match name {
                 Some(n) => parts.push(n.to_lowercase()),
                 None => return None,
@@ -129,13 +131,19 @@ fn with_crlf(bytes: &[u8]) -> Vec<u8> {
 /// Where the field of a link keeps its file, when that is not where the link points to.
 fn misplaced_target(link: &Link) -> Option<String> {
     let folder = link.canonical.as_deref()?;
-    if !folder.contains("/entityfields/") || !link.rel.contains("/entityfields/") {
+    // The files of a field of the entity, or of the mapping of a record container field, are kept in a folder of the
+    // field's own name.
+    let in_field = (folder.contains("/entityfields/") && link.rel.contains("/entityfields/"))
+        || (folder.contains("/recordfieldmappings/") && link.rel.contains("/recordfieldmappings/"));
+    if !in_field {
         return None;
     }
     let file_name = Path::new(&link.rel).file_name()?.to_string_lossy().into_owned();
     let target = format!("{folder}/{file_name}");
-    // A path that differs only in the case of its letters points to the same file.
-    if target.eq_ignore_ascii_case(&link.rel) {
+    // A path that differs only in the case of its letters (for record field mappings also in underscores) still points to the field's own folder.
+    // For a field of the entity only the case of the letters is ignored.
+    let plain = |p: &str| if folder.contains("/recordfieldmappings/") { p.to_lowercase().replace('_', "") } else { p.to_lowercase() };
+    if plain(&target) == plain(&link.rel) {
         None
     } else {
         Some(target)
@@ -154,8 +162,17 @@ pub fn misplaced_links(text: &str, base: &str) -> std::collections::HashSet<Stri
 
 /// Gives every field whose file is in the folder of another name a copy in the folder of its own name.
 pub fn run_linked_unshare(output_dir: &Path) -> io::Result<UnshareReport> {
+    run_linked_unshare_of(output_dir, None)
+}
+
+/// Like [`run_linked_unshare`], limited to the given objects: the reference only does this for objects it rewrites,
+/// which are the ones a modification was applied to. `None` takes every object.
+pub fn run_linked_unshare_of(output_dir: &Path, only: Option<&std::collections::HashSet<PathBuf>>) -> io::Result<UnshareReport> {
     let mut report = UnshareReport::default();
     for aod in aod_files(output_dir) {
+        if only.is_some_and(|set| !set.contains(&aod)) {
+            continue;
+        }
         let Ok(bytes) = fs::read(&aod) else { continue };
         if !bytes.windows(LINK_PREFIX.len()).any(|w| w == LINK_PREFIX.as_bytes()) {
             continue;
@@ -222,6 +239,42 @@ mod tests {
         let text = fs::read_to_string(dir.join("E_entity.aod")).unwrap();
         assert!(text.contains("entityfields/addtwo_action/onActionProcess.js"));
         assert!(text.contains("entityfields/addone_action/onActionProcess.js"));
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn a_record_field_mapping_that_shares_an_expression_gets_a_copy_in_its_own_folder() {
+        let root = std::env::temp_dir().join(format!("forge-unshare-mapping-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        let dir = root.join("entity").join("E_entity");
+        let mappings = dir.join("recordcontainers").join("db").join("recordfieldmappings");
+        fs::create_dir_all(mappings.join("count.value")).unwrap();
+        fs::write(mappings.join("count.value").join("expression.js"), "x\n").unwrap();
+        let aod = [
+            "<entity>",
+            "  <name>E_entity</name>",
+            "  <recordContainers>",
+            "    <dbRecordContainer>",
+            "      <name>db</name>",
+            "      <recordFieldMappings>",
+            "        <dbRecordFieldMapping>",
+            "          <name>count.value</name>",
+            "          <expression>%aditoprj%/entity/E_entity/recordcontainers/db/recordfieldmappings/count.value/expression.js</expression>",
+            "        </dbRecordFieldMapping>",
+            "        <dbRecordFieldMapping>",
+            "          <name>operationCount.value</name>",
+            "          <expression>%aditoprj%/entity/E_entity/recordcontainers/db/recordfieldmappings/count.value/expression.js</expression>",
+            "        </dbRecordFieldMapping>",
+            "      </recordFieldMappings>",
+            "    </dbRecordContainer>",
+            "  </recordContainers>",
+            "</entity>",
+        ]
+        .join("\r\n");
+        fs::write(dir.join("E_entity.aod"), aod).unwrap();
+        assert_eq!(run_linked_unshare(&root).unwrap().copies_made, 1);
+        assert_eq!(fs::read_to_string(mappings.join("operationcount.value").join("expression.js")).unwrap(), "x\r\n");
+        assert!(fs::read_to_string(dir.join("E_entity.aod")).unwrap().contains("recordfieldmappings/operationcount.value/expression.js"));
         let _ = fs::remove_dir_all(&root);
     }
 }

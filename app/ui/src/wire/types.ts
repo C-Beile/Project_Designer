@@ -77,6 +77,8 @@ export interface TreeNode {
   module_project?: boolean
   /** Type-folder key for the folder colour (`--folder-<key>`). */
   folder?: string
+  /** `iconId` of the object itself (a context or entity with an icon); shown instead of the type symbol. */
+  icon?: string
   /** Project property "Name", shown in brackets behind the project name. */
   type_label?: string
   /** Display path (forward slashes) of project roots and External Libraries modules. */

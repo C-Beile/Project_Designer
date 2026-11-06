@@ -2,6 +2,8 @@ import type { EditorProps } from './registry'
 import { field, textField, textValue } from '../wire/types'
 import type { WireValue } from '../wire/types'
 import { EditableText } from './EditableText'
+import { useEffect, useState } from 'react'
+import { useProjectIndex } from './projectIndex'
 
 // P4 sixth family (`WebserviceEditor`): the MUST subset of feature-matrix.md's WebserviceEditor
 // entry. Own mini format analysis this agent ran (no P1 `webservice.schema.json` existed, see
@@ -21,7 +23,32 @@ import { EditableText } from './EditableText'
 // `webserviceFieldName`/`consumer` are references to real entity fields/consumers, the same
 // "key is an identity, not free text" precedent `LanguageEditor.tsx`/`ApplicationEditor.tsx` set for
 // `name`.
-export function WebserviceEditor({ nodeId, tree, api, onTreeChange }: EditorProps) {
+export function WebserviceEditor({ nodeId, projectRoot, tree, api, onTreeChange }: EditorProps) {
+  const index = useProjectIndex()
+  const [entityFields, setEntityFields] = useState<{ entity: string; names: string[] } | null>(null)
+  const serviceName = textField(tree, 'name') ?? ''
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      if (!index || !serviceName) return
+      const usages = await api.findUsages(projectRoot, 'entityWebservice', serviceName).catch(() => [])
+      for (const usage of usages.filter((u) => u.object_type === 'neonContext')) {
+        const context = index.findObject('neonContext', usage.object)
+        if (!context) continue
+        const entityName = textField(await api.getPropertyTree(context.id), 'entity')
+        const entity = entityName ? index.findObject('entity', entityName) : null
+        if (!entity || !entityName) continue
+        const names = entityFieldNames(await api.getPropertyTree(entity.id))
+        if (!cancelled) setEntityFields({ entity: entityName, names })
+        return
+      }
+    }
+    void load().catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [api, index, projectRoot, serviceName])
+
   async function commitScalar(path: string, next: string) {
     const updated = await api.setProperty(nodeId, path, textValue(next))
     onTreeChange(updated)
@@ -90,18 +117,34 @@ export function WebserviceEditor({ nodeId, tree, api, onTreeChange }: EditorProp
         </label>
       )}
 
-      <section>
-        <h3>Published fields</h3>
-        {topFields.length > 0 ? (
-          <ul className="webservice-fields-tree">
-            {topFields.map((entry) => (
-              <WebserviceFieldNode key={entry.path} entry={entry} />
-            ))}
-          </ul>
-        ) : (
-          <p>No fields published.</p>
-        )}
-      </section>
+      <div className="webservice-panes">
+        <section className="webservice-pane" aria-label="Entity Fields">
+          <h3>Entity Fields{entityFields ? ` (${entityFields.entity})` : ''}</h3>
+          {entityFields ? (
+            <ul className="webservice-fields-tree">
+              {entityFields.names.map((n) => (
+                <li key={n} className="webservice-field-leaf">
+                  {n}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="webservice-editor-meta">The entity is found through the context that references this webservice.</p>
+          )}
+        </section>
+        <section className="webservice-pane" aria-label="Webservice Fields">
+          <h3>Webservice Fields</h3>
+          {topFields.length > 0 ? (
+            <ul className="webservice-fields-tree">
+              {topFields.map((entry) => (
+                <WebserviceFieldNode key={entry.path} entry={entry} />
+              ))}
+            </ul>
+          ) : (
+            <p>No fields published.</p>
+          )}
+        </section>
+      </div>
     </div>
   )
 }
@@ -176,4 +219,19 @@ function WebserviceFieldNode({ entry }: { entry: WebserviceFieldRef }) {
       )}
     </li>
   )
+}
+
+/** Names of the fields an entity offers, in file order (providers, consumers and plain fields). */
+function entityFieldNames(entityTree: WireValue): string[] {
+  const container = field(entityTree, 'entityFields')
+  if (!container || container.kind !== 'object') return []
+  const names: string[] = []
+  for (const f of container.fields) {
+    const items = f.value.kind === 'array' ? f.value.items : [f.value]
+    for (const item of items) {
+      const name = textField(item, 'name')
+      if (name) names.push(name)
+    }
+  }
+  return names.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
 }

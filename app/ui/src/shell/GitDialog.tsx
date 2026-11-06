@@ -57,6 +57,15 @@ function fileClass(code: string): string {
   return code.includes('?') || code.includes('A') ? 'is-new' : 'is-modified'
 }
 
+// Short status mark in front of a changed file (like the letters of a Git client).
+function statusBadge(code: string): { letter: string; kind: string; label: string } {
+  if (code.includes('?')) return { letter: 'U', kind: 'is-added', label: 'Untracked (new)' }
+  if (code.includes('A')) return { letter: 'A', kind: 'is-added', label: 'Added' }
+  if (code.includes('D')) return { letter: 'D', kind: 'is-deleted', label: 'Deleted' }
+  if (code.includes('R')) return { letter: 'R', kind: 'is-renamed', label: 'Renamed' }
+  return { letter: 'M', kind: 'is-modified', label: 'Modified' }
+}
+
 interface TreeHandlers {
   checked: Set<string>
   collapsed: Set<string>
@@ -126,6 +135,9 @@ function FileRow({ file, label, handlers }: { file: GitFileStatus; label: string
       <span className={`forge-commit-name ${fileClass(file.code)}`} title={`${file.code.trim() || '?'}  ${file.path}`}>
         {label}
       </span>
+      <span className={`forge-commit-badge ${statusBadge(file.code).kind}`} title={statusBadge(file.code).label} aria-label={statusBadge(file.code).label}>
+        {statusBadge(file.code).letter}
+      </span>
     </li>
   )
 }
@@ -164,6 +176,16 @@ export function GitDialog({
   const [flat, setFlat] = useState(false)
   const [fileMenu, setFileMenu] = useState<{ path: string; x: number; y: number } | null>(null)
   const [diffPath, setDiffPath] = useState<string | null>(null)
+  const [fileFilter, setFileFilter] = useState('')
+  const [running, setRunning] = useState<'commit' | 'push' | null>(null)
+  const runAction = async (kind: 'commit' | 'push', run: () => Promise<void>) => {
+    setRunning(kind)
+    try {
+      await run()
+    } finally {
+      setRunning(null)
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -208,11 +230,16 @@ export function GitDialog({
   }
 
   const messageIssue = /[\r\n]/.test(message) ? 'The message must be a single line.' : null
-  const tree = useMemo(() => buildTree(overview?.files ?? []), [overview])
+  const visibleFiles = useMemo(() => {
+    const needle = fileFilter.trim().toLowerCase()
+    const all = overview?.files ?? []
+    return needle ? all.filter((f) => f.path.toLowerCase().includes(needle)) : all
+  }, [overview, fileFilter])
+  const tree = useMemo(() => buildTree(visibleFiles), [visibleFiles])
   const nameIssue = newName.trim() !== '' && !/^[A-Za-z0-9._/-]+$/.test(newName.trim()) ? 'Use letters, digits and _ - . / only.' : null
   const canCommit = !busy && checked.size > 0 && message.trim() !== '' && !messageIssue
   const rootName = (overview?.root ?? projectRoot).replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? ''
-  const flatRoot: TreeFolder = { name: '', path: '', folders: [], files: overview?.files ?? [] }
+  const flatRoot: TreeFolder = { name: '', path: '', folders: [], files: visibleFiles }
   const isCommitView = initialTab === 'changes'
 
   const commit = () => act(() => api.gitCommit(projectRoot, message.trim(), [...checked]).then((r) => { if (r.ok) setMessage(''); return r }))
@@ -232,13 +259,15 @@ export function GitDialog({
       footer={
         isCommitView ? (
           <>
-            <button type="button" disabled={!canCommit} onClick={commit}>
-              Commit
+            <button type="button" className={running === 'commit' ? 'is-busy' : undefined} disabled={!canCommit} aria-busy={running === 'commit'} onClick={() => void runAction('commit', commit)} title={!canCommit && !busy ? 'Tick files and enter a commit message' : undefined}>
+              {running === 'commit' ? <span className="forge-btn-spinner" aria-hidden="true" /> : null}
+              {running === 'commit' ? 'Committing...' : 'Commit'}
             </button>
-            <button type="button" className="is-primary" disabled={!canCommit} title="Commits the checked files, then pushes the current branch" onClick={commitAndPush}>
-              Commit &amp; Push
+            <button type="button" className={`is-primary${running === 'push' ? ' is-busy' : ''}`} disabled={!canCommit} aria-busy={running === 'push'} title="Commits the checked files, then pushes the current branch" onClick={() => void runAction('push', commitAndPush)}>
+              {running === 'push' ? <span className="forge-btn-spinner" aria-hidden="true" /> : null}
+              {running === 'push' ? 'Committing and pushing...' : 'Commit & Push'}
             </button>
-            <button type="button" onClick={onClose}>
+            <button type="button" onClick={onClose} disabled={busy}>
               Cancel
             </button>
           </>
@@ -274,6 +303,14 @@ export function GitDialog({
           {tab === 'changes' ? (
             <div className="forge-commit">
               <div className="forge-commit-main">
+                <div className="forge-commit-summary" role="status">
+                  <span className="forge-commit-branch" title="Current branch">
+                    {overview.branch ?? '(detached)'}
+                  </span>
+                  <span className="forge-commit-selected">
+                    <strong>{checked.size}</strong> of {overview.files.length} file{overview.files.length === 1 ? '' : 's'} selected
+                  </span>
+                </div>
                 <div className="forge-commit-toolbar" role="toolbar" aria-label="Commit tree">
                   <button type="button" title="Expand all" aria-label="Expand all" onClick={() => setCollapsed(new Set())}>
                     <ExpandAllIcon />
@@ -298,8 +335,10 @@ export function GitDialog({
                   <button type="button" title="Show changes as a list" aria-label="Show as list" aria-pressed={flat} className={flat ? 'is-active' : undefined} onClick={() => setFlat((v) => !v)}>
                     <ListToggleIcon />
                   </button>
+                  <input type="search" className="forge-commit-filter" placeholder="Filter files" aria-label="Filter files" value={fileFilter} onChange={(e) => setFileFilter(e.target.value)} />
                 </div>
                 {overview.files.length === 0 ? <p className="forge-field-hint">No changes.</p> : null}
+                {overview.files.length > 0 && visibleFiles.length === 0 ? <p className="forge-field-hint">No file matches the filter.</p> : null}
                 <div className="forge-commit-treebox" aria-label="Changed files">
                   <ul className="forge-commit-tree" role="tree">
                     <FolderNode
@@ -339,7 +378,10 @@ export function GitDialog({
                 <div className="forge-titled-rule">
                   <span>Commit Message</span>
                 </div>
-                <textarea className="forge-commit-message" value={message} onChange={(e) => setMessage(e.target.value)} aria-label="Commit message" rows={5} />
+                <textarea className="forge-commit-message" value={message} onChange={(e) => setMessage(e.target.value)} aria-label="Commit message" rows={5} placeholder="Describe the change in one line" />
+                <div className={`forge-commit-counter${message.length > 72 ? ' is-long' : ''}`} aria-live="polite">
+                  {message.length} characters{message.length > 72 ? ' - a short subject line (up to about 72) reads better in the history' : ''}
+                </div>
                 {messageIssue ? <p className="forge-field-error">{messageIssue}</p> : null}
               </div>
               <aside className="forge-commit-side">

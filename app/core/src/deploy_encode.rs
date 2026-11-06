@@ -177,8 +177,10 @@ pub fn encode_model(dist: &Path, main_file: &Path) -> Result<String, String> {
         let relative = after[..end].trim();
         let file = dist.join(relative);
         if !file.is_file() {
-            out.push_str(&rest[..at + LINK_PREFIX.len()]);
-            rest = after;
+            // A module can link a script it does not ship; the script is empty then. Leaving the link text in the
+            // model would make it the source code of the script (a syntax error when the script runs).
+            out.push_str(before);
+            rest = &after[end..];
             continue;
         }
         out.push_str(before);
@@ -257,13 +259,13 @@ mod tests {
     }
 
     #[test]
-    fn a_link_to_a_missing_file_stays_as_it_is() {
+    fn a_link_to_a_missing_file_becomes_an_empty_script() {
         let dist = scratch("missing");
         std::fs::create_dir_all(dist.join("process/P")).unwrap();
         let aod = "<process><process>%aditoprj%/process/P/gone.js</process></process>";
         std::fs::write(dist.join("process/P/P.aod"), aod).unwrap();
         let xml = encode_model(&dist, &dist.join("process/P/P.aod")).unwrap();
-        assert_eq!(xml, aod);
+        assert_eq!(xml, "<process><process></process></process>");
     }
 
     #[test]

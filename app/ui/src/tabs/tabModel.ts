@@ -47,12 +47,13 @@ export function tunnelTabNode(systemId: string, systemName: string, reference: s
   return { id: `tunnel:${systemId}`, label: `${file} - ${systemName}`, object_type: null, kind: 'tunnel', path: reference, is_leaf: true, children: [] }
 }
 
-// System and alias show their users as an extra view in the original; plain files have no
-// object structure, so they get the text editor and the history only.
+// Only a system shows its users as an extra view (the users live in the database of that system, so an alias
+// definition of a module or of the project has none); plain files have no object structure, so they get the
+// text editor and the history only.
 export function subTabsFor(node: TreeNode): SubTab[] {
   if (isServiceNode(node)) return ['editor']
   if (isFileNode(node)) return ['editor', 'history']
-  if (node.object_type === 'system' || node.object_type === 'aliasDefinition') return ['editor', 'users', 'source', 'history']
+  if (node.object_type === 'system') return ['editor', 'users', 'source', 'history']
   return ['editor', 'source', 'history']
 }
 

@@ -35,6 +35,7 @@ export const tauriForgeApi: ForgeApi = {
   openLocalUrl: (url) => invoke<void>('open_local_url', { url }),
   listProjectFiles: (projectRoot) => invoke<string[]>('list_project_files', { projectRoot }),
   readThemeFile: (path) => invoke<string>('read_theme_file', { path }),
+  readThemePack: (path) => invoke<{ name: string; text: string }[]>('read_theme_pack', { path }),
   resolveImport: (projectRoot, spec, fromFile) => invoke<string | null>('resolve_import', { projectRoot, spec, fromFile }),
   readLinkedFile: (projectRoot, reference) =>
     invoke<string>('read_linked_file', { projectRoot, reference }),

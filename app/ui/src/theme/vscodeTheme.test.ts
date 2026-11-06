@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeColor, parseVsCodeTheme, stripJsonc, themeIdFor } from './vscodeTheme'
+import { normalizeColor, parseThemePack, parseVsCodeTheme, stripJsonc, themeIdFor } from './vscodeTheme'
 
 const sample = `{
   // a comment
@@ -46,5 +46,29 @@ describe('vscodeTheme', () => {
     expect(() => parseVsCodeTheme('{"a":1}', 'x.json')).toThrow(/not a VS Code colour theme/)
     expect(() => parseVsCodeTheme('nope', 'x.json')).toThrow(/not valid JSON/)
     expect(() => parseVsCodeTheme('{"include":"./other.json"}', 'x.json')).toThrow(/includes another theme/)
+  })
+})
+
+describe('parseThemePack', () => {
+  const base = JSON.stringify({ name: 'Base', type: 'dark', colors: { 'editor.background': '#101010' }, tokenColors: [{ scope: 'comment', settings: { foreground: '#777777' } }] })
+  const child = JSON.stringify({ name: 'Child', include: './base-theme.json', colors: { 'editor.foreground': '#eeeeee' }, tokenColors: [{ scope: 'string', settings: { foreground: '#00ff00' } }] })
+  const manifest = JSON.stringify({ contributes: { themes: [{ label: 'My Child', uiTheme: 'vs-dark', path: './themes/child.json' }] } })
+
+  it('finds the themes of an extension package and merges the included theme', () => {
+    const themes = parseThemePack([
+      { name: 'extension/package.json', text: manifest },
+      { name: 'extension/themes/child.json', text: child.replace('./base-theme.json', './base-theme.json') },
+      { name: 'extension/themes/base-theme.json', text: base },
+    ])
+    expect(themes).toHaveLength(1)
+    expect(themes[0].name).toBe('My Child')
+    expect(themes[0].data.colors['editor.background']).toBe('#101010')
+    expect(themes[0].data.colors['editor.foreground']).toBe('#eeeeee')
+    expect(themes[0].data.rules.map((r) => r.token)).toEqual(expect.arrayContaining(['comment', 'string']))
+  })
+
+  it('takes a single theme file and refuses a package without any colour theme', () => {
+    expect(parseThemePack([{ name: 'night.json', text: base }])[0].name).toBe('Base')
+    expect(() => parseThemePack([{ name: 'package.json', text: '{}' }])).toThrow(/No VS Code colour theme/)
   })
 })

@@ -165,3 +165,100 @@ export function parseVsCodeTheme(text: string, fallbackName: string): ImportedTh
   const name = typeof file.name === 'string' && file.name.trim() ? file.name.trim() : fallbackName.replace(/\.[^.]+$/, '')
   return { id: themeIdFor(name), name, data: { base: baseFor(file.type), inherit: true, rules, colors } }
 }
+
+// ---- Theme packages: a .vsix / .zip extension, the folder of an extension, or a single theme file ----
+
+export interface PackFile {
+  name: string
+  text: string
+}
+
+function normalizePath(path: string): string {
+  const out: string[] = []
+  for (const part of path.split(/[\\/]/)) {
+    if (part === '' || part === '.') continue
+    if (part === '..') out.pop()
+    else out.push(part)
+  }
+  return out.join('/')
+}
+
+function dirOf(path: string): string {
+  const i = path.lastIndexOf('/')
+  return i < 0 ? '' : path.slice(0, i)
+}
+
+type RawTheme = { name?: unknown; type?: unknown; colors?: Record<string, unknown>; tokenColors?: unknown[]; include?: unknown }
+
+/** The theme file with its `include` chain merged: the including file wins over the included one. */
+function withIncludes(path: string, files: Map<string, string>, depth = 0): RawTheme | null {
+  const text = files.get(path)
+  if (text === undefined || depth > 8) return null
+  let raw: RawTheme
+  try {
+    raw = JSON.parse(stripJsonc(text)) as RawTheme
+  } catch {
+    return null
+  }
+  if (typeof raw !== 'object' || raw === null) return null
+  if (typeof raw.include !== 'string') return raw
+  const base = withIncludes(normalizePath(dirOf(path) + '/' + raw.include), files, depth + 1)
+  if (!base) return raw
+  return {
+    ...base,
+    ...raw,
+    colors: { ...(base.colors ?? {}), ...(raw.colors ?? {}) },
+    tokenColors: [...(Array.isArray(base.tokenColors) ? base.tokenColors : []), ...(Array.isArray(raw.tokenColors) ? raw.tokenColors : [])],
+    include: undefined,
+  }
+}
+
+function typeForUiTheme(ui: unknown): string | undefined {
+  if (ui === 'vs') return 'light'
+  if (ui === 'hc-black') return 'hc-black'
+  if (ui === 'hc-light') return 'hc-light'
+  if (ui === 'vs-dark') return 'dark'
+  return undefined
+}
+
+/**
+ * Finds every colour theme in the files of a package. An extension lists its themes in the `package.json`
+ * (`contributes.themes`); without one every file that looks like a colour theme is taken. A theme that cannot be read
+ * is skipped. Throws when nothing is left.
+ */
+export function parseThemePack(packFiles: PackFile[]): ImportedTheme[] {
+  const files = new Map(packFiles.map((f) => [normalizePath(f.name), f.text]))
+  const found = new Map<string, ImportedTheme>()
+  const add = (path: string, label: unknown, uiTheme: unknown) => {
+    const raw = withIncludes(path, files)
+    if (!raw) return
+    const type = typeForUiTheme(uiTheme) ?? raw.type
+    const fallback = typeof label === 'string' && label.trim() ? label.trim() : path.split('/').pop() ?? 'theme'
+    try {
+      const theme = parseVsCodeTheme(JSON.stringify({ ...raw, type, name: typeof label === 'string' && label.trim() ? label.trim() : raw.name }), fallback)
+      found.set(theme.id, theme)
+    } catch {
+      // not a colour theme
+    }
+  }
+
+  const packages = [...files.keys()].filter((n) => n === 'package.json' || n.endsWith('/package.json')).sort((a, b) => a.length - b.length)
+  for (const pkg of packages) {
+    let manifest: { contributes?: { themes?: { label?: unknown; path?: unknown; uiTheme?: unknown }[] } }
+    try {
+      manifest = JSON.parse(stripJsonc(files.get(pkg) ?? '{}'))
+    } catch {
+      continue
+    }
+    for (const entry of manifest.contributes?.themes ?? []) {
+      if (typeof entry?.path === 'string') add(normalizePath(dirOf(pkg) + '/' + entry.path), entry.label, entry.uiTheme)
+    }
+  }
+  if (found.size === 0) {
+    for (const name of files.keys()) {
+      if (!name.endsWith('package.json')) add(name, undefined, undefined)
+    }
+  }
+  if (found.size === 0) throw new Error('No VS Code colour theme was found. Choose a theme .json file, a .vsix package or the folder of a theme extension.')
+  return [...found.values()]
+}

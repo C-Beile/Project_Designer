@@ -16,5 +16,5 @@ pub mod graph;
 pub mod model;
 
 pub use error::ModuleGraphError;
-pub use graph::{resolve, DiamondResolution, DuplicateReport, ModuleGraph, PROJECT_NODE};
+pub use graph::{resolve, resolve_lenient, DiamondResolution, DuplicateReport, ModuleGraph, PROJECT_NODE};
 pub use model::{AditoType, ModuleDefinition};

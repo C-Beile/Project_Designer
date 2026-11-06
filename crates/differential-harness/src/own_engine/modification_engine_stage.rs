@@ -138,6 +138,8 @@ pub struct ModificationEngineReport {
     /// (a full Hermes run can produce a couple thousand of these in the worst case; callers
     /// decide what to do with them, this stage never prints).
     pub failures: Vec<(PathBuf, String)>,
+    /// The objects (`.aod` files in the output) a modification was applied to; the reference writes these anew.
+    pub modified_objects: Vec<PathBuf>,
 }
 
 /// Locates every `modification/<id>/<id>.aod` file reachable from a module's own directory
@@ -284,7 +286,7 @@ fn extract_payload(doc: &AodDocument, index: &EventIndex, root: &EventPath, chan
     }
     let outer_value = child_path(root, "value", 0);
     index.get(&outer_value)?;
-    let wrapper_tag = ["stringValueWrapper", "modelValueWrapper", "enumValueWrapper", "booleanValueWrapper", "intValueWrapper"]
+    let wrapper_tag = ["stringValueWrapper", "modelValueWrapper", "enumValueWrapper", "booleanValueWrapper", "intValueWrapper", "longValueWrapper", "doubleValueWrapper", "floatValueWrapper", "shortValueWrapper", "decimalValueWrapper"]
         .into_iter()
         .find(|t| index.get(&child_path(&outer_value, t, 0)).is_some())?;
     let wrapper = child_path(&outer_value, wrapper_tag, 0);
@@ -398,7 +400,37 @@ fn indent_depth_of(bytes: &[u8]) -> Option<usize> {
 /// against the real `dist/` file, same element count (48 `neonViewReference`s on both sides) but
 /// wrong indentation on every inserted element's children.
 fn reindent_insert_template(payload: &[u8], target_root_depth: usize) -> Vec<u8> {
-    canonical_property_order(&reindent_insert_template_raw(payload, target_root_depth))
+    let payload = expand_inline_elements(payload);
+    canonical_property_order(&reindent_insert_template_raw(&payload, target_root_depth))
+}
+
+/// An inserted element that a modification wrote on a single line (`<a><name>x</name><p>y</p></a>`) is written by the
+/// reference with one tag per line, like every other element. Tags that follow each other without any text between
+/// them get a line break and the indentation of their level; text and empty elements stay as they are.
+fn expand_inline_elements(payload: &[u8]) -> Vec<u8> {
+    let Ok(doc) = aod_io::parse(payload) else { return payload.to_vec() };
+    let is_tag = |ev: &AodEvent| matches!(ev, AodEvent::Start(_) | AodEvent::End(_) | AodEvent::Empty(_));
+    if !doc.events.windows(2).any(|w| is_tag(&w[0]) && is_tag(&w[1]) && !(matches!(&w[0], AodEvent::Start(_)) && matches!(&w[1], AodEvent::End(_)))) {
+        return payload.to_vec();
+    }
+    let mut out: Vec<AodEvent> = Vec::with_capacity(doc.events.len() * 2);
+    let mut depth = 0usize;
+    for ev in doc.events {
+        if let AodEvent::End(_) = ev {
+            depth = depth.saturating_sub(1);
+        }
+        let after_tag = out.last().is_some_and(&is_tag);
+        let closes_empty_pair = matches!((&ev, out.last()), (AodEvent::End(_), Some(AodEvent::Start(_))));
+        if is_tag(&ev) && after_tag && !closes_empty_pair {
+            // The payload root sits one level above INSERT_PAYLOAD_SOURCE_DEPTH (the depth of its children's indentation in the file).
+            out.push(AodEvent::Text(aod_io::patch::standard_indent(INSERT_PAYLOAD_SOURCE_DEPTH - 1 + depth)));
+        }
+        if let AodEvent::Start(_) = ev {
+            depth += 1;
+        }
+        out.push(ev);
+    }
+    aod_io::serialize(&AodDocument { events: out })
 }
 
 /// An inserted element is written by the reference with its properties in the schema's order, not in
@@ -882,8 +914,10 @@ fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation,
             // corrects that (see its doc comment for the real-corpus bug this fixes).
             let target_root_depth = current.element_depth() + 1;
             let payload = reindent_insert_template(&payload, target_root_depth);
-            // Two modules can add the very same element (same name) to one list; the object has it once.
-            if let (Some(name), Some(IndexedRange::Element(range))) = (inserted_name(&payload), index.get(&current)) {
+            // Two modules can add the very same element (same name) to one list; the object has it once. An extension
+            // point is the exception: every module brings its own implementations, and all of them are kept.
+            let root_tag = String::from_utf8_lossy(payload.trim_ascii()).trim_start_matches('<').split(|c: char| c == '>' || c.is_whitespace()).next().unwrap_or("").to_string();
+            if let (Some(name), Some(IndexedRange::Element(range)), false) = (inserted_name(&payload), index.get(&current), root_tag.ends_with("ExtensionPoint")) {
                 let container = aod_io::serialize(&AodDocument { events: doc.events[range.clone()].to_vec() });
                 if String::from_utf8_lossy(&container).contains(&format!("<name>{name}</name>")) {
                     return Ok(Operation::ArrayInsert);
@@ -1104,6 +1138,38 @@ fn strip_empty_file_properties(bytes: &[u8]) -> Vec<u8> {
     if changed { kept.join("\n").into_bytes() } else { bytes.to_vec() }
 }
 
+/// A rewritten object keeps a script property whose file does not exist, but without the path: the reference writes
+/// the empty element (module objects sometimes link scripts that were never shipped). Documentation links stay.
+fn empty_dangling_script_links(bytes: &[u8], output_root: &Path) -> Vec<u8> {
+    let text = String::from_utf8_lossy(bytes);
+    if !text.contains(">%aditoprj%/") {
+        return bytes.to_vec();
+    }
+    let mut changed = false;
+    let lines: Vec<String> = text
+        .split('\n')
+        .map(|line| {
+            let t = line.trim();
+            if let Some((tag, rest)) = t.strip_prefix('<').and_then(|r| r.split_once('>')) {
+                let close = format!("</{tag}>");
+                if tag != "documentation" && is_file_property(tag) && rest.ends_with(close.as_str()) {
+                    let value = rest[..rest.len() - close.len()].trim();
+                    if let Some(rel) = value.strip_prefix("%aditoprj%/") {
+                        if !rel.is_empty() && !output_root.join(rel).exists() {
+                            changed = true;
+                            let indent = &line[..line.len() - line.trim_start().len()];
+                            let cr = if line.ends_with('\r') { "\r" } else { "" };
+                            return format!("{indent}<{tag}></{tag}>{cr}");
+                        }
+                    }
+                }
+            }
+            line.to_string()
+        })
+        .collect();
+    if changed { lines.join("\n").into_bytes() } else { bytes.to_vec() }
+}
+
 fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report: &mut ModificationEngineReport) {
     group.sort_by_key(|m| (m.is_project_root, m.position, m.source_file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()));
 
@@ -1156,6 +1222,10 @@ fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report:
     let out_bytes = if added_text_entries { sort_added_list_entries(&bytes, &out_bytes) } else { out_bytes };
     // A rewritten object has no empty file property, wherever it came from.
     let out_bytes = strip_empty_file_properties(&out_bytes);
+    let out_bytes = match target.parent().and_then(Path::parent).and_then(Path::parent) {
+        Some(root) => empty_dangling_script_links(&out_bytes, root),
+        None => out_bytes,
+    };
     let out_bytes = indent_tab_lines(&out_bytes);
     if let Err(source) = platform::fs::atomic_write(target, &out_bytes) {
         for m in &group {
@@ -1201,6 +1271,7 @@ pub fn run_modification_phase(graph: &ModuleGraph, output_dir: &Path) -> Result<
         let target = output_dir.join(&model_type).join(&model_name).join(format!("{model_name}.aod"));
         let existed = target.is_file();
         apply_all_to_file(&target, group, &mut report);
+        report.modified_objects.push(target.clone());
         // The reference transpiler writes a modified object completely new: the scripts and
         // documentation files that belong to it come out with CRLF line endings (verified against
         // a clean reference run: 45 modified entities all CRLF, 183 untouched ones verbatim).
@@ -1550,6 +1621,36 @@ mod tests {
     fn lines_indented_with_tabs_get_the_indentation_of_their_level() {
         let text = b"<a>\r\n  <b>\r\n\t\t<c>x</c>\r\n\t</b>\r\n</a>";
         assert_eq!(String::from_utf8(indent_tab_lines(text)).unwrap(), "<a>\r\n  <b>\r\n    <c>x</c>\r\n  </b>\r\n</a>");
+    }
+
+    #[test]
+    fn modify_of_a_number_sets_the_attribute_instead_of_removing_the_property() {
+        let dir = scratch_dir("modify-long");
+        let target = dir.join("entity/Foo_entity/Foo_entity.aod");
+        write(&target, "<entity>\r\n  <maxFieldSize v=\"50\" />\r\n</entity>");
+        let mod_file = dir.join("modification/m1/m1.aod");
+        write(
+            &mod_file,
+            &modification_envelope(
+                "MODIFY", 1, "entity", "Foo_entity", "Foo_entity/maxFieldSize",
+                "\n  <value>\n    <longValueWrapper>\n      <name>value</name>\n      <value v=\"100\" />\n    </longValueWrapper>\n  </value>",
+            ),
+        );
+        let m = parse_modification_file(&mod_file, false).unwrap();
+        assert_eq!(m.payload.as_deref(), Some(b"100".as_slice()));
+        let mut report = ModificationEngineReport::default();
+        apply_all_to_file(&target, vec![&m], &mut report);
+        assert_eq!(report.modifications_failed, 0);
+        let result = fs::read_to_string(&target).unwrap();
+        assert!(result.contains("<maxFieldSize v=\"100\" />"), "got: {result}");
+    }
+
+    #[test]
+    fn an_element_inserted_on_one_line_is_written_with_one_tag_per_line() {
+        let payload = b"<impl><name>a</name><process>p.js</process><empty></empty></impl>";
+        let text = String::from_utf8(expand_inline_elements(payload)).unwrap();
+        let expected = ["<impl>", "          <name>a</name>", "          <process>p.js</process>", "          <empty></empty>", "        </impl>"].join("\r\n");
+        assert_eq!(text, expected);
     }
 
     #[test]

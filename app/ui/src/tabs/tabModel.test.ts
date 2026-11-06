@@ -37,7 +37,7 @@ describe('tab model', () => {
     expect(subTabsFor(node('e', 'entity'))).toEqual(['editor', 'source', 'history'])
     expect(subTabsFor(node('v', 'neonView'))).toEqual(['editor', 'source', 'history'])
     expect(subTabsFor(node('s', 'system'))).toEqual(['editor', 'users', 'source', 'history'])
-    expect(subTabsFor(node('a', 'aliasDefinition'))).toEqual(['editor', 'users', 'source', 'history'])
+    expect(subTabsFor(node('a', 'aliasDefinition'))).toEqual(['editor', 'source', 'history'])
     expect(subTabsFor(node('p', 'process'))).toEqual(['editor', 'source', 'history'])
     expect(subTabsFor(node('f', null, 'file'))).toEqual(['editor', 'history'])
   })

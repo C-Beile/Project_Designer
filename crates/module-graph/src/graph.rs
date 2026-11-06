@@ -88,8 +88,19 @@ type Request = (String, String, String);
 /// `project_root` (must contain `package.json` and, for any real dependency, a sibling
 /// `node_modules` directory).
 pub fn resolve(project_root: &Path) -> Result<ModuleGraph, ModuleGraphError> {
+    resolve_with(project_root, true)
+}
+
+/// Like [`resolve`], for showing a project in the Designer: one unreadable `package.json` among the installed
+/// modules, a dependency cycle or a version that does not match a requested range no longer hides every module. The
+/// affected module is skipped or kept as it is; only the project's own `package.json` must be readable.
+pub fn resolve_lenient(project_root: &Path) -> Result<ModuleGraph, ModuleGraphError> {
+    resolve_with(project_root, false)
+}
+
+fn resolve_with(project_root: &Path, strict: bool) -> Result<ModuleGraph, ModuleGraphError> {
     let project = parse_package_json(&project_root.join("package.json"))?;
-    let installed = scan_node_modules(&project_root.join("node_modules"))?;
+    let installed = scan_node_modules(&project_root.join("node_modules"), strict)?;
 
     let mut edges: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     let mut reachable: BTreeMap<String, ModuleDefinition> = BTreeMap::new();
@@ -154,9 +165,12 @@ pub fn resolve(project_root: &Path) -> Result<ModuleGraph, ModuleGraphError> {
         reachable.insert(name, module);
     }
 
-    detect_cycles(&edges)?;
-
-    let (duplicates, diamonds) = analyze_requests(&project, &reachable, &requests)?;
+    let (duplicates, diamonds) = if strict {
+        detect_cycles(&edges)?;
+        analyze_requests(&project, &reachable, &requests)?
+    } else {
+        (Vec::new(), Vec::new())
+    };
 
     Ok(ModuleGraph {
         project,
@@ -173,7 +187,7 @@ pub fn resolve(project_root: &Path) -> Result<ModuleGraph, ModuleGraphError> {
 /// by the name declared *inside* the file (not the directory name) — the real corpus has
 /// at least one scope-casing inconsistency (`@3hills-it` vs. `@3hills-IT` across
 /// different projects), so the directory name is not a reliable identity.
-fn scan_node_modules(dir: &Path) -> Result<HashMap<String, ModuleDefinition>, ModuleGraphError> {
+fn scan_node_modules(dir: &Path, strict: bool) -> Result<HashMap<String, ModuleDefinition>, ModuleGraphError> {
     let mut modules = HashMap::new();
     if !dir.is_dir() {
         return Ok(modules);
@@ -182,11 +196,22 @@ fn scan_node_modules(dir: &Path) -> Result<HashMap<String, ModuleDefinition>, Mo
         let file_name = entry.file_name();
         let name = file_name.to_string_lossy();
         if name.starts_with('@') {
-            for scoped_entry in read_dir_sorted(&entry.path())? {
-                insert_if_package(&mut modules, &scoped_entry.path())?;
+            let scoped = match read_dir_sorted(&entry.path()) {
+                Ok(list) => list,
+                Err(_) if !strict => continue,
+                Err(e) => return Err(e),
+            };
+            for scoped_entry in scoped {
+                match insert_if_package(&mut modules, &scoped_entry.path()) {
+                    Err(_) if !strict => {}
+                    other => other?,
+                }
             }
         } else {
-            insert_if_package(&mut modules, &entry.path())?;
+            match insert_if_package(&mut modules, &entry.path()) {
+                Err(_) if !strict => {}
+                other => other?,
+            }
         }
     }
     Ok(modules)
@@ -507,5 +532,30 @@ mod tests {
 
         let version = Version::parse("6.0.0").unwrap();
         assert!(!version_satisfies(&version, ">=2.0.0 < 6.0.0").unwrap());
+    }
+}
+
+#[cfg(test)]
+mod lenient_tests {
+    use super::*;
+
+    fn write(path: &Path, text: &str) {
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, text).unwrap();
+    }
+
+    #[test]
+    fn one_broken_module_does_not_hide_the_others_in_the_lenient_resolution() {
+        let root = std::env::temp_dir().join(format!("forge-lenient-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        write(&root.join("package.json"), r#"{"name":"p","version":"1.0.0","dependencies":{"@s/good":"^1.0.0","@s/old":"^2.0.0"}}"#);
+        write(&root.join("node_modules/@s/good/package.json"), r#"{"name":"@s/good","version":"1.2.0"}"#);
+        write(&root.join("node_modules/@s/old/package.json"), r#"{"name":"@s/old","version":"1.0.0"}"#);
+        write(&root.join("node_modules/@s/broken/package.json"), "{ not json");
+        assert!(resolve(&root).is_err());
+        let graph = resolve_lenient(&root).unwrap();
+        assert!(graph.modules.contains_key("@s/good"));
+        assert!(graph.modules.contains_key("@s/old"));
+        let _ = std::fs::remove_dir_all(&root);
     }
 }

@@ -208,6 +208,9 @@ export function createMockForgeApi(options: {
     async readThemeFile() {
       return '{}'
     },
+    async readThemePack() {
+      return [{ name: 'theme.json', text: '{"name":"Mock","colors":{"editor.background":"#000000"}}' }]
+    },
     async listProjectFiles() {
       return ['entity/Person_entity/Person_entity.aod', 'process/Utils_lib/process.js']
     },

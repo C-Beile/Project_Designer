@@ -9,7 +9,7 @@ import type { ThemeName } from '../theme/useTheme'
 import { formatShortcut, isMacPlatform } from './shortcuts'
 import { OptionIcon } from './optionIcons'
 import { customThemes, removeCustomTheme, saveCustomTheme, subscribeCustomThemes } from '../theme/customThemes'
-import { parseVsCodeTheme } from '../theme/vscodeTheme'
+import { parseThemePack } from '../theme/vscodeTheme'
 
 // Tools > Options (manual 4.8.3, screenshots 037/038): an icon bar with the categories General,
 // Editor, Fonts & Colors, Keymap, Team, Appearance, Miscellaneous, ADITO and iReport; categories
@@ -139,15 +139,20 @@ export function OptionsDialog({
   const [themeMessage, setThemeMessage] = useState<{ ok: boolean; text: string } | null>(null)
   useEffect(() => subscribeCustomThemes(() => setThemes(customThemes())), [])
 
-  async function importTheme() {
+  async function importTheme(fromFolder = false) {
     setThemeMessage(null)
-    const picked = await api.pickFile('Import a VS Code colour theme', 'Theme (JSON)', ['json', 'jsonc']).catch(() => null)
+    const picked = fromFolder
+      ? await api.pickProjectFolder('Choose the folder of a VS Code theme extension').catch(() => null)
+      : await api.pickFile('Install a VS Code colour theme', 'Theme (.json, .vsix, .zip)', ['json', 'jsonc', 'vsix', 'zip']).catch(() => null)
     if (!picked) return
     try {
-      const imported = parseVsCodeTheme(await api.readThemeFile(picked), picked.split(/[\\/]/).pop() ?? 'theme')
-      saveCustomTheme(imported)
-      patch('editor', { colorTheme: imported.id })
-      setThemeMessage({ ok: true, text: `Imported "${imported.name}" (${imported.data.rules.length} token colours). It is applied when you press OK.` })
+      const imported = parseThemePack(await api.readThemePack(picked))
+      imported.forEach(saveCustomTheme)
+      patch('editor', { colorTheme: imported[0].id })
+      setThemeMessage({
+        ok: true,
+        text: imported.length === 1 ? `Installed "${imported[0].name}" (${imported[0].data.rules.length} token colours). It is applied when you press OK.` : `Installed ${imported.length} themes (${imported.map((t) => t.name).join(', ')}). "${imported[0].name}" is applied when you press OK.`,
+      })
     } catch (e) {
       setThemeMessage({ ok: false, text: e instanceof Error ? e.message : String(e) })
     }
@@ -280,7 +285,10 @@ export function OptionsDialog({
           </Row>
           <div className="forge-opt-buttons">
             <button type="button" onClick={() => void importTheme()}>
-              Import VS Code theme...
+              Install theme (.json, .vsix)...
+            </button>
+            <button type="button" onClick={() => void importTheme(true)}>
+              Install from folder...
             </button>
             <button
               type="button"

@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
+import { getOptions, subscribeOptions } from '../settings/options'
+import { findCustomTheme, subscribeCustomThemes } from './customThemes'
+import { applyUiTheme } from './uiTheme'
 
 export type ThemeName = 'dark' | 'light' | 'lion'
 
@@ -32,6 +35,22 @@ export function useTheme(): [ThemeName, (next?: ThemeName) => void] {
       /* ignore - see readStoredTheme */
     }
   }, [theme])
+
+  // An imported colour theme colours the whole interface, not only the editor.
+  const [themeStamp, setThemeStamp] = useState(0)
+  useEffect(() => {
+    const bump = () => setThemeStamp((n) => n + 1)
+    const offOptions = subscribeOptions(bump)
+    const offThemes = subscribeCustomThemes(bump)
+    return () => {
+      offOptions()
+      offThemes()
+    }
+  }, [])
+  const chosen = getOptions().editor.colorTheme
+  useEffect(() => {
+    applyUiTheme(chosen ? findCustomTheme(chosen)?.data : undefined, theme)
+  }, [chosen, theme, themeStamp])
 
   const toggle = useCallback((next?: ThemeName) => setTheme((t) => next ?? (t === 'dark' ? 'light' : 'dark')), [])
 

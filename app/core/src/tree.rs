@@ -130,6 +130,9 @@ pub struct TreeNode {
     /// Type folder key (`context`, `entity`, ...) for the folder colour.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub folder: Option<String>,
+    /// `iconId` of the object (`NEON:IMPORT`, `VAADIN:PRINT`), shown instead of the type symbol.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub type_label: Option<String>,
     /// Display path (forward slashes) for project roots and External Libraries modules.
@@ -168,6 +171,7 @@ struct Package {
 struct PackageScan {
     objects: Vec<(&'static str, String, PathBuf)>,
     contexts: HashMap<String, ContextInfo>,
+    entity_icons: HashMap<String, String>,
     process_groups: HashMap<String, &'static str>,
     modifications: Vec<Modification>,
     /// Project-only: system folders without their `.aod` (shown dimmed, see `system_nodes`).
@@ -177,6 +181,11 @@ struct PackageScan {
 #[derive(Clone, Default, Serialize, Deserialize)]
 struct ContextInfo {
     entity: Option<String>,
+    #[serde(default)]
+    icon: Option<String>,
+    /// Names of the `<webserviceReference>`s in file order.
+    #[serde(default)]
+    webservices: Vec<(String, String)>,
     /// `(reference name, view name)` in file order.
     views: Vec<(String, String)>,
 }
@@ -190,6 +199,9 @@ struct Modification {
     path: String,
     /// For an INSERT of a `neonViewReference`: `(reference name, view name)`.
     view_reference: Option<(String, String)>,
+    /// For an INSERT of a `<webserviceReference>`: `(reference name, webservice name)`.
+    #[serde(default)]
+    webservice_reference: Option<(String, String)>,
 }
 
 fn forward(path: &Path) -> String {
@@ -222,7 +234,7 @@ fn collect_packages(project_root: &Path) -> Vec<Package> {
         short_name: folder_name,
         is_project: true,
     }];
-    if let Ok(graph) = module_graph::resolve(project_root) {
+    if let Ok(graph) = module_graph::resolve_lenient(project_root) {
         for def in graph.modules.values() {
             packages.push(Package {
                 dir: def.path.clone(),
@@ -267,9 +279,46 @@ fn view_references(xml: &str) -> Vec<(String, String)> {
         .collect()
 }
 
+fn webservice_references(xml: &str) -> Vec<(String, String)> {
+    blocks(xml, "webserviceReference")
+        .into_iter()
+        .filter_map(|b| Some((tag_text(b, "name").unwrap_or("").to_string(), tag_text(b, "webservice")?.to_string())))
+        .collect()
+}
+
+/// The object's own icon: a top-level `<icon>` or `<iconId>` (the first one in the file, before any nested element).
+fn top_level_icon(xml: &str) -> Option<String> {
+    for line in xml.lines() {
+        let line = line.trim();
+        for tag in ["icon", "iconId"] {
+            if let Some(rest) = line.strip_prefix(&format!("<{tag}>")) {
+                if let Some(end) = rest.find(&format!("</{tag}>")) {
+                    return Some(rest[..end].trim().to_string()).filter(|v| !v.is_empty());
+                }
+            }
+        }
+        if line.starts_with("<references>") || line.starts_with("<entityProvider>") || line.starts_with("<entityFields>") || line.starts_with("<entityField") {
+            break;
+        }
+    }
+    None
+}
+
+fn head_of_file(path: &Path) -> Option<String> {
+    use std::io::Read;
+    let mut buf = vec![0u8; 3072];
+    let n = fs::File::open(path).ok()?.read(&mut buf).ok()?;
+    Some(String::from_utf8_lossy(&buf[..n]).into_owned())
+}
+
 fn parse_context(xml: &str) -> ContextInfo {
     let references = tag_text(xml, "references").unwrap_or("");
-    ContextInfo { entity: tag_text(xml, "entity").map(str::to_string), views: view_references(references) }
+    ContextInfo {
+        entity: tag_text(xml, "entity").map(str::to_string),
+        icon: top_level_icon(xml),
+        views: view_references(references),
+        webservices: webservice_references(references),
+    }
 }
 
 /// Process subfolder (Screenshot 38). Derived from the corpus (p8-step2-tree-notes.md): a process
@@ -306,6 +355,7 @@ fn parse_modification(xml: &str) -> Option<Modification> {
         model_name: tag_text(xml, "modelName")?.to_string(),
         path: tag_text(xml, "path")?.to_string(),
         view_reference: view_references(xml).into_iter().next(),
+        webservice_reference: webservice_references(xml).into_iter().next(),
     })
 }
 
@@ -333,6 +383,11 @@ fn scan_package(pkg: &Package) -> PackageScan {
                 "neonContext" => {
                     if let Ok(xml) = fs::read_to_string(&aod) {
                         scan.contexts.insert(name.clone(), parse_context(&xml));
+                    }
+                }
+                "entity" => {
+                    if let Some(icon) = head_of_file(&aod).as_deref().and_then(top_level_icon) {
+                        scan.entity_icons.insert(name.clone(), icon);
                     }
                 }
                 "process" => {
@@ -368,12 +423,14 @@ fn scan_package(pkg: &Package) -> PackageScan {
 // remembered on disk and only re-read when the module's folder stamps differ. The project's own
 // objects and linked (symlinked) modules are always read fresh.
 
-const SCAN_CACHE_FORMAT: u32 = 1;
+const SCAN_CACHE_FORMAT: u32 = 2;
 
 #[derive(Serialize, Deserialize)]
 struct StoredScan {
     objects: Vec<(String, String, String)>,
     contexts: HashMap<String, ContextInfo>,
+    #[serde(default)]
+    entity_icons: HashMap<String, String>,
     process_groups: HashMap<String, String>,
     modifications: Vec<Modification>,
 }
@@ -394,6 +451,7 @@ fn store_scan(scan: &PackageScan) -> StoredScan {
     StoredScan {
         objects: scan.objects.iter().map(|(f, n, p)| ((*f).to_string(), n.clone(), p.to_string_lossy().into_owned())).collect(),
         contexts: scan.contexts.clone(),
+        entity_icons: scan.entity_icons.clone(),
         process_groups: scan.process_groups.iter().map(|(k, v)| (k.clone(), (*v).to_string())).collect(),
         modifications: scan
             .modifications
@@ -405,6 +463,7 @@ fn store_scan(scan: &PackageScan) -> StoredScan {
                 model_name: m.model_name.clone(),
                 path: m.path.clone(),
                 view_reference: m.view_reference.clone(),
+                webservice_reference: m.webservice_reference.clone(),
             })
             .collect(),
     }
@@ -418,6 +477,7 @@ fn restore_scan(stored: &StoredScan) -> Option<PackageScan> {
         scan.objects.push((folder, name.clone(), PathBuf::from(aod)));
     }
     scan.contexts = stored.contexts.clone();
+    scan.entity_icons = stored.entity_icons.clone();
     for (name, group) in &stored.process_groups {
         let group = PROCESS_GROUPS.iter().find(|g| *g == group)?;
         scan.process_groups.insert(name.clone(), group);
@@ -430,6 +490,7 @@ fn restore_scan(stored: &StoredScan) -> Option<PackageScan> {
             model_name: m.model_name.clone(),
             path: m.path.clone(),
             view_reference: m.view_reference.clone(),
+            webservice_reference: m.webservice_reference.clone(),
         });
     }
     Some(scan)
@@ -687,6 +748,31 @@ fn effective_context_views(base: &ContextInfo, context: &str, mods: &[(bool, &Mo
     refs
 }
 
+/// The `<webserviceReference>`s of a context after the modifications of every package, like the views.
+fn effective_context_webservices(base: &ContextInfo, context: &str, mods: &[(bool, &Modification)]) -> Vec<(String, String)> {
+    let mut refs = base.webservices.clone();
+    let references_path = format!("{context}/references");
+    for (_, m) in mods {
+        if m.model_type != "neonContext" || m.model_name != context {
+            continue;
+        }
+        match m.change.as_str() {
+            "INSERT" if m.path == references_path => {
+                if let Some(r) = &m.webservice_reference {
+                    refs.push(r.clone());
+                }
+            }
+            "DELETE" => {
+                if let Some(ref_name) = m.path.strip_prefix(&format!("{references_path}/")) {
+                    refs.retain(|(n, _)| n != ref_name);
+                }
+            }
+            _ => {}
+        }
+    }
+    refs
+}
+
 // ---------------------------------------------------------------------------------------------
 // Default system (bold in the system folder)
 
@@ -856,6 +942,7 @@ pub fn scan_project_tree_with(project_root: &Path, preference_files: &[PathBuf])
 
     let mut model = Model { packages: &packages, objects: HashMap::new(), modified_by: HashMap::new() };
     let mut contexts: HashMap<String, ContextInfo> = HashMap::new();
+    let mut entity_icons: HashMap<String, String> = HashMap::new();
     let mut process_groups: HashMap<String, &'static str> = HashMap::new();
     // Packages are in project-first order, so `or_insert` lets the project win name clashes.
     for (pkg_index, scan) in scans.iter().enumerate() {
@@ -866,6 +953,11 @@ pub fn scan_project_tree_with(project_root: &Path, preference_files: &[PathBuf])
                 if *folder == "neonContext" {
                     if let Some(c) = scan.contexts.get(name) {
                         contexts.insert(name.clone(), c.clone());
+                    }
+                }
+                if *folder == "entity" {
+                    if let Some(i) = scan.entity_icons.get(name) {
+                        entity_icons.insert(name.clone(), i.clone());
                     }
                 }
                 if *folder == "process" {
@@ -902,7 +994,7 @@ pub fn scan_project_tree_with(project_root: &Path, preference_files: &[PathBuf])
                 folder.dimmed |= module_project;
                 folder
             }
-            "context" => TreeNode::folder(id, label, label, context_nodes(&model, &contexts, &ordered_mods)),
+            "context" => TreeNode::folder(id, label, label, context_nodes(&model, &contexts, &entity_icons, &ordered_mods)),
             "process" => TreeNode::folder(id.clone(), label, label, process_nodes(&model, &process_groups, &id)),
             "others" => TreeNode::folder(id, label, label, others_nodes(&packages)),
             _ => {
@@ -965,7 +1057,7 @@ fn system_nodes(model: &Model, project_scan: &PackageScan, project_root: &Path, 
     nodes
 }
 
-fn context_nodes(model: &Model, contexts: &HashMap<String, ContextInfo>, mods: &[(bool, &Modification)]) -> Vec<TreeNode> {
+fn context_nodes(model: &Model, contexts: &HashMap<String, ContextInfo>, entity_icons: &HashMap<String, String>, mods: &[(bool, &Modification)]) -> Vec<TreeNode> {
     let mut nodes: Vec<TreeNode> = model
         .names("neonContext")
         .iter()
@@ -977,11 +1069,21 @@ fn context_nodes(model: &Model, contexts: &HashMap<String, ContextInfo>, mods: &
                 .map(|(_, view)| model.object_node("neonView", &view, "neonView"))
                 .collect();
             sort_nodes(&mut views);
+            node.icon = info.icon.clone();
             let mut children = Vec::new();
             if let Some(entity) = &info.entity {
-                children.push(model.object_node("entity", entity, "entity"));
+                let mut entity_node = model.object_node("entity", entity, "entity");
+                entity_node.icon = entity_icons.get(entity).cloned();
+                children.push(entity_node);
             }
             children.extend(views);
+            children.extend(
+                effective_context_webservices(&info, name, mods)
+                    .into_iter()
+                    .map(|(_, ws)| model.object_node("entityWebservice", &ws, "entityWebservice")),
+            );
+            // Entity, views and webservices are listed together in one alphabetical order (Designer, Screenshot 2026-11-06).
+            sort_nodes(&mut children);
             node.is_leaf = children.is_empty();
             node.children = children;
             node

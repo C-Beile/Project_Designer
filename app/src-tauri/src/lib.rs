@@ -39,9 +39,17 @@ use tauri::{Manager, State};
 /// P8 step 2: returns the one project root node of the merged Projects tree; scanning a project
 /// with its ~130 modules takes a few hundred ms, so it runs off the UI thread.
 #[tauri::command]
-async fn open_project(path: String, actor: State<'_, ProjectActorHandle>) -> Result<Vec<TreeNode>, String> {
-    let actor = actor.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || actor.scan_tree(PathBuf::from(path))).await.map_err(|e| e.to_string())?
+async fn open_project(path: String) -> Result<Vec<TreeNode>, String> {
+    // The scan only reads files, so it does not wait in the actor's queue behind property edits and several projects
+    // are scanned side by side.
+    tauri::async_runtime::spawn_blocking(move || {
+        let started = std::time::Instant::now();
+        let result = forge_app_core::tree::scan_project_tree(&PathBuf::from(&path));
+        let _ = forge_app_core::crashlog::write_entry("PERF", &format!("open project {path}: tree scan {} ms", started.elapsed().as_millis()));
+        result
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// P8 step 2: children of a lazily loaded tree node (module file trees, `others`).
@@ -224,9 +232,14 @@ async fn local_data_info(threshold_days: u32, app: tauri::AppHandle) -> Result<f
 /// line, validator findings, dangling references).
 #[tauri::command]
 async fn scan_problems(project_root: String) -> Result<Vec<forge_app_core::problems::ProblemDto>, String> {
-    tauri::async_runtime::spawn_blocking(move || forge_app_core::problems::scan_project(&PathBuf::from(project_root)))
-        .await
-        .map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(move || {
+        let started = std::time::Instant::now();
+        let list = forge_app_core::problems::scan_project(&PathBuf::from(&project_root));
+        let _ = forge_app_core::crashlog::write_entry("PERF", &format!("problems scan {project_root}: {} ms, {} findings", started.elapsed().as_millis(), list.len()));
+        list
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 /// Clearing a value in the Properties panel removes the property from the file again.
@@ -451,6 +464,12 @@ fn import_config_file(project_root: String, source: String) -> Result<String, St
 #[tauri::command]
 async fn read_theme_file(path: String) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || forge_app_core::file_list::read_theme_file(&PathBuf::from(path))).await.map_err(|e| e.to_string())?
+}
+
+/// A colour theme package (`.vsix`, `.zip`, an extension folder or a single `.json` file): its theme files as text.
+#[tauri::command]
+async fn read_theme_pack(path: String) -> Result<Vec<forge_app_core::file_list::ThemePackFile>, String> {
+    tauri::async_runtime::spawn_blocking(move || forge_app_core::file_list::read_theme_pack(&PathBuf::from(path))).await.map_err(|e| e.to_string())?
 }
 
 /// Quick file search (double Ctrl): the file names of a project.
@@ -1524,6 +1543,7 @@ fn build_native_menu(app: &tauri::AppHandle) -> tauri::Result<()> {
             resolve_import,
             list_project_files,
             read_theme_file,
+            read_theme_pack,
             system_user_properties,
             system_user_set_property,
             system_user_set,

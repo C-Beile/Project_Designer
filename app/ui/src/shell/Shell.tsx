@@ -373,6 +373,17 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   }, [api])
 
   const [loadingProjects, setLoadingProjects] = useState<Set<string>>(() => new Set())
+  const [iconSvgs, setIconSvgs] = useState<ReadonlyMap<string, string>>(() => new Map())
+  useEffect(() => {
+    let cancelled = false
+    void api
+      .listIcons()
+      .then((list) => !cancelled && setIconSvgs(new Map(list.map((i) => [i.id, i.svg]))))
+      .catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
+  }, [api])
 
   useEffect(() => {
     for (const p of projects) {
@@ -2379,6 +2390,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
               onContextMenu={(node, top, x, y) => setCtxMenu({ node, top, x, y })}
               problemCounts={problemCounts}
               badgeFor={systemBadge}
+              iconSvg={(id) => iconSvgs.get(id)}
               onSystemTunnel={(node) =>
                 void api
                   .getPropertyTree(node.id)
