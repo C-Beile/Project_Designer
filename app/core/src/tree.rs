@@ -1001,7 +1001,13 @@ pub fn scan_project_tree_with(project_root: &Path, preference_files: &[PathBuf])
                 let mut nodes: Vec<TreeNode> = disk_folders
                     .iter()
                     .flat_map(|f| model.names(f).into_iter().map(move |n| (*f, n)))
-                    .map(|(f, n)| model.object_node(f, &n, f))
+                    .map(|(f, n)| {
+                        let mut node = model.object_node(f, &n, f);
+                        if f == "entity" {
+                            node.icon = entity_icons.get(&n).cloned();
+                        }
+                        node
+                    })
                     .collect();
                 sort_nodes(&mut nodes);
                 TreeNode::folder(id, label, label, nodes)

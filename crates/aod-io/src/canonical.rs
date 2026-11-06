@@ -32,6 +32,11 @@ pub fn canonical_events(doc: &AodDocument) -> AodDocument {
     while i < events.len() {
         match &events[i] {
             AodEvent::Text(t) if t.iter().all(|c| c.is_ascii_whitespace()) => {
+                // An empty element that holds only a line break (`<list>` newline `</list>`) keeps its closing tag on a
+                // line of its own; the reference inserts into such a list below the opening tag.
+                if just_opened && t.contains(&10u8) && matches!(events.get(i + 1), Some(AodEvent::End(_))) {
+                    just_opened = false;
+                }
                 i += 1;
                 continue;
             }
@@ -86,11 +91,24 @@ pub fn canonical_events(doc: &AodDocument) -> AodDocument {
     AodDocument { events: out }
 }
 
+/// Every line break, also inside multi-line texts, becomes CRLF.
+fn crlf(bytes: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(bytes.len() + bytes.len() / 40);
+    for &b in bytes {
+        match b {
+            13 => {}
+            10 => out.extend_from_slice(NEWLINE),
+            other => out.push(other),
+        }
+    }
+    out
+}
+
 /// The bytes of an object file in the regular form; a leading byte order mark is dropped.
 pub fn canonicalize(bytes: &[u8]) -> Result<Vec<u8>, AodError> {
     let bytes = bytes.strip_prefix(&[0xEF, 0xBB, 0xBF]).unwrap_or(bytes);
     let doc = parse(bytes)?;
-    Ok(serialize(&canonical_events(&doc)))
+    Ok(crlf(&serialize(&canonical_events(&doc))))
 }
 
 #[cfg(test)]
@@ -101,6 +119,13 @@ mod tests {
     fn compact_xml_with_a_byte_order_mark_gets_the_regular_layout() {
         let source = b"\xEF\xBB\xBF<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<entity><name>A</name><list><element>x</element><flag v=\"true\" /></list><empty></empty></entity>";
         let expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<entity>\r\n  <name>A</name>\r\n  <list>\r\n    <element>x</element>\r\n    <flag v=\"true\" />\r\n  </list>\r\n  <empty></empty>\r\n</entity>\r\n";
+        assert_eq!(String::from_utf8(canonicalize(source).unwrap()).unwrap(), expected);
+    }
+
+    #[test]
+    fn line_breaks_inside_a_text_become_crlf_too() {
+        let source = b"<a>\n  <d>one\ntwo</d>\n</a>";
+        let expected = "<a>\r\n  <d>one\r\ntwo</d>\r\n</a>\r\n";
         assert_eq!(String::from_utf8(canonicalize(source).unwrap()).unwrap(), expected);
     }
 

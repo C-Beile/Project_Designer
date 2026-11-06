@@ -18,7 +18,9 @@ use crate::own_engine::{OwnEngine, OwnEngineError};
 /// purpose - see the module-graph changelog note in `p5-resolver-engine-notes.md`) without
 /// going through the `OwnEngine` trait, which has no return channel for data.
 pub fn resolve_module_graph(project_home: &Path) -> Result<ModuleGraph, OwnEngineError> {
-    module_graph::resolve(project_home)
+    // The modules are taken as they are installed: an installed version that does not match a requested range (the project's
+    // package.json asks for ^2.7.3, node_modules holds 2.7.0) does not stop the build.
+    module_graph::resolve_lenient(project_home)
         .map_err(|source| OwnEngineError::Message(source.to_string()))
 }
 

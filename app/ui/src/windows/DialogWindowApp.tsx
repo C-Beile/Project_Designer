@@ -34,6 +34,7 @@ interface DialogSpec {
 // The Git window reports whether the work tree changed, so the main window reloads its tree.
 function GitWindow({ api, payload, done }: { api: ForgeApi; payload: Record<string, unknown>; done: Done }) {
   const changed = useRef(false)
+  const lastMessage = useRef<{ message: string; ok: boolean } | null>(null)
   return (
     <GitDialog
       api={api}
@@ -43,7 +44,10 @@ function GitWindow({ api, payload, done }: { api: ForgeApi; payload: Record<stri
       onChanged={() => {
         changed.current = true
       }}
-      onClose={() => done(changed.current ? { changed: true } : null)}
+      onResult={(message, ok) => {
+        lastMessage.current = { message, ok }
+      }}
+      onClose={() => done(changed.current || lastMessage.current ? { changed: changed.current, ...lastMessage.current } : null)}
     />
   )
 }

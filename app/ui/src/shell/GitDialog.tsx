@@ -153,6 +153,7 @@ export function GitDialog({
   initialTarget,
   onClose,
   onChanged,
+  onResult,
 }: {
   api: ForgeApi
   projectRoot: string
@@ -161,6 +162,8 @@ export function GitDialog({
   initialTarget?: { local?: string; remote?: string } | null
   onClose: () => void
   onChanged: () => void
+  /** What a commit or push just did, with the branch name, for the notification of the main window. */
+  onResult?: (message: string, ok: boolean) => void
 }) {
   const [tab, setTab] = useState<GitTab>(initialTab)
   const [overview, setOverview] = useState<GitOverview | null>(null)
@@ -242,14 +245,27 @@ export function GitDialog({
   const flatRoot: TreeFolder = { name: '', path: '', folders: [], files: visibleFiles }
   const isCommitView = initialTab === 'changes'
 
-  const commit = () => act(() => api.gitCommit(projectRoot, message.trim(), [...checked]).then((r) => { if (r.ok) setMessage(''); return r }))
+  const branchName = overview?.branch ?? '(detached)'
+  const firstLine = (text: string) => text.split('\n').find((l) => l.trim()) ?? ''
+  const commit = () =>
+    act(async () => {
+      const r = await api.gitCommit(projectRoot, message.trim(), [...checked])
+      if (r.ok) setMessage('')
+      onResult?.(r.ok ? `Committed on branch ${branchName}: ${message.trim()}` : `Commit on branch ${branchName} failed: ${firstLine(r.text)}`, r.ok)
+      return { ok: r.ok, text: `Branch: ${branchName}\n${r.text}`.trim() }
+    })
   const commitAndPush = () =>
     act(async () => {
       const c = await api.gitCommit(projectRoot, message.trim(), [...checked])
-      if (!c.ok) return c
+      if (!c.ok) {
+        onResult?.(`Commit on branch ${branchName} failed: ${firstLine(c.text)}`, false)
+        return { ok: false, text: `Branch: ${branchName}\n${c.text}`.trim() }
+      }
+      const sent = message.trim()
       setMessage('')
       const p = await api.gitPush(projectRoot)
-      return { ok: p.ok, text: `${c.text}\n${p.text}`.trim() }
+      onResult?.(p.ok ? `Committed and pushed on branch ${branchName}: ${sent}` : `Committed on branch ${branchName}, but the push failed: ${firstLine(p.text)}`, p.ok)
+      return { ok: p.ok, text: `Branch: ${branchName}\n${c.text}\n${p.text}`.trim() }
     })
 
   return (

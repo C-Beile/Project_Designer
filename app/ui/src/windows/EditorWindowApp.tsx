@@ -6,7 +6,7 @@ import { ProjectIndexContext, type ProjectIndex } from '../editors/projectIndex'
 import { saveCodeProperty } from '../properties/codeSave'
 import { choiceDialog, DialogHost } from '../shell/dialogService'
 import { ToastHost } from '../shell/notifications'
-import { collectByType, entityOfView, findObject } from '../shell/treeIndex'
+import { collectByType, collectIcons, entityOfView, findObject } from '../shell/treeIndex'
 import { ObjectEditorArea } from '../tabs/ObjectEditorArea'
 import { isFileNode, type EditorTab, type SubTab } from '../tabs/tabModel'
 import type { DbStatus, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
@@ -306,9 +306,11 @@ function EditorWindowBody({ name, api, payload }: { name: string; api: ForgeApi;
     return () => window.removeEventListener('keydown', onKey)
   }, [isFile, undoRedo])
 
+  const iconsByObject = useMemo(() => collectIcons(tree), [tree])
   const index = useMemo<ProjectIndex>(
     () => ({
       findObject: (type, objectName) => findObject(tree, type, objectName),
+      iconOf: (type, objectName) => iconsByObject.get(`${type}:${objectName}`),
       namesOf: (type) => [...(collectByType(tree).get(type) ?? [])],
       entityOfView: (viewName) => entityOfView(tree, viewName),
       selection,

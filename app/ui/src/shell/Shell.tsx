@@ -74,7 +74,7 @@ import { codeTabNode, processCodeTarget, saveCodeProperty } from '../properties/
 import { objectRoot } from '../properties/objectRoot'
 import { choiceDialog, confirmDialog, DialogHost, promptDialog } from './dialogService'
 import { ToastHost, notify } from './notifications'
-import { collectByType, entityOfView, findObject } from './treeIndex'
+import { collectByType, collectIcons, entityOfView, findObject } from './treeIndex'
 import { useFloatBridge } from '../windows/useFloatBridge'
 import { useEditorWindows } from '../windows/useEditorWindows'
 import { useOsDialog } from '../windows/useOsDialog'
@@ -804,13 +804,14 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   }, [])
   const notifySync = useCallback((mode: 'pull' | 'push', r: SyncResult) => {
     const label = mode === 'pull' ? 'Pull' : 'Push'
+    const onBranch = branch ? ` on branch ${branch}` : ''
     if (r.ok) {
       const what = mode === 'pull' ? 'merged' : 'pushed'
-      notify(r.commits > 0 ? `${label} finished: ${r.commits} commit${r.commits === 1 ? '' : 's'} ${what}.` : `${label} finished: nothing to ${mode === 'pull' ? 'merge' : 'push'}.`, { kind: 'success' })
+      notify(r.commits > 0 ? `${label} finished${onBranch}: ${r.commits} commit${r.commits === 1 ? '' : 's'} ${what}.` : `${label} finished${onBranch}: nothing to ${mode === 'pull' ? 'merge' : 'push'}.`, { kind: 'success' })
     } else {
-      notify(r.text.split('\n').find((l) => l.trim()) || `${label} failed.`, { kind: 'error', timeoutMs: 12000 })
+      notify(`${label} failed${onBranch}: ${r.text.split('\n').find((l) => l.trim()) || 'see the output'}`, { kind: 'error', timeoutMs: 12000 })
     }
-  }, [])
+  }, [branch])
   const runGit = useCallback(
     async (label: string, action: () => Promise<GitOutput>) => {
       try {
@@ -839,9 +840,11 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     }
   }, [])
 
+  const iconsByObject = useMemo(() => collectIcons(tree), [tree])
   const projectIndex = useMemo(
     () => ({
       findObject: (type: string, name: string) => findObject(tree, type, name),
+      iconOf: (type: string, name: string) => iconsByObject.get(`${type}:${name}`),
       namesOf: (type: string) => [...(objectsByType.get(type) ?? [])],
       selection: navSel ? { nodeId: navSel.nodeId, path: navSel.path } : null,
       removeElement: (_nodeId: string, path: string, label: string) => removeElementRef.current(path, label),
@@ -2358,11 +2361,12 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     () => setDialog((d) => (d === 'updates' ? null : d)),
   )
 
-  useOsDialog<{ changed?: boolean }>(
+  useOsDialog<{ changed?: boolean; message?: string; ok?: boolean }>(
     dialog === 'git' && hasProject,
     () => ({ name: 'git', title: gitView.tab === 'changes' ? 'Commit' : gitView.tab === 'history' ? 'Log' : 'Branches', size: { width: 1100, height: 760 }, payload: { project: root, tab: gitView.tab, target: gitView.target } }),
     (r) => {
       if (r?.changed) setReloadToken((t) => t + 1)
+      if (r?.message) notify(r.message, { kind: r.ok ? 'success' : 'error', timeoutMs: r.ok ? undefined : 12000 })
       if (root.trim()) void refreshScm(api, root)
     },
     () => setDialog((d) => (d === 'git' ? null : d)),
@@ -2774,7 +2778,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       ) : null}
       {dialog === 'localData' && !osWindowsAvailable() ? <LocalDataDialog api={api} onClose={() => setDialog(null)} /> : null}
       {dialog === 'git' && hasProject && !osWindowsAvailable() ? (
-        <GitDialog api={api} projectRoot={root} initialTab={gitView.tab} initialTarget={gitView.target} onClose={() => setDialog(null)} onChanged={() => setReloadToken((t) => t + 1)} />
+        <GitDialog api={api} projectRoot={root} initialTab={gitView.tab} initialTarget={gitView.target} onClose={() => setDialog(null)} onChanged={() => setReloadToken((t) => t + 1)} onResult={(message, ok) => notify(message, { kind: ok ? 'success' : 'error', timeoutMs: ok ? undefined : 12000 })} />
       ) : null}
       {dialog === 'sync' && hasProject && !osWindowsAvailable() ? <SyncDialog api={api} projectRoot={root} mode={syncMode} onClose={() => setDialog(null)} onDone={() => setReloadToken((t) => t + 1)} onResult={(r) => notifySync(syncMode, r)} /> : null}
       {dialog === 'updates' && !osWindowsAvailable() ? <UpdatesDialog api={api} onClose={() => setDialog(null)} onOpenTableCenter={() => setDialog('tableCenter')} /> : null}

@@ -77,7 +77,7 @@ pub struct IncrementalReport {
 }
 
 /// Raised whenever the output of the engine changes for the same sources (new or changed stage).
-const ENGINE_REVISION: u32 = 59;
+const ENGINE_REVISION: u32 = 62;
 
 fn cache_dir(project_home: &Path) -> PathBuf {
     // A test harness can keep the cache outside of the project (read-only repositories, many projects).
@@ -280,7 +280,10 @@ pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<Increme
         }
         crate::own_engine::progress::report(30, "Nothing changed, taking over the last result");
         let _ = fs::remove_file(&state_file);
-        clear_dir(output_dir).map_err(|source| IncrementalError::Cache { path: output_dir.to_path_buf(), source })?;
+        // The output folder may be gone altogether (deleted by hand): then there is nothing to clear.
+        if output_dir.is_dir() {
+            clear_dir(output_dir).map_err(|source| IncrementalError::Cache { path: output_dir.to_path_buf(), source })?;
+        }
         fs::create_dir_all(output_dir).map_err(|source| IncrementalError::Cache { path: output_dir.to_path_buf(), source })?;
         copy_tree_verbatim(&snapshot, output_dir).map_err(|source| IncrementalError::Cache { path: snapshot.clone(), source })?;
         remember_output(&state_file, output_dir, &manifest);

@@ -5186,3 +5186,7 @@ option, optgroup { color: var(--fg); background-color: var(--bg-elevated, var(--
 .webservice-panes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
 .webservice-pane { border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; min-height: 160px; max-height: 420px; overflow: auto; }
 .webservice-pane h3 { margin: 2px 0 6px; font-size: 12px; font-weight: 600; }
+
+/* Own icon of a context or entity in the application editor lists */
+.app-own-icon { display: inline-flex; width: 13px; height: 13px; flex: 0 0 13px; color: var(--folder-context, var(--fg)); }
+.app-own-icon svg { width: 13px; height: 13px; fill: currentColor; }

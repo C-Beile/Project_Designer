@@ -3,6 +3,7 @@ import type { EditorProps } from './registry'
 import { useProjectIndex } from './projectIndex'
 import { setApplicationFilter, useApplicationFilter } from './applicationFilter'
 import { AppKindIcon, type AppIconKind } from './AppKindIcon'
+import { useIconSvgs } from './useIconSvgs'
 import {
   KIND_CONTEXT,
   KIND_DASHBOARD,
@@ -59,6 +60,13 @@ function kindClass(kind: number | null): string {
 
 export function ApplicationEditor({ nodeId, tree, api, onTreeChange }: EditorProps) {
   const index = useProjectIndex()
+  const iconSvgs = useIconSvgs(api)
+  // An object with an own icon (a context or entity) shows it; the others show the colour symbol of their type.
+  const ownIcon = (objectType: string, name: string) => {
+    const id = index?.iconOf?.(objectType, name)
+    const svg = id ? iconSvgs.get(id) : undefined
+    return svg ? <span className="app-own-icon" title={id} aria-hidden="true" dangerouslySetInnerHTML={{ __html: svg }} /> : null
+  }
   const filter = useApplicationFilter()
   const [source, setSource] = useState<{ text: string; read_only: boolean } | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -295,7 +303,10 @@ export function ApplicationEditor({ nodeId, tree, api, onTreeChange }: EditorPro
           {...dragProps}
           {...dropProps(parentPath, () => i)}
         >
-          <AppKindIcon kind={node.kind === KIND_CONTEXT ? 'context' : node.kind === KIND_DASHBOARD ? 'dashboard' : node.kind === KIND_ROLE ? 'role' : 'group'} invalid={!!issue} />
+          {(node.kind === KIND_CONTEXT ? ownIcon('neonContext', node.name) : null) ?? null}
+          {node.kind === KIND_CONTEXT && ownIcon('neonContext', node.name) ? null : (
+            <AppKindIcon kind={node.kind === KIND_CONTEXT ? 'context' : node.kind === KIND_DASHBOARD ? 'dashboard' : node.kind === KIND_ROLE ? 'role' : 'group'} invalid={!!issue} />
+          )}
           <span className="app-name">{issue ? <span className="app-invalid">{'<invalid> '}</span> : null}{node.name}</span>
           {buttons}
           {removeButton}
@@ -412,7 +423,7 @@ export function ApplicationEditor({ nodeId, tree, api, onTreeChange }: EditorPro
                 onDoubleClick={() => item.kind !== null && addToSelected({ kind: item.kind, name: item.name })}
                 onKeyDown={(e) => e.key === 'Enter' && item.kind !== null && addToSelected({ kind: item.kind, name: item.name })}
               >
-                <AppKindIcon kind={item.icon} />
+                {ownIcon(PALETTE.find((p) => p.type === item.type)?.objectType ?? '', item.name) ?? <AppKindIcon kind={item.icon} />}
                 {item.name}
               </li>
             )

@@ -8,6 +8,8 @@ export interface ProjectIndex {
   openObject: (node: TreeNode) => void
   /** Entity of the context the view belongs to (the view preview takes field titles and types from it). */
   entityOfView?: (viewName: string) => TreeNode | null
+  /** The `iconId` an object shows (a context or entity with an own icon), `undefined` when it has none. */
+  iconOf?: (objectType: string, name: string) => string | undefined
   /** Names of all objects of one type in the open projects (menu editor list). */
   namesOf?: (objectType: string) => string[]
   /** Shows an element of the open object in the Properties panel (row click in an editor). */

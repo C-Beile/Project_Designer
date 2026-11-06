@@ -39,3 +39,12 @@ export function entityOfView(nodes: TreeNode[], viewName: string): TreeNode | nu
   }
   return null
 }
+
+/** The own icon of every object that has one, by object type and name (`neonContext:Activity` -> `NEON:IMPORT`). */
+export function collectIcons(nodes: TreeNode[], out: Map<string, string> = new Map()): Map<string, string> {
+  for (const n of nodes) {
+    if (n.icon && n.object_type && !out.has(`${n.object_type}:${n.label}`)) out.set(`${n.object_type}:${n.label}`, n.icon)
+    collectIcons(n.children, out)
+  }
+  return out
+}
