@@ -849,7 +849,8 @@ fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation,
                     template.extend_from_slice(&aod_io::patch::standard_indent(parent_depth + k));
                     template.extend_from_slice(format!("</{name}>").as_bytes());
                 }
-                insert_at(doc, &index, &current, &template, SiblingHint::AppendAsLastChild).map_err(|e| e.to_string())?;
+                let hint = order_hint(doc, &index, &current, &missing[0], &m.model_type);
+                insert_at(doc, &index, &current, &template, hint).map_err(|e| e.to_string())?;
                 return Ok(Operation::ArrayInsert);
             }
             None if i == last_index && m.change_type == ChangeType::Modify && m.payload.is_none() => {
@@ -1171,7 +1172,7 @@ fn empty_dangling_script_links(bytes: &[u8], output_root: &Path) -> Vec<u8> {
 }
 
 fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report: &mut ModificationEngineReport) {
-    group.sort_by_key(|m| (m.is_project_root, m.position, m.source_file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()));
+    group.sort_by_key(|m| (m.is_project_root && m.change_type != ChangeType::Insert, m.position, m.source_file.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default()));
 
     let bytes = match fs::read(target) {
         Ok(b) => b,

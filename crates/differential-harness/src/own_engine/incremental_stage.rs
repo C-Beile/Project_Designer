@@ -77,7 +77,7 @@ pub struct IncrementalReport {
 }
 
 /// Raised whenever the output of the engine changes for the same sources (new or changed stage).
-const ENGINE_REVISION: u32 = 55;
+const ENGINE_REVISION: u32 = 59;
 
 fn cache_dir(project_home: &Path) -> PathBuf {
     // A test harness can keep the cache outside of the project (read-only repositories, many projects).

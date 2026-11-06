@@ -21,11 +21,13 @@
 //! See `PROJECT/20_architecture/p3-aod-io-notes.md` for test coverage and the Event-Index API
 //! design rationale in more depth than the module docs below.
 
+pub mod canonical;
 pub mod document;
 pub mod error;
 pub mod index;
 pub mod patch;
 
+pub use canonical::{canonical_events, canonicalize};
 pub use document::{parse, round_trip_check, serialize, AodDocument, AodEvent};
 pub use error::{AodError, PatchError};
 pub use index::{build_index, EventIndex, EventPath, IndexedRange, PathStep};

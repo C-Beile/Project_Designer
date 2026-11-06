@@ -243,11 +243,20 @@ fn copy_recursive(
 }
 
 /// Copies one file of a module into the output; `.aod` files get CRLF line endings (see below).
+/// The reference writes every object in its regular form (indentation, line endings, no byte order mark), whatever
+/// form the module shipped it in. A file that does not parse is only brought to CRLF line endings.
+fn normalize_aod(bytes: &[u8]) -> Vec<u8> {
+    match aod_io::canonicalize(bytes) {
+        Ok(regular) => regular,
+        Err(_) => normalize_to_crlf(bytes),
+    }
+}
+
 fn copy_one_file(src: &Path, dest: &Path) -> Result<(), CopyPhaseError> {
     let bytes = fs::read(src).map_err(|source| CopyPhaseError::Read { path: src.to_path_buf(), source })?;
     // Real-corpus finding: every `.aod` file in the reference `dist/` uses CRLF line endings, even when its source module
     // file uses bare LF. Every other file type is copied byte-for-byte.
-    let bytes = if is_aod_file(dest) { normalize_to_crlf(&bytes) } else { bytes };
+    let bytes = if is_aod_file(dest) { normalize_aod(&bytes) } else { bytes };
     // The output folder is a build result: no temporary file and no forced flush per file.
     let write_error = |source: std::io::Error| CopyPhaseError::Write { path: dest.to_path_buf(), source: platform::PlatformError::AtomicWrite { path: dest.to_path_buf(), source } };
     if let Err(first) = fs::write(dest, &bytes) {
@@ -439,7 +448,7 @@ mod tests {
         assert_eq!(copied, 2, "expected exactly the two entity files to be copied");
         assert_eq!(
             fs::read_to_string(output_dir.join("entity/Foo_entity/Foo_entity.aod")).unwrap(),
-            "<entity/>"
+            "<entity/>\r\n"
         );
         assert_eq!(
             fs::read_to_string(output_dir.join("entity/Foo_entity/onValidation.js")).unwrap(),
@@ -494,7 +503,7 @@ mod tests {
         copy_module_tree(&module_root, &ignore, &output_dir).unwrap();
 
         let aod_bytes = fs::read(output_dir.join("entity/Foo_entity/Foo_entity.aod")).unwrap();
-        assert_eq!(aod_bytes, b"<entity>\r\n  <name>Foo</name>\r\n</entity>".to_vec());
+        assert_eq!(aod_bytes, b"<entity>\r\n  <name>Foo</name>\r\n</entity>\r\n".to_vec());
 
         let js_bytes = fs::read(output_dir.join("entity/Foo_entity/onValidation.js")).unwrap();
         assert_eq!(js_bytes, b"var x = 1;\nvar y = 2;\n".to_vec(), "non-.aod files must stay byte-for-byte untouched");
@@ -553,7 +562,7 @@ mod tests {
 
         assert_eq!(
             fs::read_to_string(output_dir.join("entity/Shared_entity/Shared_entity.aod")).unwrap(),
-            "<from-project/>"
+            "<from-project/>\r\n"
         );
 
         fs::remove_dir_all(&dep_root).ok();
