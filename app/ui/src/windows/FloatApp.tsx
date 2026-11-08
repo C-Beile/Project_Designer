@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { NavigatorPanel } from '../navigator/NavigatorPanel'
 import { ProjectPropertiesPanel, PropertySheetPanel } from '../properties/PropertySheetPanel'
-import { ScmPanel, refreshScm, useScm } from '../features/git'
+import { useDialog } from '../core/plugins/registry'
+import { refreshScm, useScm } from '../core/scm'
 import { ServicesPanel } from '../services/ServicesPanel'
 import { DialogHost } from '../core/dialogService'
 import { ToastHost } from '../core/notifications'
-import type { DbStatus } from '../wire/types'
+import type { DbStatus, DiffTarget } from '../wire/types'
 import { OutputBody, type OutputLine, type OutputSubTab } from '../shell/OutputPanel'
 import { EVENTS, FLOAT_TITLES, type FloatAction, type FloatView, type MainState } from './protocol'
 import { getWindowBackend } from './windowService'
@@ -23,6 +24,7 @@ export function FloatApp({ view, api }: { view: FloatView; api: ForgeApi }) {
   const [logs, setLogs] = useState<Record<OutputSubTab, OutputLine[]>>({ database: [], build: [], default: [], nodejs: [] })
   const [sub, setSub] = useState<OutputSubTab>('build')
   const scm = useScm()
+  const ScmPanel = useDialog('git.scmPanel')?.component
 
   const send = (action: FloatAction) => void getWindowBackend().emit(EVENTS.floatAction, action)
 
@@ -104,7 +106,7 @@ export function FloatApp({ view, api }: { view: FloatView; api: ForgeApi }) {
     )
   } else if (!state) body = <div className="forge-panel-empty">Please Wait…</div>
   else if (view === 'scm') {
-    body = <ScmPanel api={api} root={state.root} onOpenDiff={(target) => send({ type: 'openDiff', target })} onChanged={() => send({ type: 'reload' })} />
+    body = ScmPanel ? <ScmPanel api={api} root={state.root} onOpenDiff={(target: DiffTarget) => send({ type: 'openDiff', target })} onChanged={() => send({ type: 'reload' })} /> : null
   } else if (view === 'services') {
     body = <ServicesPanel api={api} db={db} onDbChange={setDb} onOpenSql={(sql) => send({ type: 'openSql', sql })} />
   } else if (view === 'navigator') {

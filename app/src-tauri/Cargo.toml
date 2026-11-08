@@ -6,9 +6,8 @@ edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
-# R13: no `cdylib` here on purpose - GNU/MinGW `ld` hits "export ordinal too large" on the full
-# windows-rs dependency chain with Tauri's default mobile-oriented crate-type list. See
-# spike-editor.md and RISKS.md R13.
+# Kein `cdylib`, bewusst. Früher brach der GNU/MinGW-`ld` mit "export ordinal too large" bei der
+# windows-rs-Kette. Heute gilt MSVC (`rust-toolchain.toml`). Ob der Grund noch zutrifft, ist nicht geprüft.
 [lib]
 name = "designer_app_lib"
 crate-type = ["staticlib", "rlib"]
@@ -35,8 +34,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 designer-core = { path = "../../crates/designer-core" }
 # All framework-agnostic logic (tree scan, wire format, undo history, validators, action
-# dispatch) lives in this sibling crate specifically so it never links tauri/wry/webview2-com -
-# see project's lib.rs doc for why (GNU-toolchain test-binary DLL issue, candidate R22).
+# dispatch) lives in this sibling crate specifically so it never links tauri/wry/webview2-com.
+# Früherer Grund: DLL-Problem der GNU-Toolchain bei Testbinaries. Heute MSVC, Grund nicht geprüft.
 # This crate itself stays a genuinely thin Tauri command/event adapter with no tests of its own.
 project = { path = "../../crates/project" }
 app-base = { path = "../../crates/app-base" }

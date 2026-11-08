@@ -58,7 +58,7 @@ fn rename_cascade_bundles_patches_from_multiple_simulated_files_into_one_transac
     );
 
     // Kept aside, untouched, to verify the resulting FileCommands against a known-good buffer -
-    // mirrors core-model's own undo_redo.rs pattern of a separate "apply target" buffer.
+    // mirrors aod::tree's own undo_redo.rs pattern of a separate "apply target" buffer.
     let mut verify1 = src1.clone();
     let mut verify2 = src2.clone();
 

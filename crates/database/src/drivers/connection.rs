@@ -4,7 +4,7 @@
 //! data-model introspection.
 //!
 //! Scope is intentionally narrow — connect/test, run a query, list schema
-//! and tables. No transactions, no prepared-statement cache, no ORM
+//! and tables. Transactions only via `execute_transaction`, no prepared-statement cache, no ORM
 //! mapping: the designer needs to manage aliases and preview data, not run
 //! application business logic against these connections.
 

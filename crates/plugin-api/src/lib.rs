@@ -1,11 +1,12 @@
-//! `plugin-api` — the four extension-point traits (`EditorProvider`, `LinkedFileCompiler`,
-//! `Validator`, `Action`) plus the static `PluginRegistry`, per architecture.md §2.
+//! `plugin-api` — die Schnittstellen zwischen Kern und Erweiterungen.
 //!
-//! Scope note: this crate has no dependency on `core-model`/`aod-io`/`refs` by design (see the
-//! owning agent's scope guardrail). All trait signatures are expressed against small,
-//! self-contained placeholder types in [`types`] rather than the real project-model types; a
-//! later integration pass is expected to retarget these traits at the real types (see
-//! `PROJECT\20_architecture\p3-plugin-api-notes.md`).
+//! - Feature-Plugins: `FeaturePlugin`, `FeatureRegistry`, `EventSink` (`feature`).
+//! - Transpiler-Engines: `Transpiler`, `TranspilerRegistry` (`transpiler`).
+//! - Ältere Erweiterungspunkte in `PluginRegistry` (`registry`): `Validator`, `Action`,
+//!   `EditorProvider`, `LinkedFileCompiler`.
+//!
+//! Die Crate hängt von keiner anderen Workspace-Crate ab. Ihre Typen in [`types`] sind eigene
+//! Platzhalter. Die Umwandlung in die echten Typen steht in `designer-core/src/plugin_bridge.rs`.
 
 pub mod action;
 pub mod builtin;

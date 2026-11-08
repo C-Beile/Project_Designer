@@ -4,7 +4,7 @@ import type { ForgeApi } from '../../api/ForgeApi'
 import type { DiffContent, DiffTarget } from '../../wire/types'
 import { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForgeThemeForMonaco } from '../../theme/monacoTheme'
 import { languageForFile } from '../../tabs/TextFileEditor'
-import { useScm } from './scmStore'
+import { useScm } from '../../core/scm'
 import { diffTitle, SIDE_LABEL } from './diffTitle'
 import { errorText } from '../../core/errorText'
 

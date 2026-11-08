@@ -1,6 +1,6 @@
 //! `preferences` validator registrations (P4, fifth editor family: `PreferencesEditor`).
 //! Mirrors the shape every prior P4 family established (`flatten` -> registry -> `Vec<Diagnostic>`)
-//! so `project_actor.rs`'s `object_type`-indexed `VALIDATORS_BY_OBJECT_TYPE` dispatch can treat
+//! so `validator_table.rs`'s `object_type`-indexed `VALIDATORS_BY_OBJECT_TYPE` dispatch can treat
 //! `preferences` identically to the other object types.
 //!
 //! **Ablageformat (Rechercheergebnis, siehe `p4-editor-system-preferences-application-notes.md`
@@ -18,7 +18,7 @@
 //! `customPasswordProperty`/`customJDitoProperty`).
 //!
 //! **A second, more pervasive real R26 observation than `language`'s** (RISKS.md R26,
-//! `core-model`/`aod-io` only collapse repeated same-tag siblings into an indexed `Array` once
+//! `aod::tree`/`aod::document` only collapse repeated same-tag siblings into an indexed `Array` once
 //! there are 2+ occurrences): because `group_children` groups by tag name independently, and the
 //! two custom-property lists interleave five different tag names, *each* tag name's count is
 //! independently either 1 (un-indexed `Object`) or 2+ (`Array`) - verified in the real fixture:
@@ -147,7 +147,7 @@ fn is_custom_property_name_path(path: &str) -> bool {
 }
 
 /// The `object_type`-indexed dispatch entry point for `preferences` diagnostics
-/// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
+/// (`validator_table.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
     let mut registry = designer_core::build_plugin_registry();

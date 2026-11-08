@@ -1,6 +1,10 @@
 import { useSyncExternalStore, type ComponentType, type ReactNode } from 'react'
+import type { Dispatch, SetStateAction } from 'react'
+import type { ForgeApi } from '../../api/ForgeApi'
 import type { MenuEntry } from '../../tree/contextMenu'
 import type { MenuContext, MenuItemDef } from '../../shell/menuModel'
+import type { ShellDialog } from '../../shell/hooks/dialogTypes'
+import type { TreeNode } from '../../wire/types'
 
 // UI-Plugin-Register: Features (Git, SQL, Transpile ...) erweitern die Oberfläche selbst,
 // der Kern kennt sie nicht. Ein Plugin ruft beim Start registerPlugin(...) und die
@@ -91,6 +95,26 @@ export interface DialogEntry {
   component: ComponentType<any>
 }
 
+/** Was die Shell einem Shell-Beitrag gibt: der schmale Ausschnitt ihres Zustands. */
+export interface ShellExtensionContext {
+  api: ForgeApi
+  root: string
+  hasProject: boolean
+  reloadToken: number
+  setReloadToken: (update: (t: number) => number) => void
+  dialog: ShellDialog
+  setDialog: Dispatch<SetStateAction<ShellDialog>>
+  handleOpen: (node: TreeNode, top?: TreeNode) => Promise<void>
+  /** Plugin in Tools > Plugins eingeschaltet. */
+  isPluginActive: (id: string) => boolean
+}
+
+/** Unsichtbare Komponente, die die Shell immer rendert: ein Plugin hängt hier seine Hooks, Befehle und Einbett-Dialoge ein. */
+export interface ShellExtension extends Contribution {
+  id: string
+  component: ComponentType<ShellExtensionContext>
+}
+
 // ---------- Store ----------
 
 interface State {
@@ -102,6 +126,9 @@ interface State {
   statusBar: StatusBarItem[]
   tree: TreeContextItem[]
   dialogs: Map<string, DialogEntry>
+  shell: ShellExtension[]
+  /** Daten je Plugin-Id für dessen Statusleisten-Beitrag (`StatusBarSlotProps.data`). */
+  pluginData: Record<string, unknown>
 }
 
 function emptyState(): State {
@@ -114,6 +141,8 @@ function emptyState(): State {
     statusBar: [],
     tree: [],
     dialogs: new Map(),
+    shell: [],
+    pluginData: {},
   }
 }
 
@@ -252,6 +281,20 @@ export function getDialog(id: string): DialogEntry | undefined {
   return d && visible(state, d) ? d : undefined
 }
 
+export function registerShellExtension(e: ShellExtension): () => void {
+  return addList('shell', e, (x) => x.id)
+}
+
+/** Setzt die Statusleisten-Daten eines Plugins (die Shell-Prop `pluginData` hat Vorrang). */
+export function setPluginData(plugin: string, data: unknown): () => void {
+  update({ pluginData: { ...state.pluginData, [plugin]: data } })
+  return () => {
+    if (state.pluginData[plugin] !== data) return
+    const { [plugin]: _gone, ...rest } = state.pluginData
+    update({ pluginData: rest })
+  }
+}
+
 // ---------- Lesen (nicht-reaktiv) ----------
 
 function readMenu(s: State, menu: string, ctx?: MenuContext): MenuItemDef[] {
@@ -304,6 +347,22 @@ export function useStatusBarItems(align: 'left' | 'right'): StatusBarItem[] {
 export function useTreeContextItems(objectType: string | null): TreeContextItem[] {
   const s = useSyncExternalStore(subscribe, getSnapshot)
   return readTree(s, objectType)
+}
+
+export function useShellExtensions(): ShellExtension[] {
+  const s = useSyncExternalStore(subscribe, getSnapshot)
+  return byOrder(s.shell.filter((e) => visible(s, e)))
+}
+
+export function usePluginData(): Record<string, unknown> {
+  return useSyncExternalStore(subscribe, getSnapshot).pluginData
+}
+
+/** Wie getDialog, aber reaktiv: rendert neu, wenn das Plugin an- oder abgemeldet wird. */
+export function useDialog(id: string): DialogEntry | undefined {
+  const s = useSyncExternalStore(subscribe, getSnapshot)
+  const d = s.dialogs.get(id)
+  return d && visible(s, d) ? d : undefined
 }
 
 export function usePlugins(): PluginInfo[] {

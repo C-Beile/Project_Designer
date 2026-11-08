@@ -19,7 +19,7 @@
 | `src/core/ui/` | Masken-Baukasten: FormDialog, ListDialog, DataTable, ProgressBar, `uiDialogs`. |
 | `src/diagnostics/` | Panels für Diagnosen, Probleme und Scan-Dienste. |
 | `src/editors/` | Ein Editor je Objekttyp, `registry.ts` und `register*Builtins.ts`. |
-| `src/features/` | Plugin-UI. Heute nur `git/` (Vorlage). |
+| `src/features/` | Plugin-UI. Heute nur `git/` (Vorlage). `registerFeatures.ts` meldet die Plugins an. |
 | `src/navigator/` | Navigator-Panel. |
 | `src/platform/` | `pathKey.ts`: Pfade vergleichen. |
 | `src/problems/` | `problemStore.ts`: eine Liste aller Probleme. |
@@ -40,7 +40,7 @@
 React-19-Oberfläche des Designers. Läuft in Tauri. Spricht nur über `ForgeApi` mit Rust.
 
 ## Einstiegspunkte
-- `src/main.tsx` wählt Hauptfenster oder Fenster mit `?window=`. `src/App.tsx` meldet Editoren (`register*Builtins`) und das Git-Plugin an, wenn `plugin_list` es meldet.
+- `src/main.tsx` wählt Hauptfenster oder Fenster mit `?window=`. `src/App.tsx` meldet Editoren (`register*Builtins`) und die Plugins an (`features/registerFeatures.ts`, wenn `plugin_list` sie meldet).
 - `src/shell/Shell.tsx` ist das Hauptfenster.
 
 ## Abhängigkeiten
@@ -59,7 +59,7 @@ React-19-Oberfläche des Designers. Läuft in Tauri. Spricht nur über `ForgeApi
 | Aufgabe | Datei |
 |---|---|
 | Neuer Tauri-Befehl | Rust: `app/src-tauri/src/commands/*.rs` + `generate_handler!` in `app/src-tauri/src/lib.rs`; UI: `src/api/ForgeApi.ts`, `src/api/tauriApi.ts`, `src/test/mockApi.ts` |
-| Neuer Toolbar-Knopf eines Plugins | `registerToolbarItem` in `src/features/<plugin>/<plugin>Plugin.ts` (Vorlage: `features/git/gitPlugin.ts`). Der Befehl (`command`) wird als `registerCommand(id, run, plugin)` angemeldet (`core/plugins/registry.ts`); für Git in `shell/hooks/useShellCommands.ts` aus den Handlern von `shell/hooks/useGit.ts`. `shell/Toolbar.tsx` und `toolbarPrefs.ts` sind nur für Kern-Knöpfe. |
+| Neuer Toolbar-Knopf eines Plugins | `registerToolbarItem` in `src/features/<plugin>/<plugin>Plugin.ts` (Vorlage: `features/git/gitPlugin.ts`). Der Befehl (`command`) wird als `registerCommand(id, run, plugin)` angemeldet (`core/plugins/registry.ts`); für Git in `features/git/GitShellBridge.tsx` aus den Handlern von `features/git/useGit.ts`. `shell/Toolbar.tsx` und `toolbarPrefs.ts` sind nur für Kern-Knöpfe. |
 | Neuer Plugin-Befehl | Rust: `crates/<plugin>/src/plugin.rs` (Arm in `call`) + Logik im Crate; UI: Aufruf über `plugin_call` in `src/api/tauriApi.ts` (Git: `gitCall`), Signatur in `src/api/ForgeApi.ts`, Mock in `src/test/mockApi.ts` |
 | Neuer Editor-Typ | `src/editors/<Name>Editor.tsx`, `registerEditor(typ, Komponente)` in einer `src/editors/register*Builtins.ts` (in `src/App.tsx` importiert) |
 | Neuer Menüpunkt | `src/shell/menuModel.ts` plus Befehl in `src/shell/hooks/useShellCommands.ts`; für Plugins `registerMenuContribution` |

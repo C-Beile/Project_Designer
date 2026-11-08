@@ -15,7 +15,6 @@
 | `useTranspile.ts` | Transpile: Engine, Fortschritt, Ergebnis, Vergleich, Abbruch. Liefert u. a. `transpile, engine, cancelBuild, commands`. |
 | `useDeploy.ts` | Deploy und Build-and-Deploy. Braucht `transpile`. Liefert `startDeploy, deployOptions, deployRun, commands`. |
 | `useLiquibase.ts` | Liquibase-Update mit Wahl der Verbindung. Braucht `transpile`. Liefert `runLiquibaseUpdate, connectionPick`. |
-| `useGit.ts` | Team-Menü: Commit-, Sync-, Verlaufs-Dialoge, Pull/Push. Liefert `openGit, runGit, openDiff, quickBranch, commands`. |
 | `useRefactoring.ts` | Find Usages, Safely Delete, Rename. Liefert `startRefactoring, startRename, doRefactoring, commands`. |
 | `useTreeActions.ts` | Kontextmenü des Baums, Zwischenablage, Bestätigungen, Dateioperationen, npm. Liefert `runTreeAction, ctxMenu, commands, ...`. |
 | `useFloatingWindows.ts` | Panels als eigene Fenster und die Brücke dahin. Liefert `bridge, floatingViews, effectiveLayout, commands`. |
@@ -32,7 +31,7 @@ Zustand und Logik des Hauptfensters, aus `Shell.tsx` ausgezogen. Jeder Hook hat 
 
 ## Einstiegspunkte
 - Alle werden in `../Shell.tsx` aufgerufen. Die Reihenfolge dort steht in `../CLAUDE.md`.
-- `commands` (Typ `CommandMap`): Hooks mit Menübefehlen (`useGit`, `useTranspile`, `useDeploy`, `useRefactoring`, `useTreeActions`, `useFloatingWindows`) liefern ihre Map. `Shell.tsx` reicht sie als `extraCommands` (Git als `gitCommands`) an `useShellCommands`.
+- `commands` (Typ `CommandMap`): Hooks mit Menübefehlen (`useTranspile`, `useDeploy`, `useRefactoring`, `useTreeActions`, `useFloatingWindows`) liefern ihre Map. `Shell.tsx` reicht sie als `extraCommands` an `useShellCommands`. Git-Befehle (`team.*`) gehören dem Git-Plugin (`GitShellBridge`); `useTreeActions` und `useFloatingWindows` rufen sie mit `runCommandById`.
 - `backendEvent.listenBackend` wird genutzt für `forge://tunnel-progress` (`useDbStatus`), `forge://build-output` und `forge://transpile-progress` (`useTranspile`), `forge://npm-output` (`useTreeActions`), `forge://native-menu` (`Shell.tsx`).
 
 ## Abhängigkeiten
@@ -42,7 +41,7 @@ Zustand und Logik des Hauptfensters, aus `Shell.tsx` ausgezogen. Jeder Hook hat 
 
 ## Regeln und Fallen
 - Zirkel vermeiden: Wenn A etwas von B braucht und B von A, lege in `Shell.tsx` ein `useRef` an und gib es beiden (Muster: `saveIdsRef`, `removeElementRef`, `activateNodeRef`, `editorWindowsRef`). Der Besitzer setzt `ref.current` in jedem Render.
-- Alle Befehle stehen in `commands` ohne eigene Registrierung. Nur Git-Befehle meldet `useShellCommands` im Register an (Plugin `git`).
+- Alle Befehle stehen in `commands` ohne eigene Registrierung. Plugin-Befehle meldet das Plugin selbst im Register an.
 - Neue Zustände, die ein Befehl liest, in die Abhängigkeitsliste von `runCommand` (`useShellCommands`) aufnehmen.
 
 ## Wenn du X ändern willst

@@ -1,7 +1,7 @@
-//! `core-model` - the Forge project's `propertly`-equivalent (architecture.md §3, ADR-0005).
+//! `aod::tree` - the Forge project's `propertly`-equivalent (architecture.md §3, ADR-0005).
 //!
 //! Owns two things: the typed, observable `PropertyTree` projection over a document (via the
-//! narrow `EventSource` trait boundary to `aod-io`), and patch-level undo/redo (`FileCommand`/
+//! narrow `EventSource` trait boundary to `aod::document`), and patch-level undo/redo (`FileCommand`/
 //! `Transaction`/`UndoStack`). Does not read/write files - callers apply the `FileCommand`s this
 //! crate computes to whatever document representation implements `EventSource`.
 

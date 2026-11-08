@@ -1,6 +1,6 @@
 //! `system` validator registrations (P4, fifth editor family: `SystemEditor`).
 //! Mirrors `alias_validators.rs`/`language_validators.rs`'s shape on purpose (`flatten` ->
-//! registry -> `Vec<Diagnostic>`) so `project_actor.rs`'s `object_type`-indexed
+//! registry -> `Vec<Diagnostic>`) so `validator_table.rs`'s `object_type`-indexed
 //! `VALIDATORS_BY_OBJECT_TYPE` dispatch can treat `system` identically to the other object types.
 //!
 //! **Ablageformat (Rechercheergebnis, gegen den echten Hermes-Korpus verifiziert, siehe
@@ -13,7 +13,7 @@
 //! in this object type, so R26 (RISKS.md) does not apply here - unlike `preferences`/`application`
 //! below.
 //!
-//! `serverConfigPath`/`tunnelConfigPath` are exactly what P3's `server-comm` research
+//! `serverConfigPath`/`tunnelConfigPath` are exactly what the P3 research on server communication
 //! (`p3-server-comm-notes.md` §6) identified as the near-certain resolution target of `DeployCLI`'s
 //! `--serverconfig` argument - an empty value here is not a cosmetic gap, it breaks deploy
 //! addressing for that environment entirely, which is why both are real error-level rules below.
@@ -76,7 +76,7 @@ impl Validator for EmptyTunnelConfigPathValidator {
 }
 
 /// The `object_type`-indexed dispatch entry point for `system` diagnostics
-/// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
+/// (`validator_table.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
     let mut registry = designer_core::build_plugin_registry();

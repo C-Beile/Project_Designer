@@ -192,7 +192,7 @@ fn read_scalar_child(doc: &AodDocument, index: &EventIndex, parent: &EventPath, 
 }
 
 /// Parses one `modification/<id>/<id>.aod` file's envelope (`transpiler.md` §3's documented
-/// common structure). Reuses `aod-io::parse`/`build_index` for this too - the modification
+/// common structure). Reuses `aod::document::parse`/`build_index` for this too - the modification
 /// envelope is itself a well-formed `.aod`-shaped XML document, so the same event-stream/index
 /// machinery this stage uses for the TARGET file applies unchanged here; no separate XML layer
 /// was written for this side.
@@ -312,7 +312,7 @@ fn extract_payload(doc: &AodDocument, index: &EventIndex, root: &EventPath, chan
         ChangeType::Insert => {
             // Structural case: the inner `<value>`'s own content (its child element, `insert_at`
             // trims surrounding whitespace itself) is the template to insert - re-serialize just
-            // that event slice via aod-io's own `serialize`, reusing the same byte-faithful writer
+            // that event slice via aod::document's own `serialize`, reusing the same byte-faithful writer
             // rather than hand-rolling XML.
             match index.get(&inner_value) {
                 // A plain text value inserted into a list of texts (`siblings`, `variants`, ...): each
@@ -559,7 +559,7 @@ fn reindent_insert_template_raw(payload: &[u8], target_root_depth: usize) -> Vec
 
 /// Resolves one `<path>` segment from an already-resolved parent element to its child's
 /// `EventPath`, the operation `transpiler.md` §3's INSERT/DELETE path forms both need and that
-/// `aod-io`'s own `EventPath` (occurrence-per-tag-name) cannot do alone: a modification path
+/// `aod::document`'s own `EventPath` (occurrence-per-tag-name) cannot do alone: a modification path
 /// segment addresses a child EITHER by its own tag name (a fixed structural field, e.g.
 /// `entityFields`, `displayValueProcess`) OR, when that fails, by the text of ITS `<name>`
 /// child (an array item keyed by UUID or author-chosen identifier, e.g. `STATUS`,
@@ -816,7 +816,7 @@ fn is_container_name(seg: &str) -> bool {
 }
 
 /// Applies one already-parsed modification to `doc`, rebuilding `doc`'s index fresh each call
-/// (mandatory after any patch - `aod-io`'s own module docs: a patch shifts every later event
+/// (mandatory after any patch - `aod::document`'s own module docs: a patch shifts every later event
 /// index). Returns the [`Operation`] actually performed, for the report.
 fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation, String> {
     if m.structured_modify {

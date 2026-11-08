@@ -43,9 +43,9 @@ Rust lädt keine Plugin-DLLs zur Laufzeit. "Abschaltbar" heißt: beim Bauen wegl
 ### Frontend (`app/ui/src`)
 
 - `core/` gemeinsame Bausteine (Modal, dialogService, notifications, outputBus, shortcuts, errorText, `plugins/registry.ts`, `ui/` Masken: FormDialog, ListDialog, DataTable, ProgressBar).
-- `core/plugins/registry.ts`: Einstiegspunkte für Plugins (Befehle, Menü, Einstellungsseiten, Toolbar, Statusleiste, Baum-Kontextmenü, Dialoge).
-- `features/git/` Git-UI, meldet sich über `registerGitPlugin()` an (nur wenn das Backend das Plugin hat, siehe `App.tsx` und `plugin_list`).
-- `shell/Shell.tsx` Hauptfenster (nur noch Verdrahtung, ca. 750 Zeilen), `shell/ShellPanels.tsx` Panels und Editor-Bereich, `shell/hooks/` die ausgezogenen Hooks (`useShellCommands`, `useTabs`, `useSave`, `useProjects`, `useSelection`, `useGit`, `useDeploy`, `useTranspile` ...). `closeProjects`, `handleTreeSelect`, `openSql`, `openProblem` blieben in Shell.tsx, weil sie quer auf viele Hooks zugreifen. `editors/` ein Editor je Objekttyp.
+- `core/plugins/registry.ts`: Einstiegspunkte für Plugins (Befehle, Menü, Einstellungsseiten, Toolbar, Statusleiste, Baum-Kontextmenü, Dialoge/Panels per Id, Shell-Beiträge). `core/scm.ts`: neutraler Store für den Source-Control-Stand.
+- `features/git/` Git-UI, meldet sich über `registerGitPlugin()` an (nur wenn das Backend das Plugin hat, siehe `features/registerFeatures.ts` und `plugin_list`). Außerhalb von `features/git` importiert nur `test/setup.ts` den Ordner; der Kern holt Dialoge, Panels und den Git-Zustand über das Register und `core/scm.ts`.
+- `shell/Shell.tsx` Hauptfenster (nur noch Verdrahtung, ca. 750 Zeilen), `shell/ShellPanels.tsx` Panels und Editor-Bereich, `shell/hooks/` die ausgezogenen Hooks (`useShellCommands`, `useTabs`, `useSave`, `useProjects`, `useSelection`, `useDeploy`, `useTranspile` ...). `closeProjects`, `handleTreeSelect`, `openSql`, `openProblem` blieben in Shell.tsx, weil sie quer auf viele Hooks zugreifen. `editors/` ein Editor je Objekttyp.
 - Themes: Night Owl, Light, "Lion in der City". Neue UI nutzt nur CSS-Variablen, keine festen Farben.
 
 ### CSS (`app/ui/src`)

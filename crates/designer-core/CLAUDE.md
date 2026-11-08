@@ -28,7 +28,7 @@ Fassade ohne UI: ein offenes Objekt (`ProjectHandle`) und die Brücke zwischen `
 - `ProjectHandle` hält ein `Rc`, ist also nicht `Send`. Darum läuft er im Actor-Thread von `project`.
 - `save` schreibt über `platform::fs::atomic_write`, nie mit `std::fs::write`. Ein UTF-8-BOM der Datei wird gemerkt und beim Speichern wieder geschrieben (Byte-Treue).
 - `plugin-api` und `aod` kennen sich nicht. Nur hier werden die Typen umgewandelt. `Object` und `Array` werden zu `Missing` (der Platzhalter kennt nur Skalare).
-- Der Kopfkommentar in `lib.rs` nennt noch ein Modul `transpiler` (`PlatformTranspilerRunner`) und Pfade `crates/core-model`. Beides gibt es nicht mehr. Ebenso sagen Kommentare in `cli/forge`, `designer_core::transpiler` sei zuständig.
+- Der Kopfkommentar in `lib.rs` und die Kommentare in `cli/forge` sind auf den heutigen Stand gebracht (Module `plugin_bridge`, `plugins`, `project`).
 - `build_plugin_registry` meldet nur den `.js`-Datei-Compiler an. Aktionen und Prüfer kommen von den Aufrufern.
 
 ## Wenn du X ändern willst

@@ -1,6 +1,6 @@
 //! `report` validator registrations (P4, seventh editor family: `ReportEditor`).
 //! Mirrors every prior P4 family's shape (`flatten` -> registry -> `Vec<Diagnostic>`) so
-//! `project_actor.rs`'s `object_type`-indexed `VALIDATORS_BY_OBJECT_TYPE` dispatch can treat
+//! `validator_table.rs`'s `object_type`-indexed `VALIDATORS_BY_OBJECT_TYPE` dispatch can treat
 //! `report` identically to the other object types.
 //!
 //! **Ablageformat (own mini format analysis, this agent, verified against the real corpus - no
@@ -37,7 +37,7 @@
 //! `Organisation_report` = indexed Array) and `images.image` (1 real image on `Salesorder_report`/
 //! `Reminder_report` = un-indexed Object, 3 on `Organisation_report` = indexed Array). Per RISKS.md
 //! R26's now seven-times-documented precedent, handled locally in `flatten`/the two validators
-//! below (Object-vs-Array treated uniformly), not by a `core-model`/`aod-io` change - no new schema
+//! below (Object-vs-Array treated uniformly), not by a `aod::tree`/`aod::document` change - no new schema
 //! knowledge was gained this round that would make a safe generic fix possible, same reasoning
 //! `p4-editor-webservice-notes.md` §3 already gave in detail (re-examined, no new angle found).
 //!
@@ -173,7 +173,7 @@ fn parent_tag(segment: &str) -> &str {
 }
 
 /// The `object_type`-indexed dispatch entry point for `report` diagnostics
-/// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
+/// (`validator_table.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
     let mut registry = designer_core::build_plugin_registry();

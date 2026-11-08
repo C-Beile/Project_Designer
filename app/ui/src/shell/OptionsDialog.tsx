@@ -19,7 +19,7 @@ import { useOptionsPages } from '../core/plugins/registry'
 // transpiler) live on ADITO > General. Pages whose feature does not exist yet keep their
 // controls visible but dimmed, with the reason.
 
-// 'team' kommt aus dem Plugin-Register (Git), siehe features/git/gitPlugin.
+// 'team' kommt aus dem Plugin-Register (Git), siehe das Git-Plugin.
 type Category = 'general' | 'editor' | 'fonts' | 'keymap' | 'appearance' | 'misc' | 'adito' | 'ireport'
 
 const CATEGORIES: { id: string; label: string; order: number }[] = [

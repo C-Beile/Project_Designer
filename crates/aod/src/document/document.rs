@@ -50,7 +50,7 @@ impl AodEvent {
 }
 
 /// An `.aod` document as an ordered list of raw events — the loaded, in-memory form. This is
-/// "Schicht 1" of the two-layer model (`architecture.md` #3): `core-model::PropertyTree`
+/// "Schicht 1" of the two-layer model (`architecture.md` #3): `aod::tree::PropertyTree`
 /// projects a typed view on top of this via the [`crate::document::index::EventIndex`].
 #[derive(Debug, Clone)]
 pub struct AodDocument {

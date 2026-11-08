@@ -21,7 +21,7 @@ import { errorText } from '../core/errorText'
 // **Not wired to the LSP sidecar in this round** (see `lsp_bridge.rs`'s doc comment for why -
 // the bridge commands exist and are reachable, ported near-verbatim from the proven spike, but
 // wiring+re-verifying live Completion/Diagnostics from this component was a deliberate budget
-// tradeoff, documented as an open point in `p4-editor-entity-notes.md`). Syntax highlighting
+// tradeoff, als offener Punkt dokumentiert). Syntax highlighting
 // alone (Monaco's built-in JS support, no LSP needed) is active.
 
 export function JDitoCodeField({

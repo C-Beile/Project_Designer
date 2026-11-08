@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
+import { registerFeaturePlugins } from '../features/registerFeatures'
 import { CrashListener } from '../core/errorHandling'
 import { useTheme } from '../theme/useTheme'
 import { DialogWindowApp } from './DialogWindowApp'
@@ -20,6 +22,17 @@ import '../editors/registerReportBuiltins'
 
 export function WindowRoot({ api, kind, name }: { api: ForgeApi; kind: string; name: string }) {
   useTheme()
+  // Auch dieses Fenster hat sein eigenes Register: Plugins (Git-Dialoge, Panels) erst anmelden, dann zeichnen.
+  const [ready, setReady] = useState(!api.pluginList)
+  useEffect(() => {
+    if (!api.pluginList) return
+    let alive = true
+    void registerFeaturePlugins(api).finally(() => alive && setReady(true))
+    return () => {
+      alive = false
+    }
+  }, [api])
+  if (!ready) return null
   return (
     <>
       <CrashListener api={api} />

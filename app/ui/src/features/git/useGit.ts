@@ -3,12 +3,14 @@ import type { ForgeApi } from '../../api/ForgeApi'
 import { promptDialog } from '../../core/dialogService'
 import { errorText } from '../../core/errorText'
 import { notify } from '../../core/notifications'
-import { diffTitle, refreshScm, type SyncResult } from '../../features/git'
+import { refreshScm } from '../../core/scm'
+import { diffTitle } from './diffTitle'
+import type { SyncResult } from './SyncDialog'
 import type { DiffTarget, GitOutput, TreeNode } from '../../wire/types'
 import { useOsDialog } from '../../windows/useOsDialog'
-import type { SyncWindowResult } from '../../windows/DialogWindowApp'
-import type { CommandMap } from './commandTypes'
-import type { ShellDialog } from './dialogTypes'
+import type { CommandMap } from '../../shell/hooks/commandTypes'
+import type { ShellDialog } from '../../shell/hooks/dialogTypes'
+import type { SyncWindowResult } from './GitWindows'
 
 export interface GitDeps {
   api: ForgeApi

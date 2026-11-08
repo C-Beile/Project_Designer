@@ -1,10 +1,12 @@
-//! `db-layer` — database access for the Forge designer's alias management
-//! and data-model introspection, behind one `DbConnection` trait shared by
-//! MariaDB/MySQL, PostgreSQL and MS SQL.
+//! `database` — Datenbankzugriff für die Alias-Verwaltung und die Datenmodell-Abfragen des
+//! Designers, hinter einem Trait `DbConnection` für MariaDB/MySQL, PostgreSQL und MS SQL.
 //!
-//! This crate is pure infrastructure with no dependency on the other P3
-//! crates (`core-model`, `aod-io`, ...): it only knows how to talk to a
-//! database server, not how the designer's project model is structured.
+//! Die Treiber hängen von keiner Fachcrate ab (`aod`, `project`). Sie sprechen nur mit einem
+//! Datenbankserver und kennen das Projektmodell nicht.
+//!
+//! Hinweis: `DbManager` (`db_session.rs`) verbindet heute nur über `mariadb::connect`. Die
+//! Postgres- und MSSQL-Treiber sind (noch) nicht angeschlossen. Transaktionen setzen nur
+//! `mariadb` und `mock` um. Die anderen Treiber melden `DbError::Unsupported`.
 
 pub mod connection;
 pub mod error;

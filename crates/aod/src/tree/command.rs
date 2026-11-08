@@ -1,6 +1,6 @@
 //! Patch-level undo primitive (architecture.md §3, ADR-0005 point 2).
 //!
-//! A `FileCommand` is deliberately the *only* unit of change `core-model` hands upward: it never
+//! A `FileCommand` is deliberately the *only* unit of change `aod::tree` hands upward: it never
 //! exposes a tree snapshot. Undo/redo cost is therefore a handful of byte ranges per touched
 //! file, not a copy of the project tree - the whole point of the patch-level (not tree-level)
 //! design ADR-0005 argues for.

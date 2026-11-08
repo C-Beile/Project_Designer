@@ -1,6 +1,6 @@
 // Windows Credential Manager access for DB login credentials (architecture.md §8). `target` is
 // an opaque caller-chosen key (e.g. "forge/db/<alias>") - this trait does not impose a naming
-// scheme, that belongs to `db-layer`/`designer-core`.
+// scheme, that belongs to `database`/`designer-core`.
 
 use crate::error::PlatformError;
 

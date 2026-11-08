@@ -1,12 +1,12 @@
 //! The narrow trait boundary to the document layer (architecture.md §3, "Schicht 1").
 //!
-//! `aod-io` builds `AodDocument` (the byte-treu event list) in parallel with this crate. Rather
+//! `aod::document` builds `AodDocument` (the byte-treu event list) in parallel with this crate. Rather
 //! than depend on its concrete types - which would couple two crates being built at the same
-//! time by different agents, and would leak `aod-io`'s internal event representation into
-//! `core-model` - `core-model` defines this trait against its *own* vocabulary (`NodePath`,
-//! `ByteRange`) and depends only on that. `aod-io` (or a thin adapter over it) implements this
+//! time by different agents, and would leak `aod::document`'s internal event representation into
+//! `aod::tree` - `aod::tree` defines this trait against its *own* vocabulary (`NodePath`,
+//! `ByteRange`) and depends only on that. `aod::document` (or a thin adapter over it) implements this
 //! trait during the later integration round; until then, `crate::tree::testing::InMemoryEventSource`
-//! stands in for it so `PropertyTree` can be built and tested without waiting on `aod-io`.
+//! stands in for it so `PropertyTree` can be built and tested without waiting on `aod::document`.
 //!
 //! Every method answers exactly one question the edit-flow in architecture.md §3 needs, and
 //! nothing else - keeping the surface small is what makes both sides free to keep changing their

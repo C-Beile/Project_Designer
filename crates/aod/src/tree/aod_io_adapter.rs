@@ -1,5 +1,5 @@
 //! Real `EventSource` implementation backed by `crate::document::AodDocument` (integration round,
-//! designer-core). Closes the seam `event_source.rs` documents: `core-model` now has a concrete
+//! designer-core). Closes the seam `event_source.rs` documents: `aod::tree` now has a concrete
 //! projection source instead of only `testing::InMemoryEventSource`.
 //!
 //! ## Coordinate translation
@@ -22,16 +22,16 @@
 //! `ByteRange` into the fully serialized document, matching `command::FileCommand`). This
 //! adapter bridges the two by serializing each event individually (`crate::document::serialize` performs
 //! no cross-event formatting - each `AodEvent` converts to bytes independently, verified by
-//! `aod-io`'s own round-trip corpus test) and accumulating the byte offsets, giving an exact
-//! `Vec<Range<usize>>` parallel to the event list without needing any private `aod-io` API.
+//! `aod::document`'s own round-trip corpus test) and accumulating the byte offsets, giving an exact
+//! `Vec<Range<usize>>` parallel to the event list without needing any private `aod::document` API.
 //!
 //! ## Scope of the scalar edit path
 //!
 //! Only the `Text`-content scalar case (`<foo>bar</foo>`) is wired through to a real document
 //! mutation (`apply_scalar_text_replace`, used by `set_scalar`/`save()` in the designer-core
 //! facade). The typed-scalar attribute case (`<foo v="..."/>`) is read (`value_span` resolves
-//! it correctly, tested below) but `aod-io`'s public `patch` module has no
-//! "replace one attribute's value" primitive yet - adding one would mean touching `aod-io`'s
+//! it correctly, tested below) but `aod::document`'s public `patch` module has no
+//! "replace one attribute's value" primitive yet - adding one would mean touching `aod::document`'s
 //! core patch logic, which this round's guardrail reserves for cases with no adapter-side
 //! alternative. Flagged as an open point for the next round rather than silently unsupported.
 
@@ -235,7 +235,7 @@ impl EventSource for AodDocumentSource {
     }
 
     fn indent_for(&self, parent: &NodePath) -> Vec<u8> {
-        // Quirk handling (e.g. customProperties) is core-model's own responsibility, applied by
+        // Quirk handling (e.g. customProperties) is aod::tree's own responsibility, applied by
         // `codec::indent_exception` on top of this default - see tree.rs::insert.
         match self.translate(parent) {
             Some(ep) => crate::document::patch::standard_indent(ep.element_depth()),

@@ -1,9 +1,9 @@
 //! Wire format between the Rust core and the TypeScript frontend.
 //!
 //! `aod::tree::value::PropertyValue`/`ScalarValue` and `aod::tree::path::NodePath` are not
-//! `serde`-serializable (deliberately - `core-model` has no frontend/IPC concern, see
+//! `serde`-serializable (deliberately - `aod::tree` has no frontend/IPC concern, see
 //! architecture.md ADR-0002 "Kern ohne UI"). This module is the one, single translation layer
-//! between those real types and JSON, living in the app crate rather than in `core-model` -
+//! between those real types and JSON, living in the app crate rather than in `aod::tree` -
 //! keeping the generic Tauri command surface (architecture.md §6) the only place that needs to
 //! know about IPC shapes at all.
 
@@ -68,7 +68,7 @@ impl WireValue {
 /// Parses the dotted/indexed path notation `NodePath`'s own `Display` impl produces
 /// (`"entityFields.entityField[2].valueProcess"`, root is `"$"` or `""`) back into a real
 /// `NodePath`. This is the exact inverse of `path.rs`'s `Display` impl, kept in the app crate
-/// (not `core-model`) since it is purely an IPC-string-format concern.
+/// (not `aod::tree`) since it is purely an IPC-string-format concern.
 pub fn parse_node_path(raw: &str) -> Result<NodePath, String> {
     if raw.is_empty() || raw == "$" {
         return Ok(NodePath::root());

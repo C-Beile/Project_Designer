@@ -1,10 +1,11 @@
-import { pathKey } from '../../platform/pathKey'
+import { pathKey } from '../platform/pathKey'
 import { useSyncExternalStore } from 'react'
-import type { ForgeApi } from '../../api/ForgeApi'
-import type { ScmFile, ScmOverview } from '../../wire/types'
-import { errorText } from '../../core/errorText'
+import type { ForgeApi } from '../api/ForgeApi'
+import type { ScmFile, ScmOverview } from '../wire/types'
+import { errorText } from './errorText'
 
-// One shared picture of the Git status of the active project: the Source Control panel, the colours
+// Neutral im Kern: Ein Source-Control-Plugin (Git) setzt mit setScmProvider, woher der Stand kommt.
+// Ohne Plugin bleibt der Store leer. One shared picture of the Git status of the active project: the Source Control panel, the colours
 // in the project tree and the editor tabs, the status bar and the editor gutters all read it. It is
 // refreshed when a project opens, after saves and Git actions, when the window gets focus and when
 // the project files changed; never on a timer of its own.
@@ -44,7 +45,21 @@ export function getScm(): State {
 
 let inflight = 0
 
+/** Liefert den Stand eines Projekts; das SCM-Plugin setzt sie (Git: `api.scmStatus`). */
+export type ScmProvider = (api: ForgeApi, root: string) => Promise<ScmOverview>
+let provider: ScmProvider | null = null
+
+/** Meldet die Quelle des Standes an; gibt die Abmelde-Funktion zurück. */
+export function setScmProvider(p: ScmProvider): () => void {
+  provider = p
+  return () => {
+    if (provider === p) provider = null
+  }
+}
+
 export async function refreshScm(api: ForgeApi, root: string): Promise<void> {
+  const source = provider
+  if (!source) return
   if (!root.trim()) {
     set({ root: '', overview: null, error: null, loading: false, version: state.version + 1 })
     return
@@ -52,7 +67,7 @@ export async function refreshScm(api: ForgeApi, root: string): Promise<void> {
   const ticket = ++inflight
   set({ root, loading: true })
   try {
-    const overview = await api.scmStatus(root)
+    const overview = await source(api, root)
     if (ticket === inflight) set({ overview, error: null, loading: false, version: state.version + 1 })
   } catch (e) {
     if (ticket === inflight) set({ overview: null, error: errorText(e), loading: false, version: state.version + 1 })

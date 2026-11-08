@@ -26,7 +26,7 @@ Die Reiter des Editorbereichs: Zustand (`tabModel.ts`) und was ein Reiter zeigt.
 - `EditorTabBar` zeigt die Leiste. Der Zustand lebt in `shell/hooks/useTabs.ts`.
 
 ## Abhängigkeiten
-- Rein: `editors/registry` (Typ), `features/git` (Diff, `useScm`), `services/SqlEditor` (lazy), `theme/*` (Monaco), `ForgeApi`.
+- Rein: `editors/registry` (Typ), `core/scm` (`useScm`), `core/plugins/registry` (Diff-Ansicht `git.diffView` per `useDialog`), `services/SqlEditor` (lazy), `theme/*` (Monaco), `ForgeApi`.
 - Raus: `shell/`, `windows/`, `properties/codeSave.ts` (`tabModel`), `windows/protocol.ts` (`SubTab`).
 
 ## Regeln und Fallen

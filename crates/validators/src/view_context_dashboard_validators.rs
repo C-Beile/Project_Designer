@@ -161,7 +161,7 @@ impl Validator for OverlappingDashletPositionValidator {
 
         for idx in dashlet_indices {
             // `<xPos v="0" />` projects as a *leaf scalar* directly at the `xPos` path itself
-            // (`core-model/src/aod_io_adapter.rs::scalar_from_empty_tag`/`project_element` -
+            // (`aod/src/tree/aod_io_adapter.rs::scalar_from_empty_tag`/`project_element` -
             // the `v` attribute is how the XML spells a typed scalar, it is not a nested field
             // in the value tree) - no `.v` suffix here.
             let x_path = format!("defaultDashlets.neonDashlet[{idx}].uiConfiguration.xPos");

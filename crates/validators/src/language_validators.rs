@@ -1,6 +1,6 @@
 //! `language` validator registrations (P4, fourth editor family: `LanguageEditor`).
 //! Mirrors `alias_validators.rs`'s shape on purpose (`flatten` -> registry -> `Vec<Diagnostic>`)
-//! so `project_actor.rs`'s `object_type`-indexed `VALIDATORS_BY_OBJECT_TYPE` dispatch can treat
+//! so `validator_table.rs`'s `object_type`-indexed `VALIDATORS_BY_OBJECT_TYPE` dispatch can treat
 //! `language` identically to the other object types: one `pub fn diagnostics_for(&CoreValue) ->
 //! Vec<Diagnostic>` entry point.
 //!
@@ -118,7 +118,7 @@ impl Validator for EmptyTranslationValueValidator {
     }
 }
 
-/// Matches both the indexed form (`keyValueMap.stringEntry[3].name`, 2+ entries - `core-model`'s
+/// Matches both the indexed form (`keyValueMap.stringEntry[3].name`, 2+ entries - `aod::tree`'s
 /// `aod_io_adapter::group_children` only wraps same-tag siblings into an `Array` when there is
 /// more than one occurrence) and the un-indexed form (`keyValueMap.stringEntry.name`, exactly one
 /// entry - the common real-world shape for a sparsely-translated language file, e.g. the real
@@ -133,7 +133,7 @@ fn is_string_entry_value_path(path: &str) -> bool {
 }
 
 /// The `object_type`-indexed dispatch entry point for `language` diagnostics
-/// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
+/// (`validator_table.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
     let mut registry = designer_core::build_plugin_registry();
@@ -196,7 +196,7 @@ mod tests {
 
     #[test]
     fn single_entry_language_file_uses_the_unindexed_path_shape_and_is_still_checked() {
-        // core-model's real projector (aod_io_adapter::group_children) only wraps same-tag
+        // aod::tree's real projector (aod_io_adapter::group_children) only wraps same-tag
         // siblings into an Array when there is more than one occurrence - a language file with
         // exactly one stringEntry (the real `_____LANGUAGE_pl` fixture's shape) projects
         // `keyValueMap.stringEntry` as a plain Object, not `keyValueMap.stringEntry[0]`. Build

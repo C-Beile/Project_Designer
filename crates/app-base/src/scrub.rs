@@ -34,7 +34,7 @@ pub fn scrub(text: &str) -> String {
     out
 }
 
-/// Percent-encodes everything but unreserved characters: `db-layer` builds a `mysql://` URL from
+/// Percent-encodes everything but unreserved characters: `database` builds a `mysql://` URL from
 /// user and password, so characters like `@`, `/` or `#` in a password must not break it.
 pub fn percent_encode(s: &str) -> String {
     let mut out = String::with_capacity(s.len());

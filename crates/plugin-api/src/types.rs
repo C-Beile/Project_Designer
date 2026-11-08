@@ -1,17 +1,17 @@
 //! Placeholder domain types for the plugin-api crate.
 //!
-//! `plugin-api` is deliberately built without a dependency on `core-model`/`aod-io`/`refs`
+//! `plugin-api` is deliberately built without a dependency on `aod::tree`/`aod::document`/`refs`
 //! (see architecture.md §2 and the scope guardrail in this crate's owning agent brief), so the
 //! trait signatures below are expressed against small, self-contained stand-ins rather than the
 //! real project-model types. The intent is that a later integration pass swaps these placeholders
-//! for the real `core-model` types (see `PROJECT\20_architecture\p3-plugin-api-notes.md` for
+//! for the real `aod::tree` types (see `PROJECT\20_architecture\p3-plugin-api-notes.md` for
 //! the concrete mapping proposal) without touching the trait shapes themselves.
 
 use std::collections::HashMap;
 use std::ops::Range;
 
 /// Coarse object family, mirroring the editor families found in the feature-matrix (Entity,
-/// View, Context, Dashboard, ...). Kept as a placeholder enum here; the real `core-model` type
+/// View, Context, Dashboard, ...). Kept as a placeholder enum here; the real `aod::tree` type
 /// is expected to be richer (e.g. carrying schema metadata).
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ObjectType {
@@ -30,12 +30,12 @@ pub enum ObjectType {
     Preferences,
     /// Escape hatch for object families not yet enumerated here, keyed by their design-time name
     /// (e.g. "process", "aliasDefinition"). Avoids having to extend this enum for every new
-    /// family discovered while `core-model`'s real type inventory is still in flux.
+    /// family discovered while `aod::tree`'s real type inventory is still in flux.
     Other(String),
 }
 
 /// A single typed scalar value on a property node. Minimal stand-in for whatever value
-/// representation `core-model::PropertyTree` ends up using.
+/// representation `aod::tree::PropertyTree` ends up using.
 #[derive(Debug, Clone, PartialEq)]
 pub enum PropertyValue {
     String(String),
@@ -44,7 +44,7 @@ pub enum PropertyValue {
     Missing,
 }
 
-/// Placeholder for `core-model::PropertyNode`: a single addressable node in a project object,
+/// Placeholder for `aod::tree::PropertyNode`: a single addressable node in a project object,
 /// identified by a slash-separated path (e.g. `"Order_entity/entityFields/STATUS/title"`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct PropertyNode {
@@ -87,7 +87,7 @@ impl Diagnostic {
 
 /// Placeholder for the whole in-memory project (what a `Validator` inspects project-wide, e.g.
 /// reference-integrity checks that span multiple objects). Flattened to a node list here; the
-/// real `core-model` equivalent will be a proper tree plus a `aod::refs::RefGraph`.
+/// real `aod::tree` equivalent will be a proper tree plus a `aod::refs::RefGraph`.
 #[derive(Debug, Clone, Default)]
 pub struct ProjectModel {
     pub nodes: Vec<PropertyNode>,
@@ -110,7 +110,7 @@ pub enum LinkedFileExtension {
 /// Reference to a linked file to be resolved during the copy phase (transpiler.md §4).
 ///
 /// `source_content` carries the already-loaded file bytes as text. This crate has no file-IO
-/// capability of its own (that is `platform`'s/`aod-io`'s job) — callers are expected to read the
+/// capability of its own (that is `platform`'s/`aod::document`'s job) — callers are expected to read the
 /// file via `platform::fs` and hand the content in here.
 #[derive(Debug, Clone, PartialEq)]
 pub struct LinkedFileRef {
@@ -154,7 +154,7 @@ impl Transaction {
 }
 
 /// Placeholder for the mutable context an `Action` runs against (target object, parameters).
-/// Deliberately untyped/string-keyed here since the real shape depends on `core-model`'s tree
+/// Deliberately untyped/string-keyed here since the real shape depends on `aod::tree`'s tree
 /// API, which this crate does not depend on.
 #[derive(Debug, Clone, Default)]
 pub struct ActionContext {

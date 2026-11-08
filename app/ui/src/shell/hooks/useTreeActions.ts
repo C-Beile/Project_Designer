@@ -8,7 +8,7 @@ import { diskFolderOf, objectLayout, type TreeMenuContext } from '../../tree/con
 import type { TreeNode } from '../../wire/types'
 import { useOsDialog } from '../../windows/useOsDialog'
 import { openDialogWindow, osWindowsAvailable } from '../../windows/windowService'
-import type { GitOutput } from '../../wire/types'
+import { runCommandById } from '../../core/plugins/registry'
 import type { OutputLine, OutputSubTab } from '../OutputPanel'
 import { nodeKind } from '../shellHelpers'
 import { listenBackend } from './backendEvent'
@@ -34,8 +34,6 @@ export interface TreeActionsDeps {
   startRefactoring: (mode: 'usages' | 'delete', node: TreeNode, project: string) => Promise<void>
   startRename: (node: TreeNode, project: string, newName: string) => Promise<void>
   startDeploy: (buildFirst: boolean) => Promise<void>
-  openGit: (tab: 'changes' | 'history' | 'branches') => void
-  runGit: (label: string, action: () => Promise<GitOutput>) => Promise<void>
   runLiquibaseUpdate: (node: TreeNode, project: string) => Promise<void>
   usageNode: TreeNode | null
   setPendingOpen: (path: string | null) => void
@@ -46,7 +44,7 @@ export interface TreeActionsDeps {
 // Context menu of the Projects tree and what hangs off it: the open popup, the copied object or
 // file, the confirmations, file operations, npm and the New / Rename / Import-Export windows.
 export function useTreeActions(d: TreeActionsDeps) {
-  const { api, root, projects, tabState, setTabState, closeTabNow, activateNode, handleOpen, projectOf, showToolWindow, setOutputSub, appendLog, closeProjects, transpile, gitActive, startRefactoring, startRename, startDeploy, openGit, runGit, runLiquibaseUpdate, usageNode, setPendingOpen, setStatus, setReloadToken } = d
+  const { api, root, projects, tabState, setTabState, closeTabNow, activateNode, handleOpen, projectOf, showToolWindow, setOutputSub, appendLog, closeProjects, transpile, gitActive, startRefactoring, startRename, startDeploy, runLiquibaseUpdate, usageNode, setPendingOpen, setStatus, setReloadToken } = d
   // Tree context menu: the open popup, the object copied with Copy and the two confirmations.
   const [ctxMenu, setCtxMenu] = useState<{ node: TreeNode; top: TreeNode; x: number; y: number } | null>(null)
   const [clipboard, setClipboard] = useState<TreeMenuContext['clipboard']>(null)
@@ -246,19 +244,19 @@ export function useTreeActions(d: TreeActionsDeps) {
           void runLiquibaseUpdate(node, project)
           return
         case 'git.commit':
-          if (gitActive) openGit('changes')
+          if (gitActive) runCommandById('team.commit')
           return
         case 'git.pull':
-          if (gitActive) void runGit('Pull', () => api.gitPull(root))
+          if (gitActive) runCommandById('team.pull')
           return
         case 'git.push':
-          if (gitActive) void runGit('Push', () => api.gitPush(root))
+          if (gitActive) runCommandById('team.push')
           return
         case 'git.branches':
-          if (gitActive) openGit('branches')
+          if (gitActive) runCommandById('team.switchBranch')
           return
         case 'git.history':
-          if (gitActive) openGit('history')
+          if (gitActive) runCommandById('team.history')
           return
       }
     },

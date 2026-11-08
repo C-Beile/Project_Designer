@@ -4,8 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMockForgeApi } from '../../test/mockApi'
 import { diffEditors, resetEditors } from '../../test/monacoMock'
 import { ScmPanel } from './ScmPanel'
+import { registerGitPlugin } from './gitPlugin'
 import { DiffView } from './DiffView'
-import { _resetScmForTests, codeOf, decorationFor, indexOf } from './scmStore'
+import { _resetScmForTests, codeOf, decorationFor, indexOf } from '../../core/scm'
 import { DialogHost, _resetDialogsForTests } from '../../core/dialogService'
 import { clearNotifications, getNotifications } from '../../core/notifications'
 import { ProjectTree } from '../../tree/ProjectTree'
@@ -210,5 +211,21 @@ describe('Diff tab', () => {
     expect(diffEditors[0]).toMatchObject({ original: 'old\n', modified: 'new\n', language: 'json' })
     expect(diffEditors[0].options).toMatchObject({ readOnly: true, originalEditable: false })
     expect(api.gitCalls).toContain('diff:unstaged:notes.json')
+  })
+})
+
+describe('SCM provider in the core store', () => {
+  it('stays empty without a provider and fills from the provider set by the plugin', async () => {
+    const { setScmProvider, refreshScm, getScm } = await import('../../core/scm')
+    const api = createMockForgeApi({ projectTree: [], documents: {}, scm: overview() })
+    const unset = registerGitPlugin()
+    unset()
+    await refreshScm(api, ROOT)
+    expect(getScm().overview).toBeNull()
+    const off = setScmProvider(async () => overview())
+    await refreshScm(api, ROOT)
+    expect(getScm().overview).not.toBeNull()
+    off()
+    registerGitPlugin()
   })
 })

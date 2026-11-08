@@ -26,13 +26,14 @@ Eigene Betriebssystem-Fenster: schwebende Panels, Dialoge, verschobene Editoren.
 - Hauptfenster-Seite: `shell/hooks/useFloatingWindows.ts`, `useEditorWindows`, `useDialogWindows.ts`.
 
 ## Abhängigkeiten
-- Rein: `@tauri-apps/api` (nur `windowService.ts`), `shell/*` (Dialoge), `features/git`, `editors/registry`, `tabs/`, `properties/`, `ForgeApi`.
+- Rein: `@tauri-apps/api` (nur `windowService.ts`), `shell/*` (Dialoge), `core/plugins/registry` (Git-Dialoge und -Panels per `getDialog`), `core/scm`, `features/registerFeatures` (meldet die Plugins an), `editors/registry`, `tabs/`, `properties/`, `ForgeApi`.
 - Raus: `shell/`, `main.tsx`.
 
 ## Regeln und Fallen
 - Alles reist als Tauri-Event (`EVENTS` in `protocol.ts`). Ein Fenster hat keinen eigenen Projektzustand. Es bekommt `MainState` und schickt `FloatAction` zurück.
 - Ein Dokument ist in genau einem Fenster offen.
 - Ohne Tauri (Browser, Tests) gibt `osWindowsAvailable()` false. Dann laufen die eingebetteten Dialoge. Tests setzen ein Fake mit `setWindowBackend` (`src/test/fakeWindowBackend.ts`).
+- Jedes OS-Fenster hat sein eigenes Register. `WindowRoot` meldet die Plugins an (`registerFeaturePlugins`), bevor es zeichnet. Git-Fenster (`git`, `sync`, `commitdiff`) und das scm-Panel kommen über `getDialog`/`useDialog`; ohne Plugin bleiben sie leer.
 - Das Ergebnis eines Dialog-Fensters wird als JSON-Text übertragen. Es muss serialisierbar sein.
 - Neue Fenster brauchen einen passenden Namen in `app/src-tauri/capabilities/default.json` (`float-*`, `dialog-*`, `editor-*` sind erlaubt).
 

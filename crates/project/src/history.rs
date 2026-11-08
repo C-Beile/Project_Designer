@@ -1,9 +1,9 @@
 //! Per-project undo/redo history (architecture.md §3, Ziel A.5).
 //!
 //! **Deliberate deviation from `aod::tree::transaction::UndoStack`, documented as an open
-//! `designer-core` API gap in `p4-editor-entity-notes.md`:** `core-model` already ships a real,
+//! `designer-core` API gap in `p4-editor-entity-notes.md`:** `aod::tree` already ships a real,
 //! tested `UndoStack<Transaction>` operating on patch-level `FileCommand` byte ranges
-//! (`core_model/src/transaction.rs`), which is the architecturally "correct" mechanism per
+//! (`aod/src/tree/transaction.rs`), which is the architecturally "correct" mechanism per
 //! architecture.md §3. But `designer_core::ProjectHandle` does not expose a way to *apply* an
 //! arbitrary `FileCommand`/`Transaction` back onto its live document - only
 //! `set_property(path, ScalarValue)` (which recomputes a fresh scalar text-replace every time)
@@ -15,7 +15,7 @@
 //! entry remembers the old and new `ScalarValue` for one `NodePath`, and undo/redo simply re-call
 //! `set_property` with the other value. Because `set_property`'s write-back
 //! (`apply_scalar_text_replace`) recomputes the target byte range fresh from the *current*
-//! document on every call (see `core-model/src/aod_io_adapter.rs`), replaying the original value
+//! document on every call (see `aod/src/tree/aod_io_adapter.rs`), replaying the original value
 //! through the same call reproduces the exact original bytes - verified end-to-end by
 //! `tests/commands.rs::undo_then_redo_reproduces_the_exact_original_and_edited_bytes`. This is a
 //! real, verified property for the single-file, single-field-at-a-time edits this round's Entity

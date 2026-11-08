@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
 import type { ForgeApi } from '../../api/ForgeApi'
 import { notify } from '../../core/notifications'
-import { refreshScm } from '../../features/git'
+import { runCommandById } from '../../core/plugins/registry'
+import { refreshScm } from '../../core/scm'
 import { normId } from '../../problems/problemStore'
 import { codeTabNode } from '../../properties/codeSave'
 import { objectRoot } from '../../properties/objectRoot'
 import { findObject } from '../../core/treeIndex'
-import type { DiffTarget, TreeNode, WireValue } from '../../wire/types'
+import type { TreeNode, WireValue } from '../../wire/types'
 import type { useEditorWindows } from '../../windows/useEditorWindows'
 import { useFloatBridge } from '../../windows/useFloatBridge'
 import { EVENTS, type FloatAction, type FloatView, type Geometry, type MainState } from '../../windows/protocol'
@@ -25,7 +26,6 @@ export interface FloatingDeps {
   treeRef: MutableRefObject<TreeNode[]>
   selectedId: string | null
   handleOpen: (node: TreeNode, top?: TreeNode) => Promise<void>
-  openDiff: (target: DiffTarget) => void
   openSql: (sql: string) => void
   markUnsaved: (nodeId: string, dirty: boolean) => void
   refreshDiagnostics: (nodeId: string) => void
@@ -56,7 +56,7 @@ export interface FloatingDeps {
 
 // Panels in windows of their own: what they draw from, and what they send back.
 export function useFloatingWindows(d: FloatingDeps) {
-  const { api, root, tree, treeRef, selectedId, handleOpen, openDiff, openSql, markUnsaved, refreshDiagnostics, resetNavRef, activateNavRef, editorWindowsRef } = d
+  const { api, root, tree, treeRef, selectedId, handleOpen, openSql, markUnsaved, refreshDiagnostics, resetNavRef, activateNavRef, editorWindowsRef } = d
   const { setNavSel, setAliasSel, setTreeSelection, setValue, setSheetVersion, setCanUndo, setStatus, setReloadToken } = d
   const { inspected, inspectedKind, inspectedObject, focusLabel, elementSel, sheetVersion, objectsByType, layout, projectsTab, setProjectsTab, logs } = d
   const [floatingViews, setFloatingViews] = useState<string[]>([])
@@ -127,7 +127,7 @@ export function useFloatingWindows(d: FloatingDeps) {
           setReloadToken((t) => t + 1)
           return
         case 'openDiff':
-          openDiff(a.target)
+          runCommandById('git.openDiff', a.target)
           return
         case 'openSql':
           openSql(a.sql)
@@ -150,7 +150,7 @@ export function useFloatingWindows(d: FloatingDeps) {
         }
       }
     },
-    [api, root, selectedId, tree, handleOpen, openDiff, openSql, markUnsaved, refreshDiagnostics],
+    [api, root, selectedId, tree, handleOpen, openSql, markUnsaved, refreshDiagnostics],
   )
   const bridge = useFloatBridge({ root, state: mainState, onAction: onFloatAction, onError: (m) => notify(m, { kind: 'error', timeoutMs: 10000 }) })
   floatApiRef.current = bridge

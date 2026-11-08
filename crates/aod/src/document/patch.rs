@@ -1,4 +1,4 @@
-//! Event-level patch operations: the three primitives `core-model::PropertyTree` builds edits
+//! Event-level patch operations: the three primitives `aod::tree::PropertyTree` builds edits
 //! on top of (architecture.md #3 "Edit-Fluss"). Each operation mutates only the events it must;
 //! every other event keeps its original bytes, which is what makes "save without edits produces
 //! an empty diff" (ADR-0002) hold once these are wired into a real edit path.

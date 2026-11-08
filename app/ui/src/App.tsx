@@ -13,8 +13,7 @@ import './editors/registerApplicationBuiltins'
 import './editors/registerWebserviceBuiltins'
 import './editors/registerReportBuiltins'
 import { useEffect, useState } from 'react'
-import { registerGitPlugin } from './features/git'
-import { isPluginAvailable } from './core/plugins/registry'
+import { registerFeaturePlugins } from './features/registerFeatures'
 
 // Entry component: registers every editor family with the editor registry and hosts the main
 // window shell (menu bar, toolbar, docking layout, status bar - see shell/Shell.tsx).
@@ -26,15 +25,7 @@ function usePluginsReady(api: ForgeApi): boolean {
   useEffect(() => {
     if (!api.pluginList) return
     let alive = true
-    api
-      .pluginList()
-      .then((list) => {
-        if (list.some((p) => p.id === 'git' && p.available) && !isPluginAvailable('git')) registerGitPlugin()
-      })
-      .catch(() => {
-        if (!isPluginAvailable('git')) registerGitPlugin()
-      })
-      .finally(() => alive && setReady(true))
+    void registerFeaturePlugins(api).finally(() => alive && setReady(true))
     return () => {
       alive = false
     }

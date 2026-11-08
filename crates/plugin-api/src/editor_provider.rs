@@ -8,7 +8,7 @@ use crate::types::{Diagnostic, ObjectType, PropertyNode};
 /// One implementation per editor family (Entity-Editor, View-Canvas, Dashboard-Canvas,
 /// Code-Editor, ...), registered once in `PluginRegistry` (architecture.md §6). The core only
 /// ever depends on this trait, never on a concrete editor technology — a new editor family
-/// requires no change to `core-model`/`aod-io`/`refs`, only a new registration.
+/// requires no change to `aod::tree`/`aod::document`/`refs`, only a new registration.
 pub trait EditorProvider {
     /// Object families this provider claims responsibility for.
     fn supported_types(&self) -> &[ObjectType];

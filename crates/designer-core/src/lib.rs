@@ -1,27 +1,11 @@
-//! `designer-core` - the facade crate bundling every P3 crate into one public API, usable and fully
-//! testable without any UI (ADR-0002 "Kern ohne UI"; architecture.md §1). CLI `forge` and the
-//! later Tauri shell are both thin consumers of this crate's surface; neither depends on the
-//! individual P3 crates directly, and no business logic lives in either of them (architecture.md
-//! §1 "Grundregel").
+//! `designer-core` — Fassade ohne UI. Bündelt die Kern-Crates in einer öffentlichen API.
+//! `cli/forge`, `validators` und `project` bauen darauf auf.
 //!
-//! ## What is *really* wired here (not just re-exported), per this round's brief
-//!
-//! - [`aod::tree::AodDocumentSource`] (`crates/core-model/src/aod_io_adapter.rs`): a real
-//!   `aod::tree::EventSource` implementation over `aod::document::AodDocument`, replacing
-//!   `aod::tree::testing::InMemoryEventSource` for actual `.aod` files. See that module's docs
-//!   for the coordinate-translation and byte-offset bridging it does.
-//! - [`transpiler::PlatformTranspilerRunner`] (`crates/transpiler/src/platform_runner.rs`): a
-//!   second `transpiler::TranspilerRunner`, backed by `platform::ProcessSpawner` instead of
-//!   `std::process::Command`, added alongside the existing verified `NbexecTranspilerRunner`.
-//! - [`plugin_bridge`]: conversion functions between `core-model`'s real project-model types and
-//!   `plugin-api`'s deliberately independent placeholder types.
-//! - [`project::ProjectHandle::save`]: the real architecture.md §4 persistence path -
-//!   `aod::document::serialize` -> `platform::fs::atomic_write` - not a direct `std::fs::write`.
-//!
-//! [`project::open_project`]/[`project::ProjectHandle`] is this round's minimal, real
-//! end-to-end proof that all of the above actually work together against a real, on-disk `.aod`
-//! file (see `crates/designer-core/tests` in `project.rs` for the load -> edit -> save -> reload and
-//! the unedited-save-is-byte-identical tests).
+//! - [`project::open_project`] / [`project::ProjectHandle`]: eine offene `.aod`-Datei laden,
+//!   ändern und speichern. Gespeichert wird über `aod::document::serialize` und
+//!   `platform::fs::atomic_write`.
+//! - [`plugin_bridge`]: Umwandlung der `aod`-Typen in die Platzhalter-Typen von `plugin-api`.
+//! - [`plugins::build_plugin_registry`]: baut die `PluginRegistry` mit den eingebauten Teilen.
 
 pub mod plugin_bridge;
 pub mod plugins;

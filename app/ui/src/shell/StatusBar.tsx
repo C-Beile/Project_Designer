@@ -1,5 +1,5 @@
 import { useCallback, useState, useSyncExternalStore } from 'react'
-import { useStatusBarItems } from '../core/plugins/registry'
+import { usePluginData, useStatusBarItems } from '../core/plugins/registry'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
 import { getEditorStatus, goToLine, subscribeEditorStatus, toggleOvertype } from '../theme/monacoActions'
@@ -59,7 +59,7 @@ export function StatusBar({
   onShowNotifications?: () => void
   onShowServices?: () => void
   onCloseTunnels?: () => void
-  /** Daten für Plugin-Beiträge, je Plugin-Id (z. B. `git`); die Shell füllt sie, die Beiträge lesen sie. */
+  /** Daten für Plugin-Beiträge, je Plugin-Id (z. B. `git`). Normal setzen Plugins sie selbst mit `setPluginData`; diese Prop hat Vorrang. */
   pluginData?: Record<string, unknown>
 }) {
   const editor = useSyncExternalStore(subscribeEditorStatus, getEditorStatus)
@@ -111,6 +111,8 @@ export function StatusBar({
     )
   }
 
+  const registryData = usePluginData()
+  const slotData = { ...registryData, ...pluginData }
   const leftItems = useStatusBarItems('left')
   const rightItems = useStatusBarItems('right')
   const caretText = editor.hasEditor ? `${editor.line}:${editor.column}` : ''
@@ -124,7 +126,7 @@ export function StatusBar({
         {message}
       </span>
       {leftItems.map((i) => (
-        <i.component key={i.id} data={pluginData ?? {}} openMenu={openMenu} />
+        <i.component key={i.id} data={slotData} openMenu={openMenu} />
       ))}
       <button
         type="button"
@@ -160,7 +162,7 @@ export function StatusBar({
         {'✉'}
       </button>
       {rightItems.map((i) => (
-        <i.component key={i.id} data={pluginData ?? {}} openMenu={openMenu} />
+        <i.component key={i.id} data={slotData} openMenu={openMenu} />
       ))}
       <button type="button" className="forge-status-btn forge-status-cell" title="Insert or overtype mode (click or Insert key to switch)" onClick={() => toggleOvertype()} disabled={!editor.hasEditor}>
         {editor.overtype ? 'OVR' : 'INS'}

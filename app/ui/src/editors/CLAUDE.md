@@ -57,7 +57,7 @@ Ein Editor je Objekttyp (`object_type` aus dem Baum). Die Registry ordnet Typ un
 - Ein Editor schreibt Änderungen über `api` und gibt den neuen Baum mit `onTreeChange` zurück. Er hält keinen eigenen Projektzustand.
 - Text-Ops (`languageEntries`, `applicationTree`, `viewFields` ...) ändern nur die betroffenen Zeilen. Alle anderen Bytes der `.aod` müssen gleich bleiben.
 - `preferencesDescriptions.generated.ts` nie von Hand ändern. Ein Erzeuger-Skript dafür liegt in `scripts/` nicht vor (nur `gen-sheet-model.mjs`, das schreibt andere Dateien).
-- Einige Kommentare nennen tote Namen (`registerBuiltins.ts`, `EntityFieldsEditor.tsx`). Es gibt sie nicht mehr.
+- Kommentare verweisen teils noch auf Notizdateien, die nicht im Repo liegen (`aod-format.md`, `feature-matrix.md`, `architecture.md`, `RISKS.md`).
 - Jede Registrierung ist ein eigenes Modul. Vergisst man den Import in `App.tsx`, bleibt der Editor stumm.
 
 ## Wenn du X ändern willst

@@ -2,8 +2,8 @@
 //! here is a thin wrapper: parse Tauri's IPC arguments, call into `project` (which itself
 //! only ever calls `designer-core`, never touches `.aod` parsing/patching logic directly), return
 //! the result. All actual project/editor logic lives in the `project` crate - deliberately
-//! kept out of this crate so it never links `tauri`/`wry`/`webview2-com` (see that crate's `lib.rs`
-//! doc for why: a GNU-toolchain test-binary DLL issue on this machine, not a code defect).
+//! kept out of this crate so it never links `tauri`/`wry`/`webview2-com` (früher: DLL-Problem der
+//! GNU-Toolchain bei Testbinaries; heute MSVC, Grund nicht geprüft).
 //!
 //! No editor-specific logic lives in a command: `set_property`/`get_property_tree`/etc. know
 //! nothing about "entity" vs. any future object type (architecture.md §6) - the entity-specific

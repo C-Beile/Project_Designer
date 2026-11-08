@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 
-// Shared editable-text-cell primitive, factored out for the P4 second family
-// (ViewCanvasEditor/ContextEditor/DashboardEditor) so all three editors commit/revert scalar text
-// edits identically to `EntityFieldsEditor.tsx`'s own inline version - same keyboard contract
-// ("Fertig"-Kriterium 3: Enter commits, Escape reverts, Tab/blur commits, no mouse required).
-// `EntityFieldsEditor.tsx` keeps its own copy rather than importing this one - out of scope for
-// this agent to touch (see role brief's "additive, no shared files" guardrail); a later cleanup
-// pass could de-duplicate the two once both exist.
+// Gemeinsame Text-Zelle für ViewCanvasEditor, ContextEditor und DashboardEditor. Tastenlogik: Enter speichert, Escape verwirft, Tab und Blur speichern, ohne Maus.
 export function EditableText({
   value,
   onCommit,

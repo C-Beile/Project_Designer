@@ -3,7 +3,7 @@ import type { ForgeApi } from '../../api/ForgeApi'
 import type { CommitFile, DiffTarget, GitCommit, GitOutput, ScmFile } from '../../wire/types'
 import { confirmDialog, promptDialog } from '../../core/dialogService'
 import { notify } from '../../core/notifications'
-import { codeOf, GIT_CODE_LABEL, refreshScm, useScm } from './scmStore'
+import { codeOf, GIT_CODE_LABEL, refreshScm, useScm } from '../../core/scm'
 import { errorText } from '../../core/errorText'
 
 // Source Control, docked like the Source Control view of VS Code: branch and Pull / Push / Sync on

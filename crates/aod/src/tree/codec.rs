@@ -11,10 +11,10 @@ use crate::tree::value::{PropertyValue, ScalarValue};
 /// Line ending verified byte-for-byte in aod-format.md §1.2 for every sampled file.
 pub const LINE_ENDING: &[u8] = b"\r\n";
 
-/// Minimal XML text/attribute escaping. `core-model` computes *content* bytes for a Text event
-/// or typed-scalar attribute value; `aod-io` only ever echoes bytes verbatim, so escaping the
+/// Minimal XML text/attribute escaping. `aod::tree` computes *content* bytes for a Text event
+/// or typed-scalar attribute value; `aod::document` only ever echoes bytes verbatim, so escaping the
 /// characters that would otherwise break well-formedness is this crate's responsibility, not
-/// aod-io's (see event_source.rs doc comment on the layering).
+/// aod::document's (see event_source.rs doc comment on the layering).
 pub fn encode_text(raw: &str) -> String {
     raw.replace('&', "&amp;")
         .replace('<', "&lt;")

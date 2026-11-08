@@ -12,7 +12,8 @@
 | `errorHandling.tsx` | `ErrorBoundary` (Absturz eines Editors), `CrashListener` (schreibt ins Logfile). |
 | `treeIndex.ts` | Suchen im Projektbaum: `collectByType`, `findObject`, `entityOfView`, `collectIcons`. |
 | `uuid.ts` | `newUuid`, `copyNewUuid`. |
-| `plugins/` | `registry.ts`: UI-Register für Plugins. |
+| `scm.ts` | Neutraler Store für den Source-Control-Stand: `useScm`, `refreshScm`, `decorationFor`, `indexOf`, `setScmProvider`. Ohne Plugin leer. |
+| `plugins/` | `registry.ts`: UI-Register für Plugins. `ShellExtensions.tsx` rendert die Shell-Beiträge. |
 | `ui/` | Masken-Baukasten: FormDialog, ListDialog, DataTable, ProgressBar, `uiDialogs`. |
 <!-- AUTO:END -->
 
@@ -24,7 +25,7 @@ Gemeinsame Bausteine ohne Fachlogik. Hauptfenster und alle OS-Fenster nutzen sie
 - `plugins/registry.ts` (Plugin-Beiträge) und `ui/index.ts` (Masken).
 
 ## Abhängigkeiten
-- Rein: fast nichts. Ausnahmen: `errorHandling` (`ForgeApi`, `chrome/tauriWindow`), `outputBus` (Typen aus `shell/OutputPanel`), `plugins/registry` (Typen aus `shell/menuModel`, `tree/contextMenu`).
+- Rein: fast nichts. Ausnahmen: `errorHandling` (`ForgeApi`, `chrome/tauriWindow`), `outputBus` (Typen aus `shell/OutputPanel`), `plugins/registry` (Typen aus `shell/menuModel`, `shell/hooks/dialogTypes`, `tree/contextMenu`), `scm` (`ForgeApi`, Typen).
 - Raus: fast jeder Ordner.
 
 ## Regeln und Fallen
@@ -50,7 +51,12 @@ Alle Register sind Stores. `register*` gibt eine Abmelde-Funktion zurück. Ein B
 - `registerToolbarItem({id, group, command, state})`: Knopf der Werkzeugleiste. Lesen: `useToolbarItems(group)`.
 - `registerStatusBarItem({id, align, component})`: Feld der Statusleiste. Lesen: `useStatusBarItems(align)`.
 - `registerTreeContextItem({objectTypes, label, command})`: Eintrag im Baum-Kontextmenü. Lesen: `useTreeContextItems(objectType)`.
-- `registerDialog({id, component})`: Dialog per Id. Lesen: `getDialog(id)`.
+- `registerDialog({id, plugin, component})`: Dialog oder Panel per Id (Props sind Sache des Plugins). Lesen: `getDialog(id)`, reaktiv `useDialog(id)`.
+- `registerShellExtension({id, plugin, order, component})`: unsichtbare Komponente, die `ShellExtensions` in der Shell rendert. Sie bekommt `ShellExtensionContext` (`api`, `root`, `dialog`, `setDialog`, `setReloadToken`, `handleOpen`, `isPluginActive` ...). Lesen: `useShellExtensions()`.
+- `setPluginData(plugin, data)`: Daten für das Statusleisten-Feld des Plugins. Lesen: `usePluginData()`.
+
+### scm.ts
+Der Kern liest den Stand (Baum-Farben, Tabs, Speichern). Das SCM-Plugin sagt mit `setScmProvider`, woher er kommt. Ohne Provider tut `refreshScm` nichts.
 
 ### ui/ – welche Maske wann
 - `FormDialog`: wenige Felder (text, number, select, checkbox) mit Prüfung. Wirft `onSubmit`, bleibt er offen.

@@ -1,9 +1,9 @@
 //! An in-memory `EventSource` test double.
 //!
 //! Not gated behind `#[cfg(test)]` - `refs`'s own tests (a separate crate) need a working
-//! `EventSource` to exercise rename-cascade patch computation without waiting on `aod-io`, and
+//! `EventSource` to exercise rename-cascade patch computation without waiting on `aod::document`, and
 //! `#[cfg(test)]` items are never visible to a downstream crate. This module is the deliberate,
-//! documented stand-in for the real `aod-io`-backed implementation the integration round wires
+//! documented stand-in for the real `aod::document`-backed implementation the integration round wires
 //! in later (see event_source.rs doc comment) - it is not meant for production use.
 
 use crate::tree::command::{ByteRange, FileCommand};
@@ -53,7 +53,7 @@ impl InMemoryEventSource {
 
     /// Registers where a new child should be spliced in when appended as the last child of
     /// `parent`. This fixture only supports the append case (`after: None`); a hint-aware
-    /// implementation is `aod-io`'s concern once the real event index exists.
+    /// implementation is `aod::document`'s concern once the real event index exists.
     pub fn register_insertion_point(&mut self, parent: NodePath, at: usize) {
         self.insertion_points.insert(parent, at);
     }

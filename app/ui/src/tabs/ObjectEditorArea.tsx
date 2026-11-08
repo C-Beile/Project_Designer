@@ -1,4 +1,3 @@
-import { LazyDiffView } from '../features/git'
 import { Suspense, lazy } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { EditorComponent } from '../editors/registry'
@@ -6,6 +5,7 @@ import type { Problem } from '../problems/problemStore'
 import type { DbStatus, UndoRedoOutcome, WireValue } from '../wire/types'
 import { HistoryView } from './HistoryView'
 import { ErrorBoundary } from '../core/errorHandling'
+import { useDialog } from '../core/plugins/registry'
 import { UsersTab } from '../services/UsersTable'
 import { systemKey, useTunnelState } from '../services/tunnelState'
 import { SUB_TAB_LABELS, isFileNode, isServiceNode, isTunnelNode, isAliasConfigNode, subTabsFor, type EditorTab, type SubTab } from './tabModel'
@@ -77,6 +77,8 @@ export function ObjectEditorArea({
 }) {
   const { node } = tab
   const tunnelShared = useTunnelState()
+  // Diff-Ansicht liefert das SCM-Plugin (Git); ohne Plugin gibt es keine Diff-Tabs.
+  const DiffView = useDialog('git.diffView')?.component
   const subTabs = subTabsFor(node)
   const sub = subTabs.includes(tab.sub) ? tab.sub : 'editor'
 
@@ -94,11 +96,11 @@ export function ObjectEditorArea({
       </Suspense>
     )
   } else if (node.diff) {
-    body = (
+    body = DiffView ? (
       <Suspense fallback={Loading}>
-        <LazyDiffView api={api} target={node.diff} />
+        <DiffView api={api} target={node.diff} />
       </Suspense>
-    )
+    ) : null
   } else if (isServiceNode(node)) {
     body = (
       <Suspense fallback={Loading}>

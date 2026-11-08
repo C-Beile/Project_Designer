@@ -1,8 +1,8 @@
 //! Event index: maps every reachable XML node/attribute to its location in the flat event
-//! list, bridging `AodDocument`'s raw event stream to `core-model::PropertyTree`
+//! list, bridging `AodDocument`'s raw event stream to `aod::tree::PropertyTree`
 //! (`architecture.md` #3 — new for P3, not needed by the P2 spike).
 //!
-//! ## Design decision (documented here since `core-model` is being built in parallel and needs
+//! ## Design decision (documented here since `aod::tree` is being built in parallel and needs
 //! to know what to expect from this API without re-deriving it):
 //!
 //! `architecture.md` describes the index as "`EventPath -> Range<usize>`". A single
@@ -14,14 +14,14 @@
 //! lives, [`IndexedRange`] is a small enum with an explicit `Attribute` variant carrying the
 //! owning event's index plus a byte range *within that event's raw bytes*. This keeps the common
 //! case (elements) exactly as simple as the architecture doc describes, while making the
-//! attribute case explicit and safe to act on (`core-model` never has to guess whether a
+//! attribute case explicit and safe to act on (`aod::tree` never has to guess whether a
 //! `Range<usize>` means "events" or "bytes within one event").
 //!
 //! [`EventPath`] identifies a node by walking down from the document root through child tag
 //! name + occurrence index (the Nth same-tag sibling under that parent), not by raw sequential
 //! position. This makes paths stable under edits to unrelated siblings: inserting or deleting an
 //! `entityField` only renumbers occurrences of `entityField` under that same parent, never
-//! `entityProvider` or any other sibling tag. `core-model::NodeRef` (architecture.md #3) is
+//! `entityProvider` or any other sibling tag. `aod::tree::NodeRef` (architecture.md #3) is
 //! expected to hold one `EventPath` per projected `PropertyNode`.
 
 use crate::document::document::{tag_name, AodDocument, AodEvent};
@@ -92,7 +92,7 @@ pub enum IndexedRange {
 }
 
 /// `EventPath -> IndexedRange` map for one document, built once after `parse` (or rebuilt after
-/// any patch operation, since a patch shifts every subsequent event index — `core-model` is
+/// any patch operation, since a patch shifts every subsequent event index — `aod::tree` is
 /// expected to call `build_index` again after applying a `Transaction`, matching
 /// architecture.md #3's "projiziert ... über den Event-Index" description).
 #[derive(Debug, Clone, Default)]

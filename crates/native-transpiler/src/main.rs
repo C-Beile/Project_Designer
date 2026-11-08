@@ -76,11 +76,10 @@ fn main() -> std::process::ExitCode {
 
     let config = TranspilerConfig::new(cli.install_dir, cli.user_dir).with_timeout(Duration::from_secs(cli.timeout_secs));
     let harness = DifferentialHarness::new(config);
-    // Sixth and final pipeline stage (P5 incremental) - resolver + copy-phase + modification-
-    // application + linked-file inlining (all reused unchanged) plus a whole-project manifest
-    // cache (transpiler.md §6; own design, no real .aditoprj cache-format example found in the
-    // corpus to verify a byte-for-byte replica against) - a cache HIT reuses a snapshot instead
-    // of re-running the pipeline, a cache MISS behaves identically to LinkedFilesEngine. See
+    // Letzte Stage (P5 incremental) - resolver + copy-phase + modification-application (alle
+    // unverändert wiederverwendet) plus ein Manifest-Cache für das ganze Projekt (transpiler.md §6;
+    // eigenes Design, kein echtes .aditoprj-Cache-Format im Korpus zum Prüfen). Ein Cache-TREFFER
+    // nimmt einen Snapshot statt den Ablauf neu zu starten, ein Cache-MISS läuft wie bisher. See
     // PROJECT/20_architecture/p5-incremental-notes.md for the real measured rate.
     let own_engine = IncrementalEngine;
 

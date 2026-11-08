@@ -1,6 +1,6 @@
 //! `entityWebservice` validator registrations (P4, sixth editor family: `WebserviceEditor`).
 //! Mirrors every prior P4 family's shape (`flatten` -> registry -> `Vec<Diagnostic>`) so
-//! `project_actor.rs`'s `object_type`-indexed `VALIDATORS_BY_OBJECT_TYPE` dispatch can treat
+//! `validator_table.rs`'s `object_type`-indexed `VALIDATORS_BY_OBJECT_TYPE` dispatch can treat
 //! `entityWebservice` identically to the other object types.
 //!
 //! **Ablageformat (own mini format analysis, this agent, verified against the real corpus - no
@@ -33,7 +33,7 @@
 //! established - `THHIT_PersonUpdate_ws` has exactly one real `webserviceField` total, the clearest
 //! minimal real R26 example found this round). Per RISKS.md R26's now six-times-documented
 //! precedent, this is handled locally in `flatten`/the two validators below (Object-vs-Array
-//! treated uniformly), not by a `core-model`/`aod-io` change - no new schema knowledge was gained
+//! treated uniformly), not by a `aod::tree`/`aod::document` change - no new schema knowledge was gained
 //! this round that would make a safe generic fix possible, same reasoning
 //! `p4-editor-system-preferences-application-notes.md` §3 already gave in detail.
 //!
@@ -185,7 +185,7 @@ fn parent_tag(segment: &str) -> &str {
 }
 
 /// The `object_type`-indexed dispatch entry point for `entityWebservice` diagnostics
-/// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
+/// (`validator_table.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
     let mut registry = designer_core::build_plugin_registry();

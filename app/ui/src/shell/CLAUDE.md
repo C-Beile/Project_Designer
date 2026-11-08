@@ -55,11 +55,11 @@ Hauptfenster: Layout, Menü, Toolbar, Dialoge und die Hooks, die den Zustand hal
 - Raus: `App.tsx` (Aufruf von `Shell`), `windows/DialogWindowApp.tsx` (nutzt Dialoge).
 
 ## Regeln und Fallen
-- Reihenfolge der Hook-Aufrufe in `Shell.tsx` zählt: spätere Hooks bekommen Werte früherer. Ungefähr: `useOutputLogs`, `useProjects`, `useSelection`, `useDbStatus`, `useProblemScan`, `useTabs`, `useSave`, `useNavElements`, `useGit`, `useFloatingWindows`, `useTranspile`, `useDeploy`, `useRefactoring`, `useLiquibase`, `useTreeActions`, `useEditorWindows`, `useExternalChanges`, `useShellCommands`, `useDialogWindows`, `useShellPanels`.
+- Reihenfolge der Hook-Aufrufe in `Shell.tsx` zählt: spätere Hooks bekommen Werte früherer. Ungefähr: `useOutputLogs`, `useProjects`, `useSelection`, `useDbStatus`, `useProblemScan`, `useTabs`, `useSave`, `useNavElements`, `useFloatingWindows`, `useTranspile`, `useDeploy`, `useRefactoring`, `useLiquibase`, `useTreeActions`, `useEditorWindows`, `useExternalChanges`, `useShellCommands`, `useDialogWindows`, `useShellPanels`.
 - `closeProjects`, `handleTreeSelect`, `openSql`, `openProblem` bleiben in `Shell.tsx` (sie brauchen Zustand aus mehreren Hooks).
 - Refs verbinden Hooks, die sich sonst im Kreis brauchen: `saveIdsRef` (Shell legt an, `useSave` setzt), `activateNodeRef` (`useTabs`), `removeElementRef` (Shell legt an, `useNavElements` setzt), `resetNavRef`/`activateNavRef` (`useNavElements`), `editorWindowsRef` (Shell setzt nach `useEditorWindows`).
 - `runCommand` nutzt die Befehls-Map der letzten Render-Runde, in der sich die Abhängigkeitsliste geändert hat. Neue Zustände in die Liste eintragen, sonst ruft ein Befehl alte Werte.
-- Git-Befehle werden im Register unter Plugin `git` angemeldet (siehe `useShellCommands`). Der Kern fragt nicht "ist Git da?".
+- Git steckt als Shell-Beitrag im Register (`<ShellExtensions>` am Ende von `Shell.tsx`, Beitrag `GitShellBridge` des Git-Plugins): Befehle, Branch, Refresh des Standes, Statusfeld, eingebettete Dialoge. Die Shell fragt nicht "ist Git da?" (nur den Schalter `gitActive` aus Tools > Plugins).
 
 ## Wenn du X ändern willst
 | Aufgabe | Datei |

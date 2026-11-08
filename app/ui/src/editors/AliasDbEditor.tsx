@@ -3,7 +3,7 @@ import type { EditorProps } from './registry'
 import { asArray, boolField, field, intField, textField, textValue } from '../wire/types'
 import { EditableText } from './EditableText'
 
-// Ziel 1 (aliasDefinition editor, P4 third family): name/targetAliasName/DB-type-hint plus the
+// Ziel 1 (aliasDefinition-Editor): name/targetAliasName/DB-type-hint plus the
 // per-table column model (feature-matrix.md's AliasEditor MUST subset - "Editor für DB-Aliase").
 //
 // `aod-format.md` §3 / the alias schema document two shapes under the one `aliasDefinition`
@@ -17,7 +17,7 @@ import { EditableText } from './EditableText'
 // `datasourceType`/`columnType`/`size`/`primaryKey`/`notNull`/`isUnique`/`index` are all the XML's
 // typed-scalar-attribute form (`<foo v="..." />`) - shown read-only for the same documented reason
 // `DashboardEditor.tsx`'s grid position is read-only (`forge-core`'s write-back path only supports
-// the `Text`-content scalar case today, see `p4-editor-view-context-dashboard-notes.md` §6).
+// the `Text`-content scalar case today).
 // `targetAliasName`/`dbName`/`idColumn`/`title` are plain `<foo>bar</foo>` text content and are
 // fully editable.
 // java.sql.Types constants as stored in `columnType`.

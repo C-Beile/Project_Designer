@@ -1,8 +1,14 @@
 import { createElement } from 'react'
-import { registerMenuContribution, registerOptionsPage, registerPlugin, registerToolbarItem, type ToolbarContext } from '../../core/plugins/registry'
+import { registerDialog, registerMenuContribution, registerOptionsPage, registerPlugin, registerShellExtension, registerToolbarItem, type ToolbarContext } from '../../core/plugins/registry'
+import { setScmProvider } from '../../core/scm'
 import { IconCommit, IconHistory, IconPull, IconPush } from '../../shell/icons'
 import { item, NO_PROJECT_HINT, type MenuContext, type MenuItemDef } from '../../shell/menuModel'
+import { CommitDiffDialog } from './CommitDiffDialog'
 import { GitOptionsPage } from './GitOptionsPage'
+import { GitShellBridge } from './GitShellBridge'
+import { GitWindow, SyncWindow } from './GitWindows'
+import { LazyDiffView } from './LazyDiffView'
+import { ScmPanel } from './ScmPanel'
 import { registerGitStatusItem } from './GitStatusItem'
 
 /** Menü Team: Git und History. Aktiv-Zustand und Hinweise wie vorher aus `hasProject`/`gitActive`. */
@@ -64,6 +70,15 @@ export function registerGitPlugin(): () => void {
     registerToolbarItem({ plugin: 'git', id: 'git.push', group: 'git', order: 30, label: 'Push', icon: createElement(IconPush), command: 'team.pushView', state: gitButton('Push: choose the local commits to push') }),
     registerToolbarItem({ plugin: 'git', id: 'git.history', group: 'git', order: 40, label: 'Show Project History', icon: createElement(IconHistory), command: 'team.history', state: gitButton('Show Project History') }),
     registerGitStatusItem(),
+    // Quelle des Source-Control-Standes im Kern (`core/scm`).
+    setScmProvider((api, root) => api.scmStatus(root)),
+    // Dialoge und Panels, die der Kern über `getDialog(id)` holt.
+    registerDialog({ plugin: 'git', id: 'git.window', component: GitWindow }),
+    registerDialog({ plugin: 'git', id: 'git.syncWindow', component: SyncWindow }),
+    registerDialog({ plugin: 'git', id: 'git.commitDiff', component: CommitDiffDialog }),
+    registerDialog({ plugin: 'git', id: 'git.scmPanel', component: ScmPanel }),
+    registerDialog({ plugin: 'git', id: 'git.diffView', component: LazyDiffView }),
+    registerShellExtension({ plugin: 'git', id: 'git.shell', order: 10, component: GitShellBridge }),
   ]
   return () => offs.forEach((off) => off())
 }

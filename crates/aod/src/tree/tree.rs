@@ -4,7 +4,7 @@
 //! plus one `EventSource` this projection is bound to. Every mutation follows the same shape:
 //! locate the affected span(s) via the `EventSource`, compute the new bytes with `codec`, update
 //! the cached `PropertyValue`, notify observers/bus, and hand back a `FileCommand` - the tree
-//! itself never writes bytes anywhere (that is `aod-io`/`platform`'s job, out of this round's
+//! itself never writes bytes anywhere (that is `aod::document`/`platform`'s job, out of this round's
 //! scope per the role brief).
 
 use crate::tree::codec;

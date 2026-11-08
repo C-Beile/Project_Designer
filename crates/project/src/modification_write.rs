@@ -8,7 +8,7 @@
 //!   the whole object;
 //! - the directory name is derived deterministically from model, path and change type, so the same
 //!   logical change always lands in the same file and re-editing it only touches the value bytes;
-//! - an existing modification is patched byte-faithfully (aod-io events), `<position>` and every
+//! - an existing modification is patched byte-faithfully (aod::document events), `<position>` and every
 //!   unchanged line stay as they are;
 //! - a change back to the original value does not write anything: the now redundant modification is
 //!   reported as `RemovalSuggested` and only deleted by `discard` after the user confirmed.

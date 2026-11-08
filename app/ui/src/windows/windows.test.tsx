@@ -10,7 +10,7 @@ import { EVENTS, type FloatAction, type MainState } from './protocol'
 import { useFloatBridge } from './useFloatBridge'
 import { openDialogWindow, setWindowBackend } from './windowService'
 import { fakeBackend } from '../test/fakeWindowBackend'
-import { _resetScmForTests } from '../features/git'
+import { _resetScmForTests } from '../core/scm'
 
 vi.mock('monaco-editor', () => import('../test/monacoMock'))
 

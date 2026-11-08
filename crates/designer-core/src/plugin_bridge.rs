@@ -1,7 +1,7 @@
-//! Conversion layer between `core-model`'s real project-model types and `plugin-api`'s
+//! Conversion layer between `aod::tree`'s real project-model types and `plugin-api`'s
 //! deliberately independent placeholder types (architecture.md §2,
 //! `p3-plugin-api-notes.md` §2's mapping proposal). Lives here, in the facade, rather than in
-//! either crate: neither `plugin-api` nor `core-model` is allowed to depend on the other
+//! either crate: neither `plugin-api` nor `aod::tree` is allowed to depend on the other
 //! (both were built in parallel, isolated by design) - `designer-core` is the one place that
 //! legitimately depends on both, so it is the correct home for the translation between them.
 
@@ -14,7 +14,7 @@ use plugin_api::types::{
     Transaction as PluginTransaction,
 };
 
-/// A core-model scalar has no direct plugin-api counterpart for `Object`/`Array` values - the
+/// A aod::tree scalar has no direct plugin-api counterpart for `Object`/`Array` values - the
 /// placeholder `PropertyValue` in plugin-api is scalar-only (it models one `PropertyNode`'s
 /// leaf value, not a subtree, per its own doc comment). Structural values map to `Missing`, the
 /// placeholder's own "not a plain scalar" escape hatch.
@@ -29,7 +29,7 @@ pub fn to_plugin_value(value: &CorePropertyValue) -> PluginPropertyValue {
 
 /// Builds a plugin-api `PropertyNode` for one addressable location in a project object - what
 /// `EditorProvider::validate`/`Validator::validate` operate on (architecture.md §2). The caller
-/// supplies `object_type` since core-model itself has no object-type concept (a flat
+/// supplies `object_type` since aod::tree itself has no object-type concept (a flat
 /// `PropertyTree` per file); `designer-core` is where a `.aod` file's object family is known (see
 /// `p3-plugin-api-notes.md` §2, `ObjectType` row).
 pub fn to_plugin_property_node(

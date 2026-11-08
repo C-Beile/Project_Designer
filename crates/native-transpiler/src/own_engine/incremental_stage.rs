@@ -1,5 +1,5 @@
-// Sixth and final `OwnEngine` stage of the own Rust transpiler pipeline (Forge P5), after
-// `linked_files_stage`. Implements `transpiler.md` §6 (Inkrementalitätsregeln) / the chef
+// Letzte Stage (Nr. 12) des eigenen Transpilers (Forge P5), nach Stage 11 (`language_merge_stage`).
+// `linked_files_stage` läuft im Ablauf nicht mit. Implements `transpiler.md` §6 (Inkrementalitätsregeln) / the chef
 // prompt's "PartialTranspileAction / FullTranspileAction, ExecutorCache,
 // ApplyAllModificationsCache, TranspilationMetadata" class-name inventory.
 //
@@ -339,7 +339,7 @@ pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<Increme
     Ok(IncrementalReport { cache_hit: false, manifest_files_scanned: files_scanned })
 }
 
-/// `OwnEngine` wiring - the sixth and final pipeline stage.
+/// `OwnEngine`-Anbindung der letzten Stage (Nr. 12).
 pub struct IncrementalEngine;
 
 impl OwnEngine for IncrementalEngine {

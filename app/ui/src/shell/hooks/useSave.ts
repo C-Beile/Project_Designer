@@ -1,7 +1,7 @@
 import { useCallback, type MutableRefObject } from 'react'
 import type { ForgeApi } from '../../api/ForgeApi'
 import { errorText } from '../../core/errorText'
-import { refreshScm } from '../../features/git'
+import { refreshScm } from '../../core/scm'
 import { saveCodeProperty } from '../../properties/codeSave'
 import { getOptions } from '../../settings/options'
 import { isFileNode, type TabState } from '../../tabs/tabModel'

@@ -23,7 +23,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Runs the official TranspilerCLI against a project (designer_core::transpiler).
+    /// Startet den offiziellen TranspilerCLI für ein Projekt (adito_transpiler).
     Transpile(commands::transpile::TranspileArgs),
     /// Runs every registered plugin-api validator against a project (designer_core::plugin_api).
     Validate(commands::validate::ValidateArgs),

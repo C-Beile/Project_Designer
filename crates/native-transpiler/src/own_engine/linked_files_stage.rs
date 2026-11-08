@@ -1,5 +1,7 @@
-// Fifth and final `OwnEngine` stage of the own Rust transpiler pipeline (Forge P5), after
-// `modification_engine_stage`. Implements the linked-file inlining portion of `transpiler.md`
+// Linked-file-Stage des eigenen Transpilers (`run_linked_files_phase`). NICHT Teil des Ablaufs von
+// `run_incremental`: die offizielle Ausgabe lässt `%aditoprj%/...` stehen (siehe `crates/native-transpiler/CLAUDE.md`).
+// Sie bleibt für das ältere Verhalten und für Tests. Früher war sie die fünfte Stage (Forge P5).
+// Implements the linked-file inlining portion of `transpiler.md`
 // §4/§5: any `.aod` tag whose ENTIRE text content is a single `%aditoprj%/<relative-path>`
 // reference gets that content replaced, in place, with the referenced file's raw bytes
 // (XML-escaped) - real-corpus-verified generic across every file type observed (`.js`, `.adoc`),
@@ -68,7 +70,7 @@ pub struct LinkedFilesReport {
 }
 
 fn xml_escape(bytes: &[u8]) -> Vec<u8> {
-    // `AodEvent::Text` bytes are stored pre-escaped everywhere else in this codebase (aod-io's
+    // `AodEvent::Text` bytes are stored pre-escaped everywhere else in this codebase (aod::document's
     // own convention - `serialize` never escapes on write). Inlined linked-file content needs
     // the same treatment before becoming a Text event's bytes - real-corpus-verified against
     // `dist/`: `&` -> `&amp;`, `<` -> `&lt;`, `>` -> `&gt;` (e.g. `&&` becomes `&amp;&amp;`, `=>`

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { runCommandById, useTreeContextItems } from '../core/plugins/registry'
+import { ShellExtensions } from '../core/plugins/ShellExtensions'
 import { activeTab, closeTabsWhere, isFileNode, openTab, setSubTab } from '../tabs/tabModel'
 import { TitleBar } from '../chrome/TitleBar'
 import { useTheme } from '../theme/useTheme'
@@ -24,7 +25,7 @@ import { LocalDataDialog } from './LocalDataDialog'
 import { NewProjectDialog } from './NewProjectDialog'
 import { TranspileMatchDialog } from './TranspileMatchDialog'
 import { UpdatesDialog } from './UpdatesDialog'
-import { GitDialog, SyncDialog, decorationFor, indexOf, refreshScm, useScm, GIT_CODE_LABEL } from '../features/git'
+import { decorationFor, indexOf, useScm, GIT_CODE_LABEL } from '../core/scm'
 import { TabSwitcher } from './TabSwitcher'
 import { QuickFileSearch, useDoubleCtrl } from './QuickFileSearch'
 import { TableCenterDialog } from './TableCenterDialog'
@@ -62,7 +63,6 @@ import { useTranspile } from './hooks/useTranspile'
 import { useDeploy } from './hooks/useDeploy'
 import { useRefactoring } from './hooks/useRefactoring'
 import { useLiquibase } from './hooks/useLiquibase'
-import { useGit } from './hooks/useGit'
 import { useShellCommands } from './hooks/useShellCommands'
 import { useTabs } from './hooks/useTabs'
 import { useProjects } from './hooks/useProjects'
@@ -106,7 +106,6 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   // The last opened project is only offered, never opened automatically (see
   // p7-bugfix-empty-project-root-notes.md).
   const [recent, setRecent] = useState<string | null>(null)
-  const [branch, setBranch] = useState<string | null>(null)
   const [sheetVersion, setSheetVersion] = useState(0)
 
   const [layout, setLayout] = useState<LayoutState>(loadLayout)
@@ -157,39 +156,6 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   )
 
   const scanning = useProblemScan(api, projects, trees, reloadToken, scanTick)
-
-  // Git status of the active project: after opening, after reloads, after saves and when the window gets focus.
-  useEffect(() => {
-    if (gitActive && root.trim()) void refreshScm(api, root)
-  }, [api, root, reloadToken, gitActive])
-  useEffect(() => {
-    if (!gitActive) return
-    let timer: number | undefined
-    const onFocus = () => {
-      window.clearTimeout(timer)
-      timer = window.setTimeout(() => root.trim() && void refreshScm(api, root), 300)
-    }
-    window.addEventListener('focus', onFocus)
-    return () => {
-      window.clearTimeout(timer)
-      window.removeEventListener('focus', onFocus)
-    }
-  }, [api, root, gitActive])
-
-  useEffect(() => {
-    setBranch(null)
-    if (!root.trim()) return
-    let cancelled = false
-    api
-      .getCurrentBranch(root)
-      .then((b) => {
-        if (!cancelled) setBranch(b)
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [api, root, reloadToken])
 
   useEffect(() => {
     api.getRecentProject().then(setRecent).catch(() => setRecent(null))
@@ -297,11 +263,10 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
 
   const { resetNavElement, activateNavElement, resetNavRef, activateNavRef } = useNavElements({ api, root, inspectedObject, applyOutcome, setNavSel, setReloadToken, setStatus, removeElementRef })
 
-  const { gitView, syncMode, openGit, notifySync, runGit, openDiff, quickBranch, commands: gitCommands } = useGit({ api, root, branch, dialog, setDialog, setReloadToken, handleOpen })
   const [quickSearch, setQuickSearch] = useState(false)
   useDoubleCtrl(() => setQuickSearch(true))
   const { bridge, floatingViews, effectiveLayout, commands: floatingCommands } = useFloatingWindows({
-    api, root, tree, treeRef, selectedId, handleOpen, openDiff, openSql, markUnsaved, refreshDiagnostics, resetNavRef, activateNavRef, editorWindowsRef,
+    api, root, tree, treeRef, selectedId, handleOpen, openSql, markUnsaved, refreshDiagnostics, resetNavRef, activateNavRef, editorWindowsRef,
     setNavSel, setAliasSel, setTreeSelection, setValue, setSheetVersion, setCanUndo, setStatus, setReloadToken,
     inspected, inspectedKind, inspectedObject, focusLabel, elementSel, sheetVersion, objectsByType, layout, projectsTab, setProjectsTab, logs,
   })
@@ -331,7 +296,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   const { connectionPick, setConnectionPick, runLiquibaseUpdate } = useLiquibase({ api, showToolWindow, appendLog, transpile, setOutputSub, setStatus })
 
   const { ctxMenu, setCtxMenu, clipboard, fileClipboard, deleteTarget, setDeleteTarget, pasteTarget, setPasteTarget, newTarget, setNewTarget, renameTarget, setRenameTarget, zipMode, setZipMode, runTreeAction, commands: treeCommands } = useTreeActions({
-    api, root, projects, tabState, setTabState, closeTabNow, activateNode, handleOpen, projectOf, showToolWindow, setOutputSub, appendLog, closeProjects, transpile, gitActive, startRefactoring, startRename, startDeploy, openGit, runGit, runLiquibaseUpdate, usageNode, setPendingOpen, setStatus, setReloadToken,
+    api, root, projects, tabState, setTabState, closeTabNow, activateNode, handleOpen, projectOf, showToolWindow, setOutputSub, appendLog, closeProjects, transpile, gitActive, startRefactoring, startRename, startDeploy, runLiquibaseUpdate, usageNode, setPendingOpen, setStatus, setReloadToken,
   })
   const pluginTreeItems = useTreeContextItems(ctxMenu?.node.object_type ?? null)
 
@@ -446,7 +411,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
 
   const { menus, runCommand, onMenuCommand } = useShellCommands({
     api, root, projects, activeTree, tabState, unsaved, editNode, selected, canUndo, canRedo, recent, dialog, layout, theme, toggleTheme, transpile, engine, transpileRunning, usageNode, startRefactoring,
-    gitActive, sqlActive, floatingViews, editorWindows, toolbarPrefs, editorPrefs, layoutBeforeOnlyEditor, gitCommands,
+    gitActive, sqlActive, floatingViews, editorWindows, toolbarPrefs, editorPrefs, layoutBeforeOnlyEditor,
     extraCommands: [transpileCommands, deployCommands, refactoringCommands, treeCommands, floatingCommands],
     openProjectAt, closeProjects, saveIds, applyOutcome, markUnsaved, showToolWindow, openSql, toggleToolbarGroup, updateToolbar,
     setStatus, setNewProjectOpen, setRecent, setReloadToken, setDialog, setLayout, setTreeSelection,
@@ -525,15 +490,6 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
           void api.tunnelDisconnectAll().catch(() => {})
           void api.dbDisconnect().catch(() => {})
           clearDb()
-        }}
-        pluginData={{
-          git: {
-            branch: scm.root === root && scm.overview ? scm.overview.branch : branch,
-            gitEnabled: gitActive && hasProject,
-            loadBranches: () => api.gitOverview(root),
-            onCheckoutBranch: (t: { local?: string; remote?: string }) => void quickBranch(t),
-            onGit: (a: string) => (a === 'newBranch' ? void quickBranch({}) : openGit('branches')),
-          },
         }}
       />
       {dialog === 'options' && !osWindowsAvailable() ? (
@@ -736,10 +692,9 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         />
       ) : null}
       {dialog === 'localData' && !osWindowsAvailable() ? <LocalDataDialog api={api} onClose={() => setDialog(null)} /> : null}
-      {dialog === 'git' && hasProject && !osWindowsAvailable() ? (
-        <GitDialog api={api} projectRoot={root} initialTab={gitView.tab} initialTarget={gitView.target} onClose={() => setDialog(null)} onChanged={() => setReloadToken((t) => t + 1)} onResult={(message, ok) => notify(message, { kind: ok ? 'success' : 'error', timeoutMs: ok ? undefined : 12000 })} />
-      ) : null}
-      {dialog === 'sync' && hasProject && !osWindowsAvailable() ? <SyncDialog api={api} projectRoot={root} mode={syncMode} onClose={() => setDialog(null)} onDone={() => setReloadToken((t) => t + 1)} onResult={(r) => notifySync(syncMode, r)} /> : null}
+      <ShellExtensions
+        ctx={{ api, root, hasProject, reloadToken, setReloadToken, dialog, setDialog, handleOpen, isPluginActive: (id) => isPluginActive(id, pluginPrefs) }}
+      />
       {dialog === 'updates' && !osWindowsAvailable() ? <UpdatesDialog api={api} onClose={() => setDialog(null)} onOpenTableCenter={() => setDialog('tableCenter')} /> : null}
       {dialog === 'tableCenter' ? <TableCenterDialog api={api} db={db} onClose={() => setDialog(null)} /> : null}
     </div>

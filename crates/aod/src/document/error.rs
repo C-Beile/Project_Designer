@@ -1,6 +1,6 @@
-//! Error types for the `aod-io` crate.
+//! Error types for the `aod::document`.
 //!
-//! Kept small and explicit on purpose: callers (`core-model`) need to distinguish
+//! Kept small and explicit on purpose: callers (`aod::tree`) need to distinguish
 //! "the file is not well-formed XML" from "the patch operation could not be applied to
 //! this document" without downcasting a generic error type.
 

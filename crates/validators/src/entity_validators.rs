@@ -52,7 +52,7 @@ pub fn flatten_into_with_type(
     }
 }
 
-/// The `object_type`-indexed dispatch entry point for entity diagnostics (`project_actor.rs`'s
+/// The `object_type`-indexed dispatch entry point for entity diagnostics (`validator_table.rs`'s
 /// `VALIDATORS_BY_OBJECT_TYPE` table) - owns which validators apply to `entity` objects, mirroring
 /// `view_diagnostics_for`/`context_diagnostics_for`/`dashboard_diagnostics_for`'s shape in
 /// `view_context_dashboard_validators.rs`.

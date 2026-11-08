@@ -1,6 +1,6 @@
 //! `application` validator registrations (P4, fifth editor family: `ApplicationEditor`).
 //! Mirrors the shape every prior P4 family established (`flatten` -> registry -> `Vec<Diagnostic>`)
-//! so `project_actor.rs`'s `object_type`-indexed `VALIDATORS_BY_OBJECT_TYPE` dispatch can treat
+//! so `validator_table.rs`'s `object_type`-indexed `VALIDATORS_BY_OBJECT_TYPE` dispatch can treat
 //! `application` identically to the other object types.
 //!
 //! **Ablageformat (Rechercheergebnis, siehe `p4-editor-system-preferences-application-notes.md`
@@ -149,7 +149,7 @@ fn parent_child_nodes_scope(path: &str) -> Option<String> {
 }
 
 /// The `object_type`-indexed dispatch entry point for `application` diagnostics
-/// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
+/// (`validator_table.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
     let mut registry = designer_core::build_plugin_registry();

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
+import { useCallback, useEffect, useMemo, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
 import type { ForgeApi } from '../../api/ForgeApi'
-import { registerCommand, runCommandAsync } from '../../core/plugins/registry'
+import { runCommandAsync } from '../../core/plugins/registry'
 import { copyNewUuid } from '../../core/uuid'
 import { matchesShortcut } from '../../core/shortcuts'
 import { closeWindow } from '../../chrome/tauriWindow'
@@ -49,7 +49,6 @@ export interface ShellCommandsDeps {
   toolbarPrefs: ToolbarPrefs
   editorPrefs: EditorPrefs
   layoutBeforeOnlyEditor: MutableRefObject<LayoutState | null>
-  gitCommands: CommandMap
   extraCommands: CommandMap[]
   openProjectAt: (path: string) => void
   closeProjects: (toClose: string[]) => void
@@ -72,17 +71,9 @@ export interface ShellCommandsDeps {
 // Befehle, Menüs und Tastenkürzel des Hauptfensters. `extraCommands` sind die Befehls-Maps der anderen Hooks (Transpile, Deploy, ...).
 export function useShellCommands({
   api, root, projects, activeTree, tabState, unsaved, editNode, selected, canUndo, canRedo, recent, dialog, layout, theme, toggleTheme, transpile, engine, transpileRunning, usageNode, startRefactoring,
-  gitActive, sqlActive, floatingViews, editorWindows, toolbarPrefs, editorPrefs, layoutBeforeOnlyEditor, gitCommands, extraCommands, openProjectAt, closeProjects, saveIds, applyOutcome, markUnsaved,
+  gitActive, sqlActive, floatingViews, editorWindows, toolbarPrefs, editorPrefs, layoutBeforeOnlyEditor, extraCommands, openProjectAt, closeProjects, saveIds, applyOutcome, markUnsaved,
   showToolWindow, openSql, toggleToolbarGroup, updateToolbar, setStatus, setNewProjectOpen, setRecent, setReloadToken, setDialog, setLayout, setTreeSelection,
 }: ShellCommandsDeps) {
-  // Git-Befehle gehören dem Git-Plugin: einmal im Register angemeldet, rufen sie die Handler der letzten Render-Runde.
-  const gitCommandsRef = useRef(gitCommands)
-  gitCommandsRef.current = gitCommands
-  useEffect(() => {
-    const offs = Object.keys(gitCommandsRef.current).map((id) => registerCommand(id, (arg) => gitCommandsRef.current[id]?.(arg as string | undefined), 'git'))
-    return () => offs.forEach((off) => off())
-  }, [])
-
   const commands: CommandMap = {
     ...Object.assign({}, ...extraCommands),
     'file.newProject': () => {

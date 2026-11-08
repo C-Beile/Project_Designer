@@ -1,6 +1,6 @@
 //! `aliasDefinition` validator registrations (P4, third editor family: `AliasDbEditor`).
 //! Mirrors `entity_validators.rs`/`view_context_dashboard_validators.rs`'s shape on purpose
-//! (`flatten` -> registry -> `Vec<Diagnostic>`) so `project_actor.rs`'s `object_type`-indexed
+//! (`flatten` -> registry -> `Vec<Diagnostic>`) so `validator_table.rs`'s `object_type`-indexed
 //! `VALIDATORS_BY_OBJECT_TYPE` dispatch can treat `aliasDefinition` identically to the other
 //! object types: one `pub fn diagnostics_for(&CoreValue) -> Vec<Diagnostic>` entry point.
 //!
@@ -114,7 +114,7 @@ fn entity_db_index(path: &str) -> Option<usize> {
 }
 
 /// The `object_type`-indexed dispatch entry point for `aliasDefinition` diagnostics
-/// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
+/// (`validator_table.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
     let mut registry = designer_core::build_plugin_registry();

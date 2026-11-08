@@ -6,7 +6,7 @@
 //! `testing::InMemoryEventSource`), and hands back a handle. `set_property` edits the typed tree
 //! *and* the underlying document through the same adapter instance (shared via `Rc<RefCell<_>>`
 //! so both sides of the edit stay in sync without needing a `PropertyTree::source_mut()` getter -
-//! deliberately not added to `core-model`'s already-verified `tree.rs`, see this round's
+//! deliberately not added to `aod::tree`'s already-verified `tree.rs`, see this round's
 //! integration notes). `save()` re-serializes the live document and writes it through
 //! `platform::fs::atomic_write` - the real architecture.md §4 persistence path, not a stand-in.
 
@@ -128,7 +128,7 @@ impl ProjectHandle {
     /// *and* the real underlying `AodDocument` in one call, so `value_at` and a subsequent
     /// `save()` both observe the change. Only the `Text`-content scalar case is wired through to
     /// a real document mutation right now - see `AodDocumentSource`'s module doc for the typed
-    /// (`v="..."`) attribute case, which is read-only until `aod-io` grows a matching patch
+    /// (`v="..."`) attribute case, which is read-only until `aod::document` grows a matching patch
     /// primitive.
     pub fn set_property(&mut self, path: &NodePath, value: ScalarValue) -> Result<(), ForgeError> {
         let node = self
@@ -168,7 +168,7 @@ impl ProjectHandle {
 
     /// Structural edits the typed tree cannot express in place (setting a typed `v="..."`
     /// attribute, adding a property element that was not in the file yet): the caller computes
-    /// the exact byte splice, this re-parses the result and only accepts it if `aod-io` re-emits
+    /// the exact byte splice, this re-parses the result and only accepts it if `aod::document` re-emits
     /// it byte for byte, so the file never changes outside the spliced range.
     pub fn splice(&mut self, range: ByteRange, replacement: &[u8]) -> Result<(), ForgeError> {
         let current = self.serialized_bytes();
@@ -267,7 +267,7 @@ mod tests {
 
     /// The structural counterpart the brief calls out explicitly: loading a file and saving it
     /// straight back without any edit must be byte-identical to the original - the core
-    /// guarantee from `spike-round-trip.md`/`aod-io`, now proven through the full wired
+    /// guarantee from `spike-round-trip.md`/`aod::document`, now proven through the full wired
     /// `open_project`/`save` path instead of `aod::document::round_trip_check` directly.
     #[test]
     fn load_and_save_without_editing_is_byte_identical() {

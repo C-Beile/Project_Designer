@@ -3,7 +3,7 @@
 //! **Why an actor thread, not `Mutex<HashMap<_, ProjectHandle>>` in Tauri-managed state:**
 //! `ProjectHandle` holds an `Rc<RefCell<AodDocumentSource>>` (see `designer-core/src/project.rs` -
 //! deliberate, to share the live document between the tree and the write-back path without a
-//! `core-model` change). `Rc` is `!Send`, so `ProjectHandle` cannot live in `tauri::State`, which
+//! `aod::tree` change). `Rc` is `!Send`, so `ProjectHandle` cannot live in `tauri::State`, which
 //! requires `Send + Sync` for anything `.manage()`d. Rather than work around that inside
 //! `designer-core` (out of scope - `designer-core` is a dependency, not something this agent edits),
 //! all `ProjectHandle`s are kept on one thread that never moves them; every Tauri command talks
@@ -267,8 +267,8 @@ struct OpenObject {
     stamp: Option<crate::watch::FileStamp>,
 }
 
-/// **Documented `core-model` behaviour this works around (not a bug - see `PropertyTree::from_value`/
-/// `build_node` in `core-model/src/tree.rs`):** a structural node's cached `PropertyValue` (an
+/// **Documented `aod::tree` behaviour this works around (not a bug - see `PropertyTree::from_value`/
+/// `build_node` in `aod/src/tree/tree.rs`):** a structural node's cached `PropertyValue` (an
 /// `Object`/`Array`) is captured once, at tree-construction time, as a full nested snapshot - it
 /// is never recomputed from its children's current values. Only a *leaf scalar* node's own cached
 /// value is updated in place by `set_scalar`. That means `ProjectHandle::value_at(&NodePath::root())`
@@ -1667,9 +1667,9 @@ mod tests {
         let actor = ProjectActorHandle::spawn();
 
         actor.get_property_tree(node_id.clone()).unwrap();
-        // `_____LANGUAGE_pl` has exactly one `stringEntry` - core-model's real projector only
+        // `_____LANGUAGE_pl` has exactly one `stringEntry` - aod::tree's real projector only
         // collapses same-tag siblings into an indexed `Array` when there is more than one
-        // occurrence (`core-model/src/aod_io_adapter.rs::group_children`), so the single entry's
+        // occurrence (`aod/src/tree/aod_io_adapter.rs::group_children`), so the single entry's
         // path here is the un-indexed `keyValueMap.stringEntry.value`, not `...stringEntry[0]...`.
         actor
             .set_property(

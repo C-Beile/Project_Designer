@@ -11,6 +11,11 @@ import {
   registerMenuContribution,
   registerOptionsPage,
   registerPlugin,
+  registerShellExtension,
+  setPluginData,
+  useDialog,
+  usePluginData,
+  useShellExtensions,
   registerStatusBarItem,
   registerToolbarItem,
   registerTreeContextItem,
@@ -184,5 +189,41 @@ describe('dialogs', () => {
     registerPlugin(plugin('git'))
     expect(getDialog('git.commit')?.component).toBe(Dummy)
     expect(getDialog('unknown')).toBeUndefined()
+  })
+})
+
+describe('useDialog', () => {
+  it('updates when the plugin appears and disappears', () => {
+    registerDialog({ id: 'git.scmPanel', component: Dummy, plugin: 'git' })
+    const { result } = renderHook(() => useDialog('git.scmPanel'))
+    expect(result.current).toBeUndefined()
+    let off!: () => void
+    act(() => { off = registerPlugin(plugin('git')) })
+    expect(result.current?.component).toBe(Dummy)
+    act(() => off())
+    expect(result.current).toBeUndefined()
+  })
+})
+
+describe('shell extensions', () => {
+  it('lists extensions of available plugins only, sorted by order', () => {
+    registerPlugin(plugin('git'))
+    registerShellExtension({ id: 'b', order: 2, component: Dummy, plugin: 'git' })
+    registerShellExtension({ id: 'a', order: 1, component: Dummy })
+    registerShellExtension({ id: 'gone', order: 0, component: Dummy, plugin: 'missing' })
+    const { result } = renderHook(() => useShellExtensions())
+    expect(result.current.map((e) => e.id)).toEqual(['a', 'b'])
+  })
+})
+
+describe('plugin data', () => {
+  it('sets and removes data per plugin id', () => {
+    const { result } = renderHook(() => usePluginData())
+    expect(result.current).toEqual({})
+    let off!: () => void
+    act(() => { off = setPluginData('git', { branch: 'main' }) })
+    expect(result.current).toEqual({ git: { branch: 'main' } })
+    act(() => off())
+    expect(result.current).toEqual({})
   })
 })

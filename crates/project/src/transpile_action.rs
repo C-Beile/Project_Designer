@@ -21,10 +21,9 @@ pub const NATIVE_ID: &str = "native";
 /// ID des offiziellen ADITO-Transpilers in der Registry.
 pub const OFFICIAL_ID: &str = "adito";
 
-/// Which engine a `"transpile"` action invocation should use. Defaults to `Official` - the one
-/// safe choice if the `engine` param is missing or holds an unrecognised value, so a typo or a
-/// stale/unexpected param never silently routes a real transpile through the experimental
-/// engine.
+/// Welche Engine ein `"transpile"`-Aufruf nutzt. Standard ist `ExperimentalForge` (die eigene
+/// Engine). Nur der Wert `"official"` wählt den offiziellen Transpiler. Fehlt der Param oder ist
+/// er unbekannt, gilt `ExperimentalForge`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TranspilerEngine {
     Official,
@@ -38,9 +37,8 @@ impl Default for TranspilerEngine {
 }
 
 impl TranspilerEngine {
-    /// Parses the `engine` action param. Anything other than the exact experimental marker
-    /// resolves to `Official` - see the type doc for why that is the deliberate safe default,
-    /// not an error.
+    /// Liest den Action-Param `engine`. Nur der genaue Wert `"official"` wählt `Official`,
+    /// alles andere ist `ExperimentalForge` (kein Fehler).
     pub fn from_param(value: Option<&str>) -> Self {
         match value {
             Some("official") => TranspilerEngine::Official,
