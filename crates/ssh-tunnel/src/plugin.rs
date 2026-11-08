@@ -92,11 +92,11 @@ mod tests {
     #[test]
     fn missing_and_wrong_arguments_are_reported() {
         let reg = registry();
-        assert_eq!(reg.call("ssh-tunnel", "tunnel_disconnect", json!({ "targetHost": "h" })).unwrap_err(), "Argument 'targetPort' fehlt");
+        assert!(reg.call("ssh-tunnel", "tunnel_disconnect", json!({ "targetHost": "h" })).unwrap_err().starts_with("Argument 'targetPort' fehlt"));
         let err = reg.call("ssh-tunnel", "tunnel_disconnect", json!({ "targetHost": "h", "targetPort": "x" })).unwrap_err();
         assert!(err.starts_with("Argument 'targetPort' ist ungültig"), "{err}");
-        assert_eq!(reg.call("ssh-tunnel", "tunnel_connect", json!({})).unwrap_err(), "Argument 'row' fehlt");
-        assert_eq!(reg.call("ssh-tunnel", "read_tunnel_config", json!({ "projectRoot": "x" })).unwrap_err(), "Argument 'reference' fehlt");
+        assert!(reg.call("ssh-tunnel", "tunnel_connect", json!({})).unwrap_err().starts_with("Argument 'row' fehlt"));
+        assert!(reg.call("ssh-tunnel", "read_tunnel_config", json!({ "projectRoot": "x" })).unwrap_err().starts_with("Argument 'reference' fehlt"));
     }
 
     #[test]

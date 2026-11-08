@@ -1,0 +1,66 @@
+/* Kopieren-Knopf (core/ui/CopyButton.tsx): Symbol -> grüner Haken mit kurzer Animation. */
+.forge-copy-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  vertical-align: middle;
+}
+.forge-copy-btn:hover,
+.forge-copy-btn:focus-visible {
+  color: var(--fg);
+  background: color-mix(in srgb, var(--fg) 12%, transparent);
+}
+.forge-copy-check {
+  position: absolute;
+  opacity: 0;
+  transform: scale(0.4);
+}
+.forge-copy-btn[data-state='done'] {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+}
+.forge-copy-btn[data-state='done'] .forge-copy-icon {
+  opacity: 0;
+}
+.forge-copy-btn[data-state='done'] .forge-copy-check {
+  opacity: 1;
+  transform: scale(1);
+  animation: forge-copy-pop 0.35s ease-out;
+}
+.forge-copy-btn[data-state='failed'] {
+  color: var(--error);
+}
+.forge-copy-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+@keyframes forge-copy-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .forge-copy-btn[data-state='done'] .forge-copy-check {
+    animation: none;
+  }
+}

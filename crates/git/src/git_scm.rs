@@ -94,7 +94,7 @@ fn git(root: &Path, args: &[&str]) -> Result<std::process::Output, String> {
         .args(args)
         .current_dir(root)
         .output()
-        .map_err(|e| format!("git could not be started: {e}"))
+        .map_err(|e| plugin_api::at!(format!("git could not be started in '{}': {e}", root.display())))
 }
 
 fn text(out: &std::process::Output) -> String {
@@ -183,7 +183,7 @@ pub fn status(dir: &Path) -> Result<ScmOverview, String> {
     files.truncate(FILE_LIMIT);
     let ops = platform::CommandGitOperations::new();
     use platform::GitOperations;
-    let branches = ops.list_branches(&root).map_err(|e| e.to_string())?;
+    let branches = ops.list_branches(&root).map_err(|e| plugin_api::at!(e.to_string()))?;
     let remote_branches = remote_branch_names(&root);
     Ok(ScmOverview { root: root.to_string_lossy().into_owned(), branch, upstream, ahead, behind, files, truncated, branches, remote_branches })
 }
@@ -201,7 +201,7 @@ fn remote_branch_names(root: &Path) -> Vec<String> {
 pub fn history(dir: &Path, limit: usize) -> Result<Vec<GitCommit>, String> {
     let root = crate::git_actions::repo_root(dir)?;
     use platform::GitOperations;
-    platform::CommandGitOperations::new().log(&root, limit).map_err(|e| e.to_string())
+    platform::CommandGitOperations::new().log(&root, limit).map_err(|e| plugin_api::at!(e.to_string()))
 }
 
 /// Every given path must have a pending change; returns the validated list.
@@ -435,8 +435,8 @@ pub fn gutter(dir: &Path, file: &Path) -> Result<Gutter, String> {
         .strip_prefix(&root)
         .map(PathBuf::from)
         .or_else(|_| {
-            let canon_root = std::fs::canonicalize(&root).map_err(|e| e.to_string())?;
-            let canon_file = std::fs::canonicalize(file).map_err(|e| e.to_string())?;
+            let canon_root = std::fs::canonicalize(&root).map_err(|e| plugin_api::at!(e.to_string()))?;
+            let canon_file = std::fs::canonicalize(file).map_err(|e| plugin_api::at!(e.to_string()))?;
             canon_file.strip_prefix(canon_root).map(PathBuf::from).map_err(|_| "The file is outside the repository.".to_string())
         })?;
     let rel = validate_rel_path(&rel.to_string_lossy())?;

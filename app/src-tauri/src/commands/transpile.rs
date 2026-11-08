@@ -20,6 +20,7 @@ pub async fn execute_action(
     mut params: HashMap<String, String>,
     app: tauri::AppHandle,
 ) -> Result<(), String> {
+    crate::commands::guard_async("execute_action", async {
     if !params.contains_key("forge_data_dir") {
         if let Ok(dir) = app.path().app_data_dir() {
             params.insert("forge_data_dir".to_string(), dir.to_string_lossy().into_owned());
@@ -39,12 +40,14 @@ pub async fn execute_action(
         project::transpile_action::set_progress_reporter(None);
     }
     result
+}).await
 }
 
 /// NodeJS menu: runs one npm command in the project folder; each output line is sent as the event
 /// `forge://npm-output` while it is produced. `confirmed` must be true for login and publish.
 #[tauri::command]
 pub async fn npm_run(project_root: String, action: String, confirmed: bool, app: tauri::AppHandle) -> Result<i32, String> {
+    crate::commands::guard_async("npm_run", async {
     blocking(move || {
         use tauri::Emitter;
         let sink = app.clone();
@@ -54,12 +57,15 @@ pub async fn npm_run(project_root: String, action: String, confirmed: bool, app:
         })
     })
     .await?
+}).await
 }
 
 /// Ends the running official transpiler (the UI asks first). False when no build is running.
 #[tauri::command(async)]
 pub fn cancel_build() -> bool {
+    crate::commands::guard("cancel_build", || {
     project::transpile_action::cancel_build()
+})
 }
 
 #[tauri::command]
@@ -68,9 +74,11 @@ pub async fn transpile_compare(
     reference: String,
     project_root: String,
 ) -> Result<project::transpile_compare::CompareReport, String> {
+    crate::commands::guard_async("transpile_compare", async {
     if registry.get(project::transpile_action::OFFICIAL_ID).is_none() {
         return Err("Der offizielle Transpiler ist nicht installiert".into());
     }
     blocking(move || project::transpile_compare::compare_outputs(&PathBuf::from(reference), &PathBuf::from(project_root).join("dist")))
         .await?
+}).await
 }

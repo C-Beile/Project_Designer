@@ -1,12 +1,47 @@
-.forge-output-btn:hover:not(:disabled) {
-  background: var(--bg-panel);
-  border-color: var(--border);
+/* IDE Log: Farbe nach Art (data-kind) und Bereich (data-area). Nur Variablen aus tokens.css, Mischung für den Bereich. */
+.forge-output-log [data-kind='PANIC'] {
+  font-weight: 700;
+}
+.forge-output-log [data-kind='PERF'] {
+  color: var(--fg-muted);
+}
+.forge-output-log [data-kind='UI-ERROR'] {
+  color: color-mix(in srgb, var(--error) 80%, var(--warning));
 }
 
-.forge-output-btn:disabled {
-  opacity: 0.35;
+.forge-log-area {
+  font-weight: 600;
+  color: color-mix(in srgb, var(--fg) 55%, var(--accent));
+}
+.forge-log-area[data-area='git'] {
+  color: color-mix(in srgb, var(--fg) 45%, var(--success));
+}
+.forge-log-area[data-area='database'],
+.forge-log-area[data-area='deploy'],
+.forge-log-area[data-area='liquibase'] {
+  color: color-mix(in srgb, var(--fg) 45%, var(--warning));
+}
+.forge-log-area[data-area='ssh-tunnel'] {
+  color: color-mix(in srgb, var(--fg) 45%, var(--error));
+}
+.forge-log-area[data-area='perf'] {
+  color: var(--fg-muted);
 }
 
-.forge-output-main .forge-output-log {
-  flex: 1 1 auto;
+/* Kopieren-Knopf pro Zeile: erscheint beim Darüberfahren oder per Tastatur-Fokus, rechts oben in der Zeile. */
+.forge-log-row {
+  position: relative;
+  padding-right: 24px;
+}
+.forge-log-row .forge-log-copy {
+  position: absolute;
+  top: 0;
+  right: 2px;
+  opacity: 0;
+}
+.forge-log-row:hover .forge-log-copy,
+.forge-log-row .forge-log-copy:focus-visible,
+.forge-log-row .forge-log-copy[data-state='done'],
+.forge-log-row .forge-log-copy[data-state='failed'] {
+  opacity: 1;
 }

@@ -88,7 +88,7 @@ pub fn collect_local_models(project_root: &Path) -> Result<Vec<LocalModel>, Stri
         return Err("The project has no dist folder yet; run a transpile first.".into());
     }
     let mut out = Vec::new();
-    let mut types: Vec<_> = std::fs::read_dir(&dist).map_err(|e| e.to_string())?.flatten().filter(|e| e.path().is_dir()).collect();
+    let mut types: Vec<_> = std::fs::read_dir(&dist).map_err(|e| plugin_api::at!(e.to_string()))?.flatten().filter(|e| e.path().is_dir()).collect();
     types.sort_by_key(|e| e.file_name());
     for t in types {
         let type_name = t.file_name().to_string_lossy().into_owned();
@@ -96,7 +96,7 @@ pub fn collect_local_models(project_root: &Path) -> Result<Vec<LocalModel>, Stri
             continue;
         }
         let Some(kind) = deploy_encode::kind_of(&type_name) else { continue };
-        let mut models: Vec<_> = std::fs::read_dir(t.path()).map_err(|e| e.to_string())?.flatten().filter(|e| e.path().is_dir()).collect();
+        let mut models: Vec<_> = std::fs::read_dir(t.path()).map_err(|e| plugin_api::at!(e.to_string()))?.flatten().filter(|e| e.path().is_dir()).collect();
         models.sort_by_key(|e| e.file_name());
         for m in models {
             let name = m.file_name().to_string_lossy().into_owned();

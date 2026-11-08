@@ -50,7 +50,7 @@ pub fn parse_system_alias(xml: &str) -> Result<DbAlias, String> {
     let mut node_stack: Vec<String> = Vec::new();
     let mut entries: Vec<(String, String)> = Vec::new();
     loop {
-        match reader.read_event().map_err(|e| format!("serverconfig is not valid XML: {e}"))? {
+        match reader.read_event().map_err(|e| plugin_api::at!(format!("serverconfig is not valid XML: {e}")))? {
             Event::Start(e) => {
                 if e.name().as_ref() == b"node" {
                     node_stack.push(attr(&e, "name").unwrap_or_default());
@@ -356,8 +356,8 @@ impl DbManager {
 
     fn connect_inner(&self, system: &str, tunnel_xml_path: &Path, server_xml_path: &Path, auth: &TunnelAuth<'_>) -> Result<DbStatus, String> {
         self.report(system, "Reading the tunnel and server config", false);
-        let tunnel_xml = std::fs::read_to_string(tunnel_xml_path).map_err(|e| format!("tunnel config not readable: {e}"))?;
-        let server_xml = std::fs::read_to_string(server_xml_path).map_err(|e| format!("server config not readable: {e}"))?;
+        let tunnel_xml = std::fs::read_to_string(tunnel_xml_path).map_err(|e| plugin_api::at!(format!("tunnel config not readable: {e}")))?;
+        let server_xml = std::fs::read_to_string(server_xml_path).map_err(|e| plugin_api::at!(format!("server config not readable: {e}")))?;
         let alias = parse_system_alias(&server_xml)?;
         let tunnels = parse_tunnels(&tunnel_xml)?;
         let tunnel = find_db_tunnel(&tunnels, &alias)
@@ -389,7 +389,7 @@ impl DbManager {
             .worker_threads(2)
             .enable_all()
             .build()
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| plugin_api::at!(e.to_string()))?;
         let mut config = ConnectionConfig::new("127.0.0.1", local_port, percent_encode(&alias.database), percent_encode(&alias.user), percent_encode(&alias.password));
         config.connect_timeout = Duration::from_secs(10);
         let connected = runtime.block_on(async {
@@ -421,7 +421,7 @@ impl DbManager {
     /// its own key and becomes the active one.
     pub fn connect_alias(&self, key: &str, tunnel_xml_path: &Path, alias: &DbAlias) -> Result<DbStatus, String> {
         self.disconnect_system(key);
-        let tunnel_xml = std::fs::read_to_string(tunnel_xml_path).map_err(|e| format!("tunnel config not readable: {e}"))?;
+        let tunnel_xml = std::fs::read_to_string(tunnel_xml_path).map_err(|e| plugin_api::at!(format!("tunnel config not readable: {e}")))?;
         let tunnels = parse_tunnels(&tunnel_xml)?;
         let tunnel = tunnels
             .iter()
@@ -433,7 +433,7 @@ impl DbManager {
             .ok_or_else(|| format!("Open the tunnel to {}:{} first (tunnel config editor).", alias.host, alias.port))?;
         let secrets = vec![alias.user.clone(), alias.password.clone()];
         let refs: Vec<&str> = secrets.iter().map(|s| s.as_str()).collect();
-        let runtime = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().map_err(|e| e.to_string())?;
+        let runtime = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().map_err(|e| plugin_api::at!(e.to_string()))?;
         let mut config = ConnectionConfig::new("127.0.0.1", local_port, percent_encode(&alias.database), percent_encode(&alias.user), percent_encode(&alias.password));
         config.connect_timeout = Duration::from_secs(10);
         let connected = runtime.block_on(async {

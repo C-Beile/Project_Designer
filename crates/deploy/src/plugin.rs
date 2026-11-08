@@ -74,9 +74,9 @@ mod tests {
     #[test]
     fn missing_and_wrong_arguments_are_reported() {
         let plugin = DeployPlugin::new(Arc::default());
-        assert_eq!(plugin.call("deploy_plan", json!({ "projectRoot": "x" })).unwrap_err(), "Argument 'force' fehlt");
-        assert_eq!(plugin.call("deploy_show_changes", json!({ "projectRoot": "x" })).unwrap_err(), "Argument 'key' fehlt");
-        assert_eq!(plugin.call("deploy_execute", json!({ "keys": [], "force": false, "confirmed": true })).unwrap_err(), "Argument 'projectRoot' fehlt");
+        assert!(plugin.call("deploy_plan", json!({ "projectRoot": "x" })).unwrap_err().starts_with("Argument 'force' fehlt"));
+        assert!(plugin.call("deploy_show_changes", json!({ "projectRoot": "x" })).unwrap_err().starts_with("Argument 'key' fehlt"));
+        assert!(plugin.call("deploy_execute", json!({ "keys": [], "force": false, "confirmed": true })).unwrap_err().starts_with("Argument 'projectRoot' fehlt"));
         let err = plugin.call("deploy_execute", json!({ "projectRoot": "x", "keys": "a", "force": false, "confirmed": true })).unwrap_err();
         assert!(err.starts_with("Argument 'keys' ist ungültig"), "{err}");
     }

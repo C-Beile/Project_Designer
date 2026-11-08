@@ -64,7 +64,7 @@ fn escape(text: &str) -> String {
 /// The text of a linked file; a file that is not valid UTF-8 is read as Latin-1 (the old script
 /// encoding of ADITO projects).
 fn read_text(path: &Path) -> Result<String, String> {
-    let bytes = std::fs::read(path).map_err(|e| format!("{} is not readable: {e}", path.display()))?;
+    let bytes = std::fs::read(path).map_err(|e| plugin_api::at!(format!("{} is not readable: {e}", path.display())))?;
     Ok(match String::from_utf8(bytes) {
         Ok(text) => text,
         Err(e) => e.into_bytes().iter().map(|&b| b as char).collect(),
@@ -153,7 +153,7 @@ fn base64(bytes: &[u8]) -> String {
 fn linked_content(file: &Path) -> Result<String, String> {
     let binary = file.extension().and_then(|e| e.to_str()).is_some_and(|e| BINARY_EXTENSIONS.iter().any(|b| b.eq_ignore_ascii_case(e)));
     if binary {
-        let bytes = std::fs::read(file).map_err(|e| format!("{} is not readable: {e}", file.display()))?;
+        let bytes = std::fs::read(file).map_err(|e| plugin_api::at!(format!("{} is not readable: {e}", file.display())))?;
         return Ok(base64(&bytes));
     }
     Ok(escape(&as_deployed_script(&read_text(file)?)))

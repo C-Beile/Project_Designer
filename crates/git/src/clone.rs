@@ -61,7 +61,7 @@ pub fn clone_repo(url: &str, dir: &Path, ssh_key: Option<&str>, password: Option
     let password = password.filter(|p| !p.is_empty());
     let mut askpass = None;
     if let Some(password) = password {
-        let helper = write_askpass(&std::env::temp_dir()).map_err(|e| format!("The password helper could not be created: {e}"))?;
+        let helper = write_askpass(&std::env::temp_dir()).map_err(|e| plugin_api::at!(format!("The password helper could not be created: {e}")))?;
         command.env("GIT_ASKPASS", &helper).env("SSH_ASKPASS", &helper).env("SSH_ASKPASS_REQUIRE", "force").env("FORGE_GIT_PASSWORD", password);
         askpass = Some(helper);
     }
@@ -69,7 +69,7 @@ pub fn clone_repo(url: &str, dir: &Path, ssh_key: Option<&str>, password: Option
     if let Some(helper) = askpass {
         let _ = std::fs::remove_file(helper);
     }
-    let output = output.map_err(|e| format!("git could not be started: {e}"))?;
+    let output = output.map_err(|e| plugin_api::at!(format!("git could not be started: {e}")))?;
     if !output.status.success() {
         let _ = std::fs::remove_dir_all(dir);
         let text = String::from_utf8_lossy(&output.stderr);

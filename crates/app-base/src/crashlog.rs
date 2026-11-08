@@ -11,6 +11,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::scrub::scrub;
 
 static LOG_DIR: OnceLock<PathBuf> = OnceLock::new();
+static ON_ENTRY: Mutex<Option<Box<dyn Fn(&str, &str, &str) + Send + Sync>>> = Mutex::new(None);
 static ON_PANIC: Mutex<Option<Box<dyn Fn(&str, &Path) + Send + Sync>>> = Mutex::new(None);
 
 /// Sets the folder the log files go to (`<app data>/logs`) and creates it.
@@ -29,6 +30,33 @@ pub fn set_panic_notifier(f: impl Fn(&str, &Path) + Send + Sync + 'static) {
     if let Ok(mut slot) = ON_PANIC.lock() {
         *slot = Some(Box::new(f));
     }
+}
+
+/// Registers what the app does with every new entry (Zeit, Art, Text): die App zeigt sie live im Output-Fenster.
+pub fn set_entry_listener(f: impl Fn(&str, &str, &str) + Send + Sync + 'static) {
+    if let Ok(mut slot) = ON_ENTRY.lock() {
+        *slot = Some(Box::new(f));
+    }
+}
+
+static UTC_OFFSET_MINUTES: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(0);
+
+/// Zeitzone des Nutzers als Abstand zu UTC in Minuten (Ost positiv, z. B. +60 für Wien im Winter).
+/// Die UI meldet sie beim Start; bis dahin gilt UTC.
+pub fn set_utc_offset_minutes(minutes: i32) {
+    UTC_OFFSET_MINUTES.store(minutes.clamp(-14 * 60, 14 * 60), std::sync::atomic::Ordering::Relaxed);
+}
+
+/// `YYYY-MM-DD HH:MM:SS` in der Zeitzone des Nutzers und das Suffix `+01:00` / `UTC`.
+#[must_use]
+pub fn timestamp_local() -> (String, String) {
+    let offset = i64::from(UTC_OFFSET_MINUTES.load(std::sync::atomic::Ordering::Relaxed));
+    let secs = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0) + offset * 60;
+    let (y, m, d) = civil_from_days(secs.div_euclid(86_400));
+    let rem = secs.rem_euclid(86_400);
+    let stamp = format!("{y:04}-{m:02}-{d:02} {:02}:{:02}:{:02}", rem / 3600, (rem % 3600) / 60, rem % 60);
+    let zone = if offset == 0 { "UTC".to_string() } else { format!("{}{:02}:{:02}", if offset < 0 { '-' } else { '+' }, offset.abs() / 60, offset.abs() % 60) };
+    (stamp, zone)
 }
 
 /// `YYYY-MM-DD HH:MM:SS` in UTC from the system clock (no time zone database needed for a log).
@@ -64,11 +92,17 @@ pub fn set_app_version(version: &str) {
 pub fn write_entry(kind: &str, message: &str) -> Option<PathBuf> {
     let dir = log_dir();
     let _ = std::fs::create_dir_all(&dir);
-    let stamp = timestamp_utc();
+    let (stamp, zone) = timestamp_local();
     let file = dir.join(format!("dito-designer-{}.log", &stamp[..10]));
     let mut f = std::fs::OpenOptions::new().create(true).append(true).open(&file).ok()?;
     let text = scrub(message);
-    writeln!(f, "[{stamp} UTC] [{kind}] version {}\n{text}\n", APP_VERSION.get().map(String::as_str).unwrap_or(env!("CARGO_PKG_VERSION"))).ok()?;
+    writeln!(f, "[{stamp} {zone}] [{kind}] version {}\n{text}\n", APP_VERSION.get().map(String::as_str).unwrap_or(env!("CARGO_PKG_VERSION"))).ok()?;
+    // Der Listener zeigt den Eintrag live im Output-Fenster. Er darf nie selbst ins Protokoll schreiben.
+    if let Ok(slot) = ON_ENTRY.lock() {
+        if let Some(listener) = slot.as_ref() {
+            listener(&stamp, kind, &text);
+        }
+    }
     Some(file)
 }
 
@@ -105,6 +139,12 @@ mod tests {
         assert_eq!(civil_from_days(0), (1970, 1, 1));
         assert_eq!(civil_from_days(20_000), (2024, 10, 4));
         assert_eq!(timestamp_utc().len(), 19);
+        set_utc_offset_minutes(90);
+        let (stamp, zone) = timestamp_local();
+        assert_eq!(stamp.len(), 19);
+        assert_eq!(zone, "+01:30");
+        set_utc_offset_minutes(0);
+        assert_eq!(timestamp_local().1, "UTC");
     }
 
     #[test]

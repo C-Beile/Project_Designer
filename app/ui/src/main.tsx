@@ -1,14 +1,19 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { tauriForgeApi } from './api/tauriApi'
+import { syncLogTimezone, tauriForgeApi } from './api/tauriApi'
 import { withSqlLog } from './api/sqlLog'
 import { installZoomControls } from './settings/zoom'
+import { setErrorLogSink } from './core/errorLog'
 import './styles.css'
 
 // Dev-only convenience: a "project" URL parameter can still pre-select a project folder for a
 // quick dev-mode reload, but the primary, supported way to open a project is now the native
 // folder dialog inside the app itself (App.tsx's "Open project…" button, P7
 // project-open-dialog) - this is just the initial value App.tsx's own state starts from.
+// Fehler-Popups kommen auch ins Protokoll (Log-Ordner, Hilfe > Open Log Folder).
+syncLogTimezone()
+setErrorLogSink((message) => void tauriForgeApi.logClientError(message).catch(() => {}))
+
 const projectRoot = new URLSearchParams(window.location.search).get('project') ?? ''
 
 // Floating panels and dialogs are opened as windows of their own with `?window=<kind>&name=<name>`.

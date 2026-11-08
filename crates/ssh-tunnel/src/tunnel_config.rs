@@ -36,7 +36,7 @@ pub fn parse_tunnels(xml: &str) -> Result<Vec<TunnelEntry>, String> {
     let mut current: Option<[String; 5]> = None;
     let mut field: Option<usize> = None;
     loop {
-        match reader.read_event().map_err(|e| format!("tunnelconfig is not valid XML: {e}"))? {
+        match reader.read_event().map_err(|e| plugin_api::at!(format!("tunnelconfig is not valid XML: {e}")))? {
             Event::Start(e) => {
                 let name = String::from_utf8_lossy(e.name().as_ref()).into_owned();
                 if name == "TunnelConfigDataModel" {
@@ -49,7 +49,7 @@ pub fn parse_tunnels(xml: &str) -> Result<Vec<TunnelEntry>, String> {
             }
             Event::Text(t) => {
                 if let (Some(cur), Some(i)) = (current.as_mut(), field) {
-                    cur[i] = t.unescape().map_err(|e| e.to_string())?.trim().to_string();
+                    cur[i] = t.unescape().map_err(|e| plugin_api::at!(e.to_string()))?.trim().to_string();
                 }
             }
             Event::End(e) => {
@@ -71,7 +71,7 @@ pub fn parse_tunnels(xml: &str) -> Result<Vec<TunnelEntry>, String> {
 
 pub fn read_tunnel_rows(project_root: &Path, reference: &str) -> Result<Vec<TunnelRowDto>, String> {
     let path = resolve_config_path(project_root, reference)?;
-    let xml = std::fs::read_to_string(&path).map_err(|e| format!("tunnel config not readable ({}): {e}", path.display()))?;
+    let xml = std::fs::read_to_string(&path).map_err(|e| plugin_api::at!(format!("tunnel config not readable ({}): {e}", path.display())))?;
     Ok(parse_tunnels(&xml)?
         .into_iter()
         .map(|t| TunnelRowDto { tunnel_host: t.tunnel_host, tunnel_port: t.tunnel_port, target_host: t.target_host, target_port: t.target_port, user: t.user })
@@ -174,11 +174,11 @@ pub fn delete_tunnel_xml(xml: &str, index: usize) -> Result<String, String> {
 
 fn rewrite_tunnel_file(project_root: &Path, reference: &str, change: impl FnOnce(&str) -> Result<String, String>) -> Result<Vec<TunnelRowDto>, String> {
     let path = resolve_config_path(project_root, reference)?;
-    let xml = std::fs::read_to_string(&path).map_err(|e| format!("tunnel config not readable ({}): {e}", path.display()))?;
+    let xml = std::fs::read_to_string(&path).map_err(|e| plugin_api::at!(format!("tunnel config not readable ({}): {e}", path.display())))?;
     let next = change(&xml)?;
-    parse_tunnels(&next).map_err(|e| format!("The change would break the file: {e}"))?;
+    parse_tunnels(&next).map_err(|e| plugin_api::at!(format!("The change would break the file: {e}")))?;
     app_base::fs_guard::ensure_writable(&path)?;
-    platform::fs::atomic_write(&path, next.as_bytes()).map_err(|e| format!("tunnel config could not be written ({}): {e}", path.display()))?;
+    platform::fs::atomic_write(&path, next.as_bytes()).map_err(|e| plugin_api::at!(format!("tunnel config could not be written ({}): {e}", path.display())))?;
     read_tunnel_rows(project_root, reference)
 }
 

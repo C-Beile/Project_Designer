@@ -99,9 +99,9 @@ mod tests {
     #[test]
     fn missing_and_wrong_arguments_are_reported() {
         let p = plugin();
-        assert_eq!(p.call("liquibase_plan", json!({ "projectRoot": "x" })).unwrap_err(), "Argument 'alias' fehlt");
-        assert_eq!(p.call("liquibase_target", json!({})).unwrap_err(), "Argument 'alias' fehlt");
-        assert_eq!(p.call("liquibase_update", json!({ "alias": "a", "projectRoot": "x" })).unwrap_err(), "Argument 'useDist' fehlt");
+        assert!(p.call("liquibase_plan", json!({ "projectRoot": "x" })).unwrap_err().starts_with("Argument 'alias' fehlt"));
+        assert!(p.call("liquibase_target", json!({})).unwrap_err().starts_with("Argument 'alias' fehlt"));
+        assert!(p.call("liquibase_update", json!({ "alias": "a", "projectRoot": "x" })).unwrap_err().starts_with("Argument 'useDist' fehlt"));
         let err = p.call("liquibase_update", json!({ "alias": "a", "projectRoot": "x", "useDist": "yes" })).unwrap_err();
         assert!(err.starts_with("Argument 'useDist' ist ungültig"), "{err}");
     }

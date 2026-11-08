@@ -141,6 +141,11 @@ pub fn run() {
                 use tauri::Emitter;
                 let _ = build_handle.emit("forge://build-output", serde_json::json!({ "line": line, "error": is_error }));
             }));
+            let log_handle = app.handle().clone();
+            app_base::crashlog::set_entry_listener(move |time, kind, message| {
+                use tauri::Emitter;
+                let _ = log_handle.emit("forge://log-entry", serde_json::json!({ "time": time, "kind": kind, "message": message }));
+            });
             let handle = app.handle().clone();
             app_base::crashlog::set_panic_notifier(move |message, file| {
                 use tauri::Emitter;
@@ -158,6 +163,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::plugins::plugin_call,
+            commands::misc::set_log_timezone,
             commands::plugins::plugin_list,
             commands::misc::check_for_update,
             commands::misc::install_update,

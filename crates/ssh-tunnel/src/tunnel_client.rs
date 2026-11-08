@@ -103,11 +103,11 @@ fn find_ssh() -> Option<PathBuf> {
 /// Writes the fixed helper that prints the password from the environment; it holds no secret.
 fn askpass_script() -> Result<PathBuf, String> {
     let path = std::env::temp_dir().join("dito-ssh-askpass.sh");
-    std::fs::write(&path, format!("#!/bin/sh\nprintf '%s\\n' \"${PASSWORD_ENV}\"\n")).map_err(|e| format!("ssh password helper could not be written: {e}"))?;
+    std::fs::write(&path, format!("#!/bin/sh\nprintf '%s\\n' \"${PASSWORD_ENV}\"\n")).map_err(|e| plugin_api::at!(format!("ssh password helper could not be written: {e}")))?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o700)).map_err(|e| format!("ssh password helper could not be prepared: {e}"))?;
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o700)).map_err(|e| plugin_api::at!(format!("ssh password helper could not be prepared: {e}")))?;
     }
     Ok(path)
 }
@@ -133,7 +133,7 @@ impl TunnelClient for OpenSshClient {
         if let TunnelAuth::Basic { password } = auth {
             cmd.env("SSH_ASKPASS", askpass_script()?).env("SSH_ASKPASS_REQUIRE", "force").env("DISPLAY", ":0").env(PASSWORD_ENV, password);
         }
-        cmd.spawn().map_err(|e| format!("ssh could not be started: {e}"))
+        cmd.spawn().map_err(|e| plugin_api::at!(format!("ssh could not be started: {e}")))
     }
 }
 

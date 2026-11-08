@@ -21,7 +21,7 @@ const NO_DB: DbStatus = { connected: false, tunnel_up: false, database: null, ho
 export function FloatApp({ view, api }: { view: FloatView; api: ForgeApi }) {
   const [state, setState] = useState<MainState | null>(null)
   const [db, setDb] = useState<DbStatus>(NO_DB)
-  const [logs, setLogs] = useState<Record<OutputSubTab, OutputLine[]>>({ database: [], build: [], default: [], nodejs: [] })
+  const [logs, setLogs] = useState<Record<OutputSubTab, OutputLine[]>>({ ide: [], database: [], build: [], default: [], nodejs: [] })
   const [sub, setSub] = useState<OutputSubTab>('build')
   const scm = useScm()
   const ScmPanel = useDialog('git.scmPanel')?.component
@@ -38,7 +38,7 @@ export function FloatApp({ view, api }: { view: FloatView; api: ForgeApi }) {
         else unsubs.push(u)
       })
     add(backend.listen(EVENTS.mainState, (p) => setState(p as MainState)))
-    add(backend.listen(EVENTS.outputLines, (p) => setLogs(p as Record<OutputSubTab, OutputLine[]>)))
+    add(backend.listen(EVENTS.outputLines, (p) => setLogs((prev) => ({ ...prev, ...(p as Record<OutputSubTab, OutputLine[]>) }))))
     add(
       backend.listen(EVENTS.scmRefresh, () => {
         const root = latestRoot.current

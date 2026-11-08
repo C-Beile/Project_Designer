@@ -52,6 +52,7 @@ Die dünne Tauri-Hülle. Sie nimmt `invoke(...)` aus der UI an und ruft `crates/
 - Raus: nichts. Die UI (`app/ui`) ruft die Befehle auf (`app/ui/src/api/tauriApi.ts`).
 
 ## Regeln und Fallen
+- **Jeder Tauri-Befehl packt seinen Rumpf in `crate::commands::guard("name", || { ... })` (sync) oder `guard_async("name", async { ... }).await` (async).** Ein Panic wird so zum Fehlertext (bei `Result`) oder zum leeren Wert (`Option`, `Vec`, `bool`, `()`) und kommt ins Protokoll, statt die App zu beenden oder das Versprechen im Frontend offen zu lassen. Neue Rückgabetypen: `PanicFallback` in `commands/mod.rs` ergänzen.
 - Cargo-Features: `git`, `ssh-tunnel`, `database` (zieht `ssh-tunnel`), `deploy` und `liquibase` (ziehen `database`), `adito-transpiler`. Alle in `default`. Prüfung mit weniger: `cargo check -p designer-app --no-default-features --features git`.
 - Neuer Befehl: Funktion mit `#[tauri::command]` in `commands/<datei>.rs` UND Eintrag in `generate_handler!` in `lib.rs`. Ohne Eintrag meldet die UI "command not found" erst zur Laufzeit.
 - `blocking(|| ...)` (`commands/mod.rs`) führt langsame Arbeit außerhalb des UI-Threads aus (`spawn_blocking`) und macht aus einem abgestürzten Task einen Fehlertext. Langsame Befehle: `async fn` + `blocking`. Ohne das friert das Fenster ein. `plugin_call` nutzt es auch.

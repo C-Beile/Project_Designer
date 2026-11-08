@@ -174,7 +174,7 @@ pub fn run_update(toolchain: &Toolchain, dir: &Path, target: &JdbcTarget, log: &
     let unique = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
     let file_name = format!("dito-liquibase-{}-{unique}.properties", std::process::id());
     let defaults = TempFile(temp_dir.join(&file_name));
-    std::fs::write(&defaults.0, defaults_file_text(&changelog, target)).map_err(|e| format!("The Liquibase settings file could not be written: {e}"))?;
+    std::fs::write(&defaults.0, defaults_file_text(&changelog, target)).map_err(|e| plugin_api::at!(format!("The Liquibase settings file could not be written: {e}")))?;
 
     let sep = if cfg!(windows) { ";" } else { ":" };
     let classpath = toolchain.classpath.iter().map(|p| p.to_string_lossy().to_string()).collect::<Vec<_>>().join(sep);
@@ -188,7 +188,7 @@ pub fn run_update(toolchain: &Toolchain, dir: &Path, target: &JdbcTarget, log: &
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-    let mut child = cmd.spawn().map_err(|e| format!("Java could not be started: {e}"))?;
+    let mut child = cmd.spawn().map_err(|e| plugin_api::at!(format!("Java could not be started: {e}")))?;
     let secrets = [target.user.as_str(), target.password.as_str()];
     let last_error = std::sync::Mutex::new(String::new());
     std::thread::scope(|scope| {
@@ -218,7 +218,7 @@ pub fn run_update(toolchain: &Toolchain, dir: &Path, target: &JdbcTarget, log: &
             });
         }
     });
-    let status = child.wait().map_err(|e| e.to_string())?;
+    let status = child.wait().map_err(|e| plugin_api::at!(e.to_string()))?;
     drop(defaults);
     if status.success() {
         Ok(())

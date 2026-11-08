@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { runCommandById, useTreeContextItems } from '../core/plugins/registry'
+import { ErrorBoundary } from '../core/errorHandling'
 import { ShellExtensions } from '../core/plugins/ShellExtensions'
 import { activeTab, closeTabsWhere, isFileNode, openTab, setSubTab } from '../tabs/tabModel'
 import { TitleBar } from '../chrome/TitleBar'
@@ -275,7 +276,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     const panel = TOOL_WINDOWS.find((w) => w.id === id)!.panel
     if (panel) setLayout((prev) => ({ ...prev, panels: { ...prev.panels, [panel]: 'open' } }))
     if (id === 'projects' || id === 'services') setProjectsTab(id)
-    if (id === 'output' || id === 'scanservices' || id === 'search' || id === 'notifications' || id === 'refactoring' || id === 'problems') setOutputTab(id)
+    if (id === 'output' || id === 'idelog' || id === 'scanservices' || id === 'search' || id === 'notifications' || id === 'refactoring' || id === 'problems') setOutputTab(id)
     if (focus) {
       const selector = panel ? `[data-panel="${panel}"]` : '.forge-editor-area'
       setTimeout(() => document.querySelector<HTMLElement>(selector)?.focus(), 0)
@@ -433,25 +434,29 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   return (
     <div className="forge-shell">
       <TitleBar title={hasProject ? `Dito Designer - ${baseName(root)}` : 'Dito Designer'} />
-      <MenuBar menus={menus} onCommand={onMenuCommand} />
-      <Toolbar
-        hasProject={hasProject}
-        hasSelection={selected !== null}
-        hasUnsaved={unsaved.size > 0}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        systems={systems}
-        runConfig={activeSystem}
-        onRunConfigChange={setRunConfig}
-        engine={engine}
-        onEngineChange={setEngine}
-        transpileRunning={transpileRunning}
-        onCommand={(c) => runCommand(c)}
-        prefs={toolbarPrefs}
-        onToggleGroup={toggleToolbarGroup}
-        gitActive={gitActive}
-        sqlActive={sqlActive}
-      />
+      <ErrorBoundary compact label="Menu bar">
+        <MenuBar menus={menus} onCommand={onMenuCommand} />
+      </ErrorBoundary>
+      <ErrorBoundary compact label="Toolbar">
+        <Toolbar
+          hasProject={hasProject}
+          hasSelection={selected !== null}
+          hasUnsaved={unsaved.size > 0}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          systems={systems}
+          runConfig={activeSystem}
+          onRunConfigChange={setRunConfig}
+          engine={engine}
+          onEngineChange={setEngine}
+          transpileRunning={transpileRunning}
+          onCommand={(c) => runCommand(c)}
+          prefs={toolbarPrefs}
+          onToggleGroup={toggleToolbarGroup}
+          gitActive={gitActive}
+          sqlActive={sqlActive}
+        />
+      </ErrorBoundary>
       <ExperimentalEngineWarning engine={engine} />
       <DockLayout
         layout={effectiveLayout}
@@ -471,27 +476,29 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
             : undefined
         }
       />
-      <StatusBar
-        system={activeSystem || null}
-        systems={systems}
-        onPickSystem={setRunConfig}
-        message={status}
-        task={transpileRunning ? { label: `Transpiling (${engine})...` } : null}
-        tunnel={db.tunnel_up || tunnelState.phase === 'on'}
-        tunnelPhase={tunnelState.phase}
-        tunnelDetail={Object.entries(tunnelState.progressBy).map(([k, v]) => `${systemNameOf(k)}: ${v.phase} (${Math.round((Date.now() - v.startedAt) / 1000)} s)`).join('; ')}
-        openTunnels={groupOpenTunnels(Object.entries(tunnelState.bySystem).filter(([k, v]) => k !== '' && !k.includes('|alias:') && (v.connected || v.tunnel_up)).map(([k]) => (projects.length > 1 ? `${systemNameOf(k)} (${baseName(k.slice(0, k.lastIndexOf('|')))})` : systemNameOf(k))))}
-        errors={totalErrors}
-        onShowProblems={() => showToolWindow('problems')}
-        onShowOutput={() => showToolWindow('output')}
-        onShowNotifications={() => showToolWindow('notifications')}
-        onShowServices={() => showToolWindow('services')}
-        onCloseTunnels={() => {
-          void api.tunnelDisconnectAll().catch(() => {})
-          void api.dbDisconnect().catch(() => {})
-          clearDb()
-        }}
-      />
+      <ErrorBoundary compact label="Status bar">
+        <StatusBar
+          system={activeSystem || null}
+          systems={systems}
+          onPickSystem={setRunConfig}
+          message={status}
+          task={transpileRunning ? { label: `Transpiling (${engine})...` } : null}
+          tunnel={db.tunnel_up || tunnelState.phase === 'on'}
+          tunnelPhase={tunnelState.phase}
+          tunnelDetail={Object.entries(tunnelState.progressBy).map(([k, v]) => `${systemNameOf(k)}: ${v.phase} (${Math.round((Date.now() - v.startedAt) / 1000)} s)`).join('; ')}
+          openTunnels={groupOpenTunnels(Object.entries(tunnelState.bySystem).filter(([k, v]) => k !== '' && !k.includes('|alias:') && (v.connected || v.tunnel_up)).map(([k]) => (projects.length > 1 ? `${systemNameOf(k)} (${baseName(k.slice(0, k.lastIndexOf('|')))})` : systemNameOf(k))))}
+          errors={totalErrors}
+          onShowProblems={() => showToolWindow('problems')}
+          onShowOutput={() => showToolWindow('output')}
+          onShowNotifications={() => showToolWindow('notifications')}
+          onShowServices={() => showToolWindow('services')}
+          onCloseTunnels={() => {
+            void api.tunnelDisconnectAll().catch(() => {})
+            void api.dbDisconnect().catch(() => {})
+            clearDb()
+          }}
+        />
+      </ErrorBoundary>
       {dialog === 'options' && !osWindowsAvailable() ? (
         <OptionsDialog
           api={api}

@@ -81,7 +81,7 @@ mod tests {
     #[test]
     fn missing_argument_is_reported() {
         let err = registry().call("git", "git_commit", json!({ "projectRoot": "x" })).unwrap_err();
-        assert_eq!(err, "Argument 'message' fehlt");
+        assert!(err.starts_with("Argument 'message' fehlt"));
     }
 
     #[test]

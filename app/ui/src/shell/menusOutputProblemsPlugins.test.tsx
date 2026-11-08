@@ -19,7 +19,7 @@ import type { ProblemDto, TreeNode } from '../wire/types'
 
 vi.mock('monaco-editor', () => import('../test/monacoMock'))
 
-const EMPTY: Record<OutputSubTab, OutputLine[]> = { database: [], build: [], default: [], nodejs: [] }
+const EMPTY: Record<OutputSubTab, OutputLine[]> = { ide: [], database: [], build: [], default: [], nodejs: [] }
 
 const ctx: MenuContext = {
   hasProject: true,

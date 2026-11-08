@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { registerFeaturePlugins } from '../features/registerFeatures'
-import { CrashListener } from '../core/errorHandling'
+import { CrashListener, ErrorBoundary } from '../core/errorHandling'
 import { useTheme } from '../theme/useTheme'
 import { DialogWindowApp } from './DialogWindowApp'
 import { EditorWindowApp } from './EditorWindowApp'
@@ -36,9 +36,11 @@ export function WindowRoot({ api, kind, name }: { api: ForgeApi; kind: string; n
   return (
     <>
       <CrashListener api={api} />
-      {kind === 'float' && isFloatView(name) ? <FloatApp view={name} api={api} /> : null}
-      {kind === 'dialog' ? <DialogWindowApp name={name} api={api} /> : null}
-      {kind === 'editor' ? <EditorWindowApp name={name} api={api} /> : null}
+      <ErrorBoundary api={api} label={`Window ${kind}/${name}`}>
+        {kind === 'float' && isFloatView(name) ? <FloatApp view={name} api={api} /> : null}
+        {kind === 'dialog' ? <DialogWindowApp name={name} api={api} /> : null}
+        {kind === 'editor' ? <EditorWindowApp name={name} api={api} /> : null}
+      </ErrorBoundary>
       {kind !== 'float' && kind !== 'dialog' && kind !== 'editor' ? <p>Unknown window.</p> : null}
     </>
   )

@@ -272,7 +272,7 @@ pub fn parse_alias_configs(xml: &str) -> Result<Vec<AliasConfigDto>, String> {
     let mut nodes: Vec<Collected> = Vec::new();
     let mut open: Vec<usize> = Vec::new();
     loop {
-        match reader.read_event().map_err(|e| format!("serverconfig is not valid XML: {e}"))? {
+        match reader.read_event().map_err(|e| plugin_api::at!(format!("serverconfig is not valid XML: {e}")))? {
             Event::Start(e) if e.name().as_ref() == b"node" => {
                 stack.push(attr(&e, "name").unwrap_or_default());
                 nodes.push(Collected { path: stack.clone(), entries: Vec::new() });
@@ -331,7 +331,7 @@ pub fn parse_alias_configs(xml: &str) -> Result<Vec<AliasConfigDto>, String> {
 
 pub fn read_alias_configs(project_root: &Path, reference: &str) -> Result<Vec<AliasConfigDto>, String> {
     let path = resolve_config_path(project_root, reference)?;
-    let xml = std::fs::read_to_string(&path).map_err(|e| format!("server config not readable ({}): {e}", path.display()))?;
+    let xml = std::fs::read_to_string(&path).map_err(|e| plugin_api::at!(format!("server config not readable ({}): {e}", path.display())))?;
     parse_alias_configs(&xml)
 }
 
@@ -353,8 +353,8 @@ pub fn system_tunnel_state(project_root: &Path, tunnel_ref: &str, server_ref: &s
     let result = (|| -> Result<(bool, Option<String>), String> {
         let tunnel_path = resolve_config_path(project_root, tunnel_ref)?;
         let server_path = resolve_config_path(project_root, server_ref)?;
-        let alias = parse_system_alias(&std::fs::read_to_string(&server_path).map_err(|e| e.to_string())?)?;
-        let entries = parse_tunnels(&std::fs::read_to_string(&tunnel_path).map_err(|e| e.to_string())?)?;
+        let alias = parse_system_alias(&std::fs::read_to_string(&server_path).map_err(|e| plugin_api::at!(e.to_string()))?)?;
+        let entries = parse_tunnels(&std::fs::read_to_string(&tunnel_path).map_err(|e| plugin_api::at!(e.to_string()))?)?;
         Ok(match find_db_tunnel(&entries, &alias) {
             Some(t) => (tunnels.local_port(&t.target_host, t.target_port).is_some(), Some(format!("{}:{}", t.target_host, t.target_port))),
             None => (false, None),

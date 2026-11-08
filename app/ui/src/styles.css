@@ -36,6 +36,7 @@
 @import './styles/sql-window.css';
 @import './shell/OutputPanel.css';
 @import './styles/output-window.css';
+@import './shell/OutputPanel.css';
 @import './diagnostics/ProblemsPanel.css';
 @import './styles/problems.css';
 @import './shell/OptionsDialog.css';
@@ -64,6 +65,7 @@
 @import './styles/alias-editor.css';
 @import './editors/ViewPreview.css';
 @import './core/ui/ProgressBar.css';
+@import './core/ui/CopyButton.css';
 @import './tabs/DbBrowserTab.css';
 @import './styles/view-preview.css';
 @import './styles/application-editor-v2.css';

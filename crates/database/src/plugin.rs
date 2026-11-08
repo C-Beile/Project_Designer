@@ -185,9 +185,9 @@ mod tests {
     #[test]
     fn missing_and_wrong_arguments_are_reported() {
         let reg = registry(true);
-        assert_eq!(reg.call("database", "db_query", json!({ "sql": "select 1" })).unwrap_err(), "Argument 'allowWrite' fehlt");
-        assert_eq!(reg.call("database", "db_activate", json!({})).unwrap_err(), "Argument 'system' fehlt");
-        assert_eq!(reg.call("database", "db_connect", json!({ "tunnelConfig": "t" })).unwrap_err(), "Argument 'serverConfig' fehlt");
+        assert!(reg.call("database", "db_query", json!({ "sql": "select 1" })).unwrap_err().starts_with("Argument 'allowWrite' fehlt"));
+        assert!(reg.call("database", "db_activate", json!({})).unwrap_err().starts_with("Argument 'system' fehlt"));
+        assert!(reg.call("database", "db_connect", json!({ "tunnelConfig": "t" })).unwrap_err().starts_with("Argument 'serverConfig' fehlt"));
         let err = reg.call("database", "db_query", json!({ "sql": 1, "allowWrite": false })).unwrap_err();
         assert!(err.starts_with("Argument 'sql' ist ungültig"), "{err}");
     }
@@ -201,7 +201,7 @@ mod tests {
         assert_eq!(err("system_user_set", json!({ "user": "x", "key": "k", "value": "v", "confirmed": false })), "Changing a user needs your confirmation.");
         assert_eq!(err("system_user_set_property", json!({ "id": "1", "value": "v", "confirmed": false })), "Changing a user needs your confirmation.");
         assert_eq!(err("system_user_set_list", json!({ "user": "x", "key": "k", "values": [], "confirmed": false })), "Changing a user needs your confirmation.");
-        assert_eq!(err("system_user_create", json!({ "title": "x" })), "Argument 'confirmed' fehlt");
+        assert!(err("system_user_create", json!({ "title": "x" })).starts_with("Argument 'confirmed' fehlt"));
     }
 
     #[test]

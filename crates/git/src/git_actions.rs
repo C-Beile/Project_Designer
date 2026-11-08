@@ -38,7 +38,7 @@ pub fn repo_root(dir: &Path) -> Result<PathBuf, String> {
         .args(["rev-parse", "--show-toplevel"])
         .current_dir(dir)
         .output()
-        .map_err(|e| format!("git could not be started: {e}"))?;
+        .map_err(|e| plugin_api::at!(format!("git could not be started in '{}': {e}", dir.display())))?;
     if !out.status.success() {
         return Err("This project folder is not inside a Git repository.".to_string());
     }
@@ -68,10 +68,10 @@ pub fn overview(dir: &Path) -> Result<GitOverview, String> {
     prepare();
     let root = repo_root(dir)?;
     let git = CommandGitOperations::new();
-    let status = git.status(&root).map_err(|e| e.to_string())?;
+    let status = git.status(&root).map_err(|e| plugin_api::at!(e.to_string()))?;
     let files = expand_untracked_dirs(&root, status.files);
-    let branches = git.list_branches(&root).map_err(|e| e.to_string())?;
-    let commits = git.log(&root, HISTORY_LIMIT).map_err(|e| e.to_string())?;
+    let branches = git.list_branches(&root).map_err(|e| plugin_api::at!(e.to_string()))?;
+    let commits = git.log(&root, HISTORY_LIMIT).map_err(|e| plugin_api::at!(e.to_string()))?;
     let remote_branches = remote_branch_names(&root);
     let user_name = git_config(&root, "user.name");
     let user_email = git_config(&root, "user.email");
@@ -121,26 +121,26 @@ pub fn commit(dir: &Path, message: &str, paths: &[String]) -> Result<GitOutput, 
     let msg = validate_message(message)?;
     let root = repo_root(dir)?;
     let git = CommandGitOperations::new();
-    let status_files = expand_untracked_dirs(&root, git.status(&root).map_err(|e| e.to_string())?.files);
+    let status_files = expand_untracked_dirs(&root, git.status(&root).map_err(|e| plugin_api::at!(e.to_string()))?.files);
     if paths.is_empty() {
         return Err("No files selected.".into());
     }
     if let Some(bad) = paths.iter().find(|p| !status_files.iter().any(|f| &f.path == *p)) {
         return Err(format!("{bad} has no pending change."));
     }
-    git.commit_paths(&root, &msg, paths).map(outcome).map_err(|e| e.to_string())
+    git.commit_paths(&root, &msg, paths).map(outcome).map_err(|e| plugin_api::at!(e.to_string()))
 }
 
 pub fn pull(dir: &Path) -> Result<GitOutput, String> {
     prepare();
     let root = repo_root(dir)?;
-    CommandGitOperations::new().pull(&root).map(outcome).map_err(|e| e.to_string())
+    CommandGitOperations::new().pull(&root).map(outcome).map_err(|e| plugin_api::at!(e.to_string()))
 }
 
 pub fn push(dir: &Path) -> Result<GitOutput, String> {
     prepare();
     let root = repo_root(dir)?;
-    CommandGitOperations::new().push(&root).map(outcome).map_err(|e| e.to_string())
+    CommandGitOperations::new().push(&root).map(outcome).map_err(|e| plugin_api::at!(e.to_string()))
 }
 
 /// Switches to an existing local branch; the name must be one of the listed branches.
@@ -148,11 +148,11 @@ pub fn checkout(dir: &Path, branch: &str) -> Result<GitOutput, String> {
     prepare();
     let root = repo_root(dir)?;
     let git = CommandGitOperations::new();
-    let branches = git.list_branches(&root).map_err(|e| e.to_string())?;
+    let branches = git.list_branches(&root).map_err(|e| plugin_api::at!(e.to_string()))?;
     if !branches.iter().any(|b| b.name == branch) {
         return Err(format!("Branch {branch} does not exist."));
     }
-    git.checkout_branch(&root, branch).map(outcome).map_err(|e| e.to_string())
+    git.checkout_branch(&root, branch).map(outcome).map_err(|e| plugin_api::at!(e.to_string()))
 }
 
 /// Creates a new local branch from the current HEAD, or from a listed remote branch, and switches
@@ -162,7 +162,7 @@ pub fn create_branch(dir: &Path, name: &str, start: Option<&str>) -> Result<GitO
     let name = validate_branch_name(name)?;
     let root = repo_root(dir)?;
     let git = CommandGitOperations::new();
-    let branches = git.list_branches(&root).map_err(|e| e.to_string())?;
+    let branches = git.list_branches(&root).map_err(|e| plugin_api::at!(e.to_string()))?;
     if branches.iter().any(|b| b.name == name) {
         return Err(format!("Branch {name} already exists."));
     }
@@ -173,7 +173,7 @@ pub fn create_branch(dir: &Path, name: &str, start: Option<&str>) -> Result<GitO
         }
         args.push(s.to_string());
     }
-    let out = platform::console::command("git").args(&args).current_dir(&root).output().map_err(|e| format!("git could not be started: {e}"))?;
+    let out = platform::console::command("git").args(&args).current_dir(&root).output().map_err(|e| plugin_api::at!(format!("git could not be started in '{}': {e}", root.display())))?;
     let text = format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr)).trim().to_string();
     Ok(GitOutput { ok: out.status.success(), text })
 }

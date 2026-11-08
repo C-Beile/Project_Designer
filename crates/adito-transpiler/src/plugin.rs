@@ -45,7 +45,7 @@ impl Transpiler for AditoTranspiler {
                 log(Progress::Log { error: stream == LogStream::Stderr, line });
             }
         });
-        let outcome = runner.run(project_root, sink).map_err(|e| e.to_string())?;
+        let outcome = runner.run(project_root, sink).map_err(|e| plugin_api::at!(e.to_string()))?;
         if take_cancelled() {
             return Err("Build cancelled.".to_string());
         }

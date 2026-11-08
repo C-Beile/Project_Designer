@@ -10,7 +10,7 @@
 | `useNavElements.ts` | Navigator: Element zurücksetzen/aktivieren. Liefert `resetNavElement, activateNavElement, resetNavRef, activateNavRef`. Setzt `removeElementRef.current`. |
 | `useExternalChanges.ts` | Änderungen von außen erkennen, Konflikt-Dialog. Liefert `resolveConflict`. |
 | `useProblemScan.ts` | Projektweiter Problem-Scan. Liefert `scanning`. |
-| `useOutputLogs.ts` | Zeilen der Output-Reiter. Liefert `logs, appendLog, clearLog`. |
+| `useOutputLogs.ts` | Zeilen der Output-Reiter (auch "IDE Log": live aus dem Event `forge://log-entry`, farbig nach Art und Bereich). Liefert `logs, appendLog, clearLog`. |
 | `useDbStatus.ts` | Datenbank- und Tunnel-Status des aktiven Projekts. Liefert `db, changeDb, clearDb, tunnelState, nowTick`. |
 | `useTranspile.ts` | Transpile: Engine, Fortschritt, Ergebnis, Vergleich, Abbruch. Liefert u. a. `transpile, engine, cancelBuild, commands`. |
 | `useDeploy.ts` | Deploy und Build-and-Deploy. Braucht `transpile`. Liefert `startDeploy, deployOptions, deployRun, commands`. |

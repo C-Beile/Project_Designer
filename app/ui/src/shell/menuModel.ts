@@ -43,6 +43,7 @@ export type ToolWindowId =
   | 'properties'
   | 'navigator'
   | 'output'
+  | 'idelog'
   | 'scanservices'
   | 'editor'
   | 'search'
@@ -57,6 +58,7 @@ export const TOOL_WINDOWS: { id: ToolWindowId; label: string; panel: PanelId | n
   { id: 'properties', label: 'Properties', panel: 'properties' },
   { id: 'navigator', label: 'Navigator', panel: 'navigator' },
   { id: 'output', label: 'Output', panel: 'output' },
+  { id: 'idelog', label: 'IDE Log', panel: 'output' },
   { id: 'scanservices', label: 'Scan Services', panel: 'output' },
   { id: 'editor', label: 'Editor', panel: null },
   { id: 'search', label: 'Search Results', panel: 'output' },
@@ -409,7 +411,6 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
           ],
         },
         item('help.localData', 'Local Data...', true),
-        item('help.openLogFolder', 'Open Log Folder', true),
         item('help.openBackupFolder', 'Open Backup Folder', true),
         sep(),
         item('tools.plugins', 'Plugins', true),
@@ -442,7 +443,7 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
           label: 'IDE Tools',
           enabled: true,
           children: [
-            later('window.ideLog', 'IDE Log'),
+            windowItem('idelog', 'IDE Log'),
             sep(),
             windowItem('notifications', 'Notifications'),
             later('window.exceptionReporter', 'Exception Reporter'),
@@ -489,6 +490,7 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
       mnemonic: 'h',
       items: [
         item('help.checkUpdates', 'Check for Updates', true),
+        item('help.openLogFolder', 'Open Log Folder', true),
         later('help.bugReport', 'Send Bug Report'),
         sep(),
         later('help.userGuide', 'Show Documentation'),

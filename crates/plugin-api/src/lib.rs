@@ -8,6 +8,15 @@
 //! Die Crate hängt von keiner anderen Workspace-Crate ab. Ihre Typen in [`types`] sind eigene
 //! Platzhalter. Die Umwandlung in die echten Typen steht in `designer-core/src/plugin_bridge.rs`.
 
+/// Hängt Datei und Zeile der Fehlerstelle an einen Fehlertext: `at!(format!("..."))` -> `"... [crates/x/src/y.rs:12]"`.
+/// Für unerwartete Fehler (Betriebssystem, Prozesse, Datenbank), damit man sie im Log und im Popup schnell findet.
+#[macro_export]
+macro_rules! at {
+    ($msg:expr) => {
+        format!("{} [{}:{}]", $msg, file!(), line!())
+    };
+}
+
 pub mod action;
 pub mod builtin;
 pub mod editor_provider;

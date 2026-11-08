@@ -199,3 +199,18 @@
 .forge-float-bar { display: flex; align-items: center; gap: 8px; padding: 3px 8px; border-bottom: 1px solid var(--border); font-size: 12px; }
 
 .forge-float-body { flex: 1; min-height: 0; overflow: auto; }
+
+/* Kleiner Fehlerstreifen für Leisten, Panels und Erweiterungen (ErrorBoundary compact). */
+.forge-error-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  color: var(--error);
+  background: color-mix(in srgb, var(--error) 12%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--error) 40%, transparent);
+  font-size: 12px;
+}
+.forge-error-compact button {
+  margin-left: auto;
+}

@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 import { IconClose, IconMinimize } from './icons'
+import { ErrorBoundary } from '../core/errorHandling'
 import { LIMITS, PANEL_TITLES, clamp, type LayoutState, type PanelId } from './layoutState'
 
 // Docking frame of the main window, arranged like the original Designer (LAYOUT_SPEC §3): the
@@ -108,7 +109,11 @@ export function PanelFrame({
           if (onFloat && (e.clientX < 0 || e.clientY < 0 || e.clientX > window.innerWidth || e.clientY > window.innerHeight)) onFloat({ x: e.screenX, y: e.screenY })
         }}
       >
-        <div className="forge-panel-header-main">{content.header}</div>
+        <div className="forge-panel-header-main">
+          <ErrorBoundary compact label={`${name} header`}>
+            {content.header}
+          </ErrorBoundary>
+        </div>
         {onFloat ? (
           <button type="button" className="forge-panel-btn" aria-label={`Open ${name} in a new window`} title={`Open ${name} in a new window (or drag the title out of the Designer)`} onClick={() => onFloat()}>
             {'⧉'}
@@ -121,7 +126,11 @@ export function PanelFrame({
           <IconMinimize />
         </button>
       </header>
-      <div className="forge-panel-body">{content.body}</div>
+      <div className="forge-panel-body">
+        <ErrorBoundary compact label={name}>
+          {content.body}
+        </ErrorBoundary>
+      </div>
     </section>
   )
 }

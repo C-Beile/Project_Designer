@@ -9,12 +9,14 @@
 | `outputBus.ts` | `logOutput(sub, text)` schreibt ins Output-Fenster. `requestShell` für kleine Bitten an die Shell. SQL-Maskierung. |
 | `shortcuts.ts` | Kürzel als `Mod+Shift+S` schreiben, anzeigen (`formatShortcut`) und prüfen (`matchesShortcut`). |
 | `errorText.ts` | `errorText(e)`: Fehler als Text. |
+| `clipboard.ts` | `copyText(text)`: kopiert in die Zwischenablage (mit Rückfall). Für alles, was kopiert. |
+| `errorLog.ts` | `logError(text)` schreibt ins Protokoll; `main.tsx` setzt die Senke. `notify(kind:'error')` ruft es auf. |
 | `errorHandling.tsx` | `ErrorBoundary` (Absturz eines Editors), `CrashListener` (schreibt ins Logfile). |
 | `treeIndex.ts` | Suchen im Projektbaum: `collectByType`, `findObject`, `entityOfView`, `collectIcons`. |
 | `uuid.ts` | `newUuid`, `copyNewUuid`. |
 | `scm.ts` | Neutraler Store für den Source-Control-Stand: `useScm`, `refreshScm`, `decorationFor`, `indexOf`, `setScmProvider`. Ohne Plugin leer. |
 | `plugins/` | `registry.ts`: UI-Register für Plugins. `ShellExtensions.tsx` rendert die Shell-Beiträge. |
-| `ui/` | Masken-Baukasten: FormDialog, ListDialog, DataTable, ProgressBar, `uiDialogs`. |
+| `ui/` | Masken-Baukasten: FormDialog, ListDialog, DataTable, ProgressBar, `CopyButton` (Kopieren-Knopf mit grünem Haken), `uiDialogs`. |
 <!-- AUTO:END -->
 
 ## Zweck
@@ -63,6 +65,7 @@ Der Kern liest den Stand (Baum-Farben, Tabs, Speichern). Das SCM-Plugin sagt mit
 - `ListDialog`: aus einer Liste wählen, einzeln oder mehrfach, mit Suche.
 - `DataTable`: Tabelle mit Sortierung und Auswahl, ohne eigenen Dialog.
 - `ProgressBar`: Fortschritt, mit oder ohne Prozent.
+- `CopyButton`: überall, wo ein Text kopiert wird (`text` als String oder Funktion, `label`). Zeigt nach dem Klick einen grünen Haken mit Animation. Nicht selbst `navigator.clipboard` aufrufen: `copyText` aus `core/clipboard.ts` nutzen.
 - `uiDialogs.tsx`: Masken als Daten. `defineFormDialog`/`defineListDialog` beschreiben, `registerUiDialog(id, spec, plugin)` meldet an, `openUiDialog(spec oder id)` öffnet. `UiDialogHost` hängt in `DialogHost`.
 - Große Dialoge mit eigenem Layout bleiben normale Komponenten mit `Modal` (siehe `shell/`).
 

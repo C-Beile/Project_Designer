@@ -1,4 +1,36 @@
-import { invoke } from '@tauri-apps/api/core'
+import { invoke as rawInvoke } from '@tauri-apps/api/core'
+import { callSite } from '../core/errorLog'
+
+/**
+ * Alle Tauri-Aufrufe laufen hierüber. Schlägt ein Befehl fehl, kommt Name und Fehlertext ins Protokoll
+ * (Log-Ordner). Ohne Argumente, damit keine Geheimnisse in die Datei geraten. Bei `plugin_call` loggt das Backend zusätzlich den Fehler mit Argumenten; hier kommt der Aufrufer (Datei:Zeile) dazu.
+ */
+function invoke<T = unknown>(command: string, args?: Record<string, unknown>): Promise<T> {
+  const site = callSite() // Aufrufer jetzt merken: nach dem await ist der Stapel weg
+  const nl = String.fromCharCode(10)
+  const report = (text: string) => void rawInvoke('log_client_error', { message: text + nl + 'aufgerufen von:' + nl + site }).catch(() => {})
+  // Ein leerer Projektordner ist immer ein Fehler des Aufrufers: sofort und mit Aufrufer melden, statt Windows-Fehler 123 aus dem Prozessstart.
+  if (command === 'plugin_call') {
+    const inner = (args?.args ?? {}) as Record<string, unknown>
+    if ('projectRoot' in inner && (typeof inner.projectRoot !== 'string' || inner.projectRoot.trim() === '')) {
+      const message = `${String(args?.plugin)}.${String(args?.command)}: kein Projektordner übergeben (projectRoot ist leer)`
+      report(`command plugin_call ${message}`)
+      return Promise.reject(message)
+    }
+  }
+  return rawInvoke<T>(command, args).catch((e: unknown) => {
+    if (command !== 'log_client_error') {
+      const what = command === 'plugin_call' ? `plugin_call ${String(args?.plugin)}.${String(args?.command)}` : command
+      report(`command ${what} failed: ${typeof e === 'string' ? e : e instanceof Error ? e.message : JSON.stringify(e)}`)
+    }
+    throw e
+  })
+}
+
+/** Meldet dem Backend die Zeitzone des Nutzers, damit das Protokoll Ortszeit zeigt (JS: Minuten westlich von UTC, daher negiert). */
+export function syncLogTimezone(): void {
+  void rawInvoke('set_log_timezone', { offsetMinutes: -new Date().getTimezoneOffset() }).catch(() => {})
+}
 
 /** Git ist ein Plugin: alle Aufrufe laufen über den einen Befehl `plugin_call`. */
 const gitCall = <T,>(command: string, args: Record<string, unknown>) =>

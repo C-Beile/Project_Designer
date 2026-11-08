@@ -11,6 +11,8 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    // Kein Vollbild-Fehlerfenster bei Syntaxfehlern im Dev-Modus: das Fenster bleibt bedienbar, der Fehler steht im Terminal von `tauri dev`.
+    hmr: { overlay: false },
   },
   build: {
     outDir: 'dist',

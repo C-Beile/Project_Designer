@@ -36,11 +36,14 @@ pub fn to_json<T: Serialize>(value: T) -> Result<Value, String> {
 pub struct Args<'a>(pub &'a Value);
 
 impl Args<'_> {
+    #[track_caller]
     pub fn get<T: DeserializeOwned>(&self, key: &str) -> Result<T, String> {
-        let value = self.0.get(key).ok_or_else(|| format!("Argument '{key}' fehlt"))?;
-        serde_json::from_value(value.clone()).map_err(|e| format!("Argument '{key}' ist ungültig: {e}"))
+        let at = std::panic::Location::caller();
+        let value = self.0.get(key).ok_or_else(|| format!("Argument '{key}' fehlt [{}:{}]", at.file(), at.line()))?;
+        serde_json::from_value(value.clone()).map_err(|e| format!("Argument '{key}' ist ungültig: {e} [{}:{}]", at.file(), at.line()))
     }
 
+    #[track_caller]
     pub fn string(&self, key: &str) -> Result<String, String> {
         self.get(key)
     }
@@ -58,6 +61,7 @@ impl Args<'_> {
     }
 
     /// `projectRoot` als Pfad.
+    #[track_caller]
     pub fn root(&self) -> Result<PathBuf, String> {
         self.string("projectRoot").map(PathBuf::from)
     }

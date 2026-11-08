@@ -81,7 +81,7 @@ Wichtige Ordner haben eine eigene `CLAUDE.md` (Karte) mit Dateiliste, Regeln, Fa
 - Tests: `cargo test --workspace --no-fail-fast` und `cd app/ui && npm test`
 - UI-Typen prüfen: `cd app/ui && npx tsc -p tsconfig.app.json --noEmit` (ein nacktes `npx tsc --noEmit` prüft nichts, `tsconfig.json` hat nur Verweise).
 - Editor ist **VS Code** (nicht Visual Studio). `.vscode/` ist per `.gitignore` lokal. Dort liegt eine F5-Konfiguration "Dito Designer (Debug)" mit `cppvsdbg` (Erweiterung `ms-vscode.cpptools`).
-- Logs der App: `%APPDATA%\de.threehillsit.dito-designer\logs`
+- Logs der App: `%APPDATA%\de.threehillsit.dito-designer\logs` (Menü Help > Open Log Folder). Dort landen Abstürze (`PANIC`), UI-Fehler (`UI-ERROR`, auch Fehler-Popups und fehlgeschlagene Tauri-Befehle), Plugin-Fehler (`ERROR plugin_call plugin.befehl (Argumente): Fehler`, Geheimnisse verdeckt) und Zeiten (`PERF`).
 
 ## Stand der Tests (Basislinie nach dem Umbau, 2026-11-08)
 
@@ -107,5 +107,5 @@ Aufteilung in Crates und Plugins nach `docs/refactoring-plan.md` (dort Stand, Na
 - Dokumentation im Code auf Deutsch, nur wenn nötig.
 - Nichts committen oder pushen ohne Auftrag.
 - Neue UI-Teile eines Features über das UI-Register (`core/plugins/registry.ts`) anmelden, nicht fest in Shell/Toolbar/StatusBar einbauen. Eigene Masken aus `core/ui/` nutzen (Recycling).
-- Neue Befehle eines Plugins über `plugin_call` laufen lassen, nicht als neuer Tauri-Befehl.
+- Neue Befehle eines Plugins über `plugin_call` laufen lassen, nicht als neuer Tauri-Befehl. Jeder Tauri-Befehl packt seinen Rumpf in `commands::guard`/`guard_async` (Panic-Schutz, siehe `app/src-tauri/CLAUDE.md`).
 - Einfache, mechanische Aufgaben an Haiku (`code-chores`), nicht an Opus.

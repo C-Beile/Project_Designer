@@ -1,3 +1,4 @@
+import { callSite, logError } from './errorLog'
 import { useSyncExternalStore } from 'react'
 
 // Non-blocking notifications: a toast above the status bar that never takes focus away from the
@@ -40,6 +41,7 @@ export function getNotifications(): AppNotification[] {
 export function notify(text: string, options: { kind?: AppNotification['kind']; actions?: NotificationAction[]; timeoutMs?: number } = {}): number {
   const existing = items.find((n) => n.toast && n.text === text)
   if (existing) return existing.id
+  if (options.kind === 'error') logError(`popup: ${text}\nlöst aus:\n${callSite()}`)
   const id = ++counter
   const item: AppNotification = { id, text, kind: options.kind ?? 'info', actions: options.actions ?? [], at: new Date().toISOString(), toast: true }
   items = [...items, item].slice(-200)

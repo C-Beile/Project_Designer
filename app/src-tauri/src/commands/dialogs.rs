@@ -8,10 +8,12 @@ use platform::{FileDialog, FileFilter, OpenFileOptions, PickFolderOptions};
 /// treats as "nothing changed", not an error.
 #[tauri::command]
 pub fn pick_project_folder(title: Option<String>) -> Option<String> {
+    crate::commands::guard("pick_project_folder", || {
     let title = title.filter(|t| !t.trim().is_empty()).unwrap_or_else(|| "Open Forge project".to_string());
     platform_file_dialog()
         .pick_folder(PickFolderOptions { title: Some(title), starting_dir: None })
         .map(|path| path.to_string_lossy().into_owned())
+})
 }
 
 pub fn platform_file_dialog() -> platform::native::RfdFileDialog {
@@ -21,6 +23,7 @@ pub fn platform_file_dialog() -> platform::native::RfdFileDialog {
 /// Services tab: native file picker for the two export files and the SSH key; `None` on cancel.
 #[tauri::command]
 pub fn pick_file(title: Option<String>, label: String, extensions: Vec<String>) -> Option<String> {
+    crate::commands::guard("pick_file", || {
     platform_file_dialog()
         .open_file(OpenFileOptions {
             title,
@@ -28,11 +31,13 @@ pub fn pick_file(title: Option<String>, label: String, extensions: Vec<String>) 
             filters: if extensions.is_empty() { Vec::new() } else { vec![FileFilter { label, extensions }] },
         })
         .map(|path| path.to_string_lossy().into_owned())
+})
 }
 
 /// Native "save as" dialog for the export file; `None` on cancel.
 #[tauri::command]
 pub fn pick_save_file(title: Option<String>, default_name: String, label: String, extensions: Vec<String>) -> Option<String> {
+    crate::commands::guard("pick_save_file", || {
     platform_file_dialog()
         .save_file(platform::SaveFileOptions {
             title,
@@ -41,4 +46,5 @@ pub fn pick_save_file(title: Option<String>, default_name: String, label: String
             filters: vec![FileFilter { label, extensions }],
         })
         .map(|path| path.to_string_lossy().into_owned())
+})
 }

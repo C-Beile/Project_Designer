@@ -75,14 +75,14 @@ pub fn find_plink() -> Option<PathBuf> {
 }
 
 pub fn free_local_port() -> Result<u16, String> {
-    let l = TcpListener::bind("127.0.0.1:0").map_err(|e| e.to_string())?;
-    Ok(l.local_addr().map_err(|e| e.to_string())?.port())
+    let l = TcpListener::bind("127.0.0.1:0").map_err(|e| plugin_api::at!(e.to_string()))?;
+    Ok(l.local_addr().map_err(|e| plugin_api::at!(e.to_string()))?.port())
 }
 
 pub(crate) fn spawn_plink(plink: &Path, args: &[String]) -> Result<Child, String> {
     let mut cmd = platform::console::command(plink);
     cmd.args(args).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::piped());
-    cmd.spawn().map_err(|e| format!("plink could not be started: {e}"))
+    cmd.spawn().map_err(|e| plugin_api::at!(format!("plink could not be started: {e}")))
 }
 
 pub(crate) fn wait_for_port(child: &mut Child, port: u16, timeout: Duration) -> Result<(), String> {

@@ -3,6 +3,7 @@ import type { ErrorInfo, ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { isTauriRuntime } from '../chrome/tauriWindow'
 import { Modal } from './Modal'
+import { logError } from './errorLog'
 import { errorText } from './errorText'
 
 // No silent failures: a render crash of one editor shows an error panel inside that editor area
@@ -47,7 +48,19 @@ function ErrorPanel({ api, title, detail, onRetry }: { api?: ForgeApi; title: st
   )
 }
 
-export class ErrorBoundary extends Component<{ api?: ForgeApi; label: string; children: ReactNode }, { error: string | null }> {
+/** Kleiner Streifen statt großer Fehlerseite: für Leisten, Panels und Erweiterungen, damit der Rest des Fensters bedienbar bleibt. */
+function CompactError({ label, detail, onRetry }: { label: string; detail: string; onRetry: () => void }) {
+  return (
+    <div className="forge-error-compact" role="alert" title={detail}>
+      <span>{label} failed: {detail.split(String.fromCharCode(10))[0].slice(0, 160)}</span>
+      <button type="button" onClick={onRetry}>
+        Try again
+      </button>
+    </div>
+  )
+}
+
+export class ErrorBoundary extends Component<{ api?: ForgeApi; label: string; compact?: boolean; children: ReactNode }, { error: string | null }> {
   state = { error: null as string | null }
 
   static getDerivedStateFromError(error: unknown) {
@@ -55,11 +68,15 @@ export class ErrorBoundary extends Component<{ api?: ForgeApi; label: string; ch
   }
 
   componentDidCatch(error: unknown, info: ErrorInfo) {
-    void this.props.api?.logClientError(`${this.props.label}: ${describe(error)}\ncomponent stack:${info.componentStack ?? ''}`)?.catch?.(() => {})
+    const text = `${this.props.label}: ${describe(error)}\ncomponent stack:${info.componentStack ?? ''}`
+    // Ohne `api` (Leisten, Panels) geht der Eintrag über die globale Log-Senke.
+    if (this.props.api) void this.props.api.logClientError(text)?.catch?.(() => {})
+    else logError(text)
   }
 
   render() {
     if (this.state.error === null) return this.props.children
+    if (this.props.compact) return <CompactError label={this.props.label} detail={this.state.error} onRetry={() => this.setState({ error: null })} />
     return <ErrorPanel api={this.props.api} title={`${this.props.label} failed`} detail={this.state.error} onRetry={() => this.setState({ error: null })} />
   }
 }
@@ -75,7 +92,7 @@ export function CrashListener({ api }: { api: ForgeApi }) {
         e.stopImmediatePropagation()
         return
       }
-      void api.logClientError(`window error: ${describe(e.error ?? e.message)}`)?.catch?.(() => {})
+      void api.logClientError(`window error: ${describe(e.error ?? e.message)}\nstelle: ${e.filename || '?'}:${e.lineno}:${e.colno}`)?.catch?.(() => {})
       setCrash({ message: e.message || 'Unexpected error in the user interface.' })
     }
     const onRejection = (e: PromiseRejectionEvent) => {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { CopyButton } from '../core/ui/CopyButton'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { ProblemsPanel } from '../diagnostics/ProblemsPanel'
 import { RefactoringPanel, type RefactoringState } from './RefactoringPanel'
@@ -11,11 +12,12 @@ import type { Problem } from '../problems/problemStore'
 // which Dito Designer cannot start yet, so they stay dimmed. Added on top: clear log, copy, wrap, a
 // text/level filter and automatic scrolling. Problems takes over the validation findings.
 
-export type OutputMainTab = 'output' | 'scanservices' | 'search' | 'notifications' | 'refactoring' | 'problems'
-export type OutputSubTab = 'database' | 'build' | 'default' | 'nodejs'
+export type OutputMainTab = 'output' | 'idelog' | 'scanservices' | 'search' | 'notifications' | 'refactoring' | 'problems'
+export type OutputSubTab = 'ide' | 'database' | 'build' | 'default' | 'nodejs'
 
 export const OUTPUT_MAIN_TABS: { id: OutputMainTab; label: string }[] = [
   { id: 'output', label: 'Output' },
+  { id: 'idelog', label: 'IDE Log' },
   { id: 'scanservices', label: 'Scan Services' },
   { id: 'search', label: 'Search Results' },
   { id: 'notifications', label: 'Notifications' },
@@ -33,6 +35,10 @@ export const OUTPUT_SUB_TABS: { id: OutputSubTab; label: string }[] = [
 export interface OutputLine {
   text: string
   level: 'info' | 'warn' | 'error' | 'success'
+  /** Art der Meldung (PANIC, ERROR, UI-ERROR, PERF ...) für die Farbe im IDE Log. */
+  kind?: string
+  /** Bereich der Meldung (git, database, ui, app ...); steht farbig vor dem Text. */
+  area?: string
 }
 
 export function OutputTabs({
@@ -115,7 +121,10 @@ export function OutputBody({
   const [notice, setNotice] = useState('')
   const [logMenu, setLogMenu] = useState<{ x: number; y: number; selection: string } | null>(null)
   const logRef = useRef<HTMLPreElement | null>(null)
-  const lines = logs[sub]
+  // Das Fenster "IDE Log" ist ein eigenes Tool-Fenster: gleiche Ansicht, aber immer die Quelle 'ide' und ohne Server-Knöpfe.
+  const ideLog = active === 'idelog'
+  const logSub: OutputSubTab = ideLog ? 'ide' : sub
+  const lines = logs[logSub] ?? []
 
   const shown = useMemo(() => {
     const needle = filter.trim().toLowerCase()
@@ -129,7 +138,7 @@ export function OutputBody({
   useEffect(() => {
     const el = logRef.current
     if (follow && el) el.scrollTop = el.scrollHeight
-  }, [shown, follow, sub, active])
+  }, [shown, follow, logSub, active])
 
   if (active === 'problems') {
     return (
@@ -152,7 +161,7 @@ export function OutputBody({
       </div>
     )
   }
-  if (active !== 'output') {
+  if (active !== 'output' && !ideLog) {
     return (
       <div className="forge-panel-empty" role="tabpanel" aria-label={OUTPUT_MAIN_TABS.find((t) => t.id === active)!.label}>
         {active === 'notifications' ? <em>Select a notification to see details</em> : 'Not yet available'}
@@ -172,7 +181,7 @@ export function OutputBody({
   return (
     <div className="forge-output">
       <div className="forge-output-subtabs" role="tablist" aria-label="Output sources">
-        {OUTPUT_SUB_TABS.map((t) => (
+        {(ideLog ? [] : OUTPUT_SUB_TABS).map((t) => (
           <button
             key={t.id}
             type="button"
@@ -182,7 +191,7 @@ export function OutputBody({
             onClick={() => onSelectSub(t.id)}
           >
             {t.label}
-            {logs[t.id].length > 0 ? <span className="forge-output-count">{logs[t.id].length}</span> : null}
+            {(logs[t.id] ?? []).length > 0 ? <span className="forge-output-count">{logs[t.id].length}</span> : null}
           </button>
         ))}
         <span className="forge-output-filter">
@@ -196,20 +205,24 @@ export function OutputBody({
       </div>
       <div className="forge-output-main">
         <div className="forge-output-bar" role="toolbar" aria-label="Output actions" aria-orientation="vertical">
-          <SideButton label="Start" title={`start - ${NOT_AVAILABLE_SERVER}`} disabled>
-            ▶
-          </SideButton>
-          <SideButton label="Stop" title={`stop - ${NOT_AVAILABLE_SERVER}`} disabled>
-            ■
-          </SideButton>
-          <SideButton label="Exit" title={`exit - ${NOT_AVAILABLE_SERVER}`} disabled>
-            ✖
-          </SideButton>
-          <SideButton label="Clear cache" title={`clear cache - ${NOT_AVAILABLE_SERVER}`} disabled>
-            🗑
-          </SideButton>
-          <span className="forge-output-bar-sep" aria-hidden="true" />
-          <SideButton label="Clear log" title="Clear this log" onClick={() => onClear(sub)}>
+          {ideLog ? null : (
+            <>
+              <SideButton label="Start" title={`start - ${NOT_AVAILABLE_SERVER}`} disabled>
+                ▶
+              </SideButton>
+              <SideButton label="Stop" title={`stop - ${NOT_AVAILABLE_SERVER}`} disabled>
+                ■
+              </SideButton>
+              <SideButton label="Exit" title={`exit - ${NOT_AVAILABLE_SERVER}`} disabled>
+                ✖
+              </SideButton>
+              <SideButton label="Clear cache" title={`clear cache - ${NOT_AVAILABLE_SERVER}`} disabled>
+                🗑
+              </SideButton>
+              <span className="forge-output-bar-sep" aria-hidden="true" />
+            </>
+          )}
+          <SideButton label="Clear log" title="Clear this log" onClick={() => onClear(logSub)}>
             ⌫
           </SideButton>
           <SideButton label="Copy log" title="Copy the shown lines" onClick={() => void copyAll()}>
@@ -226,7 +239,7 @@ export function OutputBody({
           ref={logRef}
           className={`forge-output-log${wrap ? ' is-wrapped' : ''}`}
           role="tabpanel"
-          aria-label={`${OUTPUT_SUB_TABS.find((t) => t.id === sub)!.label} output`}
+          aria-label={ideLog ? 'IDE Log' : `${OUTPUT_SUB_TABS.find((t) => t.id === logSub)!.label} output`}
           onContextMenu={(e) => {
             e.preventDefault()
             setLogMenu({ x: e.clientX, y: e.clientY, selection: window.getSelection()?.toString() ?? '' })
@@ -238,7 +251,14 @@ export function OutputBody({
           }}
         >
           {shown.map((l, i) => (
-            <div key={i} className={`forge-log-${l.level}`}>
+            <div key={i} className={`forge-log-${l.level} forge-log-row`} data-kind={l.kind}>
+              <CopyButton className="forge-log-copy" label="Copy line" text={() => (l.area ? `[${l.area}] ${l.text}` : l.text)} />
+              {l.area ? (
+                <span className="forge-log-area" data-area={l.area}>
+                  [{l.area}]
+                </span>
+              ) : null}
+              {l.area ? ' ' : ''}
               {l.text}
             </div>
           ))}
@@ -260,7 +280,7 @@ export function OutputBody({
             if (id === 'copy') void navigator.clipboard?.writeText(logMenu.selection)
             else if (id === 'copyAll') void copyAll()
             else if (id === 'wrap') setWrap((v) => !v)
-            else if (id === 'clear') onClear(sub)
+            else if (id === 'clear') onClear(logSub)
           }}
           onClose={() => setLogMenu(null)}
         />
