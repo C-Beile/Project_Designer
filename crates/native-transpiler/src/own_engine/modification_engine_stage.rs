@@ -24,7 +24,7 @@
 // numerically LATER than the project root's (1776241591)**. `<position>` therefore does NOT
 // decide a real conflict; module precedence does. This matches, and is now real-corpus proof for,
 // the same "project root beats any dependency" rule already established for copy-phase path
-// collisions and module-graph diamond overrides (`transpiler.md` §2/§4) - one unified precedence
+// collisions and npm-modules diamond overrides (`transpiler.md` §2/§4) - one unified precedence
 // rule across the whole transpiler, not three separate ones. `transpiler.md` §3 has been updated
 // to resolve this UNVERIFIED marking; see `p5-modification-engine-notes.md` for the full evidence
 // trail (file paths, positions, script diffs, dist excerpt).
@@ -48,14 +48,14 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use aod_io::{
+use aod::document::{
     build_index, delete_range, insert_at, replace_text_at, AodDocument, AodEvent, EventIndex,
     EventPath, IndexedRange, PathStep, SiblingHint,
 };
-use module_graph::{ModuleDefinition, ModuleGraph};
+use npm_modules::{ModuleDefinition, ModuleGraph};
 
 use crate::own_engine::copy_phase_stage::{run_copy_phase, CopyPhaseError};
-use crate::own_engine::resolver_stage::resolve_module_graph;
+use crate::own_engine::resolver_stage::resolve_npm_modules;
 use crate::own_engine::{OwnEngine, OwnEngineError};
 
 #[derive(Debug, thiserror::Error)]
@@ -65,7 +65,7 @@ pub enum ModificationEngineError {
     #[error("failed to read modification file {path}: {source}")]
     ReadModification { path: PathBuf, source: std::io::Error },
     #[error("failed to parse modification file {path}: {source}")]
-    ParseModification { path: PathBuf, source: aod_io::AodError },
+    ParseModification { path: PathBuf, source: aod::document::AodError },
     #[error("modification file {path} is missing required field <{field}>")]
     MissingField { path: PathBuf, field: &'static str },
     #[error("failed to write {path}: {source}")]
@@ -201,7 +201,7 @@ fn parse_modification_file(path: &Path, is_project_root: bool) -> Result<ParsedM
         path: path.to_path_buf(),
         source,
     })?;
-    let doc = aod_io::parse(&bytes).map_err(|source| ModificationEngineError::ParseModification {
+    let doc = aod::document::parse(&bytes).map_err(|source| ModificationEngineError::ParseModification {
         path: path.to_path_buf(),
         source,
     })?;
@@ -337,12 +337,12 @@ fn extract_payload(doc: &AodDocument, index: &EventIndex, root: &EventPath, chan
                         for ev in inner_events.iter_mut() {
                             if let AodEvent::Text(bytes) = ev {
                                 if let Some(d) = indent_depth_of(bytes) {
-                                    *bytes = aod_io::patch::standard_indent((d as i64 + delta).max(0) as usize);
+                                    *bytes = aod::document::patch::standard_indent((d as i64 + delta).max(0) as usize);
                                 }
                             }
                         }
                     }
-                    Some((aod_io::serialize(&AodDocument { events: inner_events }), false))
+                    Some((aod::document::serialize(&AodDocument { events: inner_events }), false))
                 }
                 _ => None,
             }
@@ -389,7 +389,7 @@ fn indent_depth_of(bytes: &[u8]) -> Option<usize> {
 /// inserting into).
 ///
 /// Real-corpus bug this fixes (found by this agent comparing a real `insert_at` run against
-/// Hermes's own `dist/neonContext/Order/Order.aod`): `aod_io::insert_at` only computes the
+/// Hermes's own `dist/neonContext/Order/Order.aod`): `aod::document::insert_at` only computes the
 /// indent for the OUTER inserted element itself from the TARGET's structure - its own doc
 /// comment says the template's "own nested content is copied through untouched", which is
 /// correct for an interactive single-document edit but wrong here, because the template bytes
@@ -408,7 +408,7 @@ fn reindent_insert_template(payload: &[u8], target_root_depth: usize) -> Vec<u8>
 /// reference with one tag per line, like every other element. Tags that follow each other without any text between
 /// them get a line break and the indentation of their level; text and empty elements stay as they are.
 fn expand_inline_elements(payload: &[u8]) -> Vec<u8> {
-    let Ok(doc) = aod_io::parse(payload) else { return payload.to_vec() };
+    let Ok(doc) = aod::document::parse(payload) else { return payload.to_vec() };
     let is_tag = |ev: &AodEvent| matches!(ev, AodEvent::Start(_) | AodEvent::End(_) | AodEvent::Empty(_));
     if !doc.events.windows(2).any(|w| is_tag(&w[0]) && is_tag(&w[1]) && !(matches!(&w[0], AodEvent::Start(_)) && matches!(&w[1], AodEvent::End(_)))) {
         return payload.to_vec();
@@ -423,14 +423,14 @@ fn expand_inline_elements(payload: &[u8]) -> Vec<u8> {
         let closes_empty_pair = matches!((&ev, out.last()), (AodEvent::End(_), Some(AodEvent::Start(_))));
         if is_tag(&ev) && after_tag && !closes_empty_pair {
             // The payload root sits one level above INSERT_PAYLOAD_SOURCE_DEPTH (the depth of its children's indentation in the file).
-            out.push(AodEvent::Text(aod_io::patch::standard_indent(INSERT_PAYLOAD_SOURCE_DEPTH - 1 + depth)));
+            out.push(AodEvent::Text(aod::document::patch::standard_indent(INSERT_PAYLOAD_SOURCE_DEPTH - 1 + depth)));
         }
         if let AodEvent::Start(_) = ev {
             depth += 1;
         }
         out.push(ev);
     }
-    aod_io::serialize(&AodDocument { events: out })
+    aod::document::serialize(&AodDocument { events: out })
 }
 
 /// An inserted element is written by the reference with its properties in the schema's order, not in
@@ -438,7 +438,7 @@ fn expand_inline_elements(payload: &[u8]) -> Vec<u8> {
 /// the other way round in the output). Elements whose children are all distinct, known properties
 /// are sorted; list wrappers (repeated children) and unknown tags keep their order.
 fn canonical_property_order(payload: &[u8]) -> Vec<u8> {
-    let Ok(doc) = aod_io::parse(payload) else { return payload.to_vec() };
+    let Ok(doc) = aod::document::parse(payload) else { return payload.to_vec() };
     let events = doc.events;
     let mut out: Vec<AodEvent> = Vec::with_capacity(events.len());
     let mut i = 0;
@@ -455,7 +455,7 @@ fn canonical_property_order(payload: &[u8]) -> Vec<u8> {
             }
         }
     }
-    aod_io::serialize(&AodDocument { events: out })
+    aod::document::serialize(&AodDocument { events: out })
 }
 
 fn matching_end(events: &[AodEvent], start: usize) -> usize {
@@ -543,18 +543,18 @@ fn reindent_insert_template_raw(payload: &[u8], target_root_depth: usize) -> Vec
     if delta == 0 {
         return payload.to_vec();
     }
-    let Ok(mut doc) = aod_io::parse(payload) else {
+    let Ok(mut doc) = aod::document::parse(payload) else {
         return payload.to_vec();
     };
     for ev in doc.events.iter_mut() {
         if let AodEvent::Text(bytes) = ev {
             if let Some(depth) = indent_depth_of(bytes) {
                 let new_depth = (depth as i64 + delta).max(0) as usize;
-                *bytes = aod_io::patch::standard_indent(new_depth);
+                *bytes = aod::document::patch::standard_indent(new_depth);
             }
         }
     }
-    aod_io::serialize(&doc)
+    aod::document::serialize(&doc)
 }
 
 /// Resolves one `<path>` segment from an already-resolved parent element to its child's
@@ -583,7 +583,7 @@ fn open_if_self_closing(doc: &mut AodDocument, index: EventIndex, container: &Ev
         start.pop();
     }
     let name = tag_name_of(&start).into_bytes();
-    let indent = aod_io::patch::standard_indent(container.element_depth().saturating_sub(1));
+    let indent = aod::document::patch::standard_indent(container.element_depth().saturating_sub(1));
     doc.events.splice(at..=at, [AodEvent::Start(start), AodEvent::Text(indent), AodEvent::End(name)]);
     build_index(doc)
 }
@@ -842,11 +842,11 @@ fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation,
                 let mut template: Vec<u8> = Vec::new();
                 for (k, name) in missing.iter().enumerate() {
                     template.extend_from_slice(format!("<{name}>").as_bytes());
-                    template.extend_from_slice(&aod_io::patch::standard_indent(parent_depth + 1 + k));
+                    template.extend_from_slice(&aod::document::patch::standard_indent(parent_depth + 1 + k));
                 }
                 template.extend_from_slice(&inner);
                 for (k, name) in missing.iter().enumerate().rev() {
-                    template.extend_from_slice(&aod_io::patch::standard_indent(parent_depth + k));
+                    template.extend_from_slice(&aod::document::patch::standard_indent(parent_depth + k));
                     template.extend_from_slice(format!("</{name}>").as_bytes());
                 }
                 let hint = order_hint(doc, &index, &current, &missing[0], &m.model_type);
@@ -919,7 +919,7 @@ fn apply_one(doc: &mut AodDocument, m: &ParsedModification) -> Result<Operation,
             // point is the exception: every module brings its own implementations, and all of them are kept.
             let root_tag = String::from_utf8_lossy(payload.trim_ascii()).trim_start_matches('<').split(|c: char| c == '>' || c.is_whitespace()).next().unwrap_or("").to_string();
             if let (Some(name), Some(IndexedRange::Element(range)), false) = (inserted_name(&payload), index.get(&current), root_tag.ends_with("ExtensionPoint")) {
-                let container = aod_io::serialize(&AodDocument { events: doc.events[range.clone()].to_vec() });
+                let container = aod::document::serialize(&AodDocument { events: doc.events[range.clone()].to_vec() });
                 if String::from_utf8_lossy(&container).contains(&format!("<name>{name}</name>")) {
                     return Ok(Operation::ArrayInsert);
                 }
@@ -1185,7 +1185,7 @@ fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report:
         }
     };
     let bytes = strip_empty_file_properties(&bytes);
-    let mut doc = match aod_io::parse(&bytes) {
+    let mut doc = match aod::document::parse(&bytes) {
         Ok(d) => d,
         Err(e) => {
             for m in &group {
@@ -1210,7 +1210,7 @@ fn apply_all_to_file(target: &Path, mut group: Vec<&ParsedModification>, report:
     let out_bytes = {
         // The reference writes a modified object with CRLF throughout, also where an inserted
         // fragment came from a modification file with LF endings.
-        let raw = aod_io::serialize(&doc);
+        let raw = aod::document::serialize(&doc);
         let mut crlf = Vec::with_capacity(raw.len() + raw.len() / 30);
         for (i, &b) in raw.iter().enumerate() {
             if b == LF_BYTE && (i == 0 || raw[i - 1] != CR_BYTE) {
@@ -1300,7 +1300,7 @@ impl OwnEngine for ModificationEngine {
     }
 
     fn run(&self, project_home: &Path, output_dir: &Path) -> Result<(), OwnEngineError> {
-        let graph = resolve_module_graph(project_home)?;
+        let graph = resolve_npm_modules(project_home)?;
         run_copy_phase(&graph, output_dir).map_err(|e| OwnEngineError::Message(e.to_string()))?;
         run_modification_phase(&graph, output_dir).map(|_report| ()).map_err(|e| OwnEngineError::Message(e.to_string()))
     }
@@ -1315,17 +1315,17 @@ pub fn merge_modifications_into_bytes(base: &[u8], files: &[(PathBuf, bool)]) ->
         parsed.push(parse_modification_file(file, *is_project_root).map_err(|e| e.to_string())?);
     }
     parsed.sort_by_key(|m| (m.is_project_root, m.position));
-    let mut doc = aod_io::parse(base).map_err(|e| e.to_string())?;
+    let mut doc = aod::document::parse(base).map_err(|e| e.to_string())?;
     for m in &parsed {
         apply_one(&mut doc, m).map_err(|e| format!("{}: {e}", m.source_file.display()))?;
     }
-    Ok(aod_io::serialize(&doc))
+    Ok(aod::document::serialize(&doc))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use module_graph::AditoType;
+    use npm_modules::AditoType;
     use semver::Version;
     use std::collections::BTreeMap as StdBTreeMap;
 

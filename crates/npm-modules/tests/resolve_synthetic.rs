@@ -1,12 +1,12 @@
 //! Synthetic resolver tests for failure paths that have no real example anywhere in the
-//! `GitRepos_ADITO` corpus search (see `PROJECT/20_architecture/p3-module-graph-notes.md`):
+//! `GitRepos_ADITO` corpus search (see `PROJECT/20_architecture/p3-npm-modules-notes.md`):
 //! a cyclic `dependencies` graph, and a diamond conflict with no `overrides` entry to save
 //! it. Both fixtures under `tests/fixtures/synthetic_*` are hand-written, not derived from
 //! any real project.
 
 use std::path::{Path, PathBuf};
 
-use module_graph::{resolve, ModuleGraphError};
+use npm_modules::{resolve, ModuleGraphError};
 
 fn fixture(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))

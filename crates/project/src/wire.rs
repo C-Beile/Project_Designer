@@ -1,17 +1,17 @@
 //! Wire format between the Rust core and the TypeScript frontend.
 //!
-//! `core_model::value::PropertyValue`/`ScalarValue` and `core_model::path::NodePath` are not
+//! `aod::tree::value::PropertyValue`/`ScalarValue` and `aod::tree::path::NodePath` are not
 //! `serde`-serializable (deliberately - `core-model` has no frontend/IPC concern, see
 //! architecture.md ADR-0002 "Kern ohne UI"). This module is the one, single translation layer
 //! between those real types and JSON, living in the app crate rather than in `core-model` -
 //! keeping the generic Tauri command surface (architecture.md §6) the only place that needs to
 //! know about IPC shapes at all.
 
-use core_model::path::{NodePath, PathSegment};
-use core_model::value::{PropertyValue as CoreValue, ScalarValue as CoreScalar};
+use aod::tree::path::{NodePath, PathSegment};
+use aod::tree::value::{PropertyValue as CoreValue, ScalarValue as CoreScalar};
 use serde::{Deserialize, Serialize};
 
-/// JSON projection of `core_model::value::PropertyValue`. Field order is carried explicitly as a
+/// JSON projection of `aod::tree::value::PropertyValue`. Field order is carried explicitly as a
 /// `Vec` (not a JSON object) for `Object`, because ADITO's own format is order-sensitive
 /// (aod-format.md §1.2, `value.rs`'s own doc comment) and a plain JSON object's key order is not
 /// a format guarantee worth relying on across the IPC boundary.
@@ -52,7 +52,7 @@ impl WireValue {
     }
 
     /// Only scalar edits are wired end-to-end right now (see `p4-editor-entity-notes.md` - the
-    /// `forge-core` write-back path only supports the `Text`-content scalar case today, and the
+    /// `designer-core` write-back path only supports the `Text`-content scalar case today, and the
     /// UI is expected to gate non-Text fields read-only accordingly). Returns `None` for
     /// `Object`/`Array`, which are never a valid `set_property` payload.
     pub fn as_core_scalar(&self) -> Option<CoreScalar> {

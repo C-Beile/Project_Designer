@@ -1,6 +1,6 @@
 //! `snapshot_check <project> <data_dir> <out_dir>`: mirrors the project like a transpile does, times it, then runs the built-in engine on the snapshot into `<out_dir>`.
 
-use differential_harness::{IncrementalEngine, OwnEngine};
+use native_transpiler::{IncrementalEngine, OwnEngine};
 use std::path::Path;
 use std::time::Instant;
 
@@ -9,7 +9,7 @@ fn main() {
     let (project, data, out) = (Path::new(&a[0]), Path::new(&a[1]), Path::new(&a[2]));
     for round in 1..=2 {
         let t = Instant::now();
-        let snap = match forge_app_core::transpile_action::try_snapshot_project(project, data) {
+        let snap = match project::transpile_action::try_snapshot_project(project, data) {
             Ok(s) => s,
             Err(e) => {
                 println!("snapshot failed: {e}");

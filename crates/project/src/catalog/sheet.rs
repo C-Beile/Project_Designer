@@ -4,7 +4,7 @@
 
 use super::{Catalog, PropDef, PropKind, GENERAL_GROUP};
 use crate::wire::WireValue;
-use core_model::path::{NodePath, PathSegment};
+use aod::tree::path::{NodePath, PathSegment};
 use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize, PartialEq)]

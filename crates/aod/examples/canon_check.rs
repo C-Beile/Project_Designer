@@ -16,7 +16,7 @@ fn walk(dir: &Path, out: &mut Vec<std::path::PathBuf>) {
 fn main() {
     let root = std::env::args().nth(1).expect("dist folder");
     if let Some(reference) = std::env::args().nth(2) {
-        let c = aod_io::canonicalize(&std::fs::read(&root).unwrap()).unwrap();
+        let c = aod::document::canonicalize(&std::fs::read(&root).unwrap()).unwrap();
         let r = std::fs::read(&reference).unwrap();
         if c == r {
             println!("canonical(source) == reference");
@@ -35,7 +35,7 @@ fn main() {
     let mut shown = 0;
     for f in &files {
         let bytes = std::fs::read(f).unwrap();
-        match aod_io::canonicalize(&bytes) {
+        match aod::document::canonicalize(&bytes) {
             Ok(c) if c == bytes => same += 1,
             Ok(c) => {
                 diff += 1;

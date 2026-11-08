@@ -1,15 +1,15 @@
-//! `forge validate` - opens a project's `.aod` file(s) through forge_core::open_project, converts
-//! each node to plugin_kernel's placeholder `ProjectModel` shape via forge_core's own bridge
-//! functions, and runs every `Validator` in forge_core::build_plugin_registry() against it
+//! `forge validate` - opens a project's `.aod` file(s) through designer_core::open_project, converts
+//! each node to plugin_api's placeholder `ProjectModel` shape via designer_core's own bridge
+//! functions, and runs every `Validator` in designer_core::build_plugin_registry() against it
 //! (architecture.md §2/§6: the same registry the later Tauri app consumes, so this subcommand's
 //! result matches GUI validation exactly). No validation rule and no project-model logic lives
 //! here - only the flattening from the nested value tree `ProjectHandle::value_at` hands back into
 //! the flat node list `ProjectModel` expects, which is pure data reshaping, not a business rule.
 
 use clap::Args;
-use forge_core::core_model::{NodePath, PropertyValue};
-use forge_core::plugin_kernel::{Diagnostic, ObjectType, ProjectModel, PropertyNode, Severity};
-use forge_core::{build_plugin_registry, open_project, to_plugin_property_node};
+use aod::tree::{NodePath, PropertyValue};
+use designer_core::plugin_api::{Diagnostic, ObjectType, ProjectModel, PropertyNode, Severity};
+use designer_core::{build_plugin_registry, open_project, to_plugin_property_node};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -47,8 +47,8 @@ pub fn run(args: ValidateArgs) -> ExitCode {
             }
         };
 
-        // The real object family (Entity/View/...) is not derivable from forge-core's current
-        // schema-free projection (see p3-forge-core-integration-notes.md's open point on the
+        // The real object family (Entity/View/...) is not derivable from designer-core's current
+        // schema-free projection (see p3-designer-core-integration-notes.md's open point on the
         // projector); the file stem is the one honest, non-fabricated label available here.
         let object_type = ObjectType::Other(
             file.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default(),
@@ -97,7 +97,7 @@ fn print_diagnostic(file: &Path, diagnostic: &Diagnostic) {
 }
 
 /// Flattens the nested value tree `ProjectHandle::value_at(root)` hands back into the flat node
-/// list `plugin_kernel::ProjectModel` expects (its own Validator contract operates on a flat,
+/// list `plugin_api::ProjectModel` expects (its own Validator contract operates on a flat,
 /// addressable node list per its doc comment, not a nested tree).
 fn collect_nodes(
     path: &NodePath,

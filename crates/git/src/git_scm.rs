@@ -266,7 +266,7 @@ pub fn discard(dir: &Path, paths: &[String]) -> Result<GitOutput, String> {
     for p in &clean {
         let abs = root.join(p);
         if abs.is_file() {
-            crate::backup::backup_file(&abs)?;
+            app_base::backup::backup_file(&abs)?;
         }
         if files.iter().any(|f| &f.path == p && f.untracked()) {
             untracked.push(p.clone());
@@ -341,6 +341,18 @@ pub enum DiffSide {
     Staged,
     /// Parent of the commit against the commit.
     Commit(String),
+}
+
+impl DiffSide {
+    /// Aus den Textwerten der Oberfläche (`unstaged`, `staged`, `commit` + Hash).
+    pub fn parse(side: &str, hash: Option<String>) -> Result<DiffSide, String> {
+        match (side, hash) {
+            ("unstaged", _) => Ok(DiffSide::Unstaged),
+            ("staged", _) => Ok(DiffSide::Staged),
+            ("commit", Some(h)) => Ok(DiffSide::Commit(h)),
+            _ => Err("Unknown diff side.".into()),
+        }
+    }
 }
 
 pub fn diff_sides(dir: &Path, path: &str, side: &DiffSide) -> Result<DiffContent, String> {
@@ -437,6 +449,32 @@ pub fn gutter(dir: &Path, file: &Path) -> Result<Gutter, String> {
     Ok(Gutter { untracked: false, hunks: parse_hunks(&String::from_utf8_lossy(&out.stdout)) })
 }
 
+/// Der ausgecheckte Branch des Projekts. `None` ausserhalb eines Git-Repositories oder ohne `git`.
+pub fn current_branch(project_root: &Path) -> Option<String> {
+    use platform::{CommandGitOperations, GitOperations};
+    CommandGitOperations::new().list_branches(project_root).ok()?.into_iter().find(|b| b.is_current).map(|b| b.name)
+}
+
+/// Git-Verlauf einer Datei fuer den History-Tab. `in_repo` ist false ausserhalb eines Repositories
+/// (oder ohne `git`); die Oberflaeche zeigt dann einen ruhigen Hinweis, keinen Fehler.
+#[derive(Serialize)]
+pub struct FileHistory {
+    pub in_repo: bool,
+    pub commits: Vec<GitCommit>,
+}
+
+pub const FILE_HISTORY_LIMIT: usize = 200;
+
+/// Nur lesend: es laeuft ausschliesslich `git log`.
+pub fn file_history(file: &Path) -> FileHistory {
+    use platform::{CommandGitOperations, GitOperations};
+    let Some(dir) = file.parent() else { return FileHistory { in_repo: false, commits: Vec::new() } };
+    match CommandGitOperations::new().file_log(dir, file, FILE_HISTORY_LIMIT) {
+        Ok(commits) => FileHistory { in_repo: true, commits },
+        Err(_) => FileHistory { in_repo: false, commits: Vec::new() },
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -521,7 +559,7 @@ mod tests {
     #[test]
     fn discard_restores_tracked_files_and_removes_untracked_ones_after_a_backup() {
         let dir = scratch("discard");
-        crate::backup::set_backup_dir(std::env::temp_dir().join(format!("forge-scm-backups-{}", std::process::id())));
+        app_base::backup::set_backup_dir(std::env::temp_dir().join(format!("forge-scm-backups-{}", std::process::id())));
         fs::write(dir.join("a.txt"), "one").unwrap();
         stage(&dir, &paths(&["a.txt"])).unwrap();
         commit_staged(&dir, "Init").unwrap();

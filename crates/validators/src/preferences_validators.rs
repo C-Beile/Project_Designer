@@ -32,16 +32,16 @@
 //! precedent (`p4-editor-view-context-dashboard-notes.md` §4, `p4-editor-alias-db-notes.md` §3,
 //! `p4-editor-language-translation-notes.md` §4).
 
-use core_model::value::PropertyValue as CoreValue;
-use plugin_kernel::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
-use plugin_kernel::Validator;
+use aod::tree::value::PropertyValue as CoreValue;
+use plugin_api::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
+use plugin_api::Validator;
 use std::collections::HashMap;
 
 use crate::entity_validators::flatten_into_with_type;
 
 fn flatten(root: &CoreValue) -> ProjectModel {
     let mut nodes: Vec<PropertyNode> = Vec::new();
-    flatten_into_with_type(root, &core_model::path::NodePath::root(), ObjectType::Preferences, &mut nodes);
+    flatten_into_with_type(root, &aod::tree::path::NodePath::root(), ObjectType::Preferences, &mut nodes);
     ProjectModel::new(nodes)
 }
 
@@ -71,7 +71,7 @@ pub struct DuplicateCustomPropertyNameValidator;
 
 impl Validator for DuplicateCustomPropertyNameValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let mut seen: HashMap<(&'static str, String), String> = HashMap::new(); // (bank, name) -> first path
         let mut diagnostics = Vec::new();
@@ -108,7 +108,7 @@ pub struct MailRepositoryAliasRequiredWhenMailEnabledValidator;
 
 impl Validator for MailRepositoryAliasRequiredWhenMailEnabledValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let enabled = project
             .nodes
@@ -150,7 +150,7 @@ fn is_custom_property_name_path(path: &str) -> bool {
 /// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
-    let mut registry = forge_core::build_plugin_registry();
+    let mut registry = designer_core::build_plugin_registry();
     registry.register_validator(Box::new(DuplicateCustomPropertyNameValidator));
     registry.register_validator(Box::new(MailRepositoryAliasRequiredWhenMailEnabledValidator));
     registry.validate_project(&model)
@@ -159,7 +159,7 @@ pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core_model::value::ScalarValue as CoreScalar;
+    use aod::tree::value::ScalarValue as CoreScalar;
 
     fn text(s: &str) -> CoreValue {
         CoreValue::Scalar(CoreScalar::Text(s.to_string()))

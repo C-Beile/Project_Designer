@@ -1,4 +1,5 @@
 use super::*;
+use app_base::fs_guard::ensure_writable;
 
 static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 

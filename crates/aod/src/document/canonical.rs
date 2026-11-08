@@ -1,8 +1,8 @@
 //! The regular form of an object file: two-space indentation, one element per line, CRLF line endings. Files that
 //! reach the build in another form (compact XML, odd indentation, a byte order mark) are written in this form.
 
-use crate::document::{parse, serialize, AodDocument, AodEvent};
-use crate::error::AodError;
+use crate::document::document::{parse, serialize, AodDocument, AodEvent};
+use crate::document::error::AodError;
 
 const NEWLINE: &[u8] = b"\r\n";
 

@@ -71,7 +71,7 @@ mod tests {
     // testable in a non-interactive agent session (the platform.md brief explicitly calls this
     // out for FileDialog/CredentialStore/ShellIntegration). This test instead proves the trait
     // shape compiles and that an `RfdFileDialog` is a valid `dyn FileDialog` - i.e. the
-    // interface forge-core would depend on is sound, without actually opening a window.
+    // interface designer-core would depend on is sound, without actually opening a window.
     #[test]
     fn implements_the_file_dialog_trait_object_shape() {
         fn assert_is_file_dialog<T: FileDialog>() {}

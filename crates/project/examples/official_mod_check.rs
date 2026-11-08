@@ -3,7 +3,7 @@
 // line diff of dist/entity/Activity_entity between the baseline run and the run with the changes.
 // Usage: official_mod_check <project_copy>   (the copy must already carry a baseline dist/)
 
-use forge_app_core::modification_write::{delete, insert, modify, ModValue, ObjectRef};
+use project::modification_write::{delete, insert, modify, ModValue, ObjectRef};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -33,7 +33,7 @@ fn main() {
     params.insert("forge_data_dir".to_string(), data.to_string_lossy().into_owned());
     params.insert("engine".to_string(), "official".to_string());
     let t = std::time::Instant::now();
-    let r = forge_app_core::actions::dispatch_action("transpile", project.to_string_lossy().into_owned(), params);
+    let r = project::actions::dispatch_action("transpile", project.to_string_lossy().into_owned(), params);
     println!("official transpile with Forge modifications: {:?} in {} s", r, t.elapsed().as_secs());
 
     let after = std::fs::read_to_string(&target).expect("dist after");

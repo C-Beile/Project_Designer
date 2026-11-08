@@ -38,7 +38,7 @@ impl FileWatcher for NotifyFileWatcher {
 
         let (tx, rx) = channel::<WatchEvent>();
         // Bridges the notify callback thread to a plain std::sync::mpsc::Receiver<WatchEvent>,
-        // so FileWatcher's trait surface never leaks the notify crate to callers (forge-core
+        // so FileWatcher's trait surface never leaks the notify crate to callers (designer-core
         // depends only on platform's own types, per ADR-0004 rule 1).
         std::thread::spawn(move || {
             for result in raw_rx {

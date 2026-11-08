@@ -1,7 +1,7 @@
 //! Manual live check of the Services tab backend: `db_live <tunnelconfig.xml> <serverconfig_system.xml> [key.ppk]`.
 //! Prints only status and row counts, never credentials.
 
-use forge_app_core::db_session::DbManager;
+use database::db_session::DbManager;
 use std::path::Path;
 
 fn main() {

@@ -96,12 +96,10 @@ pub fn load_settings(file: &Path) -> ForgeSettings {
     std::fs::read(file).map(|b| parse_settings(&b)).unwrap_or_default()
 }
 
-/// The Designer installation Forge would use without an explicit choice, shown in the Options
-/// dialog so the user can see what automatic discovery found.
+/// Die Designer-Installation, die Forge ohne explizite Wahl benutzen wuerde.
 #[must_use]
 pub fn detect_designer_install() -> Option<String> {
-    crate::official_transpiler_setup::discover_install_dir(&crate::official_transpiler_setup::default_search_roots())
-        .map(|p| p.to_string_lossy().into_owned())
+    app_base::designer_paths::detect_designer_install()
 }
 
 #[cfg(test)]

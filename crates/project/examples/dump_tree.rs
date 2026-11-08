@@ -1,6 +1,6 @@
 // Dumps the wire-format property tree of one object as JSON (read-only), used to build UI fixtures from real data.
-// Usage: cargo run --release --example dump_tree -p forge-app-core -- <file.aod> <out.json>
-use forge_app_core::project_actor::ProjectActorHandle;
+// Usage: cargo run --release --example dump_tree -p project -- <file.aod> <out.json>
+use project::project_actor::ProjectActorHandle;
 
 fn main() {
     let mut args = std::env::args().skip(1);

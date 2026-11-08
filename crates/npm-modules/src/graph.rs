@@ -23,7 +23,7 @@
 //! `5.0.3` — which satisfies that override, but violates the `^4.0.0` peerDependency
 //! range declared by several real modules in the same corpus (`keyword`, `attribute`,
 //! `basic-base-serviceimplementation`, and more — see
-//! `PROJECT/20_architecture/p3-module-graph-notes.md` for the full list). This is a real,
+//! `PROJECT/20_architecture/p3-npm-modules-notes.md` for the full list). This is a real,
 //! shipped diamond conflict, and it is resolved purely in favor of the `overrides` entry,
 //! with the conflicting peerDependency requesters silently overruled. That confirms the
 //! rule this resolver implements: an `overrides` entry unconditionally wins over any

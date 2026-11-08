@@ -7,9 +7,9 @@
 // project_home MUST be a scratch copy (this stage writes a manifest + snapshot cache into
 // project_home, see incremental_stage.rs) - never point this at GitRepos_ADITO.
 //
-// Usage: cargo run --release --example own_engine_timing -p differential-harness -- <project_home> <output_dir>
+// Usage: cargo run --release --example own_engine_timing -p native-transpiler -- <project_home> <output_dir>
 
-use differential_harness::{IncrementalEngine, OwnEngine};
+use native_transpiler::{IncrementalEngine, OwnEngine};
 use std::env;
 use std::path::PathBuf;
 use std::time::Instant;

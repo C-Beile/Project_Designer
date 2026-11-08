@@ -1,6 +1,6 @@
 //! Times the Team/Commit dialog's data load on a real project: `git_overview_timing <project>`.
 
-use forge_app_core::git_actions::overview;
+use git::git_actions::overview;
 use std::path::PathBuf;
 use std::time::Instant;
 

@@ -9,6 +9,6 @@ fn main() {
     params.insert("forge_data_dir".to_string(), data.to_string_lossy().into_owned());
     params.insert("engine".to_string(), "official".to_string());
     let t = std::time::Instant::now();
-    let r = forge_app_core::actions::dispatch_action("transpile", project, params);
+    let r = project::actions::dispatch_action("transpile", project, params);
     println!("official transpile: {:?} in {} s", r, t.elapsed().as_secs());
 }

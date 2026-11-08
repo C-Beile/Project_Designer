@@ -1,4 +1,4 @@
-use differential_harness::own_engine::linked_unshare_stage::{link_folders, misplaced_links};
+use native_transpiler::own_engine::linked_unshare_stage::{link_folders, misplaced_links};
 
 fn main() {
     let path = std::env::args().nth(1).unwrap();

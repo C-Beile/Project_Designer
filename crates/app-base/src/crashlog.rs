@@ -8,6 +8,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::scrub::scrub;
+
 static LOG_DIR: OnceLock<PathBuf> = OnceLock::new();
 static ON_PANIC: Mutex<Option<Box<dyn Fn(&str, &Path) + Send + Sync>>> = Mutex::new(None);
 
@@ -27,40 +29,6 @@ pub fn set_panic_notifier(f: impl Fn(&str, &Path) + Send + Sync + 'static) {
     if let Ok(mut slot) = ON_PANIC.lock() {
         *slot = Some(Box::new(f));
     }
-}
-
-/// Masks secrets that could end up in an error text: `password=...`, `-pw <x>`, `pwd:...`, URLs with credentials.
-#[must_use]
-pub fn scrub(text: &str) -> String {
-    let mut out = String::with_capacity(text.len());
-    let lower = text.to_lowercase();
-    let bytes = text.as_bytes();
-    let mut i = 0;
-    while i < text.len() {
-        let mut matched = false;
-        for key in ["password=", "password:", "passwd=", "pwd=", "pwd:", "-pw ", "secret=", "token="] {
-            if lower[i..].starts_with(key) && text.is_char_boundary(i + key.len()) {
-                out.push_str(&text[i..i + key.len()]);
-                out.push_str("***");
-                let mut j = i + key.len();
-                while j < bytes.len() && !bytes[j].is_ascii_whitespace() && bytes[j] != b'&' && bytes[j] != b';' && bytes[j] != b'"' && bytes[j] != b'\'' {
-                    j += 1;
-                }
-                while j < text.len() && !text.is_char_boundary(j) {
-                    j += 1;
-                }
-                i = j;
-                matched = true;
-                break;
-            }
-        }
-        if !matched {
-            let ch = text[i..].chars().next().unwrap_or(' ');
-            out.push(ch);
-            i += ch.len_utf8();
-        }
-    }
-    out
 }
 
 /// `YYYY-MM-DD HH:MM:SS` in UTC from the system clock (no time zone database needed for a log).
@@ -131,14 +99,6 @@ pub fn install_panic_hook() {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn scrub_masks_passwords_in_all_known_spellings() {
-        assert_eq!(scrub("connect password=hunter2 failed"), "connect password=*** failed");
-        assert_eq!(scrub("plink -pw s3cret -batch host"), "plink -pw *** -batch host");
-        assert_eq!(scrub("jdbc:x?user=a&pwd=abc&x=1"), "jdbc:x?user=a&pwd=***&x=1");
-        assert_eq!(scrub("Straße ü ohne Geheimnis"), "Straße ü ohne Geheimnis");
-    }
 
     #[test]
     fn timestamp_has_the_expected_shape_and_epoch_math_is_right() {

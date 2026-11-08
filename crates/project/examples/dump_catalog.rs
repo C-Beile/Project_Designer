@@ -2,7 +2,7 @@
 //! the app (so the app works on machines without an ADITO Designer):
 //! `dump_catalog <designer install folder> <output.json>`.
 
-use forge_app_core::catalog::load_catalog;
+use project::catalog::load_catalog;
 use std::path::Path;
 
 fn main() {

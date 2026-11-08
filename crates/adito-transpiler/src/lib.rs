@@ -19,10 +19,12 @@ pub mod config;
 pub mod error;
 pub mod events;
 pub mod exit_code;
-pub mod layout;
+pub mod plugin;
+pub mod setup;
 pub mod platform_runner;
 pub mod runner;
 
+pub use app_base::layout;
 pub use config::TranspilerConfig;
 pub use error::TranspilerError;
 pub use events::{EventSink, LogStream, ProgressStage, TranspileEvent};

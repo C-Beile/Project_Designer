@@ -17,9 +17,9 @@ use tokio::net::TcpStream;
 use tokio::sync::Mutex;
 use tokio_util::compat::{Compat, TokioAsyncWriteCompatExt};
 
-use crate::connection::DbConnection;
-use crate::error::DbError;
-use crate::types::{ConnectionConfig, DbValue, QueryResult, TableInfo};
+use crate::drivers::connection::DbConnection;
+use crate::drivers::error::DbError;
+use crate::drivers::types::{ConnectionConfig, DbValue, QueryResult, TableInfo};
 
 pub struct MssqlConnection {
     client: Mutex<Client<Compat<TcpStream>>>,

@@ -6,7 +6,7 @@
 //! exception table (currently just `customProperties`, aod-format.md §1.2). Neither `PropertyTree`
 //! nor `EventSource` implementations need to know these rules themselves.
 
-use crate::value::{PropertyValue, ScalarValue};
+use crate::tree::value::{PropertyValue, ScalarValue};
 
 /// Line ending verified byte-for-byte in aod-format.md §1.2 for every sampled file.
 pub const LINE_ENDING: &[u8] = b"\r\n";

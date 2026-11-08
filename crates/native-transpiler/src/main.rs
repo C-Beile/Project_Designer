@@ -1,18 +1,18 @@
-// CLI entry point: `cargo run -p differential-harness -- --project <scratch-project-copy> [...]`
-// Thin by design (architecture.md's forge-core pattern) - all logic lives in the library part
+// CLI entry point: `cargo run -p native-transpiler -- --project <scratch-project-copy> [...]`
+// Thin by design (architecture.md's designer-core pattern) - all logic lives in the library part
 // of this crate, this file only wires argv to it and prints/writes the result.
 
 use clap::Parser;
-use differential_harness::{write_report, DifferentialHarness, IncrementalEngine, OwnEngine, RunReport};
+use native_transpiler::{write_report, DifferentialHarness, IncrementalEngine, OwnEngine, RunReport};
 use std::path::PathBuf;
 use std::time::Duration;
-use transpiler::TranspilerConfig;
+use adito_transpiler::TranspilerConfig;
 
 /// Runs the reference (official) transpiler and the pluggable own-engine against the same
 /// project copy and byte-compares their `dist/` output. See PROJECT/20_architecture/
-/// p5-differential-harness-notes.md for the full manual-run guide.
+/// p5-native-transpiler-notes.md for the full manual-run guide.
 #[derive(Parser, Debug)]
-#[command(name = "differential-harness")]
+#[command(name = "native-transpiler")]
 struct Cli {
     /// Path to a SCRATCH COPY of the ADITO project to test. Must never point into
     /// GitRepos_ADITO - the reference transpiler writes a dist/ folder into this path, which
@@ -46,7 +46,7 @@ struct Cli {
 
     /// Seconds to wait for the reference transpiler before the watchdog kills it. Raise this
     /// for large corpus projects (e.g. Hermes) - the crate default (300s) was observed to be
-    /// too tight for a full-project run, see p5-differential-harness-notes.md.
+    /// too tight for a full-project run, see p5-native-transpiler-notes.md.
     #[arg(long, default_value_t = 300)]
     timeout_secs: u64,
 }

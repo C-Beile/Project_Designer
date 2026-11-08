@@ -76,7 +76,7 @@ impl SpawnRequest {
 }
 
 /// Narrow seam around "start a process, stream its output, enforce a timeout". Deliberately
-/// hides `std::process`/OS details behind this trait per ADR-0004 rule 1 - `forge-core` must
+/// hides `std::process`/OS details behind this trait per ADR-0004 rule 1 - `designer-core` must
 /// never depend on `std::process::Command` directly, only on this trait.
 pub trait ProcessSpawner: Send + Sync {
     fn spawn(&self, request: SpawnRequest, on_line: LineSink) -> Result<SpawnOutcome, PlatformError>;

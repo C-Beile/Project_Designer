@@ -1,14 +1,14 @@
 //! Per-project undo/redo history (architecture.md §3, Ziel A.5).
 //!
-//! **Deliberate deviation from `core_model::transaction::UndoStack`, documented as an open
-//! `forge-core` API gap in `p4-editor-entity-notes.md`:** `core-model` already ships a real,
+//! **Deliberate deviation from `aod::tree::transaction::UndoStack`, documented as an open
+//! `designer-core` API gap in `p4-editor-entity-notes.md`:** `core-model` already ships a real,
 //! tested `UndoStack<Transaction>` operating on patch-level `FileCommand` byte ranges
 //! (`core_model/src/transaction.rs`), which is the architecturally "correct" mechanism per
-//! architecture.md §3. But `forge_core::ProjectHandle` does not expose a way to *apply* an
+//! architecture.md §3. But `designer_core::ProjectHandle` does not expose a way to *apply* an
 //! arbitrary `FileCommand`/`Transaction` back onto its live document - only
 //! `set_property(path, ScalarValue)` (which recomputes a fresh scalar text-replace every time)
 //! and `save()` are public. Reusing `UndoStack` here would need either a new `ProjectHandle`
-//! method (`apply_transaction`) or exposing `PropertyTree::source_mut()` - both are `forge-core`
+//! method (`apply_transaction`) or exposing `PropertyTree::source_mut()` - both are `designer-core`
 //! changes, out of this agent's scope (guardrail: "ruft dessen API auf, ändert sie nicht").
 //!
 //! So this history operates at **value granularity** instead of byte-range granularity: each
@@ -21,10 +21,10 @@
 //! real, verified property for the single-file, single-field-at-a-time edits this round's Entity
 //! editor performs; it would need revisiting once multi-file cascading transactions (e.g. rename
 //! cascades, architecture.md §7) are in scope, which is exactly why the gap above is flagged for
-//! `forge-core` rather than silently worked around forever.
+//! `designer-core` rather than silently worked around forever.
 
-use core_model::path::NodePath;
-use core_model::value::ScalarValue;
+use aod::tree::path::NodePath;
+use aod::tree::value::ScalarValue;
 
 #[derive(Debug, Clone)]
 pub struct EditEntry {
@@ -65,7 +65,7 @@ impl<T: Clone> EditHistory<T> {
     }
 
     /// Records a forward edit. Matches standard editor semantics: starting a new edit clears
-    /// whatever was on the redo stack (architecture.md §3, mirrored from `core_model::UndoStack`).
+    /// whatever was on the redo stack (architecture.md §3, mirrored from `aod::tree::UndoStack`).
     pub fn record(&mut self, entry: impl Into<T>) {
         self.done.push(entry.into());
         self.undone.clear();

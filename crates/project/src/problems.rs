@@ -3,13 +3,13 @@
 //! references to objects or linked files that do not exist. Strictly read-only; every object is
 //! opened transiently and nothing stays in memory afterwards.
 
-use crate::project_actor::{root_tag, VALIDATORS_BY_OBJECT_TYPE};
+use validators::validator_table::{root_tag, VALIDATORS_BY_OBJECT_TYPE};
 use crate::tree::OBJECT_FOLDERS;
 use crate::wire::parse_node_path;
-use core_model::path::NodePath;
-use core_model::value::PropertyValue as CoreValue;
-use refs::extract::extract_edges;
-use refs::{ObjectId, ObjectKind};
+use aod::tree::path::NodePath;
+use aod::tree::value::PropertyValue as CoreValue;
+use aod::refs::extract::extract_edges;
+use aod::refs::{ObjectId, ObjectKind};
 use serde::Serialize;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -159,7 +159,7 @@ pub fn scan_project(project_root: &Path) -> Vec<ProblemDto> {
                 p.column = Some(*c);
                 out.push(p);
             }
-            let handle = match forge_core::open_project(file.clone()) {
+            let handle = match designer_core::open_project(file.clone()) {
                 Ok(h) => h,
                 Err(e) => {
                     if strict.is_none() {
@@ -260,7 +260,7 @@ pub fn scan_usages(project_root: &Path, object_type: &str, name: &str) -> Vec<(U
             let obj = entry.file_name().to_string_lossy().into_owned();
             let file = entry.path().join(format!("{obj}.aod"));
             let Ok(bytes) = std::fs::read(&file) else { continue };
-            let Ok(handle) = forge_core::open_project(file.clone()) else { continue };
+            let Ok(handle) = designer_core::open_project(file.clone()) else { continue };
             let Some(root) = handle.value_at(&NodePath::root()).cloned() else { continue };
             let tag = root_tag(&bytes);
             let wrapped = CoreValue::Object(vec![(tag.clone(), root)]);

@@ -1,26 +1,26 @@
 // First real `OwnEngine` stage of the own Rust transpiler pipeline (Forge P5). Wires the
-// already-finished, real-corpus-verified `module-graph` crate (Forge P3, see
-// PROJECT/20_architecture/p3-module-graph-notes.md) into the `OwnEngine` seam instead of
+// already-finished, real-corpus-verified `npm-modules` crate (Forge P3, see
+// PROJECT/20_architecture/p3-npm-modules-notes.md) into the `OwnEngine` seam instead of
 // rebuilding module resolution from scratch - see PROJECT/20_architecture/
 // p5-resolver-engine-notes.md for the full reasoning.
 
 use std::path::Path;
 
-use module_graph::ModuleGraph;
+use npm_modules::ModuleGraph;
 
 use crate::own_engine::{OwnEngine, OwnEngineError};
 
-/// Resolves the module graph for `project_home` via `module-graph::resolve`, translating
+/// Resolves the module graph for `project_home` via `npm-modules::resolve`, translating
 /// its error type into [`OwnEngineError`] so callers in this crate do not need a direct
-/// dependency on `module_graph::ModuleGraphError`. This is the function the next pipeline
+/// dependency on `npm_modules::ModuleGraphError`. This is the function the next pipeline
 /// stage (`copy-phase`) is expected to call to get the resolved module set (including each
-/// module's on-disk `path`, added to `module_graph::ModuleDefinition` for exactly this
-/// purpose - see the module-graph changelog note in `p5-resolver-engine-notes.md`) without
+/// module's on-disk `path`, added to `npm_modules::ModuleDefinition` for exactly this
+/// purpose - see the npm-modules changelog note in `p5-resolver-engine-notes.md`) without
 /// going through the `OwnEngine` trait, which has no return channel for data.
-pub fn resolve_module_graph(project_home: &Path) -> Result<ModuleGraph, OwnEngineError> {
+pub fn resolve_npm_modules(project_home: &Path) -> Result<ModuleGraph, OwnEngineError> {
     // The modules are taken as they are installed: an installed version that does not match a requested range (the project's
     // package.json asks for ^2.7.3, node_modules holds 2.7.0) does not stop the build.
-    module_graph::resolve_lenient(project_home)
+    npm_modules::resolve_lenient(project_home)
         .map_err(|source| OwnEngineError::Message(source.to_string()))
 }
 
@@ -40,15 +40,15 @@ pub struct ResolverEngine;
 
 impl OwnEngine for ResolverEngine {
     fn name(&self) -> &str {
-        "ResolverEngine (module-graph resolution stage; copy-phase not yet wired)"
+        "ResolverEngine (npm-modules resolution stage; copy-phase not yet wired)"
     }
 
     fn run(&self, project_home: &Path, _output_dir: &Path) -> Result<(), OwnEngineError> {
         // Resolve and discard: today's only job is proving resolution succeeds against a
         // real project. The graph itself is available to callers (and the next agent) via
-        // `resolve_module_graph`, called directly rather than through this trait method,
+        // `resolve_npm_modules`, called directly rather than through this trait method,
         // which has no data return channel.
-        resolve_module_graph(project_home)?;
+        resolve_npm_modules(project_home)?;
         Ok(())
     }
 }
@@ -58,20 +58,20 @@ mod tests {
     use super::*;
     use std::path::{Path, PathBuf};
 
-    /// Fixtures are reused directly from the already-verified `module-graph` crate (P3) per
+    /// Fixtures are reused directly from the already-verified `npm-modules` crate (P3) per
     /// the role brief - no new fixture corpus is built here.
-    fn module_graph_fixture(name: &str) -> PathBuf {
+    fn npm_modules_fixture(name: &str) -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../module-graph/tests/fixtures")
+            .join("../npm-modules/tests/fixtures")
             .join(name)
     }
 
     /// The `OwnEngine`-wrapped resolution must succeed (no error) for a real, previously
-    /// verified project fixture - proves the wiring itself, not module-graph's own logic
-    /// (already covered by `cargo test -p module-graph`).
+    /// verified project fixture - proves the wiring itself, not npm-modules's own logic
+    /// (already covered by `cargo test -p npm-modules`).
     #[test]
     fn resolver_engine_run_succeeds_against_real_pichler_fixture() {
-        let project = module_graph_fixture("pichler_diamond");
+        let project = npm_modules_fixture("pichler_diamond");
         let output_dir = std::env::temp_dir().join(format!(
             "resolver-engine-test-{}-{}",
             std::process::id(),
@@ -96,15 +96,15 @@ mod tests {
     }
 
     /// Proves the two entry points (the `OwnEngine::run` seam and the direct
-    /// `resolve_module_graph` function the next pipeline stage will call) agree with
-    /// `module-graph` resolved in isolation, for the same real fixture used by
-    /// `module-graph`'s own `pichler_diamond_resolves_via_project_root_override` test.
+    /// `resolve_npm_modules` function the next pipeline stage will call) agree with
+    /// `npm-modules` resolved in isolation, for the same real fixture used by
+    /// `npm-modules`'s own `pichler_diamond_resolves_via_project_root_override` test.
     #[test]
-    fn resolve_module_graph_matches_module_graph_resolved_in_isolation() {
-        let project = module_graph_fixture("pichler_diamond");
+    fn resolve_npm_modules_matches_npm_modules_resolved_in_isolation() {
+        let project = npm_modules_fixture("pichler_diamond");
 
-        let direct = module_graph::resolve(&project).expect("module-graph must resolve directly");
-        let via_stage = resolve_module_graph(&project).expect("resolver stage must resolve too");
+        let direct = npm_modules::resolve(&project).expect("npm-modules must resolve directly");
+        let via_stage = resolve_npm_modules(&project).expect("resolver stage must resolve too");
 
         assert_eq!(direct.project.name, via_stage.project.name);
         assert_eq!(direct.modules.len(), via_stage.modules.len());
@@ -135,11 +135,11 @@ mod tests {
     }
 
     /// A resolution failure (cycle, unresolved diamond, bad package.json) must surface as an
-    /// `OwnEngineError`, not panic or silently succeed - reuses `module-graph`'s own
+    /// `OwnEngineError`, not panic or silently succeed - reuses `npm-modules`'s own
     /// synthetic-cycle fixture rather than building a new one.
     #[test]
-    fn resolver_engine_run_surfaces_module_graph_errors() {
-        let project = module_graph_fixture("synthetic_cycle");
+    fn resolver_engine_run_surfaces_npm_modules_errors() {
+        let project = npm_modules_fixture("synthetic_cycle");
         let output_dir = std::env::temp_dir().join(format!(
             "resolver-engine-test-err-{}-{}",
             std::process::id(),

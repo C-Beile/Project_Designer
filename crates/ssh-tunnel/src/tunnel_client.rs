@@ -9,7 +9,7 @@
 //! The OpenSSH variant is prepared on Windows and unit tested for its arguments only; it has not
 //! been run against a real server (see PROJECT/MACOS_PORT.md).
 
-use crate::db_session::{find_plink, plink_args_auth, spawn_plink, TunnelAuth, TunnelEntry};
+use crate::tunnel_core::{find_plink, plink_args_auth, spawn_plink, TunnelAuth, TunnelEntry};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};

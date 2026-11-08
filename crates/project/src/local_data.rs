@@ -115,7 +115,7 @@ pub fn scan_version_dirs(roaming: &Path, threshold_days: u64, now_unix: i64) -> 
 }
 
 pub fn roaming_designer_dir() -> Option<PathBuf> {
-    let candidates = crate::official_transpiler_setup::profiles_root_candidates();
+    let candidates = app_base::designer_paths::profiles_root_candidates();
     candidates.iter().find(|c| c.is_dir()).or(candidates.first()).cloned()
 }
 

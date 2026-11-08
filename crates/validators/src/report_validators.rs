@@ -52,9 +52,9 @@
 //! the `reportData`/`subreport`/`image` paths read-only, clearly labelled, never attempts to open
 //! or write the `.jrxml`/`.jasper` bytes.
 
-use core_model::value::PropertyValue as CoreValue;
-use plugin_kernel::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
-use plugin_kernel::Validator;
+use aod::tree::value::PropertyValue as CoreValue;
+use plugin_api::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
+use plugin_api::Validator;
 use std::collections::HashMap;
 
 use crate::entity_validators::flatten_into_with_type;
@@ -62,10 +62,10 @@ use crate::entity_validators::flatten_into_with_type;
 fn flatten(root: &CoreValue) -> ProjectModel {
     let mut nodes: Vec<PropertyNode> = Vec::new();
     // No existing `ObjectType` variant fits a JasperReports report definition - `Other("report")`
-    // is the documented escape hatch (`plugin-kernel/src/types.rs`'s own doc comment) for object
+    // is the documented escape hatch (`plugin-api/src/types.rs`'s own doc comment) for object
     // families not yet enumerated there, same choice `preferences`/`entityWebservice` made before
     // a dedicated variant existed for them.
-    flatten_into_with_type(root, &core_model::path::NodePath::root(), ObjectType::Other("report".into()), &mut nodes);
+    flatten_into_with_type(root, &aod::tree::path::NodePath::root(), ObjectType::Other("report".into()), &mut nodes);
     ProjectModel::new(nodes)
 }
 
@@ -77,7 +77,7 @@ pub struct EmptyReportDataValidator;
 
 impl Validator for EmptyReportDataValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let Some(node) = project.nodes.iter().find(|n| n.path == "reportData") else {
             // No `reportData` node at all is not this validator's concern - an object type this
@@ -111,7 +111,7 @@ pub struct DuplicateSubreportNameValidator;
 
 impl Validator for DuplicateSubreportNameValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let mut seen: HashMap<String, String> = HashMap::new(); // name -> first path
         let mut diagnostics = Vec::new();
@@ -176,7 +176,7 @@ fn parent_tag(segment: &str) -> &str {
 /// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
-    let mut registry = forge_core::build_plugin_registry();
+    let mut registry = designer_core::build_plugin_registry();
     registry.register_validator(Box::new(EmptyReportDataValidator));
     registry.register_validator(Box::new(DuplicateSubreportNameValidator));
     registry.validate_project(&model)
@@ -185,7 +185,7 @@ pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core_model::value::ScalarValue as CoreScalar;
+    use aod::tree::value::ScalarValue as CoreScalar;
 
     fn text(s: &str) -> CoreValue {
         CoreValue::Scalar(CoreScalar::Text(s.to_string()))

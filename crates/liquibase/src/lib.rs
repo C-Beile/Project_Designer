@@ -7,6 +7,11 @@
 //! confirms the target database first. The database password only travels in a short-lived
 //! defaults file and never appears in a command line or in the log.
 
+pub mod plugin;
+
+pub use plugin::{InstallDirProvider, LiquibasePlugin};
+
+use database::db_session::DbManager;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
@@ -51,19 +56,7 @@ fn find_file(root: &Path, name: &str, depth: usize) -> Option<PathBuf> {
     dirs.into_iter().find_map(|d| find_file(&d, name, depth - 1))
 }
 
-/// User directories of the original Designer (`%APPDATA%/.aditodesigner/<version>`), the one that
-/// belongs to the installation first, then the others newest first.
-pub fn designer_userdirs(install_dir: &Path, appdata: &Path) -> Vec<PathBuf> {
-    let base = appdata.join(".aditodesigner");
-    let version = install_dir.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default().trim_start_matches("ADITODesigner").trim_start_matches('_').to_string();
-    let mut found: Vec<PathBuf> = std::fs::read_dir(&base).map(|rd| rd.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect()).unwrap_or_default();
-    found.sort_by(|a, b| b.file_name().cmp(&a.file_name()));
-    if let Some(i) = found.iter().position(|p| p.file_name().map(|n| n.to_string_lossy() == version.as_str()).unwrap_or(false)) {
-        let own = found.remove(i);
-        found.insert(0, own);
-    }
-    found
-}
+pub use app_base::designer_paths::designer_userdirs;
 
 /// Looks up the Java runtime of the Designer installation and the jars of the Liquibase plugin.
 pub fn discover_toolchain(install_dir: &Path, userdirs: &[PathBuf]) -> Result<Toolchain, String> {
@@ -215,7 +208,7 @@ pub fn run_update(toolchain: &Toolchain, dir: &Path, target: &JdbcTarget, log: &
                     if is_noise(&text) {
                         continue;
                     }
-                    let clean = crate::db_session::scrub(&text, &secrets.iter().copied().filter(|s| !s.is_empty()).collect::<Vec<_>>());
+                    let clean = ssh_tunnel::tunnel_core::scrub(&text, &secrets.iter().copied().filter(|s| !s.is_empty()).collect::<Vec<_>>());
                     let error = is_error_line(&clean);
                     if error {
                         *last_error.lock().unwrap() = clean.clone();
@@ -233,6 +226,112 @@ pub fn run_update(toolchain: &Toolchain, dir: &Path, target: &JdbcTarget, log: &
         let detail = last_error.into_inner().unwrap_or_default();
         Err(if detail.is_empty() { format!("Liquibase stopped with {status}.") } else { format!("Liquibase update failed: {detail}") })
     }
+}
+
+#[derive(serde::Serialize)]
+pub struct LiquibaseTarget {
+    pub system: String,
+    pub host: String,
+    pub database: String,
+}
+
+#[derive(serde::Serialize)]
+pub struct LiquibaseConnection {
+    pub alias: String,
+    pub host: String,
+    pub port: u16,
+    pub database: String,
+    /// A tunnel to this host is open, so an update can reach it.
+    pub reachable: bool,
+}
+
+#[derive(serde::Serialize)]
+pub struct LiquibasePlan {
+    /// The alias that owns the database and the master changelog.
+    pub target_alias: String,
+    /// The transpiled changelog of the target alias exists in `dist`.
+    pub dist_ready: bool,
+}
+
+/// System key to work on: the given one or the active session, without the `|alias:` suffix of an
+/// alias browser session.
+pub fn liquibase_system(system: Option<String>, db: &DbManager) -> Result<String, String> {
+    let key = system.or_else(|| db.active_system()).unwrap_or_default();
+    let key = key.split("|alias:").next().unwrap_or("").to_string();
+    if key.is_empty() || !db.activate(&key) {
+        return Err("Connect a system first (Services > Connect); Liquibase needs the open session of a system.".to_string());
+    }
+    Ok(key)
+}
+
+/// An alias definition of the project belongs to a target alias (`THHIT_Data_alias` -> `Data_alias`);
+/// that alias owns the connection and the master changelog the update runs.
+pub fn plan(project_root: &Path, alias: &str) -> LiquibasePlan {
+    let read = |base: PathBuf| std::fs::read_to_string(base.join("aliasDefinition").join(alias).join(format!("{alias}.aod"))).ok();
+    let target = read(project_root.to_path_buf())
+        .or_else(|| read(project_root.join("dist")))
+        .and_then(|text| target_alias_of(&text))
+        .unwrap_or_else(|| alias.to_string());
+    let dist_ready = changelog_dir(&project_root.join("dist"), &target).is_ok();
+    LiquibasePlan { target_alias: target, dist_ready }
+}
+
+/// Every database connection the system knows (ASYS_ALIASCONFIG), for the "Select Database Connection" list.
+pub fn connections(db: &DbManager, system: Option<String>) -> Result<Vec<LiquibaseConnection>, String> {
+    liquibase_system(system, db)?;
+    let result = db.query("SELECT ALIASID, CAST(XMLDATA AS CHAR) FROM ASYS_ALIASCONFIG ORDER BY ALIASID", false)?;
+    let mut out: Vec<LiquibaseConnection> = Vec::new();
+    for row in result.rows {
+        let mut cells = row.into_iter();
+        let (Some(Some(alias)), Some(Some(xml))) = (cells.next(), cells.next()) else { continue };
+        let Some(conn) = database::system_config::alias_db_connection(&xml) else { continue };
+        if !out.iter().any(|c| c.alias == alias && c.host == conn.host && c.database == conn.database) {
+            let reachable = db.forward_port_for(&conn.host, conn.port).is_some();
+            out.push(LiquibaseConnection { alias, host: conn.host, port: conn.port, database: conn.database, reachable });
+        }
+    }
+    Ok(out)
+}
+
+/// Where a Liquibase update of this alias would go; shown in the confirmation before anything runs.
+/// `connection_alias` names the alias whose connection is used when the alias has none of its own.
+pub fn target(db: &DbManager, system: Option<String>, alias: &str, connection_alias: Option<&str>) -> Result<LiquibaseTarget, String> {
+    let system = liquibase_system(system, db)?;
+    let conn = database::system_db::read_alias_db(db, connection_alias.unwrap_or(alias), &[])?;
+    Ok(LiquibaseTarget { system, host: conn.host, database: conn.database })
+}
+
+/// Runs the changelogs of `.liquibase/<alias>` against the alias database of the system. Only call
+/// after the user confirmed the target. `configured_install` is the Designer folder from the settings.
+#[allow(clippy::too_many_arguments)]
+pub fn update(
+    db: &DbManager,
+    system: Option<String>,
+    alias: &str,
+    project_root: &Path,
+    connection_alias: Option<&str>,
+    use_dist: bool,
+    configured_install: Option<String>,
+    emit: &(dyn Fn(bool, &str) + Sync),
+) -> Result<String, String> {
+    let system = liquibase_system(system, db)?;
+    // The transpiled master changelog of the alias includes the changelogs of every module and project alias.
+    let changelog_root = if use_dist { project_root.join("dist") } else { project_root.to_path_buf() };
+    let dir = changelog_dir(&changelog_root, alias)?;
+    let conn = database::system_db::read_alias_db(db, connection_alias.unwrap_or(alias), &[])?;
+    let port = db.forward_port_for(&conn.host, conn.port).ok_or_else(|| format!("Open the tunnel to {}:{} first (Services).", conn.host, conn.port))?;
+    let install = configured_install
+        .filter(|d| !d.trim().is_empty())
+        .or_else(app_base::designer_paths::detect_designer_install)
+        .ok_or("The Designer installation was not found. Choose it in Tools > Options.")?;
+    let appdata = std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_default();
+    let install = PathBuf::from(install);
+    let toolchain = discover_toolchain(&install, &designer_userdirs(&install, &appdata))?;
+    let jdbc = JdbcTarget { url: jdbc_url(port, &conn.database), user: conn.user.clone(), password: conn.password.clone() };
+    emit(false, &format!("Liquibase update of {alias} on system {system} (database {})", conn.database));
+    run_update(&toolchain, &dir, &jdbc, emit)?;
+    emit(false, "Liquibase update finished.");
+    Ok("Liquibase update finished.".to_string())
 }
 
 #[cfg(test)]
@@ -293,7 +392,7 @@ mod tests {
     // Needs the Designer installation of this machine; skipped where it is not found.
     #[test]
     fn a_closed_port_fails_cleanly_streams_the_output_and_never_shows_the_password() {
-        let Some(install) = crate::settings::detect_designer_install().map(PathBuf::from) else { return };
+        let Some(install) = app_base::designer_paths::detect_designer_install().map(PathBuf::from) else { return };
         let appdata = std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_default();
         let Ok(toolchain) = discover_toolchain(&install, &designer_userdirs(&install, &appdata)) else { return };
         let tmp = std::env::temp_dir().join(format!("forge-lb-run-{}", std::process::id()));

@@ -18,15 +18,15 @@
 //! `--serverconfig` argument - an empty value here is not a cosmetic gap, it breaks deploy
 //! addressing for that environment entirely, which is why both are real error-level rules below.
 
-use core_model::value::PropertyValue as CoreValue;
-use plugin_kernel::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
-use plugin_kernel::Validator;
+use aod::tree::value::PropertyValue as CoreValue;
+use plugin_api::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
+use plugin_api::Validator;
 
 use crate::entity_validators::flatten_into_with_type;
 
 fn flatten(root: &CoreValue) -> ProjectModel {
     let mut nodes: Vec<PropertyNode> = Vec::new();
-    flatten_into_with_type(root, &core_model::path::NodePath::root(), ObjectType::System, &mut nodes);
+    flatten_into_with_type(root, &aod::tree::path::NodePath::root(), ObjectType::System, &mut nodes);
     ProjectModel::new(nodes)
 }
 
@@ -38,7 +38,7 @@ pub struct EmptyServerConfigPathValidator;
 
 impl Validator for EmptyServerConfigPathValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let Some(node) = project.nodes.iter().find(|n| n.path == "serverConfigPath") else {
             return Vec::new();
@@ -60,7 +60,7 @@ pub struct EmptyTunnelConfigPathValidator;
 
 impl Validator for EmptyTunnelConfigPathValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let Some(node) = project.nodes.iter().find(|n| n.path == "tunnelConfigPath") else {
             return Vec::new();
@@ -79,7 +79,7 @@ impl Validator for EmptyTunnelConfigPathValidator {
 /// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
-    let mut registry = forge_core::build_plugin_registry();
+    let mut registry = designer_core::build_plugin_registry();
     registry.register_validator(Box::new(EmptyServerConfigPathValidator));
     registry.register_validator(Box::new(EmptyTunnelConfigPathValidator));
     registry.validate_project(&model)
@@ -88,7 +88,7 @@ pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core_model::value::ScalarValue as CoreScalar;
+    use aod::tree::value::ScalarValue as CoreScalar;
 
     fn text(s: &str) -> CoreValue {
         CoreValue::Scalar(CoreScalar::Text(s.to_string()))

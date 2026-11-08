@@ -4,8 +4,8 @@
 //! `std::sync::mpsc` for the bus that `refs::RefGraph` and `index` subscribe to. No reactive
 //! framework, no dependency graph.
 
-use crate::path::NodePath;
-use crate::tree::NodeId;
+use crate::tree::path::NodePath;
+use crate::tree::tree::NodeId;
 use std::sync::mpsc::{self, Receiver, Sender};
 
 /// What changed, in terms other subscribers (RefGraph, index) can act on incrementally without

@@ -5,10 +5,10 @@
 
 use async_trait::async_trait;
 
-use crate::connection::{DbConnection, TxStatement};
+use crate::drivers::connection::{DbConnection, TxStatement};
 use std::sync::Mutex;
-use crate::error::DbError;
-use crate::types::{DbValue, QueryResult, TableInfo};
+use crate::drivers::error::DbError;
+use crate::drivers::types::{DbValue, QueryResult, TableInfo};
 
 /// A canned connection: always reports success, returns a fixed table list
 /// and echoes the query text back as a single-column result so callers can

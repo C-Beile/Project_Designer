@@ -4,7 +4,7 @@
 // copy that module's directory tree into `output_dir`, minus the entries the module's own
 // `.transpilerignore` excludes.
 //
-// Deliberately out of scope for this stage (see `p5-differential-harness-notes.md`'s
+// Deliberately out of scope for this stage (see `p5-native-transpiler-notes.md`'s
 // `OwnEngine` doc comment, which lists `modification-engine` and `linked-files` as separate,
 // not-yet-built stages that come AFTER copy-phase in the pipeline):
 // - Linked-file inlining (`%aditoprj%/.../x.js` path -> inline script content inside the
@@ -26,9 +26,9 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use module_graph::{ModuleDefinition, ModuleGraph};
+use npm_modules::{ModuleDefinition, ModuleGraph};
 
-use crate::own_engine::resolver_stage::resolve_module_graph;
+use crate::own_engine::resolver_stage::resolve_npm_modules;
 use crate::own_engine::{OwnEngine, OwnEngineError};
 
 /// The exclusion list documented in `transpiler.md` §4/§6, used only as a fallback when a
@@ -246,7 +246,7 @@ fn copy_recursive(
 /// The reference writes every object in its regular form (indentation, line endings, no byte order mark), whatever
 /// form the module shipped it in. A file that does not parse is only brought to CRLF line endings.
 fn normalize_aod(bytes: &[u8]) -> Vec<u8> {
-    match aod_io::canonicalize(bytes) {
+    match aod::document::canonicalize(bytes) {
         Ok(regular) => regular,
         Err(_) => normalize_to_crlf(bytes),
     }
@@ -380,7 +380,7 @@ impl OwnEngine for CopyPhaseEngine {
     }
 
     fn run(&self, project_home: &Path, output_dir: &Path) -> Result<(), OwnEngineError> {
-        let graph = resolve_module_graph(project_home)?;
+        let graph = resolve_npm_modules(project_home)?;
         run_copy_phase(&graph, output_dir)
             .map(|_report| ())
             .map_err(|source| OwnEngineError::Message(source.to_string()))
@@ -390,7 +390,7 @@ impl OwnEngine for CopyPhaseEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use module_graph::AditoType;
+    use npm_modules::AditoType;
     use semver::Version;
     use std::collections::BTreeMap;
 

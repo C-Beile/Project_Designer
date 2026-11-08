@@ -5,11 +5,11 @@
 // expensive to build for one measurement (see perf-guard-report.md), so this example gives an
 // honest, clearly-labelled partial answer instead: pure backend scan_tree latency.
 //
-// Usage: cargo run --release --example scan_tree_timing -p forge-app-core -- <project_root>
+// Usage: cargo run --release --example scan_tree_timing -p project -- <project_root>
 // Read-only: `scan_tree` never writes into the scanned project (verified by inspection of
 // tree.rs/project_actor.rs before this example was pointed at a real GitRepos_ADITO project).
 
-use forge_app_core::project_actor::ProjectActorHandle;
+use project::project_actor::ProjectActorHandle;
 use std::env;
 use std::path::PathBuf;
 use std::time::Instant;

@@ -3,8 +3,8 @@
 // Proves the minimal diff of INSERT / MODIFY / DELETE on module objects and that every real
 // Designer-written project modification of the corpus still merges onto its module object.
 
-use differential_harness::own_engine::merge_modifications_into_bytes;
-use forge_app_core::modification_write::{delete, insert, modify, ModValue, ObjectRef};
+use native_transpiler::own_engine::merge_modifications_into_bytes;
+use project::modification_write::{delete, insert, modify, ModValue, ObjectRef};
 use std::path::{Path, PathBuf};
 
 fn corpus() -> Option<PathBuf> {

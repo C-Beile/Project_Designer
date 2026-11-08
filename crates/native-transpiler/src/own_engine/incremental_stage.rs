@@ -19,7 +19,7 @@
 // **Conclusion: there is still, after a second dedicated search, ZERO real example anywhere in
 // the corpus of what `cache.txt`/`cacheMods.txt`/`ExecutorCache`/`ApplyAllModificationsCache`/
 // `TranspilationMetadata` actually contain or how their invalidation is keyed.** This is the same
-// situation as `.ts` linked files (`plugin-kernel`'s `UnverifiedTsCompiler` precedent,
+// situation as `.ts` linked files (`plugin-api`'s `UnverifiedTsCompiler` precedent,
 // `linked-files`'s own TypeScript gap): nothing to reverse-engineer against. Rather than guess at
 // an unverifiable byte-for-byte cache format, this stage implements a SEPARATE, OWN-DESIGN,
 // clearly-labeled incremental cache that achieves the same FUNCTIONAL goal §2.4/§5 actually cares
@@ -45,11 +45,11 @@ use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
-use module_graph::{ModuleDefinition, ModuleGraph};
+use npm_modules::{ModuleDefinition, ModuleGraph};
 
 use crate::own_engine::copy_phase_stage::run_copy_phase;
 use crate::own_engine::modification_engine_stage::run_modification_phase;
-use crate::own_engine::resolver_stage::resolve_module_graph;
+use crate::own_engine::resolver_stage::resolve_npm_modules;
 use crate::own_engine::{OwnEngine, OwnEngineError};
 
 const CACHE_DIR_NAME: &str = ".forge-incremental-cache";
@@ -261,7 +261,7 @@ pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<Increme
         }
     };
     crate::own_engine::progress::report(1, "Reading the modules");
-    let graph = resolve_module_graph(project_home).map_err(|e| IncrementalError::Resolve(e.to_string()))?;
+    let graph = resolve_npm_modules(project_home).map_err(|e| IncrementalError::Resolve(e.to_string()))?;
     lap("modules read");
     crate::own_engine::progress::report(4, "Checking what changed");
     let (manifest, files_scanned) = compute_manifest(&graph, project_home, output_dir)?;
@@ -355,7 +355,7 @@ impl OwnEngine for IncrementalEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use module_graph::AditoType;
+    use npm_modules::AditoType;
     use semver::Version;
     use std::collections::BTreeMap;
     use std::time::{SystemTime, UNIX_EPOCH as EPOCH};
@@ -377,8 +377,8 @@ mod tests {
         fs::write(path, contents).unwrap();
     }
 
-    /// `run_incremental` calls `resolve_module_graph`, which needs a real, parseable
-    /// project-root `package.json` (`module-graph`'s own requirement) - every test that drives
+    /// `run_incremental` calls `resolve_npm_modules`, which needs a real, parseable
+    /// project-root `package.json` (`npm-modules`'s own requirement) - every test that drives
     /// the full `run_incremental` entry point (as opposed to calling `compute_manifest` directly
     /// against a hand-built `ModuleGraph`) needs this fixture.
     fn write_minimal_project_package_json(project_root: &Path) {
@@ -489,7 +489,7 @@ mod tests {
     }
 
     /// `compute_manifest` on its own (no full pipeline) correctly excludes `output_dir` when it
-    /// sits INSIDE `project_home` - the exact layout the differential-harness CLI defaults to
+    /// sits INSIDE `project_home` - the exact layout the native-transpiler CLI defaults to
     /// (`project.join("_own_engine_dist")`). Without this guard the manifest would depend on the
     /// pipeline's own previous output, and a stable fixed point (repeatable cache hits) would be
     /// impossible.
@@ -517,7 +517,7 @@ mod tests {
     /// (`<project_home>/dist`) must also be excluded from the manifest, exactly like
     /// `output_dir`/the cache dir - `harness.rs` deliberately leaves a stale `dist/` around
     /// between runs and always re-runs the reference transpiler, which rewrites `dist/` on every
-    /// single differential-harness invocation regardless of whether any real source file
+    /// single native-transpiler invocation regardless of whether any real source file
     /// changed. Without this exclusion the manifest can never stabilize (every run looks like a
     /// cache miss), which is exactly what happened on a real Hermes run before this fix.
     #[test]

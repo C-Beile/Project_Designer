@@ -3,7 +3,7 @@
 //! verified `runner::NbexecTranspilerRunner` (std::process::Command-based) rather than replacing
 //! it - the exit-code interpretation (`exit_code.rs`) and log-line classification (`events.rs`)
 //! this crate already proved are reused unchanged; only the process-spawning mechanism itself is
-//! swapped for the platform-neutral seam ADR-0004 requires `forge-core` to depend on.
+//! swapped for the platform-neutral seam ADR-0004 requires `designer-core` to depend on.
 
 use crate::config::TranspilerConfig;
 use crate::error::TranspilerError;
@@ -115,7 +115,7 @@ mod tests {
     }
 
     fn project_dir() -> std::path::PathBuf {
-        std::env::temp_dir().join(format!("forge-core-platform-runner-test-{}", std::process::id()))
+        std::env::temp_dir().join(format!("designer-core-platform-runner-test-{}", std::process::id()))
     }
 
     #[test]

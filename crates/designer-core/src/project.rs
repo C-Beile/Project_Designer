@@ -1,8 +1,8 @@
 //! `ProjectHandle`: the minimal, real end-to-end proof that the wiring holds
 //! (architecture.md §1 "Datenfluss Edit -> Save", §4 "Persistenzschicht").
 //!
-//! `open_project` reads a real `.aod` file, parses it with `aod_io::parse`, projects it into a
-//! `core_model::PropertyTree` via the real `AodDocumentSource` adapter (not
+//! `open_project` reads a real `.aod` file, parses it with `aod::document::parse`, projects it into a
+//! `aod::tree::PropertyTree` via the real `AodDocumentSource` adapter (not
 //! `testing::InMemoryEventSource`), and hands back a handle. `set_property` edits the typed tree
 //! *and* the underlying document through the same adapter instance (shared via `Rc<RefCell<_>>`
 //! so both sides of the edit stay in sync without needing a `PropertyTree::source_mut()` getter -
@@ -10,12 +10,12 @@
 //! integration notes). `save()` re-serializes the live document and writes it through
 //! `platform::fs::atomic_write` - the real architecture.md §4 persistence path, not a stand-in.
 
-use core_model::command::ByteRange;
-use core_model::event_source::EventSource;
-use core_model::path::NodePath;
-use core_model::tree::PropertyTree;
-use core_model::value::{PropertyValue, ScalarValue};
-use core_model::AodDocumentSource;
+use aod::tree::command::ByteRange;
+use aod::tree::event_source::EventSource;
+use aod::tree::path::NodePath;
+use aod::tree::tree::PropertyTree;
+use aod::tree::value::{PropertyValue, ScalarValue};
+use aod::tree::AodDocumentSource;
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
@@ -25,11 +25,11 @@ pub enum ForgeError {
     #[error("failed to read project file {path}: {source}")]
     Read { path: PathBuf, #[source] source: std::io::Error },
     #[error("malformed .aod file {path}: {source}")]
-    Xml { path: PathBuf, #[source] source: aod_io::AodError },
+    Xml { path: PathBuf, #[source] source: aod::document::AodError },
     #[error(transparent)]
-    Tree(#[from] core_model::error::Error),
+    Tree(#[from] aod::tree::error::Error),
     #[error(transparent)]
-    Adapter(#[from] core_model::AdapterError),
+    Adapter(#[from] aod::tree::AdapterError),
     #[error(transparent)]
     Platform(#[from] platform::PlatformError),
     #[error("node at path '{0}' does not exist in this project's tree")]
@@ -101,7 +101,7 @@ pub fn open_project(path: impl Into<PathBuf>) -> Result<ProjectHandle, ForgeErro
     let raw = std::fs::read(&file).map_err(|source| ForgeError::Read { path: file.clone(), source })?;
     let bom = raw.starts_with(&[0xEF, 0xBB, 0xBF]);
     let bytes: &[u8] = if bom { &raw[3..] } else { &raw };
-    let doc = aod_io::parse(bytes).map_err(|source| ForgeError::Xml { path: file.clone(), source })?;
+    let doc = aod::document::parse(bytes).map_err(|source| ForgeError::Xml { path: file.clone(), source })?;
 
     let adapter = AodDocumentSource::new(file.clone(), doc);
     let root_value = adapter.project();
@@ -138,7 +138,7 @@ impl ProjectHandle {
 
         self.tree.set_scalar(node, value.clone())?;
 
-        let new_bytes = core_model::codec::encode_scalar(&value);
+        let new_bytes = aod::tree::codec::encode_scalar(&value);
         self.shared.borrow_mut().apply_scalar_text_replace(path, new_bytes)?;
         Ok(())
     }
@@ -184,8 +184,8 @@ impl ProjectHandle {
 
     /// Replaces the whole live document (used by splice and by snapshot-based undo/redo).
     pub fn replace_document(&mut self, bytes: Vec<u8>) -> Result<(), ForgeError> {
-        let doc = aod_io::parse(&bytes).map_err(|source| ForgeError::Xml { path: self.file.clone(), source })?;
-        if aod_io::serialize(&doc) != bytes {
+        let doc = aod::document::parse(&bytes).map_err(|source| ForgeError::Xml { path: self.file.clone(), source })?;
+        if aod::document::serialize(&doc) != bytes {
             return Err(ForgeError::NodeNotFound("edit would not round-trip byte-exactly".to_string()));
         }
         let adapter = AodDocumentSource::new(self.file.clone(), doc);
@@ -226,7 +226,7 @@ mod tests {
         let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").join(name);
         let unique = FIXTURE_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let dir = std::env::temp_dir()
-            .join(format!("forge-core-e2e-{}-{}", std::process::id(), unique));
+            .join(format!("designer-core-e2e-{}-{}", std::process::id(), unique));
         std::fs::create_dir_all(&dir).unwrap();
         let dest = dir.join(name);
         std::fs::copy(&src, &dest).unwrap();
@@ -268,7 +268,7 @@ mod tests {
     /// The structural counterpart the brief calls out explicitly: loading a file and saving it
     /// straight back without any edit must be byte-identical to the original - the core
     /// guarantee from `spike-round-trip.md`/`aod-io`, now proven through the full wired
-    /// `open_project`/`save` path instead of `aod_io::round_trip_check` directly.
+    /// `open_project`/`save` path instead of `aod::document::round_trip_check` directly.
     #[test]
     fn load_and_save_without_editing_is_byte_identical() {
         let path = fixture_copy("PROJECT_Sales.aod");

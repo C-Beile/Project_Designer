@@ -7,7 +7,7 @@
 use std::ops::Range;
 use thiserror::Error;
 
-/// Failure while parsing raw `.aod` bytes into an [`crate::document::AodDocument`].
+/// Failure while parsing raw `.aod` bytes into an [`crate::document::document::AodDocument`].
 #[derive(Debug, Error)]
 pub enum AodError {
     #[error("malformed XML: {0}")]

@@ -1,10 +1,10 @@
-//! Placeholder domain types for the plugin-kernel crate.
+//! Placeholder domain types for the plugin-api crate.
 //!
-//! `plugin-kernel` is deliberately built without a dependency on `core-model`/`aod-io`/`refs`
+//! `plugin-api` is deliberately built without a dependency on `core-model`/`aod-io`/`refs`
 //! (see architecture.md §2 and the scope guardrail in this crate's owning agent brief), so the
 //! trait signatures below are expressed against small, self-contained stand-ins rather than the
 //! real project-model types. The intent is that a later integration pass swaps these placeholders
-//! for the real `core-model` types (see `PROJECT\20_architecture\p3-plugin-kernel-notes.md` for
+//! for the real `core-model` types (see `PROJECT\20_architecture\p3-plugin-api-notes.md` for
 //! the concrete mapping proposal) without touching the trait shapes themselves.
 
 use std::collections::HashMap;
@@ -87,7 +87,7 @@ impl Diagnostic {
 
 /// Placeholder for the whole in-memory project (what a `Validator` inspects project-wide, e.g.
 /// reference-integrity checks that span multiple objects). Flattened to a node list here; the
-/// real `core-model` equivalent will be a proper tree plus a `refs::RefGraph`.
+/// real `core-model` equivalent will be a proper tree plus a `aod::refs::RefGraph`.
 #[derive(Debug, Clone, Default)]
 pub struct ProjectModel {
     pub nodes: Vec<PropertyNode>,

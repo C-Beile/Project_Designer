@@ -1,11 +1,11 @@
-//! Owns every open `forge_core::ProjectHandle` on one dedicated thread.
+//! Owns every open `designer_core::ProjectHandle` on one dedicated thread.
 //!
 //! **Why an actor thread, not `Mutex<HashMap<_, ProjectHandle>>` in Tauri-managed state:**
-//! `ProjectHandle` holds an `Rc<RefCell<AodDocumentSource>>` (see `forge-core/src/project.rs` -
+//! `ProjectHandle` holds an `Rc<RefCell<AodDocumentSource>>` (see `designer-core/src/project.rs` -
 //! deliberate, to share the live document between the tree and the write-back path without a
 //! `core-model` change). `Rc` is `!Send`, so `ProjectHandle` cannot live in `tauri::State`, which
 //! requires `Send + Sync` for anything `.manage()`d. Rather than work around that inside
-//! `forge-core` (out of scope - `forge-core` is a dependency, not something this agent edits),
+//! `designer-core` (out of scope - `designer-core` is a dependency, not something this agent edits),
 //! all `ProjectHandle`s are kept on one thread that never moves them; every Tauri command talks
 //! to that thread over an `mpsc` channel of small, `Send` request/reply structs. This is also
 //! exactly the "long operations off the UI thread" shape architecture.md §5 describes for other
@@ -15,12 +15,12 @@
 use crate::catalog::sheet::{self, NavNode, PropertySheet};
 use crate::catalog::Catalog;
 use crate::history::{EditEntry, EditHistory, HistoryItem};
-use crate::tree::{ensure_writable, list_tree_children, object_type_for_leaf_path, resolve_leaf_path, scan_project_tree, TreeNode};
+use app_base::fs_guard::ensure_writable;
+use crate::tree::{list_tree_children, object_type_for_leaf_path, resolve_leaf_path, scan_project_tree, TreeNode};
 use crate::wire::{parse_node_path, WireValue};
-use core_model::path::NodePath;
-use core_model::value::PropertyValue as CoreValue;
-use forge_core::ProjectHandle;
-use plugin_kernel::types::Diagnostic;
+use aod::tree::path::NodePath;
+use aod::tree::value::PropertyValue as CoreValue;
+use designer_core::ProjectHandle;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -28,26 +28,7 @@ use std::sync::Arc;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 
-/// `object_type`-indexed dispatch table for `list_diagnostics`, analogous to `tree.rs`'s
-/// `OBJECT_FOLDERS`. Replaces this function's previous hard-wired call to the two entity
-/// validators (see `p4-editor-entity-notes.md` §2/§5, the deliberately deferred generalisation -
-/// this is the "first team building a second validator family" the note asked to do it).
-/// Extend this table, not `list_diagnostics`'s body, to add a new object type's validators - each
-/// entry owns its own flatten+registry+validate_project internally (see
-/// `entity_validators::diagnostics_for` / `view_context_dashboard_validators::*_diagnostics_for`).
-pub const VALIDATORS_BY_OBJECT_TYPE: &[(&str, fn(&CoreValue) -> Vec<Diagnostic>)] = &[
-    ("entity", crate::entity_validators::diagnostics_for),
-    ("neonView", crate::view_context_dashboard_validators::view_diagnostics_for),
-    ("neonContext", crate::view_context_dashboard_validators::context_diagnostics_for),
-    ("neonDashboard", crate::view_context_dashboard_validators::dashboard_diagnostics_for),
-    ("aliasDefinition", crate::alias_validators::diagnostics_for),
-    ("language", crate::language_validators::diagnostics_for),
-    ("system", crate::system_validators::diagnostics_for),
-    ("preferences", crate::preferences_validators::diagnostics_for),
-    ("application", crate::application_validators::diagnostics_for),
-    ("entityWebservice", crate::webservice_validators::diagnostics_for),
-    ("report", crate::report_validators::diagnostics_for),
-];
+use validators::validator_table::{root_tag, VALIDATORS_BY_OBJECT_TYPE};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct DiagnosticDto {
@@ -122,7 +103,7 @@ pub type ModificationOutcome = crate::modification_write::Outcome;
 
 /// Handle Tauri-managed state holds: just a channel sender, which *is* `Send + Sync`
 /// (`Sender<Request>` is `Send` because `Request` is `Send`; wrapping in a `Mutex` makes the
-/// handle `Sync` too, satisfying `tauri::State`'s bound without touching `forge-core`).
+/// handle `Sync` too, satisfying `tauri::State`'s bound without touching `designer-core`).
 #[derive(Clone)]
 pub struct ProjectActorHandle {
     tx: Sender<Request>,
@@ -293,15 +274,15 @@ struct OpenObject {
 /// value is updated in place by `set_scalar`. That means `ProjectHandle::value_at(&NodePath::root())`
 /// after an edit still returns the *original* nested tree with the edited leaf unchanged, even
 /// though `value_at(&exact_leaf_path)` correctly returns the new value (proven by
-/// `forge-core/src/project.rs`'s own end-to-end test, which only ever reads one exact leaf path).
+/// `designer-core/src/project.rs`'s own end-to-end test, which only ever reads one exact leaf path).
 ///
 /// `live_snapshot` reconstructs a fully up-to-date nested value by walking the *shape* captured
 /// at open time (field names/array lengths do not change without `insert`/`delete`, which this
 /// round never calls) and re-querying `value_at` for every leaf position individually - the one
 /// per-node operation that *is* guaranteed live. This is the only way to hand the frontend a
-/// correct "whole object" view with `forge-core`'s current public API; a `ProjectHandle` method
+/// correct "whole object" view with `designer-core`'s current public API; a `ProjectHandle` method
 /// that returns a live nested snapshot directly (recomputing `Object`/`Array` from current child
-/// values) would let this function disappear - flagged as a `forge-core` API gap in
+/// values) would let this function disappear - flagged as a `designer-core` API gap in
 /// `p4-editor-entity-notes.md`.
 fn live_snapshot(handle: &ProjectHandle, path: &NodePath, shape: &CoreValue) -> CoreValue {
     match shape {
@@ -398,9 +379,9 @@ fn run(rx: Receiver<Request>) {
                 let _ = reply.send(result);
             }
             Request::EnableModification { node_id, project_root, reply } => {
-                let result = if !crate::tree::is_under_node_modules(Path::new(&node_id)) {
+                let result = if !app_base::fs_guard::is_under_node_modules(Path::new(&node_id)) {
                     Err("only objects of installed modules (node_modules) need a modification".to_string())
-                } else if crate::tree::is_under_node_modules(&project_root) || !project_root.is_dir() {
+                } else if app_base::fs_guard::is_under_node_modules(&project_root) || !project_root.is_dir() {
                     Err("the project folder is invalid".to_string())
                 } else {
                     modifiable.insert(node_id, project_root);
@@ -472,7 +453,7 @@ fn run(rx: Receiver<Request>) {
             }
         }));
         if handled.is_err() {
-            crate::crashlog::write_entry("ERROR", "the project actor survived a panic while handling a request");
+            app_base::crashlog::write_entry("ERROR", "the project actor survived a panic while handling a request");
         }
     }
 }
@@ -489,7 +470,7 @@ pub fn friendly_write_error(path: &Path, raw: &str) -> String {
 fn get_source(open: &mut HashMap<String, OpenObject>, node_id: &str) -> Result<SourceDto, String> {
     let entry = ensure_open(open, node_id)?;
     let text = String::from_utf8(entry.handle.serialized_bytes()).map_err(|_| "the file is not valid UTF-8".to_string())?;
-    Ok(SourceDto { text, read_only: crate::tree::is_under_node_modules(Path::new(node_id)) })
+    Ok(SourceDto { text, read_only: app_base::fs_guard::is_under_node_modules(Path::new(node_id)) })
 }
 
 fn set_source(open: &mut HashMap<String, OpenObject>, node_id: &str, text: String) -> Result<UndoRedoOutcome, String> {
@@ -560,7 +541,7 @@ fn ensure_open<'a>(open: &'a mut HashMap<String, OpenObject>, node_id: &str) -> 
         let raw = std::fs::read(&path).map_err(|e| format!("cannot read '{}': {e}", path.display()))?;
         crate::problems::validate_aod_bytes(&raw).map_err(|e| format!("'{}' cannot be opened: {e}", path.display()))?;
         drop(raw);
-        let handle = forge_core::open_project(path).map_err(|e| e.to_string())?;
+        let handle = designer_core::open_project(path).map_err(|e| e.to_string())?;
         let shape = handle.value_at(&NodePath::root()).expect("root node always exists").clone();
         open.insert(node_id.to_string(), OpenObject { handle, history: EditHistory::new(), shape, object_type, stamp });
     }
@@ -644,27 +625,6 @@ fn outcome(entry: &OpenObject) -> UndoRedoOutcome {
     UndoRedoOutcome { tree: WireValue::from_core(&root), can_undo: entry.history.can_undo(), can_redo: entry.history.can_redo() }
 }
 
-/// Name of the document's top-level element, i.e. the ADITO model type (`entity`, `neonContext`).
-pub fn root_tag(bytes: &[u8]) -> String {
-    let mut i = 0;
-    while let Some(off) = bytes[i..].iter().position(|&c| c == b'<') {
-        let start = i + off + 1;
-        match bytes.get(start) {
-            Some(b'?') | Some(b'!') => i = start,
-            Some(_) => {
-                let end = bytes[start..]
-                    .iter()
-                    .position(|c| c.is_ascii_whitespace() || *c == b'>' || *c == b'/')
-                    .map(|e| start + e)
-                    .unwrap_or(bytes.len());
-                return String::from_utf8_lossy(&bytes[start..end]).into_owned();
-            }
-            None => break,
-        }
-    }
-    String::new()
-}
-
 /// `%aditoprj%` of an object file: `<root>/<typeFolder>/<Name>/<Name>.aod`.
 pub(crate) fn object_project_root(file: &Path) -> Option<PathBuf> {
     file.parent()?.parent()?.parent().map(Path::to_path_buf)
@@ -690,7 +650,7 @@ fn property_sheet(open: &mut HashMap<String, OpenObject>, node_id: &str, path: &
         None => node_path,
     };
     let file = Path::new(node_id);
-    let read_only = (crate::tree::is_under_node_modules(file) && !modification).then_some(sheet::READ_ONLY_MODULE);
+    let read_only = (app_base::fs_guard::is_under_node_modules(file) && !modification).then_some(sheet::READ_ONLY_MODULE);
     let project_root = object_project_root(file);
     let mut result = sheet::resolve_sheet(catalog, &model_type, &root, &node_path, read_only, &|r| linked_preview(project_root.as_deref(), r))?;
     for row in result.groups.iter_mut().flat_map(|g| g.rows.iter_mut()) {
@@ -708,7 +668,7 @@ fn property_sheet(open: &mut HashMap<String, OpenObject>, node_id: &str, path: &
 /// layout `<type>/<Object>/<container>/<element name>/.../<property>.js` (for example
 /// `entity/Foo_entity/entityfields/city/valueProcess.js`).
 pub fn linked_new_reference(file: &Path, root: &WireValue, path: &NodePath, prop: &str) -> Option<String> {
-    use core_model::path::PathSegment;
+    use aod::tree::path::PathSegment;
     let dir = file.parent()?;
     let object = dir.file_name()?.to_str()?;
     let folder = dir.parent()?.file_name()?.to_str()?;
@@ -772,11 +732,11 @@ fn navigator(open: &mut HashMap<String, OpenObject>, node_id: &str) -> Result<Ve
 }
 
 fn encode_attr(raw: &str) -> String {
-    core_model::codec::encode_text(raw).replace('"', "&quot;")
+    aod::tree::codec::encode_text(raw).replace('"', "&quot;")
 }
 
-fn scalar_text(value: &core_model::value::ScalarValue) -> String {
-    use core_model::value::ScalarValue;
+fn scalar_text(value: &aod::tree::value::ScalarValue) -> String {
+    use aod::tree::value::ScalarValue;
     match value {
         ScalarValue::Text(t) => t.clone(),
         ScalarValue::Bool(b) => b.to_string(),
@@ -816,7 +776,7 @@ fn set_sheet_property(
                 refresh_shape(entry);
                 entry.history.record(HistoryItem::Document { before, after });
             } else {
-                let new = core_model::value::ScalarValue::Text(new_text);
+                let new = aod::tree::value::ScalarValue::Text(new_text);
                 entry.handle.set_property(&target, new.clone()).map_err(|e| e.to_string())?;
                 entry.history.record(HistoryItem::Scalar(EditEntry { path: target, old: old_scalar, new }));
             }
@@ -825,13 +785,13 @@ fn set_sheet_property(
             let element = if typed {
                 format!("<{name} v=\"{}\" />", encode_attr(&new_text))
             } else {
-                format!("<{name}>{}</{name}>", core_model::codec::encode_text(&new_text))
+                format!("<{name}>{}</{name}>", aod::tree::codec::encode_text(&new_text))
             };
             let parent_value = entry.handle.value_at(&parent).cloned().ok_or_else(|| format!("no element at '{path_str}'"))?;
             let CoreValue::Object(fields) = &parent_value else {
                 return Err(format!("'{path_str}' cannot hold properties"));
             };
-            let mut last: Option<core_model::command::ByteRange> = None;
+            let mut last: Option<aod::tree::command::ByteRange> = None;
             for (key, child) in fields {
                 let paths: Vec<NodePath> = match child {
                     CoreValue::Array(items) => (0..items.len()).map(|i| parent.field(key).index(i)).collect(),
@@ -856,7 +816,7 @@ fn set_sheet_property(
             insert.extend_from_slice(element.as_bytes());
             entry
                 .handle
-                .splice(core_model::command::ByteRange::new(at, at), &insert)
+                .splice(aod::tree::command::ByteRange::new(at, at), &insert)
                 .map_err(|e| e.to_string())?;
             let after = entry.handle.serialized_bytes();
             refresh_shape(entry);
@@ -867,8 +827,8 @@ fn set_sheet_property(
 }
 
 /// Identity of the module object a modification belongs to, read from the untouched file on disk.
-fn pristine_object(node_id: &str) -> Result<(forge_core::ProjectHandle, CoreValue, crate::modification_write::ObjectRef, PathBuf), String> {
-    let pristine = forge_core::open_project(PathBuf::from(node_id)).map_err(|e| e.to_string())?;
+fn pristine_object(node_id: &str) -> Result<(designer_core::ProjectHandle, CoreValue, crate::modification_write::ObjectRef, PathBuf), String> {
+    let pristine = designer_core::open_project(PathBuf::from(node_id)).map_err(|e| e.to_string())?;
     let root = pristine.value_at(&NodePath::root()).ok_or("object has no root")?.clone();
     let model_type = root_tag(&pristine.serialized_bytes());
     let model_name = match &root {
@@ -892,7 +852,7 @@ fn modification_set_property(
     kind: &str,
 ) -> Result<ModificationOutcome, String> {
     use crate::modification_write::{modification_path, modify, ModValue, ObjectRef};
-    use core_model::value::ScalarValue;
+    use aod::tree::value::ScalarValue;
     if path_str.contains(NEW_MARK) {
         return modification_insert_mapping(open, modifiable, node_id, path_str, name, value, typed);
     }
@@ -952,7 +912,7 @@ fn split_virtual(path: &str) -> Option<(&str, &str)> {
 
 /// Element name of a field mapping of a record container, `dbRecordContainer` -> `dbRecordFieldMapping`.
 fn mapping_tag(container: &NodePath) -> String {
-    use core_model::path::PathSegment;
+    use aod::tree::path::PathSegment;
     let tag = container.segments().iter().rev().find_map(|s| if let PathSegment::Field(f) = s { Some(f.clone()) } else { None });
     match tag {
         Some(t) if t.ends_with("Container") => format!("{}FieldMapping", &t[..t.len() - "Container".len()]),
@@ -997,7 +957,7 @@ fn find_mapping_path(root: &WireValue, container: &NodePath, name: &str) -> Opti
 /// Adds an empty mapping called `name` to a copy of the property tree, so its Properties can be shown.
 fn add_virtual_mapping(root: &mut WireValue, container: &NodePath, name: &str) -> Result<NodePath, String> {
     use crate::wire::WireField;
-    use core_model::path::PathSegment;
+    use aod::tree::path::PathSegment;
     if let Some(existing) = find_mapping_path(root, container, name) {
         return Ok(existing);
     }
@@ -1054,7 +1014,7 @@ fn materialize_mapping(entry: &mut OpenObject, container: &NodePath, name: &str)
     let before = entry.handle.serialized_bytes();
     let list_value = entry.handle.value_at(&list_path).cloned().ok_or("This record container has no recordFieldMappings element yet; add the first mapping in the Source tab.")?;
     let CoreValue::Object(children) = &list_value else { return Err("recordFieldMappings cannot hold mappings".into()) };
-    let mut last: Option<core_model::command::ByteRange> = None;
+    let mut last: Option<aod::tree::command::ByteRange> = None;
     for (key, child) in children {
         let paths: Vec<NodePath> = match child {
             CoreValue::Array(items) => (0..items.len()).map(|i| list_path.field(key).index(i)).collect(),
@@ -1078,10 +1038,10 @@ fn materialize_mapping(entry: &mut OpenObject, container: &NodePath, name: &str)
     let eol = if before.contains(&b'\r') { "\r\n" } else { "\n" };
     let spaces: Vec<u8> = indent.iter().rev().take_while(|&&c| c == b' ').copied().collect();
     let sp = String::from_utf8_lossy(&spaces).into_owned();
-    let element = format!("<{tag}>{eol}{sp}  <name>{}</name>{eol}{sp}</{tag}>", core_model::codec::encode_text(name));
+    let element = format!("<{tag}>{eol}{sp}  <name>{}</name>{eol}{sp}</{tag}>", aod::tree::codec::encode_text(name));
     let mut insert = indent;
     insert.extend_from_slice(element.as_bytes());
-    entry.handle.splice(core_model::command::ByteRange::new(at, at), &insert).map_err(|e| e.to_string())?;
+    entry.handle.splice(aod::tree::command::ByteRange::new(at, at), &insert).map_err(|e| e.to_string())?;
     refresh_shape(entry);
     let live = WireValue::from_core(&live_snapshot(&entry.handle, &NodePath::root(), &entry.shape));
     find_mapping_path(&live, container, name).ok_or_else(|| "the new mapping was not found after inserting it".to_string())
@@ -1141,7 +1101,7 @@ fn activate_in_modification(
     let (container_str, binding) = split_virtual(path_str).ok_or("This entry already has a definition.")?;
     let container = parse_node_path(container_str)?;
     let tag = mapping_tag_for(&container, binding);
-    let element_xml = format!("<{tag}>\n  <name>{}</name>\n</{tag}>", core_model::codec::encode_text(binding));
+    let element_xml = format!("<{tag}>\n  <name>{}</name>\n</{tag}>", aod::tree::codec::encode_text(binding));
     let live = {
         let entry = ensure_open(open, node_id)?;
         live_snapshot(&entry.handle, &NodePath::root(), &entry.shape)
@@ -1173,8 +1133,8 @@ fn modification_insert_mapping(
     let scalar = value.as_core_scalar().ok_or("only scalar values can be set")?;
     let text = scalar_text(&scalar);
     let tag = mapping_tag_for(&container, binding);
-    let prop_xml = if typed { format!("<{name} v=\"{}\" />", encode_attr(&text)) } else { format!("<{name}>{}</{name}>", core_model::codec::encode_text(&text)) };
-    let element_xml = format!("<{tag}>\n  <name>{}</name>\n  {prop_xml}\n</{tag}>", core_model::codec::encode_text(binding));
+    let prop_xml = if typed { format!("<{name} v=\"{}\" />", encode_attr(&text)) } else { format!("<{name}>{}</{name}>", aod::tree::codec::encode_text(&text)) };
+    let element_xml = format!("<{tag}>\n  <name>{}</name>\n  {prop_xml}\n</{tag}>", aod::tree::codec::encode_text(binding));
     let live = {
         let entry = ensure_open(open, node_id)?;
         live_snapshot(&entry.handle, &NodePath::root(), &entry.shape)
@@ -1277,8 +1237,8 @@ mod tests {
     use std::path::Path;
 
     // A timestamp alone collides under `cargo test`'s parallel scheduling (same lesson
-    // `forge-core/src/project.rs`'s own E2E tests already hit and fixed, see
-    // `p3-forge-core-integration-notes.md`) - an atomic counter guarantees distinct directories
+    // `designer-core/src/project.rs`'s own E2E tests already hit and fixed, see
+    // `p3-designer-core-integration-notes.md`) - an atomic counter guarantees distinct directories
     // regardless of clock granularity.
     static FIXTURE_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
@@ -1356,7 +1316,7 @@ mod tests {
     }
 
     /// "Fertig"-Kriterium 1 (Round-Trip verlustfrei), exercised through this app's own generic
-    /// `save()` path (not just `forge-core`'s own test) - loading a real fixture through the
+    /// `save()` path (not just `designer-core`'s own test) - loading a real fixture through the
     /// actor and saving without any edit must reproduce the file byte-for-byte.
     #[test]
     fn zero_edit_save_through_the_actor_is_byte_identical() {
@@ -1375,7 +1335,7 @@ mod tests {
     }
 
     /// Same "Fertig"-Kriterium 1 check as above, run for the P4 second family too (one fixture per
-    /// object type is enough - the round-trip guarantee comes from `forge-core`'s serializer, not
+    /// object type is enough - the round-trip guarantee comes from `designer-core`'s serializer, not
     /// from anything object-type-specific in this app crate; this just proves the actor's generic
     /// `save()` path doesn't accidentally special-case entity).
     #[test]

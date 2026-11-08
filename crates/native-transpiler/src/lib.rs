@@ -15,16 +15,20 @@
 //! - [`report`] - renders a run into a human/agent-readable Markdown report on disk.
 
 pub mod compare;
+#[cfg(feature = "harness")]
 pub mod error;
+#[cfg(feature = "harness")]
 pub mod harness;
 pub mod own_engine;
 pub mod report;
 
 pub use compare::{compare_trees, ComparisonReport, FileComparison, FileVerdict};
+#[cfg(feature = "harness")]
 pub use error::HarnessError;
+#[cfg(feature = "harness")]
 pub use harness::{DifferentialHarness, HarnessRunResult};
 pub use own_engine::{
-    resolve_module_graph, run_copy_phase, run_incremental, run_linked_files_phase,
+    resolve_npm_modules, run_copy_phase, run_incremental, run_linked_files_phase,
     run_modification_phase, CopyPhaseEngine, CopyPhaseError, CopyPhaseReport, IncrementalEngine,
     IncrementalError, IncrementalReport, LinkedFilesEngine, LinkedFilesError, LinkedFilesReport,
     ModificationEngine, ModificationEngineError, ModificationEngineReport, OwnEngine,

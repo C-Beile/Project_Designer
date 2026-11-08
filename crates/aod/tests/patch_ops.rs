@@ -3,7 +3,7 @@
 //! quirk exception (aod-format.md #1.2). Fixtures here are small, hand-built XML snippets
 //! rather than corpus files, so each test isolates exactly the mechanism it names.
 
-use aod_io::{
+use aod::document::{
     build_index, delete_range, insert_at, replace_text_at, serialize, EventPath, PathStep,
     SiblingHint,
 };
@@ -20,7 +20,7 @@ fn replace_text_at_changes_only_the_targeted_field_value() {
     let original =
         b"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<entity>\r\n  <name>Foo</name>\r\n</entity>\r\n"
             .to_vec();
-    let mut doc = aod_io::parse(&original).unwrap();
+    let mut doc = aod::document::parse(&original).unwrap();
     let index = build_index(&doc);
 
     let name_path = EventPath(vec![
@@ -50,9 +50,9 @@ fn replace_text_at_changes_only_the_targeted_field_value() {
 #[test]
 fn replace_text_at_rejects_a_multi_event_range() {
     let original = b"<entity>\r\n  <name>Foo</name>\r\n</entity>\r\n".to_vec();
-    let mut doc = aod_io::parse(&original).unwrap();
+    let mut doc = aod::document::parse(&original).unwrap();
     let err = replace_text_at(&mut doc, 0..2, b"x".to_vec()).unwrap_err();
-    assert!(matches!(err, aod_io::PatchError::NotASingleTextEvent(_)));
+    assert!(matches!(err, aod::document::PatchError::NotASingleTextEvent(_)));
 }
 
 #[test]
@@ -60,7 +60,7 @@ fn insert_at_appends_last_child_with_standard_indentation() {
     let original =
         b"<entityFields>\r\n  <entityField>\r\n    <name>A</name>\r\n  </entityField>\r\n</entityFields>\r\n"
             .to_vec();
-    let mut doc = aod_io::parse(&original).unwrap();
+    let mut doc = aod::document::parse(&original).unwrap();
     let index = build_index(&doc);
 
     let parent_path = root_child_path("entityFields", 0);
@@ -82,7 +82,7 @@ fn insert_at_appends_last_child_with_standard_indentation() {
 #[test]
 fn insert_at_before_existing_sibling_keeps_its_own_indentation_intact() {
     let original = b"<entityFields>\r\n  <entityField>\r\n    <name>B</name>\r\n  </entityField>\r\n</entityFields>\r\n".to_vec();
-    let mut doc = aod_io::parse(&original).unwrap();
+    let mut doc = aod::document::parse(&original).unwrap();
     let index = build_index(&doc);
 
     let parent_path = root_child_path("entityFields", 0);
@@ -114,7 +114,7 @@ fn insert_at_before_existing_sibling_keeps_its_own_indentation_intact() {
 #[test]
 fn insert_at_after_existing_sibling() {
     let original = b"<entityFields>\r\n  <entityField>\r\n    <name>A</name>\r\n  </entityField>\r\n</entityFields>\r\n".to_vec();
-    let mut doc = aod_io::parse(&original).unwrap();
+    let mut doc = aod::document::parse(&original).unwrap();
     let index = build_index(&doc);
 
     let parent_path = root_child_path("entityFields", 0);
@@ -146,7 +146,7 @@ fn insert_at_after_existing_sibling() {
 #[test]
 fn insert_at_into_empty_element_is_rejected() {
     let original = b"<usePermissions v=\"true\" />\r\n".to_vec();
-    let mut doc = aod_io::parse(&original).unwrap();
+    let mut doc = aod::document::parse(&original).unwrap();
     let index = build_index(&doc);
     let path = root_child_path("usePermissions", 0);
     let err = insert_at(
@@ -157,13 +157,13 @@ fn insert_at_into_empty_element_is_rejected() {
         SiblingHint::AppendAsLastChild,
     )
     .unwrap_err();
-    assert!(matches!(err, aod_io::PatchError::CannotInsertIntoEmptyElement(_)));
+    assert!(matches!(err, aod::document::PatchError::CannotInsertIntoEmptyElement(_)));
 }
 
 #[test]
 fn delete_range_removes_element_and_its_leading_whitespace() {
     let original = b"<entityFields>\r\n  <entityField>\r\n    <name>A</name>\r\n  </entityField>\r\n  <entityField>\r\n    <name>B</name>\r\n  </entityField>\r\n</entityFields>\r\n".to_vec();
-    let mut doc = aod_io::parse(&original).unwrap();
+    let mut doc = aod::document::parse(&original).unwrap();
     let index = build_index(&doc);
 
     let first_field_path = EventPath(vec![
@@ -177,7 +177,7 @@ fn delete_range_removes_element_and_its_leading_whitespace() {
         },
     ]);
     let range = match index.get(&first_field_path).unwrap() {
-        aod_io::IndexedRange::Element(r) => r.clone(),
+        aod::document::IndexedRange::Element(r) => r.clone(),
         _ => panic!("expected an element range"),
     };
 
@@ -199,7 +199,7 @@ fn insert_at_copies_existing_custom_properties_sibling_indentation() {
     // customProperties child here is deliberately indented 3 spaces instead, mimicking the
     // real-world irregularity without needing the full aliasDefinition nesting depth.
     let original = b"<entityFieldDb>\r\n   <customProperties><stringEntry><name>k</name></stringEntry></customProperties>\r\n</entityFieldDb>\r\n".to_vec();
-    let mut doc = aod_io::parse(&original).unwrap();
+    let mut doc = aod::document::parse(&original).unwrap();
     let index = build_index(&doc);
 
     let parent_path = root_child_path("entityFieldDb", 0);
@@ -216,7 +216,7 @@ fn insert_at_copies_existing_custom_properties_sibling_indentation() {
     // the leading Text event of the inserted block must be the copied 3-space indent, not the
     // standard 4-space depth-based indent.
     match &doc.events[inserted_range.start] {
-        aod_io::AodEvent::Text(b) => assert_eq!(b, b"\r\n   "),
+        aod::document::AodEvent::Text(b) => assert_eq!(b, b"\r\n   "),
         other => panic!("expected the inserted block to start with a Text indent, got {other:?}"),
     }
 }
@@ -224,7 +224,7 @@ fn insert_at_copies_existing_custom_properties_sibling_indentation() {
 #[test]
 fn insert_at_falls_back_to_standard_indent_when_no_quirk_sibling_exists() {
     let original = b"<entityFieldDb>\r\n  <name>k</name>\r\n</entityFieldDb>\r\n".to_vec();
-    let mut doc = aod_io::parse(&original).unwrap();
+    let mut doc = aod::document::parse(&original).unwrap();
     let index = build_index(&doc);
 
     let parent_path = root_child_path("entityFieldDb", 0);
@@ -242,7 +242,7 @@ fn insert_at_falls_back_to_standard_indent_when_no_quirk_sibling_exists() {
     // the fixture's root element (path length 1), so its children indent 2 spaces, matching
     // the existing <name> sibling already in the fixture.
     match &doc.events[inserted_range.start] {
-        aod_io::AodEvent::Text(b) => assert_eq!(b, b"\r\n  "),
+        aod::document::AodEvent::Text(b) => assert_eq!(b, b"\r\n  "),
         other => panic!("expected the inserted block to start with a Text indent, got {other:?}"),
     }
 }

@@ -1,20 +1,23 @@
 //! Database session for the Services tab: reads the system-DB alias and the tunnel entry from the
 //! two export files the user picks (`*_serverconfig_system.xml`, `*_tunnelconfig.xml`), opens an
-//! SSH port forward with `plink` and connects through `db-layer`.
+//! SSH port forward with `plink` and connects through `drivers`.
 //!
 //! Business rule: the credentials exist only in memory while a session is open. They are never
 //! written to disk, never logged and never part of an error message (see `scrub`).
 
-use db_layer::mariadb;
-use db_layer::{ConnectionConfig, DbConnection, DbValue, TxStatement};
+use crate::drivers::mariadb;
+use crate::drivers::{ConnectionConfig, DbConnection, DbValue, TxStatement};
 use quick_xml::events::Event;
 use quick_xml::Reader;
 use serde::Serialize;
-use std::net::{SocketAddr, TcpListener, TcpStream};
-use std::path::{Path, PathBuf};
-use std::process::{Child, Stdio};
+use std::path::Path;
+use std::process::Child;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
+
+pub use ssh_tunnel::tunnel_config::parse_tunnels;
+pub use ssh_tunnel::tunnel_core::{find_plink, percent_encode, plink_args, plink_args_auth, scrub, TunnelAuth, TunnelEntry};
+use ssh_tunnel::tunnel_core::{free_local_port, wait_for_port_cancellable};
 
 /// Hard cap so a careless `SELECT *` on a large table cannot flood the UI.
 pub const MAX_ROWS: usize = 1000;
@@ -39,15 +42,6 @@ impl std::fmt::Debug for DbAlias {
             .field("password", &"<redacted>")
             .finish()
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TunnelEntry {
-    pub tunnel_host: String,
-    pub tunnel_port: u16,
-    pub target_host: String,
-    pub target_port: u16,
-    pub user: String,
 }
 
 /// The `db alias` map of the system DB node inside `serverconfig_system.xml`.
@@ -94,134 +88,9 @@ pub(crate) fn attr(e: &quick_xml::events::BytesStart<'_>, key: &str) -> Option<S
         .and_then(|a| a.unescape_value().ok().map(|v| v.into_owned()))
 }
 
-/// All `TunnelConfigDataModel` entries of `tunnelconfig.xml`.
-pub fn parse_tunnels(xml: &str) -> Result<Vec<TunnelEntry>, String> {
-    let mut reader = Reader::from_str(xml);
-    let mut out = Vec::new();
-    let mut current: Option<[String; 5]> = None;
-    let mut field: Option<usize> = None;
-    loop {
-        match reader.read_event().map_err(|e| format!("tunnelconfig is not valid XML: {e}"))? {
-            Event::Start(e) => {
-                let name = String::from_utf8_lossy(e.name().as_ref()).into_owned();
-                if name == "TunnelConfigDataModel" {
-                    current = Some(Default::default());
-                } else if current.is_some() {
-                    field = ["tunnelHostAddress", "tunnelHostPort", "targetServerAddress", "targetServerPort", "user"]
-                        .iter()
-                        .position(|n| *n == name);
-                }
-            }
-            Event::Text(t) => {
-                if let (Some(cur), Some(i)) = (current.as_mut(), field) {
-                    cur[i] = t.unescape().map_err(|e| e.to_string())?.trim().to_string();
-                }
-            }
-            Event::End(e) => {
-                if e.name().as_ref() == b"TunnelConfigDataModel" {
-                    if let Some(c) = current.take() {
-                        if let (Ok(tp), Ok(pp)) = (c[1].parse::<u16>(), c[3].parse::<u16>()) {
-                            out.push(TunnelEntry { tunnel_host: c[0].clone(), tunnel_port: tp, target_host: c[2].clone(), target_port: pp, user: c[4].clone() });
-                        }
-                    }
-                }
-                field = None;
-            }
-            Event::Eof => break,
-            _ => {}
-        }
-    }
-    Ok(out)
-}
-
 /// The tunnel that forwards to the alias' database host and port.
 pub fn find_db_tunnel<'a>(tunnels: &'a [TunnelEntry], alias: &DbAlias) -> Option<&'a TunnelEntry> {
     tunnels.iter().find(|t| t.target_host.eq_ignore_ascii_case(&alias.host) && t.target_port == alias.port)
-}
-
-/// Percent-encodes everything but unreserved characters: `db-layer` builds a `mysql://` URL from
-/// user and password, so characters like `@`, `/` or `#` in a password must not break it.
-pub fn percent_encode(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    for b in s.bytes() {
-        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'.' | b'_' | b'~') {
-            out.push(b as char);
-        } else {
-            out.push_str(&format!("%{b:02X}"));
-        }
-    }
-    out
-}
-
-/// Removes every secret (and its URL-encoded form) from text that may reach the UI.
-pub fn scrub(text: &str, secrets: &[&str]) -> String {
-    let mut out = text.to_string();
-    for s in secrets.iter().filter(|s| s.len() >= 3) {
-        out = out.replace(s, "***").replace(&percent_encode(s), "***");
-    }
-    out
-}
-
-/// How the SSH tunnel authenticates (Manual appendix E). The password only lives in memory.
-#[derive(Clone)]
-pub enum TunnelAuth<'a> {
-    /// PuTTY key file; `None` falls back to a running Pageant.
-    Key(Option<&'a Path>),
-    Basic { password: &'a str },
-}
-
-impl std::fmt::Debug for TunnelAuth<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            TunnelAuth::Key(k) => f.debug_tuple("Key").field(k).finish(),
-            TunnelAuth::Basic { .. } => f.write_str("Basic { password: <redacted> }"),
-        }
-    }
-}
-
-/// Argument list for `plink`; `-batch` keeps it from ever waiting for a prompt.
-pub fn plink_args(t: &TunnelEntry, key: Option<&Path>, local_port: u16) -> Vec<String> {
-    plink_args_auth(t, &TunnelAuth::Key(key), local_port)
-}
-
-/// Same with an explicit auth scheme. Basic auth passes the password via `-pw`, the only
-/// non-interactive way plink offers; it is visible to local processes while the tunnel runs.
-pub fn plink_args_auth(t: &TunnelEntry, auth: &TunnelAuth<'_>, local_port: u16) -> Vec<String> {
-    let mut args = vec!["-ssh".to_string(), "-batch".into(), "-P".into(), t.tunnel_port.to_string()];
-    match auth {
-        TunnelAuth::Key(Some(k)) => {
-            args.push("-i".into());
-            args.push(k.to_string_lossy().into_owned());
-        }
-        TunnelAuth::Key(None) => {}
-        TunnelAuth::Basic { password } => {
-            args.push("-pw".into());
-            args.push((*password).to_string());
-        }
-    }
-    args.extend([
-        "-l".to_string(),
-        t.user.clone(),
-        "-L".into(),
-        format!("127.0.0.1:{local_port}:{}:{}", t.target_host, t.target_port),
-        "-N".into(),
-        t.tunnel_host.clone(),
-    ]);
-    args
-}
-
-pub fn find_plink() -> Option<PathBuf> {
-    let candidates = ["C:\\Program Files\\PuTTY\\plink.exe", "C:\\Program Files (x86)\\PuTTY\\plink.exe"];
-    if let Some(found) = candidates.iter().map(PathBuf::from).find(|p| p.is_file()) {
-        return Some(found);
-    }
-    let path = std::env::var_os("PATH")?;
-    std::env::split_paths(&path).map(|d| d.join("plink.exe")).find(|p| p.is_file())
-}
-
-pub(crate) fn free_local_port() -> Result<u16, String> {
-    let l = TcpListener::bind("127.0.0.1:0").map_err(|e| e.to_string())?;
-    Ok(l.local_addr().map_err(|e| e.to_string())?.port())
 }
 
 /// Read-only guard: exactly one statement that starts with a reading keyword.
@@ -369,46 +238,15 @@ pub struct DbManager {
     active: Mutex<Option<String>>,
     progress: Mutex<Option<ProgressSink>>,
     cancel: std::sync::atomic::AtomicBool,
-    pub tunnels: std::sync::Arc<crate::tunnels::TunnelManager>,
-}
-
-pub(crate) fn spawn_plink(plink: &Path, args: &[String]) -> Result<Child, String> {
-    let mut cmd = platform::console::command(plink);
-    cmd.args(args).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::piped());
-    cmd.spawn().map_err(|e| format!("plink could not be started: {e}"))
-}
-
-pub(crate) fn wait_for_port(child: &mut Child, port: u16, timeout: Duration) -> Result<(), String> {
-    wait_for_port_cancellable(child, port, timeout, None)
-}
-
-pub(crate) fn wait_for_port_cancellable(child: &mut Child, port: u16, timeout: Duration, cancel: Option<&std::sync::atomic::AtomicBool>) -> Result<(), String> {
-    let addr: SocketAddr = ([127, 0, 0, 1], port).into();
-    let start = Instant::now();
-    loop {
-        if cancel.map(|c| c.load(std::sync::atomic::Ordering::SeqCst)).unwrap_or(false) {
-            return Err("Connecting was cancelled.".to_string());
-        }
-        if let Ok(Some(status)) = child.try_wait() {
-            let mut msg = String::new();
-            if let Some(mut err) = child.stderr.take() {
-                use std::io::Read;
-                let _ = err.read_to_string(&mut msg);
-            }
-            let msg = msg.trim();
-            return Err(format!("SSH tunnel stopped ({status}){}", if msg.is_empty() { String::new() } else { format!(": {msg}") }));
-        }
-        if TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok() {
-            return Ok(());
-        }
-        if start.elapsed() > timeout {
-            return Err("SSH tunnel did not open in time".to_string());
-        }
-        std::thread::sleep(Duration::from_millis(200));
-    }
+    pub tunnels: std::sync::Arc<ssh_tunnel::tunnels::TunnelManager>,
 }
 
 impl DbManager {
+    /// Nutzt den `TunnelManager` der App mit (das SSH-Tunnel-Plugin zeigt dieselben Weiterleitungen).
+    pub fn with_tunnels(tunnels: std::sync::Arc<ssh_tunnel::tunnels::TunnelManager>) -> Self {
+        Self { tunnels, ..Self::default() }
+    }
+
     /// The shell registers one sink; every connect reports its phases to it.
     pub fn set_progress_sink(&self, sink: ProgressSink) {
         *self.progress.lock().unwrap() = Some(sink);
@@ -535,13 +373,13 @@ impl DbManager {
             None => {
                 self.report(system, "Starting ssh/plink", false);
                 let local_port = free_local_port()?;
-                let mut child = crate::tunnel_client::default_client().spawn(&tunnel, auth, local_port).map_err(|e| crate::tunnels::friendly_error(&e, false))?;
+                let mut child = ssh_tunnel::tunnel_client::default_client().spawn(&tunnel, auth, local_port).map_err(|e| ssh_tunnel::tunnels::friendly_error(&e, false))?;
                 self.report(system, "Authenticating and forwarding the port", false);
                 if let Err(e) = wait_for_port_cancellable(&mut child, local_port, Duration::from_secs(20), Some(&self.cancel)) {
                     let _ = child.kill();
                     let _ = child.wait();
                     let refs: Vec<&str> = secrets.iter().map(|s| s.as_str()).collect();
-                    return Err(crate::tunnels::friendly_error(&scrub(&e, &refs), matches!(auth, TunnelAuth::Key(Some(_)))));
+                    return Err(ssh_tunnel::tunnels::friendly_error(&scrub(&e, &refs), matches!(auth, TunnelAuth::Key(Some(_)))));
                 }
                 (Some(child), local_port)
             }
@@ -557,7 +395,7 @@ impl DbManager {
         let connected = runtime.block_on(async {
             let conn = mariadb::connect(&config).await?;
             conn.test_connection().await?;
-            Ok::<_, db_layer::DbError>(conn)
+            Ok::<_, crate::drivers::DbError>(conn)
         });
         let refs: Vec<&str> = secrets.iter().map(|s| s.as_str()).collect();
         let conn = match connected {
@@ -601,7 +439,7 @@ impl DbManager {
         let connected = runtime.block_on(async {
             let conn = mariadb::connect(&config).await?;
             conn.test_connection().await?;
-            Ok::<_, db_layer::DbError>(conn)
+            Ok::<_, crate::drivers::DbError>(conn)
         });
         let conn = match connected {
             Ok(c) => c,
@@ -767,18 +605,6 @@ mod tests {
     }
 
     #[test]
-    fn percent_encoding_protects_url_special_characters() {
-        assert_eq!(percent_encode("p@ss/w#rd"), "p%40ss%2Fw%23rd");
-        assert_eq!(percent_encode("abc-1_.~"), "abc-1_.~");
-    }
-
-    #[test]
-    fn scrub_removes_plain_and_encoded_secrets() {
-        let out = scrub("denied for dbuser using p@ss/w#rd / p%40ss%2Fw%23rd", &["dbuser", "p@ss/w#rd"]);
-        assert!(!out.contains("dbuser") && !out.contains("p@ss") && !out.contains("p%40ss"));
-    }
-
-    #[test]
     fn read_only_guard_accepts_reads_and_rejects_everything_else() {
         assert!(is_read_only("SELECT 1"));
         assert!(is_read_only("  select * from t where a = 'x;y'; "));
@@ -810,7 +636,7 @@ mod tests {
 
     #[test]
     fn sessions_of_two_systems_stay_open_next_to_each_other() {
-        use db_layer::mock::MockConnection;
+        use crate::drivers::mock::MockConnection;
         let m = DbManager::default();
         m.attach_connection_for("FFG", Box::new(MockConnection::default()), vec![]);
         m.attach_connection_for("SVB", Box::new(MockConnection::default()), vec![]);

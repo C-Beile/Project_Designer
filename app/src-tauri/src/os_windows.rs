@@ -16,7 +16,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder, Window, WindowEvent};
 
-use forge_app_core::window_labels::{label_of, parse_label};
+use app_base::window_labels::{label_of, parse_label};
 
 #[derive(Default)]
 pub struct WindowPayloads(Mutex<HashMap<String, String>>);

@@ -1,4 +1,4 @@
-// Error surface for one differential-harness run. Kept separate from `transpiler::TranspilerError`
+// Error surface for one native-transpiler run. Kept separate from `adito_transpiler::TranspilerError`
 // (the reference run's own error type) so a caller can tell "the harness itself could not run"
 // apart from "the reference transpiler run failed" - the latter is a valid, reportable outcome
 // (e.g. exit 150), not a harness defect.
@@ -11,7 +11,7 @@ pub enum HarnessError {
     ProjectHomeNotFound(PathBuf),
 
     #[error("reference transpiler wrapper failed to start: {0}")]
-    ReferenceSetup(#[from] transpiler::TranspilerError),
+    ReferenceSetup(#[from] adito_transpiler::TranspilerError),
 
     #[error("own engine failed: {0}")]
     OwnEngine(String),

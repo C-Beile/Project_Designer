@@ -3,7 +3,7 @@
 // (see crates/transpiler/tests/real_transpiler.rs) and runs it against the known-broken fixture
 // project - the CLI must reproduce the same "TRANSPILATION FAILED / exit 150" outcome the
 // transpiler crate's own real-subprocess test already proved, this time through the full
-// forge (CLI) -> forge-core -> transpiler -> nbexec64.exe path with no mocks anywhere in it.
+// forge (CLI) -> designer-core -> transpiler -> nbexec64.exe path with no mocks anywhere in it.
 //
 // Uses the broken (not the valid) fixture deliberately: it fails fast, keeping this test's JVM
 // startup cost to a single run instead of two, while still proving the real subprocess wiring
@@ -28,7 +28,7 @@ fn transpile_reports_real_failure_for_the_broken_fixture_project() {
         return;
     }
 
-    let output = Command::new(env!("CARGO_BIN_EXE_forge"))
+    let output = Command::new(env!("CARGO_BIN_EXE_designer-cli"))
         .args(["transpile", "--project"])
         .arg(fixture("testproject-broken"))
         .args(["--install-dir", INSTALL_DIR])
@@ -49,7 +49,7 @@ fn transpile_reports_real_failure_for_the_broken_fixture_project() {
 
 #[test]
 fn transpile_reports_an_honest_error_for_a_project_home_that_does_not_exist() {
-    let output = Command::new(env!("CARGO_BIN_EXE_forge"))
+    let output = Command::new(env!("CARGO_BIN_EXE_designer-cli"))
         .args(["transpile", "--project"])
         .arg(r"C:\this\path\does\not\exist\forge-cli-test")
         .args(["--install-dir", INSTALL_DIR])

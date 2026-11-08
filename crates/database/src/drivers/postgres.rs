@@ -5,9 +5,9 @@ use async_trait::async_trait;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Column, Pool, Postgres, Row};
 
-use crate::connection::DbConnection;
-use crate::error::DbError;
-use crate::types::{ConnectionConfig, DbValue, QueryResult, TableInfo};
+use crate::drivers::connection::DbConnection;
+use crate::drivers::error::DbError;
+use crate::drivers::types::{ConnectionConfig, DbValue, QueryResult, TableInfo};
 
 pub struct PostgresConnection {
     pool: Pool<Postgres>,

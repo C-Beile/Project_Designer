@@ -11,7 +11,7 @@
 // not just Hermes) - zero `.ts` files anywhere under an object folder (`entity/`, `process/`,
 // `neonView/`, `neonContext/`). TypeScript linked-file compilation therefore stays an honest,
 // documented gap (see `LinkedFilesError::TypeScriptNotImplemented`) rather than untested,
-// speculative `tsc`-invocation code - same precedent as `plugin-kernel`'s `UnverifiedTsCompiler`.
+// speculative `tsc`-invocation code - same precedent as `plugin-api`'s `UnverifiedTsCompiler`.
 //
 // `%aditoprj%` resolution (verified against the real corpus, not assumed): it is NOT the
 // top-level project root - it is relative to whichever MODULE the referencing `.aod` file itself
@@ -31,12 +31,12 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use aod_io::{build_index, replace_text_at, AodDocument, AodEvent, EventIndex, EventPath, IndexedRange};
-use module_graph::ModuleGraph;
+use aod::document::{build_index, replace_text_at, AodDocument, AodEvent, EventIndex, EventPath, IndexedRange};
+use npm_modules::ModuleGraph;
 
 use crate::own_engine::copy_phase_stage::run_copy_phase;
 use crate::own_engine::modification_engine_stage::run_modification_phase;
-use crate::own_engine::resolver_stage::resolve_module_graph;
+use crate::own_engine::resolver_stage::resolve_npm_modules;
 use crate::own_engine::{OwnEngine, OwnEngineError};
 
 /// The literal prefix every linked-file reference in the corpus starts with (`transpiler.md`
@@ -49,7 +49,7 @@ pub enum LinkedFilesError {
     #[error("failed to read {path}: {source}")]
     Read { path: PathBuf, source: std::io::Error },
     #[error("failed to parse {path}: {source}")]
-    Parse { path: PathBuf, source: aod_io::AodError },
+    Parse { path: PathBuf, source: aod::document::AodError },
     #[error("failed to write {path}: {source}")]
     Write { path: PathBuf, source: platform::error::PlatformError },
 }
@@ -115,7 +115,7 @@ fn find_linked_file_references(doc: &AodDocument, index: &EventIndex) -> Vec<(Ev
 /// corpus) rather than guessed at.
 fn inline_file(path: &Path, output_dir: &Path, report: &mut LinkedFilesReport) -> Result<(), LinkedFilesError> {
     let bytes = fs::read(path).map_err(|source| LinkedFilesError::Read { path: path.to_path_buf(), source })?;
-    let mut doc = aod_io::parse(&bytes).map_err(|source| LinkedFilesError::Parse { path: path.to_path_buf(), source })?;
+    let mut doc = aod::document::parse(&bytes).map_err(|source| LinkedFilesError::Parse { path: path.to_path_buf(), source })?;
     let index = build_index(&doc);
     let refs = find_linked_file_references(&doc, &index);
     if refs.is_empty() {
@@ -160,7 +160,7 @@ fn inline_file(path: &Path, output_dir: &Path, report: &mut LinkedFilesReport) -
     }
 
     if changed {
-        let out_bytes = aod_io::serialize(&doc);
+        let out_bytes = aod::document::serialize(&doc);
         platform::fs::atomic_write(path, &out_bytes).map_err(|source| LinkedFilesError::Write { path: path.to_path_buf(), source })?;
     }
     Ok(())
@@ -214,7 +214,7 @@ impl OwnEngine for LinkedFilesEngine {
     }
 
     fn run(&self, project_home: &Path, output_dir: &Path) -> Result<(), OwnEngineError> {
-        let graph: ModuleGraph = resolve_module_graph(project_home)?;
+        let graph: ModuleGraph = resolve_npm_modules(project_home)?;
         run_copy_phase(&graph, output_dir).map_err(|e| OwnEngineError::Message(e.to_string()))?;
         run_modification_phase(&graph, output_dir).map_err(|e| OwnEngineError::Message(e.to_string()))?;
         let _report = run_linked_files_phase(output_dir);

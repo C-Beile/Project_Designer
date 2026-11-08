@@ -11,12 +11,13 @@
 // in the checked-in fixture (that pollution was part of R43). Tests are serialised because
 // official runs share one transpiler profile, which is single-instance.
 
-use forge_app_core::actions::dispatch_action;
+use project::actions::dispatch_action;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
 fn serial() -> std::sync::MutexGuard<'static, ()> {
+    register_engines();
     static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
     LOCK.get_or_init(|| Mutex::new(())).lock().unwrap_or_else(|p| p.into_inner())
 }
@@ -34,7 +35,7 @@ fn copy_tree(src: &Path, dest: &Path) {
 }
 
 fn fresh_fixture_copy(label: &str) -> PathBuf {
-    let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../crates/differential-harness/tests/fixtures/minimal");
+    let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../crates/native-transpiler/tests/fixtures/minimal");
     let dest = std::env::temp_dir().join(format!("forge-transpile-real-{label}-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dest);
     copy_tree(&src, &dest);
@@ -43,6 +44,18 @@ fn fresh_fixture_copy(label: &str) -> PathBuf {
 
 fn forge_data_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../../../_scratch/p8-official-transpiler/forge-data")
+}
+
+/// Meldet die Engines an wie die App beim Start (einmal je Prozess): eigene Engine plus offizieller Transpiler.
+fn register_engines() {
+    static ONCE: OnceLock<()> = OnceLock::new();
+    ONCE.get_or_init(|| {
+        let mut registry = plugin_api::TranspilerRegistry::new();
+        registry.register(std::sync::Arc::new(project::transpile_action::NativeTranspiler));
+        registry.register(std::sync::Arc::new(adito_transpiler::plugin::AditoTranspiler));
+        registry.set_default(project::transpile_action::NATIVE_ID);
+        project::transpile_action::set_transpilers(std::sync::Arc::new(registry));
+    });
 }
 
 fn official_params() -> HashMap<String, String> {

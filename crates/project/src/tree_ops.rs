@@ -9,10 +9,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Folder-safe object name: letters, digits, underscore, hyphen and dot-free.
-pub fn valid_object_name(name: &str) -> bool {
-    !name.is_empty() && name.len() <= 100 && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
-}
+pub use crate::object_names::valid_object_name;
 
 pub struct ObjectLocation {
     pub dir: PathBuf,
@@ -63,10 +60,10 @@ pub fn rewrite_for_copy(text: &str, type_folder: &str, old: &str, new: &str) -> 
 /// Copies the object at `aod` as `new_name` below `dest_root/<type>/`. Returns the new `.aod`.
 pub fn copy_object(aod: &Path, dest_root: &Path, new_name: &str) -> Result<PathBuf, String> {
     let loc = locate_object(aod)?;
-    crate::new_object::validate_name(dest_root, &loc.type_folder, new_name)?;
+    crate::object_names::validate_name(dest_root, &loc.type_folder, new_name)?;
     let dest_dir = dest_root.join(&loc.type_folder).join(new_name);
     if dest_dir.exists() {
-        return Err(crate::new_object::MSG_EXISTS.into());
+        return Err(crate::object_names::MSG_EXISTS.into());
     }
     let source_bytes = fs::read(aod).map_err(|e| e.to_string())?;
     let source_text = String::from_utf8(source_bytes).map_err(|_| "The object file is not UTF-8 text.".to_string())?;

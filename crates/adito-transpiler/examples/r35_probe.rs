@@ -5,7 +5,7 @@
 //       mode by default), visible directly in its own stdout log ("Full Transpile" vs.
 //       "Partial Transpile" markers) - independent of which userdir is used.
 //   (b) stale state in the SHARED scratch userdir/cachedir (`_scratch\p3-transpiler-wrapper\
-//       userdir`), reused unchanged by every P5 harness run since `differential-harness` -
+//       userdir`), reused unchanged by every P5 harness run since `native-transpiler` -
 //       tested by re-running against the exact same project copy with a userdir that has NEVER
 //       processed any real corpus project (only the four `de.adito.aditoweb.nbm.nodejs` plugin
 //       seed artifacts, freshly copied from the real interactive designer profile, see
@@ -18,7 +18,7 @@
 
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use transpiler::{EventSink, LogStream, TranspileEvent, TranspilerConfig, TranspilerRunner, NbexecTranspilerRunner};
+use adito_transpiler::{EventSink, LogStream, TranspileEvent, TranspilerConfig, TranspilerRunner, NbexecTranspilerRunner};
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();

@@ -9,7 +9,7 @@
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
-use transpiler::{EventSink, ExitOutcome, FailureReason, NbexecTranspilerRunner, TranspileEvent, TranspilerConfig, TranspilerRunner};
+use adito_transpiler::{EventSink, ExitOutcome, FailureReason, NbexecTranspilerRunner, TranspileEvent, TranspilerConfig, TranspilerRunner};
 
 // Root of the read-only ADITO Designer installation used by every P2/P3 spike so far. Never
 // written to by this crate.

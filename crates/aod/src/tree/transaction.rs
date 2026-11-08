@@ -2,7 +2,7 @@
 //! (architecture.md §3: "Eine einzelne fachliche User-Aktion ... bündelt mehrere FileCommands
 //! zu einer Transaction, die atomar auf den Undo-Stack kommt").
 
-use crate::command::FileCommand;
+use crate::tree::command::FileCommand;
 
 #[derive(Debug, Clone)]
 pub struct Transaction {
@@ -78,7 +78,7 @@ impl UndoStack {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::command::ByteRange;
+    use crate::tree::command::ByteRange;
     use std::path::PathBuf;
 
     fn cmd(start: usize, end: usize, old: &str, new: &str) -> FileCommand {

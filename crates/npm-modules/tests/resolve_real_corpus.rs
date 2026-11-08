@@ -4,12 +4,12 @@
 //! `resolve_synthetic.rs`) is a read-only copy of a subset of `package.json` files taken
 //! verbatim from a real checkout under `C:\Users\ClemensBeile\Desktop\GitRepos_ADITO`
 //! (never modified, never written back to). See
-//! `PROJECT/20_architecture/p3-module-graph-notes.md` for the full corpus-search protocol
+//! `PROJECT/20_architecture/p3-npm-modules-notes.md` for the full corpus-search protocol
 //! and provenance of each fixture.
 
 use std::path::{Path, PathBuf};
 
-use module_graph::{resolve, PROJECT_NODE};
+use npm_modules::{resolve, PROJECT_NODE};
 
 fn fixture(name: &str) -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))

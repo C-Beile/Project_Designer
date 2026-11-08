@@ -235,7 +235,7 @@ fn module_object_edit_becomes_a_minimal_modification_and_merges_to_the_expected_
     assert!(text.contains("<intValueWrapper>") && text.contains("<value v=\"12\" />"));
     assert_eq!(std::fs::read_dir(root.join("modification")).unwrap().count(), 1);
 
-    let merged = differential_harness::own_engine::merge_modifications_into_bytes(&original, &[(mod_file, true)]).unwrap();
+    let merged = native_transpiler::own_engine::merge_modifications_into_bytes(&original, &[(mod_file, true)]).unwrap();
     let base = String::from_utf8(original.clone()).unwrap();
     let field = base.find("<name>TARGET_LEVEL_VALUE</name>").unwrap();
     let at = field + base[field..].find("<maxIntegerDigits v=\"10\" />").unwrap();

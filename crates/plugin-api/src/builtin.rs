@@ -6,7 +6,7 @@
 //! `Validator` (`refs`), and concrete `Action`s (rename, delete-cascade, ...) all live in crates
 //! this one deliberately does not depend on; they plug into the same `PluginRegistry` via this
 //! same `register_all` pattern once those crates exist (see
-//! `p3-plugin-kernel-notes.md` for the integration proposal). The `.ts` compiler is intentionally
+//! `p3-plugin-api-notes.md` for the integration proposal). The `.ts` compiler is intentionally
 //! NOT registered here — registering `UnverifiedTsCompiler` would make every `.ts` lookup fail
 //! loudly instead of silently falling through to "no compiler found", which is a deliberate
 //! choice left to the integrating crate once `.ts` handling is verified.

@@ -2,7 +2,7 @@
 //! project's `dist`, to compare with `SELECT ID, CRC32(XMLDATA)` on a deployed system:
 //! `deploy_crc_all <project>`.
 
-use forge_app_core::system_db::collect_local_models;
+use deploy::system_deploy::collect_local_models;
 use std::path::PathBuf;
 
 fn crc32(bytes: &[u8]) -> u32 {

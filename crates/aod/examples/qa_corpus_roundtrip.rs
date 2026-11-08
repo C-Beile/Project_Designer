@@ -6,7 +6,7 @@
 //! machine (not just the Hermes/FZ_Juerlich subset most P3-P5 agents used).
 //!
 //! Read-only guarantee: this program only ever calls `std::fs::read` on files under the
-//! corpus root. `aod_io::round_trip_check` parses and re-serializes purely in memory and
+//! corpus root. `aod::document::round_trip_check` parses and re-serializes purely in memory and
 //! never touches disk itself. Nothing under the corpus root is written, renamed or deleted.
 
 use std::env;
@@ -73,7 +73,7 @@ fn main() {
 
         for file in &files {
             match fs::read(file) {
-                Ok(bytes) => match aod_io::round_trip_check(&bytes) {
+                Ok(bytes) => match aod::document::round_trip_check(&bytes) {
                     Ok(()) => matched += 1,
                     Err(diag) => failures.push((file.clone(), diag)),
                 },

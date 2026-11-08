@@ -3,10 +3,10 @@
 //! the project's root files and "External Libraries".
 //!
 //! The Designer shows the *merged* model: objects of the project and of every resolved module
-//! (`node_modules`, resolved with `module-graph` like the transpiler pipeline does) appear side by
+//! (`node_modules`, resolved with `npm-modules` like the transpiler pipeline does) appear side by
 //! side, module objects carry their origin `@scope/name:version`, and a project object with the
 //! same name hides the module's (the same "project root wins" rule the transpiler applies, see
-//! `differential-harness/src/own_engine/modification_engine_stage.rs`). Contexts are the main
+//! `native-transpiler/src/own_engine/modification_engine_stage.rs`). Contexts are the main
 //! structure: their entity and all referenced views hang below them, including view references
 //! other packages add through `modification/` files.
 //!
@@ -14,6 +14,7 @@
 //! `<neonViewReference>`, `<variants>`, `<publishAsWebservice>`, the modification envelope);
 //! nothing here ever writes, and everything under `node_modules` is reported read-only.
 
+use app_base::fs_guard::is_under_node_modules;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
@@ -208,12 +209,7 @@ fn forward(path: &Path) -> String {
     path.to_string_lossy().replace('\\', "/")
 }
 
-pub fn is_under_node_modules(path: &Path) -> bool {
-    path.components()
-        .any(|c| c.as_os_str().to_str().is_some_and(|s| s.eq_ignore_ascii_case("node_modules")))
-}
-
-fn coordinate_of(def: &module_graph::ModuleDefinition) -> String {
+fn coordinate_of(def: &npm_modules::ModuleDefinition) -> String {
     format!("{}:{}", def.name, def.version)
 }
 
@@ -225,7 +221,7 @@ fn short_name(name: &str) -> String {
 /// `package.json` (or with an unresolvable graph) still shows its own objects.
 fn collect_packages(project_root: &Path) -> Vec<Package> {
     let folder_name = project_root.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-    let project_coordinate = module_graph::model::parse_package_json(&project_root.join("package.json"))
+    let project_coordinate = npm_modules::model::parse_package_json(&project_root.join("package.json"))
         .map(|def| coordinate_of(&def))
         .unwrap_or_else(|_| folder_name.clone());
     let mut packages = vec![Package {
@@ -234,7 +230,7 @@ fn collect_packages(project_root: &Path) -> Vec<Package> {
         short_name: folder_name,
         is_project: true,
     }];
-    if let Ok(graph) = module_graph::resolve_lenient(project_root) {
+    if let Ok(graph) = npm_modules::resolve_lenient(project_root) {
         for def in graph.modules.values() {
             packages.push(Package {
                 dir: def.path.clone(),
@@ -781,7 +777,7 @@ fn effective_context_webservices(base: &ContextInfo, context: &str, mods: &[(boo
 /// DesignerBase.properties`, key `file:/<project path>/project.systemConfig.name` (Pichler -> qs_bg,
 /// matching Screenshot 41). Read only; the most recently written profile wins.
 pub fn designer_preference_files() -> Vec<PathBuf> {
-    let base = crate::official_transpiler_setup::default_profiles_root();
+    let base = app_base::designer_paths::default_profiles_root();
     let mut files: Vec<(std::time::SystemTime, PathBuf)> = sub_dirs(&base)
         .into_iter()
         .map(|(_, d)| d.join("config/Preferences/de/adito/designer/netbeans/DesignerBase.properties"))
@@ -937,7 +933,7 @@ pub fn scan_project_tree_with(project_root: &Path, preference_files: &[PathBuf])
     }
 
     let packages = collect_packages(project_root);
-    let module_project = module_graph::model::parse_package_json(&project_root.join("package.json")).map(|d| d.adito_type == module_graph::AditoType::Module).unwrap_or(false);
+    let module_project = npm_modules::model::parse_package_json(&project_root.join("package.json")).map(|d| d.adito_type == npm_modules::AditoType::Module).unwrap_or(false);
     let scans = scan_packages(project_root, &packages);
 
     let mut model = Model { packages: &packages, objects: HashMap::new(), modified_by: HashMap::new() };
@@ -1152,8 +1148,8 @@ fn external_libraries(packages: &[Package], scans: &[PackageScan], root_id: &str
         .filter(|(p, s)| {
             !s.objects.is_empty()
                 || !s.modifications.is_empty()
-                || module_graph::model::parse_package_json(&p.dir.join("package.json"))
-                    .is_ok_and(|d| d.adito_type == module_graph::AditoType::Module)
+                || npm_modules::model::parse_package_json(&p.dir.join("package.json"))
+                    .is_ok_and(|d| d.adito_type == npm_modules::AditoType::Module)
         })
         .map(|(p, _)| TreeNode {
             id: format!("dir:{}", p.dir.to_string_lossy()),
@@ -1183,24 +1179,13 @@ fn external_libraries(packages: &[Package], scans: &[PackageScan], root_id: &str
 // Leaf helpers used by the project actor
 
 /// Resolves a leaf node id back to its file path, validating it actually points at a real file -
-/// the guard against a stale/forged node id reaching `forge_core::open_project`.
+/// the guard against a stale/forged node id reaching `designer_core::open_project`.
 pub fn resolve_leaf_path(node_id: &str) -> Result<PathBuf, String> {
     let path = PathBuf::from(node_id);
     if !path.is_file() {
         return Err(format!("node id '{node_id}' does not resolve to a real file"));
     }
     Ok(path)
-}
-
-/// Objects of installed modules belong to their publisher and are never changed by Forge.
-pub fn ensure_writable(path: &Path) -> Result<(), String> {
-    if is_under_node_modules(path) {
-        return Err(format!(
-            "'{}' belongs to an installed module (node_modules) and is read-only; change it in the module's own repository or through a modification in the project",
-            path.display()
-        ));
-    }
-    Ok(())
 }
 
 /// Determines the `object_type` for an already-resolved leaf path by walking up its ancestor

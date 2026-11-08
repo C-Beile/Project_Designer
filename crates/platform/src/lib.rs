@@ -1,5 +1,5 @@
 //! `platform` - the single platform-specific seam for Forge (architecture.md §8, ADR-0004 rule
-//! 2). `forge-core` and the CLI compile only against the trait interfaces declared at this
+//! 2). `designer-core` and the CLI compile only against the trait interfaces declared at this
 //! crate's root; no `std::process::Command`, `windows-sys`/`windows-rs`, or other OS-specific
 //! call is allowed to leak outside this crate (ADR-0004 rule 1). `fs::atomic_write` is the one
 //! exception to the "trait + per-OS impl" shape - `std::fs::rename` is already atomic-with-

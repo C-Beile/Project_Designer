@@ -11,7 +11,7 @@
 use std::path::Path;
 use walkdir::WalkDir;
 
-/// Every fixture file must load (`aod_io::parse`) and re-save (`aod_io::serialize`)
+/// Every fixture file must load (`aod::document::parse`) and re-save (`aod::document::serialize`)
 /// byte-identical to its original bytes, with no edits applied — this is what proves
 /// `AodDocument`'s event-stream representation captures the full file, including every
 /// formatting quirk (CRLF, no BOM, irregular `customProperties` indentation, ...), without
@@ -41,7 +41,7 @@ fn corpus_round_trip_is_byte_identical() {
         }
 
         let bytes = std::fs::read(path).expect("read fixture file");
-        if let Err(reason) = aod_io::round_trip_check(&bytes) {
+        if let Err(reason) = aod::document::round_trip_check(&bytes) {
             failures.push(format!("{}: {}", path.display(), reason));
         }
     }
@@ -91,5 +91,5 @@ fn custom_properties_quirk_file_round_trips_byte_identical() {
         bytes.windows(b"customProperties".len()).any(|w| w == b"customProperties"),
         "fixture no longer contains a customProperties block — quirk test would be vacuous"
     );
-    aod_io::round_trip_check(&bytes).expect("byte-identical round trip of customProperties quirk file");
+    aod::document::round_trip_check(&bytes).expect("byte-identical round trip of customProperties quirk file");
 }

@@ -1,21 +1,16 @@
 [package]
-name = "forge-core"
+name = "designer-core"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
 [dependencies]
-aod-io = { path = "../aod-io" }
-core-model = { path = "../core-model" }
-refs = { path = "../refs" }
-module-graph = { path = "../module-graph" }
-transpiler = { path = "../transpiler" }
-plugin-kernel = { path = "../plugin-kernel" }
-db-layer = { path = "../db-layer" }
-server-comm = { path = "../server-comm" }
+aod = { path = "../aod" }
+npm-modules = { path = "../npm-modules" }
+plugin-api = { path = "../plugin-api" }
 platform = { path = "../platform" }
-thiserror = "1"
+thiserror = { workspace = true }
 
 [lints]
 workspace = true

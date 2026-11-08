@@ -5,15 +5,15 @@
 //! time by different agents, and would leak `aod-io`'s internal event representation into
 //! `core-model` - `core-model` defines this trait against its *own* vocabulary (`NodePath`,
 //! `ByteRange`) and depends only on that. `aod-io` (or a thin adapter over it) implements this
-//! trait during the later integration round; until then, `core_model::testing::InMemoryEventSource`
+//! trait during the later integration round; until then, `crate::tree::testing::InMemoryEventSource`
 //! stands in for it so `PropertyTree` can be built and tested without waiting on `aod-io`.
 //!
 //! Every method answers exactly one question the edit-flow in architecture.md §3 needs, and
 //! nothing else - keeping the surface small is what makes both sides free to keep changing their
 //! own internals independently.
 
-use crate::command::ByteRange;
-use crate::path::NodePath;
+use crate::tree::command::ByteRange;
+use crate::tree::path::NodePath;
 use std::path::Path;
 
 pub trait EventSource {

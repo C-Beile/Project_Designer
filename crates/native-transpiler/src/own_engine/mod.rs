@@ -39,7 +39,7 @@ pub use modification_engine_stage::{
     merge_modifications_into_bytes,
     run_modification_phase, ModificationEngine, ModificationEngineError, ModificationEngineReport,
 };
-pub use resolver_stage::{resolve_module_graph, ResolverEngine};
+pub use resolver_stage::{resolve_npm_modules, ResolverEngine};
 
 #[derive(Debug, thiserror::Error)]
 pub enum OwnEngineError {

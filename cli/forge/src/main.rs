@@ -1,8 +1,8 @@
-//! `forge` - the thin, UI-free command-line shell over `forge-core` (architecture.md §1: "duenne
+//! `forge` - the thin, UI-free command-line shell over `designer-core` (architecture.md §1: "duenne
 //! CLI: transpile, validate, deploy - laeuft in CI ohne GUI"). Every subcommand below does
-//! nothing but parse arguments, call exactly one `forge-core` entry point, and format the result
+//! nothing but parse arguments, call exactly one `designer-core` entry point, and format the result
 //! for the console. No business logic lives here - the grounding rule from architecture.md §1
-//! ("jede fachliche Logik liegt in forge-core, niemals in der CLI selbst") applies to every file
+//! ("jede fachliche Logik liegt in designer-core, niemals in der CLI selbst") applies to every file
 //! in this crate.
 
 use clap::{Parser, Subcommand};
@@ -12,7 +12,7 @@ mod commands;
 
 #[derive(Parser)]
 #[command(
-    name = "forge",
+    name = "designer-cli",
     version,
     about = "Headless CLI for the ADITO Forge Designer core (transpile, validate, deploy)"
 )]
@@ -23,11 +23,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Runs the official TranspilerCLI against a project (forge_core::transpiler).
+    /// Runs the official TranspilerCLI against a project (designer_core::transpiler).
     Transpile(commands::transpile::TranspileArgs),
-    /// Runs every registered plugin-kernel validator against a project (forge_core::plugin_kernel).
+    /// Runs every registered plugin-api validator against a project (designer_core::plugin_api).
     Validate(commands::validate::ValidateArgs),
-    /// Deploys a project to a running ADITO server (forge_core::server_comm).
+    /// Deploys a project to a running ADITO server (nicht verfuegbar).
     Deploy(commands::deploy::DeployArgs),
 }
 

@@ -1,0 +1,74 @@
+//! Benutzereinstellungen und Pfad der Einstellungsdatei.
+
+use super::blocking;
+use project::settings::{self, ForgeSettings};
+use std::path::PathBuf;
+use tauri::Manager;
+
+pub fn write_settings(file: &std::path::Path, settings: &ForgeSettings) -> Result<(), String> {
+    let bytes = settings::serialize_settings(settings)?;
+    platform::fs::atomic_write(file, &bytes).map_err(|e| e.to_string())
+}
+
+/// The app data folder carries the identifier of the app. After the rename, settings, logs and backups of the old folder are copied once.
+pub fn migrate_legacy_data_dir(app: &tauri::AppHandle) {
+    let Ok(dir) = app.path().app_data_dir() else { return };
+    let Some(parent) = dir.parent() else { return };
+    let old = parent.join("de.threehillsit.vendira-designer");
+    if dir.exists() || !old.is_dir() {
+        return;
+    }
+    fn copy_all(from: &std::path::Path, to: &std::path::Path) -> std::io::Result<()> {
+        std::fs::create_dir_all(to)?;
+        for entry in std::fs::read_dir(from)? {
+            let entry = entry?;
+            let target = to.join(entry.file_name());
+            if entry.file_type()?.is_dir() {
+                copy_all(&entry.path(), &target)?;
+            } else {
+                std::fs::copy(entry.path(), target)?;
+            }
+        }
+        Ok(())
+    }
+    let _ = copy_all(&old, &dir);
+    // Copied log files get the new name, too.
+    if let Ok(entries) = std::fs::read_dir(dir.join("logs")) {
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if let Some(rest) = name.strip_prefix("vendira-designer-") {
+                let _ = std::fs::rename(entry.path(), entry.path().with_file_name(format!("dito-designer-{rest}")));
+            }
+        }
+    }
+}
+
+pub fn settings_file(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir.join(settings::SETTINGS_FILE_NAME))
+}
+
+/// P8 Tools > Options: Forge's own user settings (see `project::settings`).
+#[tauri::command(async)]
+pub fn get_settings(app: tauri::AppHandle) -> Result<ForgeSettings, String> {
+    Ok(settings::load_settings(&settings_file(&app)?))
+}
+
+#[tauri::command(async)]
+pub fn set_settings(mut settings: ForgeSettings, app: tauri::AppHandle) -> Result<(), String> {
+    // The open-project list is owned by add/remove_open_project; the Options dialog never
+    // carries it, so it must not wipe it.
+    let file = settings_file(&app)?;
+    settings.open_projects = settings::load_settings(&file).open_projects;
+    #[cfg(feature = "ssh-tunnel")]
+    ::ssh_tunnel::tunnel_client::set_accept_new_host_keys(settings.ssh_accept_new_host_keys.unwrap_or(false));
+    write_settings(&file, &settings)
+}
+
+/// P8 Tools > Options: the Designer installation automatic discovery would pick, shown next to
+/// the user's own choice. Scans a few folders, so it runs off the UI thread.
+#[tauri::command]
+pub async fn detect_designer_install() -> Result<Option<String>, String> {
+    blocking(settings::detect_designer_install).await
+}

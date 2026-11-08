@@ -1,7 +1,7 @@
 // Hardening helper: prints the problems scan of a project grouped by message shape (read-only).
 fn main() {
     let root = std::env::args().nth(1).expect("project root");
-    let list = forge_app_core::problems::scan_project(std::path::Path::new(&root));
+    let list = project::problems::scan_project(std::path::Path::new(&root));
     let mut seen = std::collections::BTreeMap::<String, (usize, String)>::new();
     for p in &list {
         let v = format!("{p:?}");

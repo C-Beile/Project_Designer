@@ -6,9 +6,9 @@ use async_trait::async_trait;
 use sqlx::mysql::MySqlPoolOptions;
 use sqlx::{Column, MySql, Pool, Row};
 
-use crate::connection::{DbConnection, TxStatement};
-use crate::error::DbError;
-use crate::types::{ConnectionConfig, DbValue, QueryResult, TableInfo};
+use crate::drivers::connection::{DbConnection, TxStatement};
+use crate::drivers::error::DbError;
+use crate::drivers::types::{ConnectionConfig, DbValue, QueryResult, TableInfo};
 
 pub struct MariaDbConnection {
     pool: Pool<MySql>,

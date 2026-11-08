@@ -1,8 +1,4 @@
 [toolchain]
-# GNU host toolchain — required because MSVC's link.exe is missing on this machine
-# (VS 2022 Professional without the "Desktop development with C++" workload).
-# Verified working in P2 spikes (spike-editor.md, spike-transpiler-wrapper.md, RISKS.md R13).
-# This is a provisional default per architecture.md §9 point 5 — Clemens may later switch
-# the whole project to MSVC by installing the VC++ build tools; until then every P3 crate
-# inherits this setting from the workspace root, no per-crate rediscovery needed.
-channel = "stable-x86_64-pc-windows-gnu"
+# MSVC-Toolchain (Standard unter Windows). Braucht in Visual Studio / den Build Tools
+# den Workload "Desktopentwicklung mit C++".
+channel = "stable-x86_64-pc-windows-msvc"

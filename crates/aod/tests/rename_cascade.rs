@@ -4,9 +4,9 @@
 
 use std::collections::HashMap;
 
-use core_model::testing::InMemoryEventSource;
-use core_model::{ByteRange, NodePath, PropertyTree, PropertyValue, ScalarValue};
-use refs::{ObjectId, RefGraph};
+use aod::tree::testing::InMemoryEventSource;
+use aod::tree::{ByteRange, NodePath, PropertyTree, PropertyValue, ScalarValue};
+use aod::refs::{ObjectId, RefGraph};
 
 fn text(s: &str) -> PropertyValue {
     PropertyValue::Scalar(ScalarValue::Text(s.to_string()))

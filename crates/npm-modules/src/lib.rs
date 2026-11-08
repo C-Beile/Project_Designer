@@ -1,4 +1,4 @@
-//! `module-graph` — npm-based module resolution for ADITO projects (Forge P3).
+//! `npm-modules` — npm-based module resolution for ADITO projects (Forge P3).
 //!
 //! Builds a full dependency graph from a project's `package.json` plus its installed
 //! `node_modules/@aditosoftware/*` / `@3hills-it/*` modules, detects cycles in the
@@ -6,7 +6,7 @@
 //! project's `overrides` field.
 //!
 //! See `PROJECT/30_spec/transpiler.md` §1-2 and
-//! `PROJECT/20_architecture/p3-module-graph-notes.md` for the corpus evidence behind
+//! `PROJECT/20_architecture/p3-npm-modules-notes.md` for the corpus evidence behind
 //! every rule implemented here — in particular, the diamond `overrides` rule is verified
 //! against a real shipped conflict in the Pichler project, not just inferred from class
 //! names.

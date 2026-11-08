@@ -3,11 +3,11 @@
 
 use std::collections::HashMap;
 
-use core_model::{EventSource, NodePath, PropertyTree, PropertyValue, ScalarValue, Transaction};
+use crate::tree::{EventSource, NodePath, PropertyTree, PropertyValue, ScalarValue, Transaction};
 
-use crate::edge::{Edge, RefKind};
-use crate::extract;
-use crate::object_id::ObjectId;
+use crate::refs::edge::{Edge, RefKind};
+use crate::refs::extract;
+use crate::refs::object_id::ObjectId;
 
 #[derive(Debug, thiserror::Error)]
 pub enum RefsError {
@@ -16,7 +16,7 @@ pub enum RefsError {
     #[error("reference site in {0} no longer resolves in its tree - the graph index is stale, reindex before cascading")]
     StaleSite(ObjectId),
     #[error("failed to patch the reference site in {0}: {1}")]
-    Edit(ObjectId, #[source] core_model::Error),
+    Edit(ObjectId, #[source] crate::tree::Error),
 }
 
 /// One still-standing incoming reference, reported instead of auto-cascaded on delete
@@ -105,7 +105,7 @@ impl RefGraph {
     /// rewritten to `new_name` and bundled into one `Transaction` - atomic, one undo step. `trees`
     /// must hold one `PropertyTree` per referencing object (keyed by `ObjectId`), covering every
     /// file the cascade touches - in production these are the already-open/loaded projections;
-    /// the tests use `core_model::testing::InMemoryEventSource`-backed ones as the "multiple
+    /// the tests use `crate::tree::testing::InMemoryEventSource`-backed ones as the "multiple
     /// simulated files" fixture.
     ///
     /// `ValueProcessLinkedFile` edges are skipped: their site holds a linked-file *path*, not the
@@ -146,8 +146,8 @@ impl RefGraph {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::object_id::ObjectKind;
-    use core_model::ScalarValue;
+    use crate::refs::object_id::ObjectKind;
+    use crate::tree::ScalarValue;
 
     fn text(s: &str) -> PropertyValue {
         PropertyValue::Scalar(ScalarValue::Text(s.to_string()))

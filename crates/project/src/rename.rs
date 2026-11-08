@@ -87,7 +87,7 @@ fn check(root: &Path, aod: &Path, new_name: &str) -> Result<crate::tree_ops::Obj
     if loc.name == new_name {
         return Err("The new name equals the old name.".into());
     }
-    crate::new_object::validate_name(root, &loc.type_folder, new_name)?;
+    crate::object_names::validate_name(root, &loc.type_folder, new_name)?;
     Ok(loc)
 }
 

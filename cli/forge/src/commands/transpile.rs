@@ -1,10 +1,10 @@
-//! `forge transpile` - a thin wrapper around forge_core::transpiler's real
+//! `forge transpile` - a thin wrapper around designer_core::transpiler's real
 //! `NbexecTranspilerRunner` (the verified `nbexec64.exe --projecthome ...` invocation). Every
-//! decision (exit-code interpretation, log-line classification) is forge_core::transpiler's, not
+//! decision (exit-code interpretation, log-line classification) is designer_core::transpiler's, not
 //! this file's - this subcommand only wires arguments in and prints events/outcome out.
 
 use clap::Args;
-use forge_core::transpiler::{
+use adito_transpiler::{
     EventSink, NbexecTranspilerRunner, TranspileEvent, TranspilerConfig, TranspilerRunner,
 };
 use std::path::PathBuf;

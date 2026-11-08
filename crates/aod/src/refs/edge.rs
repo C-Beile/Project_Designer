@@ -1,9 +1,9 @@
 //! Typed reference kinds from the verified catalogue (aod-format.md §4) that `refs::extract`
 //! knows how to pull out of a `PropertyTree` projection, and the `Edge` shape the graph stores.
 
-use core_model::NodePath;
+use crate::tree::NodePath;
 
-use crate::object_id::ObjectId;
+use crate::refs::object_id::ObjectId;
 
 /// One documented reference type from aod-format.md §4. Kept as a closed enum (rather than a
 /// free-form string tag) so a new extractor is a compiler-checked match arm, not a typo-prone
@@ -21,7 +21,7 @@ pub enum RefKind {
     EntityConsumerDependency,
     /// `dbRecordContainer.alias` -> Alias, resolved through the alias's own `targetAliasName`
     /// (aod-format.md §4 row 4's documented special case) rather than the literal alias object
-    /// name - see `crate::extract` for the resolution.
+    /// name - see `crate::refs::extract` for the resolution.
     DbRecordContainerAlias,
     /// `entityField.valueProcess` / `.displayValueProcess` -> a linked `.js` file.
     ValueProcessLinkedFile,

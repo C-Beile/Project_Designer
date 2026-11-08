@@ -36,16 +36,16 @@
 //! gleiches, bereits dreifach dokumentiertes Precedent aus `p4-editor-view-context-dashboard-notes.md`
 //! §4 und `p4-editor-alias-db-notes.md` §3).
 
-use core_model::value::PropertyValue as CoreValue;
-use plugin_kernel::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
-use plugin_kernel::Validator;
+use aod::tree::value::PropertyValue as CoreValue;
+use plugin_api::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
+use plugin_api::Validator;
 use std::collections::HashMap;
 
 use crate::entity_validators::flatten_into_with_type;
 
 fn flatten(root: &CoreValue) -> ProjectModel {
     let mut nodes: Vec<PropertyNode> = Vec::new();
-    flatten_into_with_type(root, &core_model::path::NodePath::root(), ObjectType::Language, &mut nodes);
+    flatten_into_with_type(root, &aod::tree::path::NodePath::root(), ObjectType::Language, &mut nodes);
     ProjectModel::new(nodes)
 }
 
@@ -59,7 +59,7 @@ pub struct DuplicateTranslationKeyValidator;
 
 impl Validator for DuplicateTranslationKeyValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let mut seen: HashMap<String, String> = HashMap::new(); // key text -> first path
         let mut diagnostics = Vec::new();
@@ -98,7 +98,7 @@ pub struct EmptyTranslationValueValidator;
 
 impl Validator for EmptyTranslationValueValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let mut diagnostics = Vec::new();
         for node in &project.nodes {
@@ -136,7 +136,7 @@ fn is_string_entry_value_path(path: &str) -> bool {
 /// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
-    let mut registry = forge_core::build_plugin_registry();
+    let mut registry = designer_core::build_plugin_registry();
     registry.register_validator(Box::new(DuplicateTranslationKeyValidator));
     registry.register_validator(Box::new(EmptyTranslationValueValidator));
     registry.validate_project(&model)
@@ -145,7 +145,7 @@ pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core_model::value::ScalarValue as CoreScalar;
+    use aod::tree::value::ScalarValue as CoreScalar;
 
     fn text(s: &str) -> CoreValue {
         CoreValue::Scalar(CoreScalar::Text(s.to_string()))

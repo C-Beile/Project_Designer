@@ -4,7 +4,7 @@
 //! session reuses the forward that points at its database host instead of opening a second SSH
 //! connection. Credentials live in memory only and are scrubbed from every message.
 
-use crate::db_session::{free_local_port, scrub, wait_for_port, TunnelAuth, TunnelEntry};
+use crate::tunnel_core::{free_local_port, scrub, wait_for_port, TunnelAuth, TunnelEntry};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::process::Child;

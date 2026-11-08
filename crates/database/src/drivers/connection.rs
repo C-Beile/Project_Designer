@@ -10,8 +10,8 @@
 
 use async_trait::async_trait;
 
-use crate::error::DbError;
-use crate::types::{DbValue, QueryResult, TableInfo};
+use crate::drivers::error::DbError;
+use crate::drivers::types::{DbValue, QueryResult, TableInfo};
 
 /// One parameterised write inside a transaction; values are bound, never spliced into the SQL.
 #[derive(Debug, Clone, PartialEq)]

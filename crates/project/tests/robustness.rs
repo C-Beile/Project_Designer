@@ -1,8 +1,8 @@
 // Hardening (rc2): damaged and unusual files, read-only files and external changes, end to end
 // through the project actor. Where the corpus copy exists, real objects are damaged on purpose.
 
-use forge_app_core::project_actor::ProjectActorHandle;
-use forge_app_core::wire::WireValue;
+use project::project_actor::ProjectActorHandle;
+use project::wire::WireValue;
 use std::path::{Path, PathBuf};
 
 const GOOD: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<entity xmlns=\"http://www.adito.de/2018/ao/Model\" VERSION=\"1.2.0\">\r\n  <name>Foo_entity</name>\r\n  <title>Old</title>\r\n</entity>";

@@ -1,0 +1,17 @@
+[package]
+name = "git"
+version = "0.1.0"
+description = "Git-Aktionen und Quellcodeverwaltung der App (ruft das externe git über platform auf)"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+platform = { path = "../platform" }
+app-base = { path = "../app-base" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+plugin-api = { path = "../plugin-api" }
+
+[lints]
+workspace = true

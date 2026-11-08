@@ -2,9 +2,9 @@
 // SCRATCH COPY of a project (no reference run, the original Designer is not needed here). Prints the
 // match rate per top-level folder and per file type, and the first differing files of each folder.
 //
-// Usage: cargo run --release --example own_vs_dist -p differential-harness -- <project_copy> <own_output_dir>
+// Usage: cargo run --release --example own_vs_dist -p native-transpiler -- <project_copy> <own_output_dir>
 
-use differential_harness::{compare_trees, FileVerdict, IncrementalEngine, OwnEngine};
+use native_transpiler::{compare_trees, FileVerdict, IncrementalEngine, OwnEngine};
 use std::collections::BTreeMap;
 use std::env;
 use std::path::PathBuf;

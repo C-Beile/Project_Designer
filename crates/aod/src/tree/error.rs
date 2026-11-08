@@ -1,5 +1,5 @@
-use crate::path::NodePath;
-use crate::tree::NodeId;
+use crate::tree::path::NodePath;
+use crate::tree::tree::NodeId;
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum Error {

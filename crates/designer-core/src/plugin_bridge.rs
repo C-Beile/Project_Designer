@@ -1,21 +1,21 @@
-//! Conversion layer between `core-model`'s real project-model types and `plugin-kernel`'s
+//! Conversion layer between `core-model`'s real project-model types and `plugin-api`'s
 //! deliberately independent placeholder types (architecture.md §2,
-//! `p3-plugin-kernel-notes.md` §2's mapping proposal). Lives here, in the facade, rather than in
-//! either crate: neither `plugin-kernel` nor `core-model` is allowed to depend on the other
-//! (both were built in parallel, isolated by design) - `forge-core` is the one place that
+//! `p3-plugin-api-notes.md` §2's mapping proposal). Lives here, in the facade, rather than in
+//! either crate: neither `plugin-api` nor `core-model` is allowed to depend on the other
+//! (both were built in parallel, isolated by design) - `designer-core` is the one place that
 //! legitimately depends on both, so it is the correct home for the translation between them.
 
-use core_model::command::FileCommand as CoreFileCommand;
-use core_model::path::NodePath;
-use core_model::transaction::Transaction as CoreTransaction;
-use core_model::value::{PropertyValue as CorePropertyValue, ScalarValue as CoreScalarValue};
-use plugin_kernel::types::{
+use aod::tree::command::FileCommand as CoreFileCommand;
+use aod::tree::path::NodePath;
+use aod::tree::transaction::Transaction as CoreTransaction;
+use aod::tree::value::{PropertyValue as CorePropertyValue, ScalarValue as CoreScalarValue};
+use plugin_api::types::{
     FileCommand as PluginFileCommand, ObjectType, PropertyNode, PropertyValue as PluginPropertyValue,
     Transaction as PluginTransaction,
 };
 
-/// A core-model scalar has no direct plugin-kernel counterpart for `Object`/`Array` values - the
-/// placeholder `PropertyValue` in plugin-kernel is scalar-only (it models one `PropertyNode`'s
+/// A core-model scalar has no direct plugin-api counterpart for `Object`/`Array` values - the
+/// placeholder `PropertyValue` in plugin-api is scalar-only (it models one `PropertyNode`'s
 /// leaf value, not a subtree, per its own doc comment). Structural values map to `Missing`, the
 /// placeholder's own "not a plain scalar" escape hatch.
 pub fn to_plugin_value(value: &CorePropertyValue) -> PluginPropertyValue {
@@ -27,11 +27,11 @@ pub fn to_plugin_value(value: &CorePropertyValue) -> PluginPropertyValue {
     }
 }
 
-/// Builds a plugin-kernel `PropertyNode` for one addressable location in a project object - what
+/// Builds a plugin-api `PropertyNode` for one addressable location in a project object - what
 /// `EditorProvider::validate`/`Validator::validate` operate on (architecture.md §2). The caller
 /// supplies `object_type` since core-model itself has no object-type concept (a flat
-/// `PropertyTree` per file); `forge-core` is where a `.aod` file's object family is known (see
-/// `p3-plugin-kernel-notes.md` §2, `ObjectType` row).
+/// `PropertyTree` per file); `designer-core` is where a `.aod` file's object family is known (see
+/// `p3-plugin-api-notes.md` §2, `ObjectType` row).
 pub fn to_plugin_property_node(
     path: &NodePath,
     object_type: ObjectType,
@@ -40,7 +40,7 @@ pub fn to_plugin_property_node(
     PropertyNode::new(path.to_string(), object_type, to_plugin_value(value))
 }
 
-/// `core_model::FileCommand` -> `plugin_kernel::types::FileCommand`: same shape
+/// `aod::tree::FileCommand` -> `plugin_api::types::FileCommand`: same shape
 /// (architecture.md §3), differing only in how `file` (`PathBuf` vs. `String`) and the byte
 /// range (a named `ByteRange` struct vs. a bare `Range<usize>`) are spelled in each crate.
 pub fn to_plugin_file_command(cmd: &CoreFileCommand) -> PluginFileCommand {
@@ -59,11 +59,11 @@ pub fn to_plugin_transaction(tx: &CoreTransaction) -> PluginTransaction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core_model::command::ByteRange;
+    use aod::tree::command::ByteRange;
     use std::path::PathBuf;
 
     #[test]
-    fn scalar_values_convert_to_their_plugin_kernel_counterparts() {
+    fn scalar_values_convert_to_their_plugin_api_counterparts() {
         assert_eq!(
             to_plugin_value(&CorePropertyValue::Scalar(CoreScalarValue::Text("Tour".into()))),
             PluginPropertyValue::String("Tour".into())

@@ -20,7 +20,7 @@ pub trait EditorProvider {
     /// Hook run just before a node belonging to this provider is persisted. Returning a
     /// non-empty `Vec` of `Severity::Error` diagnostics is how a provider can veto a save;
     /// callers are expected to check the returned diagnostics before proceeding to
-    /// `aod_io::serialize`. Default: no additional checks.
+    /// `aod::document::serialize`. Default: no additional checks.
     fn on_before_save(&self, _node: &PropertyNode) -> Vec<Diagnostic> {
         Vec::new()
     }

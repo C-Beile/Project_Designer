@@ -1,4 +1,4 @@
-//! Error types for `module-graph`.
+//! Error types for `npm-modules`.
 
 use std::path::PathBuf;
 

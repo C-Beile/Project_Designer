@@ -10,7 +10,7 @@
 // (e.g. a different Designer version, a different scratch profile), so they live here
 // rather than as crate-level constants.
 
-use crate::layout;
+use app_base::layout;
 use std::path::PathBuf;
 use std::time::Duration;
 

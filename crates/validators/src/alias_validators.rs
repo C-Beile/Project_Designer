@@ -18,16 +18,16 @@
 //! `p4-editor-view-context-dashboard-notes.md` §4) - no check against `entity.recordContainers.
 //! dbRecordContainer.alias` (a different open file) is attempted here.
 
-use core_model::value::PropertyValue as CoreValue;
-use plugin_kernel::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
-use plugin_kernel::Validator;
+use aod::tree::value::PropertyValue as CoreValue;
+use plugin_api::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
+use plugin_api::Validator;
 use std::collections::HashMap;
 
 use crate::entity_validators::flatten_into_with_type;
 
 fn flatten(root: &CoreValue) -> ProjectModel {
     let mut nodes: Vec<PropertyNode> = Vec::new();
-    flatten_into_with_type(root, &core_model::path::NodePath::root(), ObjectType::Alias, &mut nodes);
+    flatten_into_with_type(root, &aod::tree::path::NodePath::root(), ObjectType::Alias, &mut nodes);
     ProjectModel::new(nodes)
 }
 
@@ -40,7 +40,7 @@ pub struct EmptyTargetAliasNameValidator;
 
 impl Validator for EmptyTargetAliasNameValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let Some(node) = project
             .nodes
@@ -70,7 +70,7 @@ pub struct DuplicateColumnNameValidator;
 
 impl Validator for DuplicateColumnNameValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let mut seen: HashMap<(usize, String), String> = HashMap::new(); // (table index, column name) -> first path
         let mut diagnostics = Vec::new();
@@ -117,7 +117,7 @@ fn entity_db_index(path: &str) -> Option<usize> {
 /// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
-    let mut registry = forge_core::build_plugin_registry();
+    let mut registry = designer_core::build_plugin_registry();
     registry.register_validator(Box::new(EmptyTargetAliasNameValidator));
     registry.register_validator(Box::new(DuplicateColumnNameValidator));
     registry.validate_project(&model)
@@ -126,7 +126,7 @@ pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core_model::value::ScalarValue as CoreScalar;
+    use aod::tree::value::ScalarValue as CoreScalar;
 
     fn text(s: &str) -> CoreValue {
         CoreValue::Scalar(CoreScalar::Text(s.to_string()))

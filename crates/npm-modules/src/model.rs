@@ -1,7 +1,7 @@
 //! Data model for a single npm-resolved ADITO module (`adito.type` in `package.json`).
 //!
 //! Field semantics are taken from `transpiler.md` §1, verified against the real corpus
-//! under `GitRepos_ADITO` (see `PROJECT/20_architecture/p3-module-graph-notes.md`):
+//! under `GitRepos_ADITO` (see `PROJECT/20_architecture/p3-npm-modules-notes.md`):
 //! `dependencies` is a real install requirement AND a traversal edge (npm resolves and
 //! flattens it into `node_modules`), while `peerDependencies` is a compatibility
 //! constraint only — it never drives installation, it just has to be satisfied by
@@ -231,7 +231,7 @@ mod tests {
         fn new() -> Self {
             let mut path = std::env::temp_dir();
             let unique = format!(
-                "module-graph-test-{}-{}",
+                "npm-modules-test-{}-{}",
                 std::process::id(),
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)

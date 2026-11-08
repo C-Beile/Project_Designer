@@ -1,22 +1,32 @@
 [package]
-name = "differential-harness"
+name = "native-transpiler"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
 [[bin]]
-name = "differential-harness"
+name = "native-transpiler"
 path = "src/main.rs"
+required-features = ["harness"]
+
+[[test]]
+name = "full_harness_run"
+required-features = ["harness"]
+
+[features]
+# Vergleich mit dem offiziellen Transpiler (Harness, Kommandozeile). Die eigene Engine braucht es nicht.
+default = ["harness"]
+harness = ["dep:adito-transpiler"]
 
 [dependencies]
-transpiler = { path = "../transpiler" }
-module-graph = { path = "../module-graph" }
-aod-io = { path = "../aod-io" }
+adito-transpiler = { path = "../adito-transpiler", optional = true }
+npm-modules = { path = "../npm-modules" }
+aod = { path = "../aod" }
 platform = { path = "../platform" }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-thiserror = "1"
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 
 [dev-dependencies]

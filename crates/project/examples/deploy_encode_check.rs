@@ -2,7 +2,7 @@
 //! system: `deploy_encode_check <project> <type/name>...` prints `name kind byte-length title`.
 //! With `--out <dir>` the encoded text is also written to `<dir>/<name>.xml`.
 
-use forge_app_core::deploy_encode::{encode_model, kind_of, title_of};
+use deploy::deploy_encode::{encode_model, kind_of, title_of};
 use std::path::PathBuf;
 
 fn main() {

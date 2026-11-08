@@ -1,20 +1,28 @@
 [package]
-name = "db-layer"
+name = "database"
 version = "0.1.0"
+description = "Datenbank: Treiber (MariaDB/Postgres/MSSQL), Sitzungen, System-Konfiguration, Benutzer und Aliase"
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
 [dependencies]
+ssh-tunnel = { path = "../ssh-tunnel" }
+app-base = { path = "../app-base" }
+platform = { path = "../platform" }
+serde = { workspace = true }
+quick-xml = { workspace = true }
+serde_json = { workspace = true }
+plugin-api = { path = "../plugin-api" }
 async-trait = "0.1"
 thiserror = "2"
-tokio = { version = "1", features = ["net", "rt-multi-thread", "macros", "time"] }
+tokio = { workspace = true, features = ["net", "rt-multi-thread", "macros", "time"] }
 sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "mysql", "postgres"] }
 tiberius = { version = "0.12", default-features = false, features = ["rustls", "tds73"] }
 tokio-util = { version = "0.7", features = ["compat"] }
 
 [dev-dependencies]
-tokio = { version = "1", features = ["test-util", "rt-multi-thread", "macros"] }
+tokio = { workspace = true, features = ["test-util", "rt-multi-thread", "macros"] }
 
 [lints]
 workspace = true

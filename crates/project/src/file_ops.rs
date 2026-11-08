@@ -6,7 +6,7 @@
 //! file is kept in the backup folder first; npm runs in the project folder without a console window,
 //! `npm login` and `npm publish` only run because the caller asked for them explicitly.
 
-use crate::tree::ensure_writable;
+use app_base::fs_guard::ensure_writable;
 use serde::Serialize;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -125,7 +125,7 @@ pub fn delete_file(project_root: &Path, path: &Path) -> Result<(), String> {
     if !path.is_file() || !inside(project_root, path) {
         return Err("Only files of the project can be deleted here.".into());
     }
-    crate::backup::backup_file(path)?;
+    app_base::backup::backup_file(path)?;
     std::fs::remove_file(path).map_err(|e| format!("cannot delete {}: {e}", path.display()))
 }
 

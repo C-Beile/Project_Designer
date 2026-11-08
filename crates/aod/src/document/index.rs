@@ -24,7 +24,7 @@
 //! `entityProvider` or any other sibling tag. `core-model::NodeRef` (architecture.md #3) is
 //! expected to hold one `EventPath` per projected `PropertyNode`.
 
-use crate::document::{tag_name, AodDocument, AodEvent};
+use crate::document::document::{tag_name, AodDocument, AodEvent};
 use std::collections::HashMap;
 use std::ops::Range;
 
@@ -53,7 +53,7 @@ impl EventPath {
     }
 
     /// Depth of this path (number of `Child` steps before any trailing `Attribute` step) —
-    /// used by `crate::patch` to compute standard indentation (`depth * 2` spaces, per
+    /// used by `crate::document::patch` to compute standard indentation (`depth * 2` spaces, per
     /// aod-format.md #1.2's baseline rule).
     pub fn element_depth(&self) -> usize {
         self.0
@@ -202,7 +202,7 @@ fn index_attributes(
     event_idx: usize,
     element_path: &EventPath,
 ) {
-    let name_len = crate::document::tag_name_len(raw);
+    let name_len = crate::document::document::tag_name_len(raw);
     let mut i = name_len;
     while i < raw.len() {
         while i < raw.len() && raw[i].is_ascii_whitespace() {

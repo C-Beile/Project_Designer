@@ -8,7 +8,7 @@ use crate::error::HarnessError;
 use crate::own_engine::OwnEngine;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use transpiler::{EventSink, NbexecTranspilerRunner, TranspilerConfig, TranspilerRunner};
+use adito_transpiler::{EventSink, NbexecTranspilerRunner, TranspilerConfig, TranspilerRunner};
 
 pub struct DifferentialHarness {
     transpiler_config: TranspilerConfig,

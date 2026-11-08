@@ -8,9 +8,9 @@
 //! *standard* case and matches every object type except the documented `customProperties`
 //! exception (see [`KNOWN_INDENT_QUIRKS`]).
 
-use crate::document::{tag_name, AodDocument, AodEvent};
-use crate::error::PatchError;
-use crate::index::{EventIndex, EventPath, IndexedRange};
+use crate::document::document::{tag_name, AodDocument, AodEvent};
+use crate::document::error::PatchError;
+use crate::document::index::{EventIndex, EventPath, IndexedRange};
 use std::ops::Range;
 
 /// Where to place a newly inserted element relative to an existing child of `parent_path`.
@@ -171,8 +171,8 @@ fn resolve_element(index: &EventIndex, path: &EventPath) -> Result<Range<usize>,
 /// top-level element (leading/trailing whitespace in the caller-supplied template is trimmed
 /// first, so callers can write templates with natural formatting).
 fn parse_template(template_bytes: &[u8]) -> Result<Vec<AodEvent>, PatchError> {
-    let doc = crate::document::parse(template_bytes)
-        .map_err(|crate::error::AodError::Xml(x)| PatchError::InvalidTemplate(x))?;
+    let doc = crate::document::document::parse(template_bytes)
+        .map_err(|crate::document::error::AodError::Xml(x)| PatchError::InvalidTemplate(x))?;
     let mut events = doc.events;
     while matches!(events.first(), Some(e) if e.is_whitespace_only()) {
         events.remove(0);

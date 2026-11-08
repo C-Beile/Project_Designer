@@ -1,8 +1,8 @@
 // Integration test for the copy-phase stage (role brief requirement: "Copy-Phase gegen ein
 // reales, kleines Modul aus dem Korpus, Ergebnis mit dem entsprechenden Teil des echten dist/
 // byteweise vergleichen für die unmodifizierten Anteile"). Uses the already-prepared Hermes
-// scratch corpus copy (`_scratch/p5-differential-harness/corpus/Hermes`, produced by the
-// `differential-harness` agent's own earlier real run - not GitRepos_ADITO, which stays
+// scratch corpus copy (`_scratch/p5-native-transpiler/corpus/Hermes`, produced by the
+// `native-transpiler` agent's own earlier real run - not GitRepos_ADITO, which stays
 // strictly read-only per the chef prompt) as the real module source, and the reference `dist/`
 // that same corpus copy already carries from the official-transpiler run done during that
 // earlier round.
@@ -15,11 +15,11 @@
 // Skips (rather than fails) if the scratch corpus is not present on this machine - it is a
 // large, separately-prepared fixture (~18k files) that is not checked into the repo.
 
-use differential_harness::run_copy_phase;
+use native_transpiler::run_copy_phase;
 use std::path::{Path, PathBuf};
 
 fn hermes_corpus() -> PathBuf {
-    PathBuf::from(r"C:\Users\ClemensBeile\Desktop\ADITO_Designer\_scratch\p5-differential-harness\corpus\Hermes")
+    PathBuf::from(r"C:\Users\ClemensBeile\Desktop\ADITO_Designer\_scratch\p5-native-transpiler\corpus\Hermes")
 }
 
 #[test]
@@ -34,7 +34,7 @@ fn copy_phase_matches_real_dist_for_unmodified_resource_operation_files() {
         return;
     }
 
-    let graph = module_graph::resolve(&project_home).expect("module resolution must succeed against the real Hermes corpus");
+    let graph = npm_modules::resolve(&project_home).expect("module resolution must succeed against the real Hermes corpus");
 
     let output_dir = std::env::temp_dir().join(format!(
         "copy-phase-corpus-test-{}-{}",

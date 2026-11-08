@@ -1,9 +1,9 @@
 // Hardening run (rc2): real-corpus load / round-trip / navigator / properties / problems sweep.
 // Read-only: every file is only read; run it against COPIES of the corpus projects.
-// Usage: cargo run --release --example hardening_corpus -p forge-app-core -- <project_root>
+// Usage: cargo run --release --example hardening_corpus -p project -- <project_root>
 
-use forge_app_core::catalog::{load_catalog, Catalog};
-use forge_app_core::project_actor::ProjectActorHandle;
+use project::catalog::{load_catalog, Catalog};
+use project::project_actor::ProjectActorHandle;
 use std::collections::BTreeMap;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::path::{Path, PathBuf};
@@ -17,11 +17,11 @@ fn skip(p: &Path) -> bool {
     })
 }
 
-fn count(nodes: &[forge_app_core::tree::TreeNode]) -> usize {
+fn count(nodes: &[project::tree::TreeNode]) -> usize {
     nodes.iter().map(|n| 1 + count(&n.children)).sum()
 }
 
-fn flatten<'a>(nodes: &'a [forge_app_core::catalog::sheet::NavNode], out: &mut Vec<&'a str>) {
+fn flatten<'a>(nodes: &'a [project::catalog::sheet::NavNode], out: &mut Vec<&'a str>) {
     for n in nodes {
         if let Some(p) = &n.path {
             out.push(p);
@@ -41,7 +41,7 @@ fn main() {
         other => println!("scan_tree FAILED: {:?}", other.as_ref().map(|r| r.as_ref().err())),
     }
 
-    let catalog: Option<Arc<Catalog>> = forge_app_core::settings::detect_designer_install()
+    let catalog: Option<Arc<Catalog>> = project::settings::detect_designer_install()
         .and_then(|d| load_catalog(Path::new(&d), None).ok())
         .map(Arc::new);
     println!("catalog: {}", if catalog.is_some() { "loaded" } else { "MISSING" });
@@ -54,7 +54,7 @@ fn main() {
     let t = Instant::now();
     for f in &files {
         let bytes = std::fs::read(f).unwrap();
-        match catch_unwind(|| aod_io::round_trip_check(&bytes)) {
+        match catch_unwind(|| aod::document::round_trip_check(&bytes)) {
             Ok(Ok(())) => {}
             Ok(Err(e)) => rt_fail.push((f.clone(), e)),
             Err(_) => rt_fail.push((f.clone(), "PANIC".into())),
@@ -133,7 +133,7 @@ fn main() {
     println!("panics caught: {panics}");
 
     let t = Instant::now();
-    let probs = forge_app_core::problems::scan_project(&root);
+    let probs = project::problems::scan_project(&root);
     println!("problems scan: {} problems, {} ms", probs.len(), t.elapsed().as_millis());
     let mut kinds: BTreeMap<String, usize> = BTreeMap::new();
     for p in &probs {

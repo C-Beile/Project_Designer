@@ -1,15 +1,15 @@
 //! Entity-specific `Validator` registrations (Ziel B.4). Registered in this app crate, not in
-//! `plugin-kernel` itself - exactly the extension point architecture.md §2/§6 describes ("jeder
+//! `plugin-api` itself - exactly the extension point architecture.md §2/§6 describes ("jeder
 //! Objekttyp kann weitere [Validatoren] andocken, ohne den Kern zu ändern"). Operates against
-//! `plugin_kernel::types::ProjectModel`, the deliberately independent placeholder type the
+//! `plugin_api::types::ProjectModel`, the deliberately independent placeholder type the
 //! `Validator` trait is expressed against (see that crate's module doc) - `flatten_entity` below
-//! is the bridge from a real, loaded entity's `core_model::PropertyValue` tree into that flat
-//! node list, built with `forge_core::to_plugin_property_node` for each node.
+//! is the bridge from a real, loaded entity's `aod::tree::PropertyValue` tree into that flat
+//! node list, built with `designer_core::to_plugin_property_node` for each node.
 
-use core_model::path::NodePath;
-use core_model::value::PropertyValue as CoreValue;
-use plugin_kernel::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
-use plugin_kernel::Validator;
+use aod::tree::path::NodePath;
+use aod::tree::value::PropertyValue as CoreValue;
+use plugin_api::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
+use plugin_api::Validator;
 use std::collections::HashMap;
 
 /// Walks a fully-loaded entity's value tree (as returned by `ProjectHandle::value_at(&NodePath::root())`)
@@ -36,7 +36,7 @@ pub fn flatten_into_with_type(
     object_type: ObjectType,
     out: &mut Vec<PropertyNode>,
 ) {
-    out.push(forge_core::to_plugin_property_node(path, object_type.clone(), value));
+    out.push(designer_core::to_plugin_property_node(path, object_type.clone(), value));
     match value {
         CoreValue::Object(fields) => {
             for (key, child) in fields {
@@ -58,7 +58,7 @@ pub fn flatten_into_with_type(
 /// `view_context_dashboard_validators.rs`.
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten_entity(root);
-    let mut registry = forge_core::build_plugin_registry();
+    let mut registry = designer_core::build_plugin_registry();
     registry.register_validator(Box::new(DuplicateEntityFieldNameValidator));
     registry.register_validator(Box::new(MissingFieldTitleValidator));
     registry.validate_project(&model)
@@ -73,7 +73,7 @@ pub struct DuplicateEntityFieldNameValidator;
 
 impl Validator for DuplicateEntityFieldNameValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let mut seen: HashMap<String, String> = HashMap::new(); // field name -> first path that used it
         let mut diagnostics = Vec::new();
@@ -106,7 +106,7 @@ pub struct MissingFieldTitleValidator;
 
 impl Validator for MissingFieldTitleValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let mut diagnostics = Vec::new();
         for node in &project.nodes {
@@ -146,7 +146,7 @@ fn is_entity_field_container_path(path: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core_model::value::ScalarValue as CoreScalar;
+    use aod::tree::value::ScalarValue as CoreScalar;
 
     fn text(s: &str) -> CoreValue {
         CoreValue::Scalar(CoreScalar::Text(s.to_string()))

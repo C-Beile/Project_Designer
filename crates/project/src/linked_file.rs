@@ -5,7 +5,7 @@
 //! object type has `%aditoprj%`-relative process fields (architecture.md §6: stable, generic
 //! command surface).
 //!
-//! Write-back goes through `forge_core::platform::fs::atomic_write` - the same real
+//! Write-back goes through `designer_core::platform::fs::atomic_write` - the same real
 //! temp-file-then-rename primitive `ProjectHandle::save()` uses (architecture.md §4) - so a
 //! crash mid-write can never leave a linked `.js` file half-written, exactly like `.aod` saves.
 
@@ -27,11 +27,11 @@ pub fn read_linked_file(project_root: &Path, reference: &str) -> Result<String, 
 
 pub fn write_linked_file(project_root: &Path, reference: &str, content: &str) -> Result<(), String> {
     let path = resolve_linked_path(project_root, reference);
-    crate::tree::ensure_writable(&path)?;
+    app_base::fs_guard::ensure_writable(&path)?;
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir).map_err(|e| format!("failed to create '{}': {e}", dir.display()))?;
     }
-    forge_core::platform::fs::atomic_write(&path, content.as_bytes())
+    designer_core::platform::fs::atomic_write(&path, content.as_bytes())
         .map_err(|e| format!("failed to write linked file '{}': {e}", path.display()))
 }
 

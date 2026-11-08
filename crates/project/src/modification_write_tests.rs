@@ -1,5 +1,5 @@
 use super::*;
-use differential_harness::own_engine::merge_modifications_into_bytes;
+use native_transpiler::own_engine::merge_modifications_into_bytes;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 static COUNTER: AtomicU64 = AtomicU64::new(0);

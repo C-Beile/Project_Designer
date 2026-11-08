@@ -27,21 +27,21 @@
 //! on the two validators' own path-suffix matching below).
 //!
 //! Both rules are file-local (no project-wide index), same precedent as every prior P4 family.
-//! Structural edits (rename/add/remove a node) are out of scope, same documented `forge_core::
+//! Structural edits (rename/add/remove a node) are out of scope, same documented `designer_core::
 //! ProjectHandle::set_property`-is-scalar-only limitation `p4-editor-language-translation-notes.md`
 //! §9 already flagged - only `title`/`icon` are edited by this editor, `name`/`kind` stay read-only
 //! (kind additionally for the R24 typed-attribute reason).
 
-use core_model::value::PropertyValue as CoreValue;
-use plugin_kernel::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
-use plugin_kernel::Validator;
+use aod::tree::value::PropertyValue as CoreValue;
+use plugin_api::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
+use plugin_api::Validator;
 use std::collections::HashMap;
 
 use crate::entity_validators::flatten_into_with_type;
 
 fn flatten(root: &CoreValue) -> ProjectModel {
     let mut nodes: Vec<PropertyNode> = Vec::new();
-    flatten_into_with_type(root, &core_model::path::NodePath::root(), ObjectType::Application, &mut nodes);
+    flatten_into_with_type(root, &aod::tree::path::NodePath::root(), ObjectType::Application, &mut nodes);
     ProjectModel::new(nodes)
 }
 
@@ -57,7 +57,7 @@ pub struct DuplicateChildNodeNameValidator;
 
 impl Validator for DuplicateChildNodeNameValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let mut seen: HashMap<(String, String), String> = HashMap::new(); // (parent scope, name) -> first path
         let mut diagnostics = Vec::new();
@@ -93,7 +93,7 @@ pub struct EmptyEntityNodeNameValidator;
 
 impl Validator for EmptyEntityNodeNameValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let mut diagnostics = Vec::new();
         for node in &project.nodes {
@@ -152,7 +152,7 @@ fn parent_child_nodes_scope(path: &str) -> Option<String> {
 /// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
-    let mut registry = forge_core::build_plugin_registry();
+    let mut registry = designer_core::build_plugin_registry();
     registry.register_validator(Box::new(DuplicateChildNodeNameValidator));
     registry.register_validator(Box::new(EmptyEntityNodeNameValidator));
     registry.validate_project(&model)
@@ -161,7 +161,7 @@ pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core_model::value::ScalarValue as CoreScalar;
+    use aod::tree::value::ScalarValue as CoreScalar;
 
     fn text(s: &str) -> CoreValue {
         CoreValue::Scalar(CoreScalar::Text(s.to_string()))

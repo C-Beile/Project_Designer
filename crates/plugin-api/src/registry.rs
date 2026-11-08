@@ -1,5 +1,5 @@
 //! `PluginRegistry`: the single static registration point for all four extension traits.
-//! Lives conceptually in `forge-core` (architecture.md §2); this crate just defines the
+//! Lives conceptually in `designer-core` (architecture.md §2); this crate just defines the
 //! container type plus the `register_all` entry point. Populated once at process start and
 //! consumed identically by the CLI and the Tauri app, so `forge validate` on the CLI behaves
 //! exactly like validation in the GUI.

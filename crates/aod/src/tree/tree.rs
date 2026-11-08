@@ -7,13 +7,13 @@
 //! itself never writes bytes anywhere (that is `aod-io`/`platform`'s job, out of this round's
 //! scope per the role brief).
 
-use crate::codec;
-use crate::command::{ByteRange, FileCommand};
-use crate::error::Error;
-use crate::event_source::EventSource;
-use crate::observer::{ChangeBus, ChangeEvent};
-use crate::path::NodePath;
-use crate::value::{PropertyValue, ScalarValue};
+use crate::tree::codec;
+use crate::tree::command::{ByteRange, FileCommand};
+use crate::tree::error::Error;
+use crate::tree::event_source::EventSource;
+use crate::tree::observer::{ChangeBus, ChangeEvent};
+use crate::tree::path::NodePath;
+use crate::tree::value::{PropertyValue, ScalarValue};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
@@ -86,7 +86,7 @@ impl<S: EventSource> PropertyTree<S> {
     /// (e.g. the `entityFields` field under the `entity` root).
     pub fn child_by_field(&self, node: NodeId, name: &str) -> Option<NodeId> {
         self.children_of(node).iter().copied().find(|&c| match self.path_of(c).last() {
-            Some(crate::path::PathSegment::Field(f)) => f == name,
+            Some(crate::tree::path::PathSegment::Field(f)) => f == name,
             _ => false,
         })
     }
@@ -99,8 +99,8 @@ impl<S: EventSource> PropertyTree<S> {
         let mut current = self.root;
         for seg in path.segments() {
             current = match seg {
-                crate::path::PathSegment::Field(name) => self.child_by_field(current, name)?,
-                crate::path::PathSegment::Index(i) => *self.children_of(current).get(*i)?,
+                crate::tree::path::PathSegment::Field(name) => self.child_by_field(current, name)?,
+                crate::tree::path::PathSegment::Index(i) => *self.children_of(current).get(*i)?,
             };
         }
         Some(current)
@@ -228,7 +228,7 @@ fn build_node(arena: &mut Vec<NodeData>, path: NodePath, value: PropertyValue, p
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing::InMemoryEventSource;
+    use crate::tree::testing::InMemoryEventSource;
 
     fn sample_source() -> InMemoryEventSource {
         // Simulates a tiny entity file:

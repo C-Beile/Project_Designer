@@ -44,20 +44,20 @@
 //! `neonContext/THHIT_Tour/THHIT_Tour.aod` references `THHIT_Tour_token_ws`, which does not exist
 //! anywhere under Hermes' own `entityWebservice/` folder (confirmed by directory listing), the same
 //! legitimate cross-module-reference shape aod-format.md §2 already documents for `Person_entity`.
-//! A validator built without module-graph/dependency knowledge would flag this real, correct file as
+//! A validator built without npm-modules/dependency knowledge would flag this real, correct file as
 //! broken - so, like every prior family's project-wide reference checks, this is deferred rather than
 //! built as a guessed heuristic.
 
-use core_model::value::PropertyValue as CoreValue;
-use plugin_kernel::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
-use plugin_kernel::Validator;
+use aod::tree::value::PropertyValue as CoreValue;
+use plugin_api::types::{Diagnostic, ObjectType, ProjectModel, PropertyNode};
+use plugin_api::Validator;
 use std::collections::HashMap;
 
 use crate::entity_validators::flatten_into_with_type;
 
 fn flatten(root: &CoreValue) -> ProjectModel {
     let mut nodes: Vec<PropertyNode> = Vec::new();
-    flatten_into_with_type(root, &core_model::path::NodePath::root(), ObjectType::Webservice, &mut nodes);
+    flatten_into_with_type(root, &aod::tree::path::NodePath::root(), ObjectType::Webservice, &mut nodes);
     ProjectModel::new(nodes)
 }
 
@@ -111,7 +111,7 @@ pub struct DuplicateWebserviceFieldNameValidator;
 
 impl Validator for DuplicateWebserviceFieldNameValidator {
     fn validate(&self, project: &ProjectModel) -> Vec<Diagnostic> {
-        use plugin_kernel::types::PropertyValue as PluginValue;
+        use plugin_api::types::PropertyValue as PluginValue;
 
         let mut seen: HashMap<(String, String), String> = HashMap::new(); // (parent scope, name) -> first path
         let mut diagnostics = Vec::new();
@@ -188,7 +188,7 @@ fn parent_tag(segment: &str) -> &str {
 /// (`project_actor.rs`'s `VALIDATORS_BY_OBJECT_TYPE` table).
 pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
     let model = flatten(root);
-    let mut registry = forge_core::build_plugin_registry();
+    let mut registry = designer_core::build_plugin_registry();
     registry.register_validator(Box::new(EmptyWebserviceMethodsValidator));
     registry.register_validator(Box::new(DuplicateWebserviceFieldNameValidator));
     registry.validate_project(&model)
@@ -197,7 +197,7 @@ pub fn diagnostics_for(root: &CoreValue) -> Vec<Diagnostic> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core_model::value::ScalarValue as CoreScalar;
+    use aod::tree::value::ScalarValue as CoreScalar;
 
     fn text(s: &str) -> CoreValue {
         CoreValue::Scalar(CoreScalar::Text(s.to_string()))

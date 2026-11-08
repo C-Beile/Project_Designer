@@ -1,0 +1,18 @@
+[package]
+name = "ssh-tunnel"
+version = "0.1.0"
+description = "SSH-Tunnel über plink: Einträge, Auth, Prozessstart, Tunnel-Verwaltung"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+platform = { path = "../platform" }
+app-base = { path = "../app-base" }
+serde = { workspace = true }
+quick-xml = { workspace = true }
+plugin-api = { path = "../plugin-api" }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,11 +1,11 @@
-//! Real `EventSource` implementation backed by `aod_io::AodDocument` (integration round,
-//! forge-core). Closes the seam `event_source.rs` documents: `core-model` now has a concrete
+//! Real `EventSource` implementation backed by `crate::document::AodDocument` (integration round,
+//! designer-core). Closes the seam `event_source.rs` documents: `core-model` now has a concrete
 //! projection source instead of only `testing::InMemoryEventSource`.
 //!
 //! ## Coordinate translation
 //!
-//! `core_model::NodePath` addresses a node as a chain of business field names, with an index
-//! step for the N-th element of a repeatable field (`path.rs`). `aod_io::EventPath` addresses a
+//! `crate::tree::NodePath` addresses a node as a chain of business field names, with an index
+//! step for the N-th element of a repeatable field (`path.rs`). `crate::document::EventPath` addresses a
 //! node as a chain of `Child { tag, occurrence }` steps directly against the XML tag structure.
 //! Both describe the same coordinate system (see `path.rs`'s module doc), so translation is a
 //! straightforward, schema-free rule: a `Field(name)` step becomes `Child { tag: name,
@@ -17,10 +17,10 @@
 //!
 //! ## Byte offsets vs. event indices
 //!
-//! `aod_io::EventIndex` locates nodes in *event-index* space (a `Range<usize>` over
-//! `AodDocument::events`), but `core_model::EventSource` speaks in *byte-offset* space (a
+//! `crate::document::EventIndex` locates nodes in *event-index* space (a `Range<usize>` over
+//! `AodDocument::events`), but `crate::tree::EventSource` speaks in *byte-offset* space (a
 //! `ByteRange` into the fully serialized document, matching `command::FileCommand`). This
-//! adapter bridges the two by serializing each event individually (`aod_io::serialize` performs
+//! adapter bridges the two by serializing each event individually (`crate::document::serialize` performs
 //! no cross-event formatting - each `AodEvent` converts to bytes independently, verified by
 //! `aod-io`'s own round-trip corpus test) and accumulating the byte offsets, giving an exact
 //! `Vec<Range<usize>>` parallel to the event list without needing any private `aod-io` API.
@@ -28,18 +28,18 @@
 //! ## Scope of the scalar edit path
 //!
 //! Only the `Text`-content scalar case (`<foo>bar</foo>`) is wired through to a real document
-//! mutation (`apply_scalar_text_replace`, used by `set_scalar`/`save()` in the forge-core
+//! mutation (`apply_scalar_text_replace`, used by `set_scalar`/`save()` in the designer-core
 //! facade). The typed-scalar attribute case (`<foo v="..."/>`) is read (`value_span` resolves
 //! it correctly, tested below) but `aod-io`'s public `patch` module has no
 //! "replace one attribute's value" primitive yet - adding one would mean touching `aod-io`'s
 //! core patch logic, which this round's guardrail reserves for cases with no adapter-side
 //! alternative. Flagged as an open point for the next round rather than silently unsupported.
 
-use crate::command::ByteRange;
-use crate::event_source::EventSource;
-use crate::path::{NodePath, PathSegment};
-use crate::value::{PropertyValue, ScalarValue};
-use aod_io::{AodDocument, AodEvent, EventIndex, EventPath, IndexedRange, PathStep};
+use crate::tree::command::ByteRange;
+use crate::tree::event_source::EventSource;
+use crate::tree::path::{NodePath, PathSegment};
+use crate::tree::value::{PropertyValue, ScalarValue};
+use crate::document::{AodDocument, AodEvent, EventIndex, EventPath, IndexedRange, PathStep};
 use std::collections::HashMap;
 use std::ops::Range;
 use std::path::{Path, PathBuf};
@@ -49,7 +49,7 @@ pub enum AdapterError {
     #[error("path {0} could not be resolved to a location in the source document")]
     UnknownPath(String),
     #[error(transparent)]
-    Patch(#[from] aod_io::PatchError),
+    Patch(#[from] crate::document::PatchError),
 }
 
 /// Real `EventSource` over a parsed `.aod` document. Owns the document, its event index, and a
@@ -68,7 +68,7 @@ pub struct AodDocumentSource {
 
 impl AodDocumentSource {
     pub fn new(file: impl Into<PathBuf>, doc: AodDocument) -> Self {
-        let index = aod_io::build_index(&doc);
+        let index = crate::document::build_index(&doc);
         let (event_ranges, serialized) = compute_byte_ranges(&doc);
         let root_tag = doc
             .events
@@ -86,7 +86,7 @@ impl AodDocumentSource {
     }
 
     /// The fully serialized document as it stands right now - what `save()` should write to
-    /// disk (architecture.md §4: `aod_io::serialize` -> `platform::fs::atomic_write`).
+    /// disk (architecture.md §4: `crate::document::serialize` -> `platform::fs::atomic_write`).
     pub fn serialized_bytes(&self) -> &[u8] {
         &self.serialized
     }
@@ -125,14 +125,14 @@ impl AodDocumentSource {
             .index
             .text_event_index(&self.doc, &ep)
             .ok_or_else(|| AdapterError::UnknownPath(path.to_string()))?;
-        aod_io::replace_text_at(&mut self.doc, idx..idx + 1, new_bytes)?;
+        crate::document::replace_text_at(&mut self.doc, idx..idx + 1, new_bytes)?;
         let (event_ranges, serialized) = compute_byte_ranges(&self.doc);
         self.event_ranges = event_ranges;
         self.serialized = serialized;
         Ok(())
     }
 
-    /// Translates a `NodePath` into the equivalent `aod_io::EventPath`, prefixed with the
+    /// Translates a `NodePath` into the equivalent `crate::document::EventPath`, prefixed with the
     /// document's own top-level element (see `root_tag` doc comment). See module docs for the
     /// translation rule. Returns `None` only for a malformed `NodePath` (a bare `Index` step
     /// with no preceding `Field` - never produced by `NodePath`'s own builder methods).
@@ -179,7 +179,7 @@ impl EventSource for AodDocumentSource {
                 attr_steps.push(PathStep::Attribute("v".to_string()));
                 match self.index.get(&EventPath(attr_steps)) {
                     Some(IndexedRange::Attribute { event, value_bytes }) => {
-                        // aod_io::serialize echoes a Start/Empty event's raw tag bytes verbatim
+                        // crate::document::serialize echoes a Start/Empty event's raw tag bytes verbatim
                         // after the leading '<' (see document.rs) - value_bytes is an offset into
                         // those raw bytes, so shifting by 1 lands on the serialized position.
                         let base = self.event_ranges[*event].start + 1;
@@ -238,8 +238,8 @@ impl EventSource for AodDocumentSource {
         // Quirk handling (e.g. customProperties) is core-model's own responsibility, applied by
         // `codec::indent_exception` on top of this default - see tree.rs::insert.
         match self.translate(parent) {
-            Some(ep) => aod_io::patch::standard_indent(ep.element_depth()),
-            None => aod_io::patch::standard_indent(1),
+            Some(ep) => crate::document::patch::standard_indent(ep.element_depth()),
+            None => crate::document::patch::standard_indent(1),
         }
     }
 }
@@ -249,7 +249,7 @@ fn compute_byte_ranges(doc: &AodDocument) -> (Vec<Range<usize>>, Vec<u8>) {
     let mut buf = Vec::new();
     for ev in &doc.events {
         let single = AodDocument { events: vec![ev.clone()] };
-        let bytes = aod_io::serialize(&single);
+        let bytes = crate::document::serialize(&single);
         let start = buf.len();
         buf.extend_from_slice(&bytes);
         ranges.push(start..buf.len());
@@ -405,7 +405,7 @@ mod tests {
     use super::*;
 
     fn parse(bytes: &[u8]) -> AodDocument {
-        aod_io::parse(bytes).expect("test fixture must be well-formed XML")
+        crate::document::parse(bytes).expect("test fixture must be well-formed XML")
     }
 
     const ROLE_XML: &[u8] = b"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n\
@@ -481,7 +481,7 @@ mod tests {
 
         let span = source.value_span(&path).unwrap();
         assert_eq!(source.bytes_in(span), b"Role_Sales_Changed");
-        assert!(aod_io::round_trip_check(source.serialized_bytes()).is_ok());
+        assert!(crate::document::round_trip_check(source.serialized_bytes()).is_ok());
     }
 
     #[test]

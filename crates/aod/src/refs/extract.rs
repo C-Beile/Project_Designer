@@ -7,10 +7,10 @@
 //! byte spans. Byte spans only matter once a *cascade* needs to patch the site, which is
 //! `RefGraph::rename_cascade`'s job against the referencing object's own `PropertyTree`.
 
-use core_model::{NodePath, PropertyValue};
+use crate::tree::{NodePath, PropertyValue};
 
-use crate::edge::{Edge, RefKind};
-use crate::object_id::ObjectId;
+use crate::refs::edge::{Edge, RefKind};
+use crate::refs::object_id::ObjectId;
 
 /// Reads the `aliasDefDb.targetAliasName` value off an Alias object's own root value - the short
 /// form entities actually reference (aod-format.md §4 row 4). Callers register this with
@@ -98,7 +98,7 @@ fn match_scalar_ref(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core_model::ScalarValue;
+    use crate::tree::ScalarValue;
 
     fn text(s: &str) -> PropertyValue {
         PropertyValue::Scalar(ScalarValue::Text(s.to_string()))

@@ -2,8 +2,8 @@
 //! Without `--execute` it only reads and prints the plan. The write is limited to the clemens-onboarding dev system.
 //! The password of the tunnel is taken from the environment variable FORGE_DEPLOY_TUNNEL_PASSWORD when no key file is given.
 
-use forge_app_core::db_session::{DbManager, TunnelAuth};
-use forge_app_core::system_db::{execute, plan, DeployOp};
+use database::db_session::{DbManager, TunnelAuth};
+use deploy::system_deploy::{execute, plan, DeployOp};
 use std::path::Path;
 
 const ALLOWED_TARGET: &str = "dev-clemens-onboarding-htc1-adito-cloud";

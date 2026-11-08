@@ -2,14 +2,14 @@
 //! is atomically reversible and re-applicable, byte-for-byte, against a simulated document
 //! buffer - the property architecture.md §3 and ADR-0005 point 2 are built around.
 
-use core_model::testing::InMemoryEventSource;
-use core_model::{NodePath, PropertyTree, PropertyValue, ScalarValue, Transaction, UndoStack};
+use aod::tree::testing::InMemoryEventSource;
+use aod::tree::{NodePath, PropertyTree, PropertyValue, ScalarValue, Transaction, UndoStack};
 
 fn two_field_source() -> InMemoryEventSource {
     // <root><a>alpha</a><b>beta</b></root>
     let mut src = InMemoryEventSource::new("two.aod", b"<root><a>alpha</a><b>beta</b></root>".to_vec());
-    src.register_value(NodePath::root().field("a"), core_model::ByteRange::new(9, 14));
-    src.register_value(NodePath::root().field("b"), core_model::ByteRange::new(21, 25));
+    src.register_value(NodePath::root().field("a"), aod::tree::ByteRange::new(9, 14));
+    src.register_value(NodePath::root().field("b"), aod::tree::ByteRange::new(21, 25));
     src
 }
 

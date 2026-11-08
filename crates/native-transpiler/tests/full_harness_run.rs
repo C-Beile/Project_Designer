@@ -3,21 +3,21 @@
 // derived from the already-verified transpiler crate fixture, see tests/fixtures/minimal).
 // This is the "reicht als manueller/dokumentierter Lauf" case from the role definition for the
 // small project; the large-corpus (Hermes) run is documented separately and run manually (see
-// PROJECT/20_architecture/p5-differential-harness-notes.md), not wired into `cargo test`.
+// PROJECT/20_architecture/p5-native-transpiler-notes.md), not wired into `cargo test`.
 //
-// Known limitation shared with transpiler::tests::real_transpiler: nbexec64.exe takes an
+// Known limitation shared with adito_transpiler::tests::real_transpiler: nbexec64.exe takes an
 // exclusive lock on its userdir for the process lifetime. This test reuses the SAME scratch
 // userdir as the transpiler crate's own real-subprocess tests (already seeded with the
 // required de.adito.aditoweb.nbm.nodejs plugin, see spike-transpiler-wrapper.md). Running this
 // test concurrently with those (e.g. a workspace-wide `cargo test -j N` executing both test
-// binaries at once) can race for that lock; run `cargo test -p differential-harness` and
+// binaries at once) can race for that lock; run `cargo test -p native-transpiler` and
 // `cargo test -p transpiler` sequentially if both must run, exactly as documented in the
 // notes file.
 
-use differential_harness::{DifferentialHarness, OwnEngine, StubEngine};
+use native_transpiler::{DifferentialHarness, OwnEngine, StubEngine};
 use std::path::PathBuf;
 use std::time::Duration;
-use transpiler::TranspilerConfig;
+use adito_transpiler::TranspilerConfig;
 
 const INSTALL_DIR: &str = r"C:\Users\ClemensBeile\Desktop\ADITO_Designer\Adito_designer\ADITODesigner2026.0.4";
 const USER_DIR: &str = r"C:\Users\ClemensBeile\Desktop\ADITO_Designer\_scratch\p3-transpiler-wrapper\userdir";
@@ -80,7 +80,7 @@ fn stub_engine_run_against_minimal_project_produces_a_report_with_0_percent_matc
     assert_eq!(result.comparison.match_rate_percent(), 0.0);
     assert!(!result.comparison.is_perfect_match());
 
-    let run_report = differential_harness::RunReport {
+    let run_report = native_transpiler::RunReport {
         project_home: &project,
         reference_dir: &result.reference_dir,
         own_dir: &result.own_dir,
@@ -89,7 +89,7 @@ fn stub_engine_run_against_minimal_project_produces_a_report_with_0_percent_matc
         comparison: &result.comparison,
         max_listed_diffs: 50,
     };
-    differential_harness::write_report(&run_report, &report_path).expect("report must be writable");
+    native_transpiler::write_report(&run_report, &report_path).expect("report must be writable");
     let written = std::fs::read_to_string(&report_path).expect("report file must exist after write_report");
     assert!(written.contains("Match rate: 0.00%"));
     assert!(written.contains("NOT MET"));

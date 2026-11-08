@@ -1,7 +1,7 @@
 use super::sheet::*;
 use super::*;
 use crate::wire::{WireField, WireValue};
-use core_model::path::NodePath;
+use aod::tree::path::NodePath;
 use std::sync::OnceLock;
 
 const REAL_INSTALL: &str = r"C:\Users\ClemensBeile\Desktop\ADITO_Designer\Adito_designer\ADITODesigner2026.0.4";

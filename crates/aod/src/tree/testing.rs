@@ -6,10 +6,10 @@
 //! documented stand-in for the real `aod-io`-backed implementation the integration round wires
 //! in later (see event_source.rs doc comment) - it is not meant for production use.
 
-use crate::command::{ByteRange, FileCommand};
-use crate::event_source::EventSource;
-use crate::path::NodePath;
-use crate::transaction::Transaction;
+use crate::tree::command::{ByteRange, FileCommand};
+use crate::tree::event_source::EventSource;
+use crate::tree::path::NodePath;
+use crate::tree::transaction::Transaction;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -120,7 +120,7 @@ impl EventSource for InMemoryEventSource {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::path::NodePath;
+    use crate::tree::path::NodePath;
 
     #[test]
     fn apply_rebases_later_spans_after_a_length_changing_edit() {

@@ -17,9 +17,9 @@
 //! and the envelope are taken from the real corpus; the hash part is Forge's own (deterministic)
 //! choice - the Designer uses random ids, so the pattern is imitated, not reproduced.
 
-use aod_io::{build_index, AodEvent, EventPath, IndexedRange, PathStep};
-use core_model::path::{NodePath, PathSegment};
-use core_model::value::{PropertyValue as CoreValue, ScalarValue};
+use aod::document::{build_index, AodEvent, EventPath, IndexedRange, PathStep};
+use aod::tree::path::{NodePath, PathSegment};
+use aod::tree::value::{PropertyValue as CoreValue, ScalarValue};
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -246,7 +246,7 @@ pub fn discard(project_root: &Path, dir: &str) -> Result<(), String> {
     if dir.is_empty() || dir.contains(['/', '\\']) || dir == "." || dir == ".." {
         return Err("invalid modification name".into());
     }
-    crate::tree::ensure_writable(project_root)?;
+    app_base::fs_guard::ensure_writable(project_root)?;
     let target = project_root.join("modification").join(dir);
     if !mod_file(project_root, dir).is_file() {
         return Err(format!("modification '{dir}' not found"));
@@ -264,7 +264,7 @@ pub fn find_insert(obj: &ObjectRef, container: &[String], name: &str) -> Option<
     find_existing(obj, Change::Insert, &full_path(obj, container), Some(name))
 }
 fn guard(obj: &ObjectRef) -> Result<(), String> {
-    crate::tree::ensure_writable(&obj.project_root)?;
+    app_base::fs_guard::ensure_writable(&obj.project_root)?;
     if obj.model_type.is_empty() || obj.model_name.is_empty() {
         return Err("model type/name of the object are unknown".into());
     }
@@ -324,7 +324,7 @@ fn with_eol(text: &str, eol: &str) -> Vec<u8> {
 }
 
 fn enc(raw: &str) -> String {
-    core_model::codec::encode_text(raw)
+    aod::tree::codec::encode_text(raw)
 }
 
 fn value_xml(v: &ModValue, script_ref: &str) -> String {
@@ -417,7 +417,7 @@ fn read_value_text(bytes: &[u8]) -> Option<String> {
 /// Replaces only the value bytes of an existing MODIFY file; regenerates the value block when the
 /// wrapper type changed.
 fn patch_value(bytes: &[u8], new: &ModValue, dir: &str) -> Result<Vec<u8>, String> {
-    let mut doc = aod_io::parse(bytes).map_err(|e| e.to_string())?;
+    let mut doc = aod::document::parse(bytes).map_err(|e| e.to_string())?;
     let index = build_index(&doc);
     let step = |tag: &str| PathStep::Child { tag: tag.to_string(), occurrence: 0 };
     let base = vec![step("modification"), step("value")];
@@ -440,11 +440,11 @@ fn patch_value(bytes: &[u8], new: &ModValue, dir: &str) -> Result<Vec<u8>, Strin
         }
         ModValue::Text(t) => {
             let Some(i) = index.text_event_index(&doc, &inner) else { return regenerate(bytes, new, dir) };
-            aod_io::replace_text_at(&mut doc, i..i + 1, enc(t).into_bytes()).map_err(|e| e.to_string())?;
+            aod::document::replace_text_at(&mut doc, i..i + 1, enc(t).into_bytes()).map_err(|e| e.to_string())?;
         }
         ModValue::Script { .. } => {}
     }
-    Ok(aod_io::serialize(&doc))
+    Ok(aod::document::serialize(&doc))
 }
 
 fn regenerate(bytes: &[u8], new: &ModValue, dir: &str) -> Result<Vec<u8>, String> {
@@ -465,7 +465,7 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    forge_core::platform::fs::atomic_write(path, bytes).map_err(|e| format!("failed to write '{}': {e}", path.display()))
+    designer_core::platform::fs::atomic_write(path, bytes).map_err(|e| format!("failed to write '{}': {e}", path.display()))
 }
 
 fn write_if_different(path: &Path, bytes: &[u8]) -> Result<bool, String> {
