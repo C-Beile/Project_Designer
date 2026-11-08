@@ -1,0 +1,64 @@
+# core – Karte
+<!-- AUTO:START -->
+## Dateien
+| Datei | Wofür |
+|---|---|
+| `Modal.tsx` | Rahmen für jeden Dialog (Titel, Inhalt, Fußzeile, Enter). Im OS-Fenster füllt er das Fenster. |
+| `dialogService.tsx` | `confirmDialog`, `promptDialog`, `choiceDialog` als Promise. `DialogHost` zeigt sie und die Masken. |
+| `notifications.tsx` | `notify(text, opts)`: Toast ohne Fokusraub. `ToastHost` zeigt ihn. Liste für den Notifications-Reiter. |
+| `outputBus.ts` | `logOutput(sub, text)` schreibt ins Output-Fenster. `requestShell` für kleine Bitten an die Shell. SQL-Maskierung. |
+| `shortcuts.ts` | Kürzel als `Mod+Shift+S` schreiben, anzeigen (`formatShortcut`) und prüfen (`matchesShortcut`). |
+| `errorText.ts` | `errorText(e)`: Fehler als Text. |
+| `errorHandling.tsx` | `ErrorBoundary` (Absturz eines Editors), `CrashListener` (schreibt ins Logfile). |
+| `treeIndex.ts` | Suchen im Projektbaum: `collectByType`, `findObject`, `entityOfView`, `collectIcons`. |
+| `uuid.ts` | `newUuid`, `copyNewUuid`. |
+| `plugins/` | `registry.ts`: UI-Register für Plugins. |
+| `ui/` | Masken-Baukasten: FormDialog, ListDialog, DataTable, ProgressBar, `uiDialogs`. |
+<!-- AUTO:END -->
+
+## Zweck
+Gemeinsame Bausteine ohne Fachlogik. Hauptfenster und alle OS-Fenster nutzen sie.
+
+## Einstiegspunkte
+- `DialogHost` und `ToastHost` hängen in `shell/Shell.tsx`, `windows/EditorWindowApp.tsx`, `windows/FloatApp.tsx`. `windows/DialogWindowApp.tsx` hat nur `DialogHost`.
+- `plugins/registry.ts` (Plugin-Beiträge) und `ui/index.ts` (Masken).
+
+## Abhängigkeiten
+- Rein: fast nichts. Ausnahmen: `errorHandling` (`ForgeApi`, `chrome/tauriWindow`), `outputBus` (Typen aus `shell/OutputPanel`), `plugins/registry` (Typen aus `shell/menuModel`, `tree/contextMenu`).
+- Raus: fast jeder Ordner.
+
+## Regeln und Fallen
+- Module halten Zustand auf Modulebene (Listener-Sets, `useSyncExternalStore`). Jedes Fenster hat sein eigenes Modul. Ein Toast im Hauptfenster erscheint nicht in einem Editor-Fenster.
+- Kein `window.confirm`. Nimm `confirmDialog`. Gleicher Text, solange offen, ergibt nur einen Dialog.
+- Tests leeren den Zustand mit `_reset...ForTests()`.
+
+## Wenn du X ändern willst
+| Aufgabe | Datei |
+|---|---|
+| Ja/Nein-Frage, Texteingabe, Auswahl aus Knöpfen | `dialogService.tsx` (`confirmDialog`, `promptDialog`, `choiceDialog`) |
+| Meldung ohne Unterbrechung | `notify` in `notifications.tsx` |
+| Zeile ins Output-Fenster | `logOutput` in `outputBus.ts` |
+| Neues Kürzel formatieren | `shortcuts.ts` |
+| Plugin-Beitrag, Maske | siehe unten |
+
+### plugins/registry.ts
+Alle Register sind Stores. `register*` gibt eine Abmelde-Funktion zurück. Ein Beitrag mit `plugin` zählt nur, wenn das Plugin und seine `requires` angemeldet sind.
+- `registerPlugin(info)`: Plugin anmelden. `isPluginAvailable(id)` fragt, `usePlugins()` liest.
+- `registerCommand(id, run, plugin?)`: Befehl. `hasCommand`, `runCommandById`, `runCommandAsync` führen ihn aus.
+- `registerMenuContribution({menu, items, order})`: Einträge im Hauptmenü. Lesen: `useMenuContributions`, `getMenuContributions`.
+- `registerOptionsPage({id, category, title, component})`: Seite in Tools > Options. Lesen: `useOptionsPages`.
+- `registerToolbarItem({id, group, command, state})`: Knopf der Werkzeugleiste. Lesen: `useToolbarItems(group)`.
+- `registerStatusBarItem({id, align, component})`: Feld der Statusleiste. Lesen: `useStatusBarItems(align)`.
+- `registerTreeContextItem({objectTypes, label, command})`: Eintrag im Baum-Kontextmenü. Lesen: `useTreeContextItems(objectType)`.
+- `registerDialog({id, component})`: Dialog per Id. Lesen: `getDialog(id)`.
+
+### ui/ – welche Maske wann
+- `FormDialog`: wenige Felder (text, number, select, checkbox) mit Prüfung. Wirft `onSubmit`, bleibt er offen.
+- `ListDialog`: aus einer Liste wählen, einzeln oder mehrfach, mit Suche.
+- `DataTable`: Tabelle mit Sortierung und Auswahl, ohne eigenen Dialog.
+- `ProgressBar`: Fortschritt, mit oder ohne Prozent.
+- `uiDialogs.tsx`: Masken als Daten. `defineFormDialog`/`defineListDialog` beschreiben, `registerUiDialog(id, spec, plugin)` meldet an, `openUiDialog(spec oder id)` öffnet. `UiDialogHost` hängt in `DialogHost`.
+- Große Dialoge mit eigenem Layout bleiben normale Komponenten mit `Modal` (siehe `shell/`).
+
+## Tests
+- `*.test.tsx` neben den Dateien, z. B. `plugins/registry.test.tsx`. `npx vitest run src/core`.

@@ -57,6 +57,15 @@ Rust lädt keine Plugin-DLLs zur Laufzeit. "Abschaltbar" heißt: beim Bauen wegl
 - Nur CSS-Variablen aus `theme/tokens.css`, keine festen Farben. Alte Versionsnamen (rc5, 0.7.0) nicht mehr als Dateinamen nutzen.
 - Offen: Teile in `styles/shell/` und andere Themen-Dateien von Hand zu den Komponenten verschieben (jeweils mit Sichtprüfung der Themes).
 
+## Karten pro Ordner (für Agenten)
+
+Wichtige Ordner haben eine eigene `CLAUDE.md` (Karte) mit Dateiliste, Regeln, Fallen und "Wenn du X ändern willst". Claude Code lädt sie, sobald man dort eine Datei liest. Einstieg: `crates/CLAUDE.md` (Rust), `app/ui/CLAUDE.md` (UI). Vorhanden (21): Rust: `crates`, `crates/{project,aod,native-transpiler,plugin-api,database,validators,designer-core}`, `app/src-tauri`. UI: `app/ui`, `app/ui/src/{shell,shell/hooks,editors,core,features/git,properties,tabs,tree,windows,theme,styles}`. Kleine Crates und kleine UI-Ordner stehen in `crates/CLAUDE.md` und `app/ui/CLAUDE.md`.
+
+- Wer Dateien anlegt, verschiebt oder löscht, passt die Karte des Ordners an (Tabelle zwischen `AUTO:START` und `AUTO:END`).
+- Prüfen: `powershell -File scripts/check-maps.ps1` (Exit-Code = Anzahl Fehler). `-Fix` ergänzt neue Dateien mit `TODO`; den Satz dazu von Hand schreiben.
+- In Aufträgen an Subagenten steht: "Lies zuerst `<Ordner>/CLAUDE.md`, öffne danach nur die Dateien, die die Karte nennt, und melde falsche Karten-Angaben."
+- `docs/refactoring-plan.md` ist Historie, nur bei Bedarf lesen.
+
 ## Bibliotheken
 
 - Frontend: react, react-dom, monaco-editor, marked, dompurify, @tauri-apps/api. Kein State-Manager, kein Komponenten-Kit, kein Router. Alles eigenes CSS (`styles.css`).
