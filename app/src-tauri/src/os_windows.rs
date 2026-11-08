@@ -97,6 +97,8 @@ pub async fn window_open(app: AppHandle, payloads: State<'_, WindowPayloads>, mo
         .min_inner_size(240.0, 120.0)
         .resizable(req.resizable.unwrap_or(true))
         .decorations(true)
+        // Das Fenster startet unsichtbar und zeigt sich selbst (`window_show`), sobald die Seite gezeichnet ist.
+        .visible(false)
         .focused(true);
     if let Some(color) = req.background.as_deref().and_then(parse_hex_color) {
         builder = builder.background_color(color);
@@ -121,6 +123,14 @@ pub async fn window_open(app: AppHandle, payloads: State<'_, WindowPayloads>, mo
         builder = builder.parent(&main).map_err(|e| e.to_string())?;
     }
     let window = builder.build().map_err(|e| e.to_string())?;
+    // Notausgang: zeigt sich die Seite nicht von selbst (Fehler im Frontend), erscheint das Fenster nach 3 s trotzdem.
+    {
+        let late = window.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_secs(3));
+            let _ = late.show();
+        });
+    }
     if req.modal {
         if let Some(main) = app.get_webview_window("main") {
             main.set_enabled(false).map_err(|e| e.to_string())?;
@@ -130,6 +140,16 @@ pub async fn window_open(app: AppHandle, payloads: State<'_, WindowPayloads>, mo
     }
     Ok(())
 }).await
+}
+
+/// Das Fenster zeigt sich, sobald seine Seite fertig gezeichnet ist.
+#[tauri::command]
+pub fn window_show(window: tauri::WebviewWindow) -> Result<(), String> {
+    crate::commands::guard("window_show", || {
+        window.show().map_err(|e| e.to_string())?;
+        let _ = window.set_focus();
+        Ok(())
+    })
 }
 
 /// The payload the window was opened with (read once by the new window).

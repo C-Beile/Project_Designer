@@ -246,6 +246,7 @@ pub fn run() {
             os_windows::window_close_guard,
             os_windows::app_exit,
             os_windows::main_window_contains,
+            os_windows::window_show,
             lsp_bridge::start_lsp,
             lsp_bridge::send_lsp_message,
         ])

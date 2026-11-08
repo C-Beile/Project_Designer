@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { registerFeaturePlugins } from '../features/registerFeatures'
+import { revealApp } from '../core/revealApp'
 import { CrashListener, ErrorBoundary } from '../core/errorHandling'
 import { useTheme } from '../theme/useTheme'
 import { DialogWindowApp } from './DialogWindowApp'
@@ -32,6 +33,9 @@ export function WindowRoot({ api, kind, name }: { api: ForgeApi; kind: string; n
       alive = false
     }
   }, [api])
+  useEffect(() => {
+    if (ready) revealApp(true)
+  }, [ready])
   if (!ready) return null
   return (
     <>

@@ -13,6 +13,7 @@
 | `errorLog.ts` | `logError(text)` schreibt ins Protokoll; `main.tsx` setzt die Senke. `notify(kind:'error')` ruft es auf. |
 | `errorHandling.tsx` | `ErrorBoundary` (Absturz eines Editors), `CrashListener` (schreibt ins Logfile). |
 | `treeIndex.ts` | Suchen im Projektbaum: `collectByType`, `findObject`, `entityOfView`, `collectIcons`. |
+| `revealApp.ts` | `revealApp()`: blendet die Seite erst nach zwei Frames ein (setzt `data-ready` auf `<html>`), damit kein ungestyltes Zwischenbild aufblitzt. |
 | `uuid.ts` | `newUuid`, `copyNewUuid`. |
 | `scm.ts` | Neutraler Store für den Source-Control-Stand: `useScm`, `refreshScm`, `decorationFor`, `indexOf`, `setScmProvider`. Ohne Plugin leer. |
 | `plugins/` | `registry.ts`: UI-Register für Plugins. `ShellExtensions.tsx` rendert die Shell-Beiträge. |

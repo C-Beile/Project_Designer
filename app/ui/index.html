@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dito Designer</title>
+    <style>
+      /* Inhalt bleibt unsichtbar, bis CSS und erster Render da sind (siehe revealApp in main.tsx). */
+      html:not([data-ready]) #root { visibility: hidden; }
+    </style>
+    <script>
+      // Notausgang: nach 3 s immer anzeigen, auch wenn etwas hängt.
+      setTimeout(function () { document.documentElement.setAttribute('data-ready', '') }, 3000)
+    </script>
     <script>
       // Theme sofort setzen, noch vor dem ersten Zeichnen. Sonst sieht man kurz das falsche Theme,
       // bis React läuft. Die Farben müssen zu --bg in theme/tokens.css passen.

@@ -4,6 +4,7 @@ import { syncLogTimezone, tauriForgeApi } from './api/tauriApi'
 import { withSqlLog } from './api/sqlLog'
 import { installZoomControls } from './settings/zoom'
 import { setErrorLogSink } from './core/errorLog'
+import { revealApp } from './core/revealApp'
 import './styles.css'
 
 // Dev-only convenience: a "project" URL parameter can still pre-select a project folder for a
@@ -32,6 +33,7 @@ if (windowKind) {
         <WindowRoot api={withSqlLog(tauriForgeApi)} kind={windowKind} name={windowName} />
       </StrictMode>,
     )
+    // Ein Fenster zeigt sich selbst, sobald es bereit ist (WindowRoot).
   })
 } else {
   void import('./App').then(({ App }) => {
@@ -41,6 +43,7 @@ if (windowKind) {
       </StrictMode>,
     )
     // Monaco's workers (syntax errors of JDito code) are prepared in the background, before the first editor opens.
+    revealApp()
     void import('./theme/monacoWorkers').then((m) => m.ensureMonacoWorkers())
   })
 }
