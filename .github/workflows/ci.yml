@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, lion]
+
+env:
+  RUSTUP_TOOLCHAIN: stable-x86_64-pc-windows-msvc
+
+jobs:
+  check:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Rust compiles (all crates, tests, examples)
+        run: cargo check --workspace --tests --examples
+
+      - name: Rust compiles with the fewest plugins
+        run: cargo check -p designer-app --no-default-features --features git
+
+      - name: UI install
+        working-directory: app/ui
+        run: npm install
+
+      - name: UI types
+        working-directory: app/ui
+        run: npx tsc -p tsconfig.app.json --noEmit
+
+      # Tests: 10 Rust and 3 UI tests need a real ADITO installation or files outside the repo
+      # (see CLAUDE.md, "Stand der Tests"). Until these are fixed, the test steps report but do not block.
+      - name: Rust tests
+        continue-on-error: true
+        run: cargo test --workspace --no-fail-fast
+
+      - name: UI tests
+        continue-on-error: true
+        working-directory: app/ui
+        run: npm test

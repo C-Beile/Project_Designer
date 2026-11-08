@@ -37,9 +37,9 @@ Help > Check for Updates. Die App prüft dieses private Repository und installie
 
 ```
 app/ui          React-Oberfläche (Vite, Monaco, Vitest)
-app/core        Logik ohne UI (Projektbaum, Git, Liquibase, Datenbank, Tunnel)
+crates/project  Logik ohne UI (Projektbaum, Git, Liquibase, Datenbank, Tunnel)
 app/src-tauri   Tauri-Hülle und Befehle
-crates/         Bibliotheken (aod-io, transpiler, platform)
+crates/         Bibliotheken (aod, adito-transpiler, platform)
 ```
 
 ```
