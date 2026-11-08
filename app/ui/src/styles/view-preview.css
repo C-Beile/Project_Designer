@@ -1,0 +1,55 @@
+/* ---- rc7: view preview selection and ADITO templates ---- */
+
+.vp-sel { cursor: default; }
+
+.vp-sel:hover { outline: 1px dotted var(--border-strong); outline-offset: 1px; }
+
+.vp-sel.is-selected { outline: 2px solid var(--brand-link); outline-offset: 1px; }
+
+.vp-block { display: block; }
+
+.vp-tl-row { display: flex; justify-content: space-between; gap: 16px; padding: 4px 0; border-bottom: 1px solid var(--border); }
+
+.vp-tl-title { font-weight: 600; }
+
+.vp-tl-values { display: flex; gap: 8px; flex: 1; justify-content: flex-end; }
+
+.vp-more { padding-top: 4px; }
+
+.vp-tiles { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.vp-tile { display: flex; gap: 8px; align-items: center; min-width: 200px; border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: var(--bg); }
+
+.vp-tile.is-portrait { flex-direction: column; align-items: flex-start; }
+
+.vp-tile-icon { width: 32px; height: 32px; border-radius: 50%; background: var(--border); flex: 0 0 auto; }
+
+.vp-tile-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.vp-al-row { display: flex; gap: 8px; align-items: center; padding: 4px 0; }
+
+.vp-link { color: var(--brand-link); text-decoration: underline; }
+
+.vp-drawer > summary { cursor: pointer; color: var(--fg-muted); margin-bottom: 6px; }
+
+@keyframes forge-stripe { from { background-position: 0 0; } to { background-position: 28px 0; } }
+
+.dbb-tree ul { list-style: none; margin: 0; padding-left: 14px; }
+
+.dbb-table.is-selected { background: var(--selection-bg, var(--border)); }
+
+.dbb-grid th, .dbb-grid td { text-align: left; padding: 2px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+
+.dbb-changelog textarea { width: 100%; font-family: monospace; }
+
+.forge-spinner { display: inline-block; width: 9px; height: 9px; border: 2px solid var(--warning); border-right-color: transparent; border-radius: 50%; animation: forge-spin 0.8s linear infinite; vertical-align: -1px; }
+
+@keyframes forge-spin { to { transform: rotate(360deg); } }
+
+@keyframes forge-pulse { 50% { opacity: 0.35; } }
+
+.forge-props-value.is-unset { color: var(--fg-muted); font-style: italic; }
+
+.forge-props-row.is-draft .forge-props-input { border-color: var(--warning); }
+
+.alias-config-tab .alias-config-panel { max-width: none; }

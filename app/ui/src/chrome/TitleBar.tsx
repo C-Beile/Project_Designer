@@ -1,4 +1,4 @@
-import { isMacPlatform } from '../shell/shortcuts'
+import { isMacPlatform } from '../core/shortcuts'
 import { useCallback, useEffect, useState } from 'react'
 import appIcon64 from '../assets/brand/app-icon-64.png'
 import {

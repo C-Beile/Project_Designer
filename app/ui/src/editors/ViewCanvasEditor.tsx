@@ -4,13 +4,14 @@ import { EditableText } from './EditableText'
 import { FIELD_DRAG, ViewPreview, useViewEntityFields, type PreviewActions } from './ViewPreview'
 import { ViewAddDialog, type AddChoice, type AddTemplate } from './ViewAddDialog'
 import { addEntityFieldToTemplate, addViewReference } from './viewFields'
-import { newUuid } from '../shell/uuid'
+import { newUuid } from '../core/uuid'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useProjectIndex } from './projectIndex'
 import { moveViewChild, parseViewChildren } from './viewChildren'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
-import { confirmDialog } from '../shell/dialogService'
+import { confirmDialog } from '../core/dialogService'
+import { errorText } from '../core/errorText'
 
 // Ziel 1 (neonView editor, P4 second family): a structured list view of the view's layout
 // reference table, not a full drag-and-drop canvas. architecture.md names "ein eigener
@@ -73,7 +74,7 @@ export function ViewCanvasEditor({ nodeId, tree, api, onTreeChange }: EditorProp
         setSource({ text: next, read_only: false })
         onTreeChange(outcome.tree)
       } catch (e) {
-        setMoveError(e instanceof Error ? e.message : String(e))
+        setMoveError(errorText(e))
       }
     },
     [api, nodeId, onTreeChange, source],
@@ -88,7 +89,7 @@ export function ViewCanvasEditor({ nodeId, tree, api, onTreeChange }: EditorProp
         setSource({ text: next, read_only: false })
         onTreeChange(outcome.tree)
       } catch (e) {
-        setMoveError(e instanceof Error ? e.message : String(e))
+        setMoveError(errorText(e))
       }
     },
     [api, nodeId, onTreeChange],

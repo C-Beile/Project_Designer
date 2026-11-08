@@ -6,7 +6,7 @@ import { DashboardEditor } from './DashboardEditor'
 import type { WireValue } from '../wire/types'
 import { createMockForgeApi } from '../test/mockApi'
 
-// Mirrors Home.aod's real shape (app/core/tests/fixtures/DemoProject/neonDashboard), trimmed to
+// Mirrors Home.aod's real shape (crates/aod/tests/fixtures/DemoProject/neonDashboard), trimmed to
 // two dashlets.
 function sampleDashboard(): WireValue {
   return {

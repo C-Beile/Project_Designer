@@ -4,14 +4,15 @@ import type { ForgeApi } from '../api/ForgeApi'
 import { getEditorFor } from '../editors/registry'
 import { ProjectIndexContext, type ProjectIndex } from '../editors/projectIndex'
 import { saveCodeProperty } from '../properties/codeSave'
-import { choiceDialog, DialogHost } from '../shell/dialogService'
-import { ToastHost } from '../shell/notifications'
-import { collectByType, collectIcons, entityOfView, findObject } from '../shell/treeIndex'
+import { choiceDialog, DialogHost } from '../core/dialogService'
+import { ToastHost } from '../core/notifications'
+import { collectByType, collectIcons, entityOfView, findObject } from '../core/treeIndex'
 import { ObjectEditorArea } from '../tabs/ObjectEditorArea'
 import { isFileNode, type EditorTab, type SubTab } from '../tabs/tabModel'
 import type { DbStatus, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 import { EVENTS, type EditorCommand, type EditorDockResult, type EditorWindowPayload, type FloatAction } from './protocol'
 import { getWindowBackend } from './windowService'
+import { errorText } from '../core/errorText'
 
 // Content of the window an editor was moved into. The document itself stays in the backend (one
 // copy for all windows), so this window only draws the editor and reports back what the main
@@ -142,7 +143,7 @@ function EditorWindowBody({ name, api, payload }: { name: string; api: ForgeApi;
       setStatus('Saved.')
       return true
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e)
+      const message = errorText(e)
       if (message.startsWith('CONFLICT:')) {
         const choice = await choiceDialog(
           `${node.label} was changed on disk after it was opened, and it has unsaved edits.`,
@@ -277,7 +278,7 @@ function EditorWindowBody({ name, api, payload }: { name: string; api: ForgeApi;
       try {
         applied(node.id, kind === 'undo' ? await api.undo(node.id) : await api.redo(node.id))
       } catch (e) {
-        setStatus(e instanceof Error ? e.message : String(e))
+        setStatus(errorText(e))
       }
     },
     [api, node.id, applied],

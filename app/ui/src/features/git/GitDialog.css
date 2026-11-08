@@ -1,0 +1,4 @@
+.forge-commit-side fieldset {
+  border: 1px solid var(--border);
+  margin: 0;
+}

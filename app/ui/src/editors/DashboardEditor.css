@@ -1,0 +1,22 @@
+.dashboard-canvas {
+  display: grid;
+  grid-auto-rows: 36px;
+  gap: 10px;
+  padding: 10px;
+}
+
+.dashlet-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  overflow: hidden;
+  background: var(--bg-elevated, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.dashlet-value {
+  color: var(--fg);
+  min-height: 16px;
+}

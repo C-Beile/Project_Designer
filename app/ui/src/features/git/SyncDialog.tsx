@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import type { ForgeApi } from '../api/ForgeApi'
-import type { GitCommit, GitOutput } from '../wire/types'
-import { Modal } from './Dialogs'
+import type { ForgeApi } from '../../api/ForgeApi'
+import type { GitCommit, GitOutput } from '../../wire/types'
+import { Modal } from '../../core/Modal'
+import { errorText } from '../../core/errorText'
 
 // Toolbar Pull and Push: Pull shows what the remote has that is not here yet before anything is
 // merged; Push lists the local commits that are not on the remote and pushes the chosen ones.
@@ -48,7 +49,7 @@ export function SyncDialog({
       setCommits(list)
       setCount(list.length)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     }
   }
 
@@ -74,7 +75,7 @@ export function SyncDialog({
         await load()
       }
     } catch (e) {
-      const text = e instanceof Error ? e.message : String(e)
+      const text = errorText(e)
       setOutput({ ok: false, text })
       onResult?.({ ok: false, text, commits: 0 })
     } finally {

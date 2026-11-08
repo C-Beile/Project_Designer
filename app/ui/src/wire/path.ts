@@ -1,6 +1,6 @@
 import type { WireValue } from './types'
 
-// Mirrors app/core/src/wire.rs's `parse_node_path` exactly (same dotted/indexed string format,
+// Mirrors crates/project/src/wire.rs's `parse_node_path` exactly (same dotted/indexed string format,
 // root is `"$"` or `""`) - only used by the test mock backend (src/test/mockApi.ts) to simulate
 // `set_property`'s targeted-field-update semantics without a real Rust process.
 export type PathSegment = { kind: 'field'; name: string } | { kind: 'index'; index: number }

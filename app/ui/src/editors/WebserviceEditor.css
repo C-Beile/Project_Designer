@@ -1,0 +1,6 @@
+/* Entity fields and webservice fields side by side, like in the original Designer */
+.webservice-panes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+
+.webservice-pane { border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; min-height: 160px; max-height: 420px; overflow: auto; }
+
+.webservice-pane h3 { margin: 2px 0 6px; font-size: 12px; font-weight: 600; }

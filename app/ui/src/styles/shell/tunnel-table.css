@@ -1,0 +1,73 @@
+.alias-icon {
+  font-size: 18px;
+}
+
+.alias-detail {
+  padding: 6px 8px;
+}
+
+.alias-group-label {
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.alias-prop {
+  display: grid;
+  grid-template-columns: minmax(80px, 30%) 1fr;
+  padding-left: 12px;
+}
+
+.tunnel-editor {
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.tunnel-toolbar {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tunnel-toolbar button {
+  min-width: 24px;
+  height: 22px;
+}
+
+.tunnel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.tunnel-table th,
+.tunnel-table td {
+  text-align: left;
+  padding: 1px 6px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tunnel-table tr.is-selected {
+  background: var(--selection, #1d3b53);
+}
+
+.tunnel-status {
+  color: var(--fg-muted);
+}
+
+.tunnel-status.is-active {
+  color: #3fb950;
+}
+
+.forge-modal-title,
+.forge-about-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}

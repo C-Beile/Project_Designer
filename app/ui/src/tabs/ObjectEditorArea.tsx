@@ -1,10 +1,11 @@
+import { LazyDiffView } from '../features/git'
 import { Suspense, lazy } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { EditorComponent } from '../editors/registry'
 import type { Problem } from '../problems/problemStore'
 import type { DbStatus, UndoRedoOutcome, WireValue } from '../wire/types'
 import { HistoryView } from './HistoryView'
-import { ErrorBoundary } from '../shell/errorHandling'
+import { ErrorBoundary } from '../core/errorHandling'
 import { UsersTab } from '../services/UsersTable'
 import { systemKey, useTunnelState } from '../services/tunnelState'
 import { SUB_TAB_LABELS, isFileNode, isServiceNode, isTunnelNode, isAliasConfigNode, subTabsFor, type EditorTab, type SubTab } from './tabModel'
@@ -18,7 +19,6 @@ const SqlEditor = lazy(() => import('../services/SqlEditor').then((m) => ({ defa
 const DbBrowserTab = lazy(() => import('./DbBrowserTab').then((m) => ({ default: m.DbBrowserTab })))
 const AliasConfigTab = lazy(() => import('./AliasConfigTab').then((m) => ({ default: m.AliasConfigTab })))
 const TunnelConfigEditor = lazy(() => import('./TunnelConfigEditor').then((m) => ({ default: m.TunnelConfigEditor })))
-const DiffView = lazy(() => import('../scm/DiffView').then((m) => ({ default: m.DiffView })))
 const TextFileEditor = lazy(() => import('./TextFileEditor').then((m) => ({ default: m.TextFileEditor })))
 
 function Hint({ children }: { children: string }) {
@@ -96,7 +96,7 @@ export function ObjectEditorArea({
   } else if (node.diff) {
     body = (
       <Suspense fallback={Loading}>
-        <DiffView api={api} target={node.diff} />
+        <LazyDiffView api={api} target={node.diff} />
       </Suspense>
     )
   } else if (isServiceNode(node)) {

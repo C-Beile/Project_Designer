@@ -4,6 +4,7 @@ import type { AliasConfigDto, TreeNode } from '../wire/types'
 import { useTunnelState } from '../services/tunnelState'
 import { useProjectIndex } from '../editors/projectIndex'
 import { AliasConfigPanel } from '../properties/AliasConfigPanel'
+import { errorText } from '../core/errorText'
 
 // Editor tab of one alias config of a system (original Designer, shot 84): full-width grouped
 // property sheet Name | Value. The values come from the system database of exactly this system;
@@ -65,7 +66,7 @@ export function AliasConfigTab({ api, path }: { api: ForgeApi; path: string | un
         if (!found) setError(`${ref.alias} is not in the system database of ${ref.system}.`)
       }
     })().catch((e) => {
-      if (!cancelled) setError(e instanceof Error ? e.message : String(e))
+      if (!cancelled) setError(errorText(e))
     })
     return () => {
       cancelled = true

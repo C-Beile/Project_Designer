@@ -1,0 +1,4 @@
+.diagnostics-panel li {
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--border);
+}

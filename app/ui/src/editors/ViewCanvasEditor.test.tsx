@@ -6,7 +6,7 @@ import { ViewCanvasEditor } from './ViewCanvasEditor'
 import type { WireValue } from '../wire/types'
 import { createMockForgeApi } from '../test/mockApi'
 
-// Mirrors THHIT_ActivityMain_view.aod's real shape (app/core/tests/fixtures/DemoProject/neonView)
+// Mirrors THHIT_ActivityMain_view.aod's real shape (crates/aod/tests/fixtures/DemoProject/neonView)
 // - two references, the second one is the layout's master.
 function sampleView(): WireValue {
   return {

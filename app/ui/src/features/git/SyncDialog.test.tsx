@@ -2,8 +2,8 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { SyncDialog } from './SyncDialog'
-import { createMockForgeApi } from '../test/mockApi'
-import type { GitOverview } from '../wire/types'
+import { createMockForgeApi } from '../../test/mockApi'
+import type { GitOverview } from '../../wire/types'
 
 const git: GitOverview = {
   root: 'C:/p',

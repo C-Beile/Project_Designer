@@ -3,7 +3,7 @@ import type { KeyboardEvent, ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { DbStatus, SqlResult } from '../wire/types'
 import { MonacoText, type MonacoTextHandle } from '../tabs/MonacoText'
-import { logOutput, requestShell } from '../shell/outputBus'
+import { logOutput, requestShell } from '../core/outputBus'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { getOptions } from '../settings/options'
 import { setSystemsDb, systemNameOf, useTunnelState } from './tunnelState'
@@ -20,6 +20,7 @@ import {
   statementAt,
   toCsv,
 } from './sqlTools'
+import { errorText } from '../core/errorText'
 
 // Execute SQL window (manual chapter 8, screenshot 088): connection row, icon bar, statement
 // editor, one result tab per executed statement with the middle bar (add/delete/save/cancel/
@@ -111,7 +112,7 @@ export function SqlEditor({
         if (result.columns.length > 0) logOutput('database', 'Fetching resultset took 0 s.')
         logOutput('database', `Execution finished after ${secs} s, no errors occurred. (${oneLine(sql)})`)
       } catch (e) {
-        const message = e instanceof Error ? e.message : String(e)
+        const message = errorText(e)
         fresh.push({ id: nextTab.current++, sql, result: null, error: message })
         logOutput('database', '[1:1] Failed in 0 s.', 'error')
         logOutput('database', `[Exception] ${message}`, 'error')
@@ -508,7 +509,7 @@ function ResultPane({
         setMessage(`${statements.length} change(s) committed.`)
         await onRefresh()
       } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e)
+        const msg = errorText(e)
         logOutput('database', `SQL FAILED: ${msg}`, 'error')
         setMessage(`Saving stopped: ${msg}`)
       }
@@ -523,7 +524,7 @@ function ResultPane({
         logOutput('database', `SQL OK: TRUNCATE TABLE ${t}`)
         await onRefresh()
       } catch (e) {
-        setMessage(e instanceof Error ? e.message : String(e))
+        setMessage(errorText(e))
       }
     })
   }
@@ -540,7 +541,7 @@ function ResultPane({
       a.remove()
       setTimeout(() => URL.revokeObjectURL(url), 1000)
     } catch (e) {
-      setMessage(`Export failed: ${e instanceof Error ? e.message : String(e)}`)
+      setMessage(`Export failed: ${errorText(e)}`)
     }
   }
 

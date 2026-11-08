@@ -1,17 +1,17 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createMockForgeApi } from '../test/mockApi'
-import { diffEditors, resetEditors } from '../test/monacoMock'
+import { createMockForgeApi } from '../../test/mockApi'
+import { diffEditors, resetEditors } from '../../test/monacoMock'
 import { ScmPanel } from './ScmPanel'
 import { DiffView } from './DiffView'
 import { _resetScmForTests, codeOf, decorationFor, indexOf } from './scmStore'
-import { DialogHost, _resetDialogsForTests } from '../shell/dialogService'
-import { clearNotifications, getNotifications } from '../shell/notifications'
-import { ProjectTree } from '../tree/ProjectTree'
-import type { ScmOverview, TreeNode } from '../wire/types'
+import { DialogHost, _resetDialogsForTests } from '../../core/dialogService'
+import { clearNotifications, getNotifications } from '../../core/notifications'
+import { ProjectTree } from '../../tree/ProjectTree'
+import type { ScmOverview, TreeNode } from '../../wire/types'
 
-vi.mock('monaco-editor', () => import('../test/monacoMock'))
+vi.mock('monaco-editor', () => import('../../test/monacoMock'))
 
 const ROOT = 'C:/work/proj'
 

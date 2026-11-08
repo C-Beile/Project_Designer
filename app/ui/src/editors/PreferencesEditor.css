@@ -1,0 +1,45 @@
+.forge-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.sheet-group > label > input, .sheet-group > label > select { text-indent: 0; }
+
+.sheet-group { margin: 0; border-bottom: 1px solid var(--border); }
+
+.sheet-group-head { display: flex; align-items: center; gap: 6px; margin: 0; padding: 3px 8px; background: var(--bg-panel); border-top: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--fg); }
+
+.sheet-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 12px; margin: 0; }
+
+.sheet-table .col-name { width: 38%; }
+
+.sheet-table .col-value { width: 32%; }
+
+.sheet-table tbody tr:hover td { background: color-mix(in srgb, var(--fg) 5%, transparent); }
+
+.sheet-table .sheet-name { padding-left: 16px; color: var(--fg); border-right: 1px solid color-mix(in srgb, var(--border) 38%, transparent); }
+
+.sheet-table .sheet-desc { color: var(--fg-muted); border-right: 1px solid color-mix(in srgb, var(--border) 38%, transparent); }
+
+.sheet-table .sheet-value { padding: 0 4px; }
+
+.sheet-table .sheet-value > span { display: block; padding: 0 8px; }
+
+.sheet-table .sheet-value .sheet-bool { padding: 0 4px; }
+
+.sheet-table .sheet-value .sheet-bool input { margin: 0 4px; opacity: 1; }
+
+/* Preferences editor: selectable rows, readable inputs (never black), clear click affordance */
+.preferences-editor .pref-row { display: grid; grid-template-columns: var(--sheet-split, 40%) 1fr; align-items: center; gap: 8px; padding: 3px 10px; cursor: pointer; border-bottom: 1px solid color-mix(in srgb, var(--fg) 8%, transparent); }
+
+.preferences-editor .pref-row input[type="text"],
+.preferences-editor .pref-row input[type="password"],
+.preferences-editor .sheet-value input[type="text"],
+.preferences-editor .sheet-value input[type="password"] { background: color-mix(in srgb, var(--fg) 6%, transparent); border: 1px solid color-mix(in srgb, var(--fg) 22%, transparent); color: var(--fg); border-radius: 3px; padding: 2px 6px; width: 100%; box-sizing: border-box; cursor: text; }
+
+.preferences-editor input[readonly] { opacity: 0.6; cursor: not-allowed; }
+
+.preferences-editor tbody tr { cursor: pointer; }
+
+.preferences-editor tbody tr:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+
+.preferences-editor .sheet-desc { border-top: 1px solid color-mix(in srgb, var(--fg) 20%, transparent); padding: 8px 12px; max-height: 28%; overflow: auto; }
+
+.preferences-editor .sheet-desc p { margin: 4px 0 0; white-space: pre-wrap; }

@@ -1,8 +1,8 @@
-import { isMacPlatform } from './shortcuts'
+import { isMacPlatform } from '../core/shortcuts'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react'
 import type { MenuDef, MenuItemDef } from './menuModel'
-import { formatShortcut } from './shortcuts'
+import { formatShortcut } from '../core/shortcuts'
 
 // Classic desktop menu bar, operable without a mouse like the original: Alt or F10 opens the
 // first menu, Alt+<letter> opens a menu directly, arrows move, Enter runs, Esc closes.

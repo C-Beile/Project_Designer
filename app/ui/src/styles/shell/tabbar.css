@@ -1,0 +1,70 @@
+.forge-tabbar-more {
+  flex: 0 0 auto;
+  padding: 0 8px;
+  border-left: 1px solid var(--border);
+}
+
+.forge-tabbar-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+}
+
+.forge-tabbar-menuitem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.forge-tabbar-menuitem:hover,
+.forge-tabbar-menuitem.is-active {
+  background: var(--bg-panel);
+}
+
+.forge-object-editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.forge-subtabs {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: stretch;
+  background: var(--bg-inset);
+  border-bottom: 1px solid var(--border);
+}
+
+.forge-subtab {
+  padding: 2px 12px;
+  border: none;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.forge-subtab.is-active {
+  background: var(--bg-panel);
+  color: var(--fg);
+  box-shadow: inset 0 -2px 0 var(--brand-underline);
+}

@@ -1,0 +1,120 @@
+.forge-editor-host {
+  padding: 10px 12px;
+}
+
+.forge-editor-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  color: var(--fg-muted);
+}
+
+.forge-editor-empty p {
+  margin: 0;
+}
+
+.forge-splitter {
+  flex: 0 0 4px;
+  background: var(--bg-inset);
+  touch-action: none;
+}
+
+.forge-splitter-vertical {
+  cursor: col-resize;
+}
+
+.forge-splitter-horizontal {
+  cursor: row-resize;
+}
+
+.forge-splitter:hover,
+.forge-splitter:focus-visible {
+  background: var(--border-strong);
+  outline: none;
+}
+
+.forge-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  outline: none;
+}
+
+.forge-panel:focus-within .forge-panel-header {
+  background: var(--bg-elevated);
+}
+
+.forge-panel-header {
+  display: flex;
+  align-items: center;
+  flex: 0 0 20px;
+  height: 20px;
+  padding-left: 4px;
+  background: var(--bg-inset);
+  border-bottom: 1px solid var(--border);
+}
+
+.forge-panel-header-main {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+
+.forge-panel-title {
+  align-self: center;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forge-panel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+}
+
+.forge-panel-btn:hover {
+  color: var(--fg);
+  background: var(--bg-panel);
+}
+
+.forge-panel-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+}
+
+.forge-panel-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  border: none;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.forge-panel-tab.is-active {
+  color: var(--fg);
+  background: var(--bg-panel);
+  box-shadow: inset 0 -2px 0 var(--brand-underline);
+}

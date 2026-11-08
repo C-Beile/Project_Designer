@@ -1,0 +1,206 @@
+/* ---- 0.7.0: toolbar, plugins, local data, table center, open dialog ---- */
+
+.forge-toolbar.is-large .forge-tool-btn {
+  width: 32px;
+  height: 28px;
+}
+
+.forge-toolbar.is-large .forge-tool-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+.forge-toolbar.is-large {
+  height: 36px;
+}
+
+.forge-toolbar-heap {
+  min-width: 52px;
+  padding: 0 6px;
+  color: var(--fg-muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.forge-modal:has(.forge-plugins),
+.forge-modal:has(.forge-localdata),
+.forge-modal:has(.forge-tablecenter) {
+  width: min(860px, calc(100vw - 32px));
+}
+
+.forge-plugins-note {
+  padding: 10px 4px;
+}
+
+.forge-plugins-split {
+  display: flex;
+  gap: 10px;
+  height: 380px;
+  padding-top: 8px;
+}
+
+.forge-plugins-list {
+  flex: 1 1 55%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.forge-plugins-search {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 4px;
+}
+
+.forge-plugins-list table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.forge-plugins-list th,
+.forge-plugins-list td {
+  padding: 2px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.forge-plugins-list th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  font-weight: 500;
+}
+
+.forge-plugins-list tr.is-selected td {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.forge-plugins-list tr.is-missing td {
+  color: var(--fg-muted);
+}
+
+.forge-plugin-dot.is-active {
+  color: var(--success);
+}
+
+.forge-plugin-dot.is-deactivated {
+  color: var(--warning);
+}
+
+.forge-plugin-dot.is-missing {
+  color: var(--fg-muted);
+}
+
+.forge-plugins-actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 6px;
+}
+
+.forge-plugins-actions button,
+.forge-plugins-note button,
+.forge-updates button,
+.forge-localdata button,
+.forge-tablecenter-bar button {
+  padding: 2px 12px;
+  background: var(--bg-panel);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+}
+
+.forge-plugins-actions button:disabled,
+.forge-plugins-note button:disabled,
+.forge-tablecenter-bar button:disabled,
+.forge-localdata button:disabled {
+  opacity: 0.4;
+}
+
+.forge-plugins-detail {
+  flex: 1 1 45%;
+  min-width: 0;
+  overflow: auto;
+  padding: 0 8px;
+  border-left: 1px solid var(--border);
+}
+
+.forge-localdata {
+  max-height: min(560px, calc(100vh - 220px));
+  overflow: auto;
+}
+
+.forge-localdata tr.is-outdated td {
+  color: var(--warning);
+}
+
+.forge-tablecenter-bar {
+  display: flex;
+  gap: 4px;
+  padding-bottom: 6px;
+}
+
+.forge-tablecenter-split {
+  display: flex;
+  height: 340px;
+  border: 1px solid var(--border);
+}
+
+.forge-tablecenter-list {
+  flex: 0 0 280px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  border-right: 1px solid var(--border);
+}
+
+.forge-tablecenter-list li.is-problem {
+  color: var(--error);
+}
+
+.forge-tablecenter-list li.is-selected {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.forge-tablecenter-info {
+  flex: 1;
+  padding: 8px 12px;
+  overflow: auto;
+}
+
+.forge-tablecenter-info dl {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 2px 8px;
+}
+
+.forge-openmodel-list {
+  margin: 8px 0 0;
+  padding: 0;
+  height: 260px;
+  overflow: auto;
+  list-style: none;
+  border: 1px solid var(--border);
+}
+
+.forge-openmodel-list li {
+  padding: 2px 8px;
+  cursor: default;
+}
+
+.forge-openmodel-list li.is-selected {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.forge-openmodel-list li.is-selected .forge-field-hint {
+  color: inherit;
+}
+
+.psheet-text {
+  cursor: pointer;
+}

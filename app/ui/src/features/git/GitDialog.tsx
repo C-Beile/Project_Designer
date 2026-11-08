@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { ForgeApi } from '../api/ForgeApi'
-import type { GitFileStatus, GitOutput, GitOverview } from '../wire/types'
-import { Modal } from './Dialogs'
+import type { ForgeApi } from '../../api/ForgeApi'
+import type { GitFileStatus, GitOutput, GitOverview } from '../../wire/types'
+import { Modal } from '../../core/Modal'
 import { CommitDiffDialog } from './CommitDiffDialog'
-import { TreeContextMenu } from '../tree/TreeContextMenu'
-import { openDialogWindow, osWindowsAvailable } from '../windows/windowService'
+import { TreeContextMenu } from '../../tree/TreeContextMenu'
+import { openDialogWindow, osWindowsAvailable } from '../../windows/windowService'
 import { Chevron, CollapseAllIcon, ExpandAllIcon, FileIcon, FolderIcon, ListToggleIcon } from './commitIcons'
+import { errorText } from '../../core/errorText'
 
 // Team menu: basic Git on the repository of the active project (commit, pull, push, switch
 // branch, status, history). Every action runs from exactly one click on its own button and never
@@ -199,7 +200,7 @@ export function GitDialog({
       setTarget((prev) => (o.branches.some((b) => b.name === prev && !b.is_current) ? prev : (o.branches.find((b) => !b.is_current)?.name ?? '')))
     } catch (e) {
       setOverview(null)
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     }
   }, [api, projectRoot])
 
@@ -219,7 +220,7 @@ export function GitDialog({
         await load()
       }
     } catch (e) {
-      setOutput({ ok: false, text: e instanceof Error ? e.message : String(e) })
+      setOutput({ ok: false, text: errorText(e) })
     } finally {
       setBusy(false)
     }

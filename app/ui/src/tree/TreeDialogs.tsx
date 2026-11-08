@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Modal } from '../shell/Dialogs'
+import { Modal } from '../core/Modal'
 
 // Confirmations behind the tree's context menu. Nothing is deleted or created by the menu click
 // itself; only the confirming button inside these dialogs runs the action.

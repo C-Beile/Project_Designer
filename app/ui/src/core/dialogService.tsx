@@ -1,5 +1,6 @@
 import { useState, useSyncExternalStore } from 'react'
-import { Modal } from './Dialogs'
+import { Modal } from './Modal'
+import { UiDialogHost } from './ui/uiDialogs'
 
 // In-app replacement for window.confirm: a promise-based question shown as a modal inside the
 // window. A second request with the same text while the first is still open joins the first one,
@@ -140,8 +141,12 @@ function PendingDialog({ pending }: { pending: Pending }) {
 
 export function DialogHost() {
   const pending = useSyncExternalStore(subscribe, snapshot)
-  if (!pending) return null
-  return <PendingDialog key={pending.message} pending={pending} />
+  return (
+    <>
+      {pending ? <PendingDialog key={pending.message} pending={pending} /> : null}
+      <UiDialogHost />
+    </>
+  )
 }
 
 /** Test helper: drops every open question as declined. */

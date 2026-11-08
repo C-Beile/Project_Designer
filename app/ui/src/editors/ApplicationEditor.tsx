@@ -19,6 +19,7 @@ import {
   validateReferences,
   type AppNode,
 } from './applicationTree'
+import { errorText } from '../core/errorText'
 
 // Global menu of the Web Client (`____SYSTEM_APPLICATION_NEON`), as in the original Designer
 // (shot 49): left the menu as nested group tiles, right the list of everything that can be put into
@@ -81,7 +82,7 @@ export function ApplicationEditor({ nodeId, tree, api, onTreeChange }: EditorPro
     api
       .getObjectSource(nodeId)
       .then((s) => !cancelled && setSource(s))
-      .catch((e) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
+      .catch((e) => !cancelled && setError(errorText(e)))
     return () => {
       cancelled = true
     }
@@ -100,7 +101,7 @@ export function ApplicationEditor({ nodeId, tree, api, onTreeChange }: EditorPro
         setSource({ text: next, read_only: false })
         onTreeChange(outcome.tree)
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e))
+        setError(errorText(e))
       } finally {
         busy.current = false
       }

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { ModelEntry } from '../wire/types'
-import { Modal } from './Dialogs'
+import { Modal } from '../core/Modal'
+import { errorText } from '../core/errorText'
 
 // File > Export Project / Import Project, laid out like the manual's export window (img 011):
 // "Export the entire system", one tab per data model type with picked/total counts, "Select all",
@@ -62,7 +63,7 @@ export function ProjectZipDialog({
         setPicked(new Set(list.map(keyOf)))
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : String(e))
+          setError(errorText(e))
           setModels([])
         }
       }
@@ -115,7 +116,7 @@ export function ProjectZipDialog({
         onDone(`Imported ${out.imported.length} data model(s)${out.skipped.length ? `, skipped ${out.skipped.length} that already exist` : ''}.`)
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
       setBusy(false)
     }
   }

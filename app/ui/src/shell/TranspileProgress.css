@@ -1,0 +1,8 @@
+/* Build progress: bottom-right panel, the rest of the window stays usable */
+.forge-build-progress { position: fixed; right: 16px; bottom: 36px; width: 320px; z-index: 900; padding: 10px 12px; border-radius: 6px; background: var(--bg-elevated, var(--bg)); border: 1px solid color-mix(in srgb, var(--fg) 25%, transparent); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4); }
+
+.forge-build-progress-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+.forge-build-progress p { margin: 6px 0; color: var(--fg-muted); font-size: 12px; }
+
+.forge-build-result p { color: var(--fg); }

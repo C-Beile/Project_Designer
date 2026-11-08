@@ -4,6 +4,7 @@ import type { TreeNode } from '../wire/types'
 import { textField } from '../wire/types'
 import { resolvePathVariables } from '../properties/pathVariables'
 import { getTunnelState, setForwardFor, setUnconfigured, setSystemsDb, setTunnelError, systemKey, tunnelConnecting } from './tunnelState'
+import { errorText } from '../core/errorText'
 
 // One source of truth per system and project: is the tunnel to its database open (tunnel manager),
 // is a database session connected, did something fail. The shell polls the tunnel state of every
@@ -125,7 +126,7 @@ export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Recor
                 setTunnelError(null, key)
               } catch (e) {
                 failedAt.current.set(key, Date.now())
-                setTunnelError(e instanceof Error ? e.message : String(e), key)
+                setTunnelError(errorText(e), key)
               } finally {
                 tunnelConnecting(false, key)
               }

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { ForgeApi } from '../api/ForgeApi'
-import type { CommitFile, DiffTarget, GitCommit, GitOutput, ScmFile } from '../wire/types'
-import { confirmDialog, promptDialog } from '../shell/dialogService'
-import { notify } from '../shell/notifications'
+import type { ForgeApi } from '../../api/ForgeApi'
+import type { CommitFile, DiffTarget, GitCommit, GitOutput, ScmFile } from '../../wire/types'
+import { confirmDialog, promptDialog } from '../../core/dialogService'
+import { notify } from '../../core/notifications'
 import { codeOf, GIT_CODE_LABEL, refreshScm, useScm } from './scmStore'
+import { errorText } from '../../core/errorText'
 
 // Source Control, docked like the Source Control view of VS Code: branch and Pull / Push / Sync on
 // top, the commit message with Commit, the staged and the other changes with stage / unstage /
@@ -77,7 +78,7 @@ export function ScmPanel({
         if (result.ok && options.reloadTree) onChanged()
         return result.ok
       } catch (e) {
-        notify(e instanceof Error ? e.message : String(e), { kind: 'error', timeoutMs: 10000 })
+        notify(errorText(e), { kind: 'error', timeoutMs: 10000 })
         return false
       } finally {
         await refreshScm(api, root)
@@ -133,7 +134,7 @@ export function ScmPanel({
       const files = await api.scmCommitFiles(root, hash)
       setCommitFiles((prev) => ({ ...prev, [hash]: files }))
     } catch (e) {
-      notify(e instanceof Error ? e.message : String(e), { kind: 'error' })
+      notify(errorText(e), { kind: 'error' })
     }
   }
 

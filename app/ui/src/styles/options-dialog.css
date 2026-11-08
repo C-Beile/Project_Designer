@@ -1,0 +1,133 @@
+/* ---- 0.7.0: Options dialog (screenshots 037/038) ---- */
+
+.forge-modal:has(.forge-options) {
+  width: min(880px, calc(100vw - 32px));
+}
+
+.forge-options {
+  display: flex;
+  flex-direction: column;
+  height: min(540px, calc(100vh - 160px));
+}
+
+.forge-opt-cats {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.forge-opt-cat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 74px;
+  padding: 6px 10px 4px;
+  background: transparent;
+  color: var(--fg);
+  border: none;
+  border-bottom: 3px solid transparent;
+}
+
+.forge-opt-cat.is-active {
+  background: var(--bg-panel);
+  border-bottom-color: var(--brand-underline);
+}
+
+.forge-opt-glyph {
+  font-size: 20px;
+  line-height: 24px;
+  color: var(--accent);
+}
+
+.forge-opt-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 4px 0 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.forge-opt-page {
+  padding: 3px 12px;
+  background: transparent;
+  color: var(--fg-muted);
+  border: none;
+  border-bottom: 2px solid transparent;
+}
+
+.forge-opt-page.is-active {
+  color: var(--fg);
+  border-bottom-color: var(--brand-underline);
+}
+
+.forge-opt-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.forge-opt-row {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.forge-opt-hint {
+  grid-column: 2;
+}
+
+.forge-opt-body input[type="text"],
+.forge-opt-body input[type="number"],
+.forge-opt-body input[type="password"],
+.forge-opt-body select {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  padding: 2px 6px;
+}
+
+.forge-opt-group {
+  border: 1px solid var(--border);
+  padding: 6px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.forge-opt-check {
+  display: flex;
+  flex-direction: column;
+}
+
+.forge-opt-scroll {
+  max-height: 340px;
+  overflow: auto;
+  border: 1px solid var(--border);
+}
+
+.forge-opt-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.forge-opt-table th,
+.forge-opt-table td {
+  padding: 2px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.forge-opt-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+}

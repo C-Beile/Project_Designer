@@ -1,0 +1,21 @@
+/* ===== Git Branches popup ===== */
+
+.forge-branch-popup > header { display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: left; padding: 8px 12px; font-weight: 600; }
+
+.forge-branch-current { padding: 1px 9px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 25%, transparent); font-size: 11px; font-weight: 600; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.forge-branch-filter { margin: 8px 10px 4px; height: 26px; padding: 0 10px; box-sizing: border-box; border-radius: 5px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); }
+
+.forge-branch-filter:focus { outline: none; border-color: var(--focus-ring, var(--accent)); }
+
+.forge-branch-list h4 { display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.05em; font-size: 10.5px; color: var(--fg-muted); }
+
+.forge-branch-count { padding: 0 7px; border-radius: 9px; background: color-mix(in srgb, var(--fg) 12%, transparent); font-size: 10px; letter-spacing: 0; }
+
+.forge-branch-item { align-items: center; border-radius: 4px; margin: 0 4px; width: calc(100% - 8px); }
+
+.forge-branch-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.forge-branch-check { margin-right: 6px; color: var(--accent); font-weight: 700; }
+
+.forge-branch-arrow { opacity: 0.4; flex: 0 0 auto; padding-left: 8px; }

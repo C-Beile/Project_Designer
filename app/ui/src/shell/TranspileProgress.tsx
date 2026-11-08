@@ -1,3 +1,5 @@
+import { ProgressBar } from '../core/ui'
+
 // Progress of a running build: a small panel in the corner. It does not block the window, so work in
 // the Designer goes on while the build runs. The built-in transpiler reports how far it is: a bar
 // with the percentage and the stage that runs now. The official transpiler reports nothing, so it
@@ -19,13 +21,7 @@ export function TranspileProgress({ label, onCancel, progress }: { label: string
         </button>
       </div>
       <p>{progress ? progress.stage : label}</p>
-      {progress ? (
-        <div className="forge-progress-bar" role="progressbar" aria-label="Build progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent}>
-          <div className="forge-progress-bar-fill" style={{ width: `${progress.percent}%` }} />
-        </div>
-      ) : (
-        <div className="forge-progress-stripe" role="progressbar" aria-label="Build running" aria-busy="true" />
-      )}
+      <ProgressBar percent={progress?.percent} label={progress ? 'Build progress' : 'Build running'} />
     </div>
   )
 }

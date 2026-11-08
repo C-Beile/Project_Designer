@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { NewObjectKind } from '../wire/types'
 import { localNameError } from '../tree/nameRules'
-import { Modal } from './Dialogs'
+import { Modal } from '../core/Modal'
 import { TypeCombo } from './TypeCombo'
+import { errorText } from '../core/errorText'
 
 // "Create New Model" (DESIGNER_BEHAVIOR_SPEC.md 4.2): project, type and name. The Finish button stays off
 // until the name passes all checks, a project is chosen and the type is supported. A type with a fixed name
@@ -87,7 +88,7 @@ export function NewObjectDialog({
       const aod = await api.createObject(project, kind.folder, fixedName ?? name, kind.needs_title ? title.trim() : null, kind.reference_label && reference.trim() ? reference.trim() : null)
       onCreated(aod, kind.folder, fixedName ?? name)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     }
   }
 

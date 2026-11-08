@@ -73,6 +73,8 @@ export interface ForgeApi {
   detectDesignerInstall(): Promise<string | null>
   // P8 status bar: checked-out Git branch of the open project, `null` outside a repository.
   getCurrentBranch(projectRoot: string): Promise<string | null>
+  /** Welche Backend-Plugins gibt es? Fehlt die Methode (Tests), gelten alle als vorhanden. */
+  pluginList?(): Promise<{ id: string; name: string; available: boolean }[]>
   // P8 step 3: the Properties panel of an object (`path` '$') or of one element inside it, with
   // all properties the installed Designer knows for it, grouped and described.
   getPropertySheet(nodeId: string, path: string): Promise<PropertySheet>

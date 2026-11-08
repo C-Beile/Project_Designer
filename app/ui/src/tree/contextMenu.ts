@@ -1,4 +1,4 @@
-import { formatShortcut } from '../shell/shortcuts'
+import { formatShortcut } from '../core/shortcuts'
 import type { TreeNode } from '../wire/types'
 
 // Context menus of the Projects tree, entry for entry as in the original (LAYOUT_SPEC section 10a).

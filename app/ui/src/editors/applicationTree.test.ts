@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { KIND_CONTEXT, KIND_GROUP, addChild, moveNode, nodeAt, parseApplicationTree, removeNode, setNodeField, validateReferences } from './applicationTree'
 
 // Real files of the corpus fixtures: Vendira_basic is LF, Pichler uses CRLF line endings.
-const FIXTURES = resolve(__dirname, '../../../../crates/aod-io/tests/fixtures')
+const FIXTURES = resolve(__dirname, '../../../../crates/aod/tests/fixtures')
 const load = (project: string) => readFileSync(resolve(FIXTURES, project, 'application/_____SYSTEM_APPLICATION_NEON/_____SYSTEM_APPLICATION_NEON.aod'), 'utf-8')
 
 function wellFormed(text: string): boolean {

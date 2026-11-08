@@ -1,0 +1,21 @@
+/* ---- Commit window: the tree takes the free height, the message sits at the bottom (also in an own window) ---- */
+
+.forge-modal-body:has(> .forge-git), .forge-os-dialog .forge-modal-body:has(> .forge-git) { display: flex; flex-direction: column; padding: 12px 14px; }
+
+.forge-git { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+
+.forge-git > .forge-commit { flex: 1 1 auto; min-height: 0; grid-template-rows: minmax(0, 1fr); }
+
+.forge-commit-main { min-height: 0; }
+
+.forge-commit-treebox { flex: 1 1 auto; min-height: 120px; background: var(--bg-inset); border-color: var(--border); border-radius: 3px; }
+
+.forge-commit-message { flex: 0 0 auto; height: 120px; min-height: 70px; border-radius: 3px; border-color: var(--border); background: var(--bg-inset); }
+
+.forge-commit-author input { border-radius: 3px; border-color: var(--border); background: var(--bg-inset); }
+
+.forge-commit-toolbar button { border-radius: 3px; cursor: pointer; }
+
+.forge-commit-row { min-height: 26px; }
+
+.forge-os-dialog .forge-modal-footer:has(.is-primary) { background: transparent; border-top: none; }

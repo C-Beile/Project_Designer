@@ -1,0 +1,88 @@
+/* ---- 0.7.0: Scan Services window (screenshot 170), picker ---- */
+
+.forge-scan-bar button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid transparent;
+  border-radius: 2px;
+}
+
+.forge-scan-bar button:hover:not(:disabled),
+.forge-scan-bar button[aria-pressed="true"] {
+  background: var(--bg-panel);
+  border-color: var(--border-strong);
+}
+
+.forge-scan-actions button {
+  padding: 1px 10px;
+  background: var(--bg-panel);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+}
+
+.forge-scan-actions button:disabled {
+  opacity: 0.4;
+}
+
+.forge-scan-task.is-selected {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.forge-scan-task.is-ignored {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.forge-scan-task.is-error .forge-scan-icon {
+  color: var(--error);
+}
+
+.forge-scan-task.is-warning .forge-scan-icon {
+  color: var(--warning);
+}
+
+.psheet-picker input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg);
+  color: var(--fg);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 4px 6px;
+}
+
+.psheet-picker li {
+  padding: 2px 8px;
+}
+
+.psheet-picker li.is-selected {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.psheet-picker li.is-current {
+  font-weight: 700;
+}
+
+.tunnel-status.is-error {
+  color: #f85149;
+}
+
+.tunnel-status.is-busy {
+  color: #d29922;
+}
+
+.tunnel-auth {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.tunnel-auth input {
+  width: 200px;
+}

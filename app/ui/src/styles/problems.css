@@ -1,0 +1,80 @@
+/* ---- 0.7.0: Problems tab, badges, status ---- */
+
+.forge-problems-bar input[type="text"] {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  height: 20px;
+  padding: 0 4px;
+}
+
+.forge-problems-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.forge-problems-table th {
+  position: sticky;
+  top: 27px;
+  padding: 2px 8px;
+  text-align: left;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  font-weight: 500;
+}
+
+.forge-problems-table td {
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  max-width: 560px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forge-problem-row:hover,
+.forge-problem-row.is-selected {
+  background: var(--bg-panel);
+}
+
+.forge-problem-row.is-error .forge-problem-icon {
+  color: var(--error);
+}
+
+.forge-problem-row.is-warning .forge-problem-icon {
+  color: var(--warning);
+}
+
+.project-tree-problem {
+  margin-left: 6px;
+  font-size: 9px;
+}
+
+.project-tree-problem.is-error,
+.forge-tab-error {
+  color: var(--error);
+}
+
+.project-tree-problem.is-warning {
+  color: var(--warning);
+}
+
+.forge-tab-error {
+  margin-left: 4px;
+  font-size: 9px;
+}
+
+.forge-status-errors {
+  padding: 0 6px;
+  background: transparent;
+  color: var(--fg-muted);
+  border: none;
+  cursor: pointer;
+}
+
+.forge-status-errors.has-errors {
+  color: var(--error);
+  font-weight: 600;
+}

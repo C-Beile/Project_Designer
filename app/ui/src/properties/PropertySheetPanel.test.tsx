@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { PropertySheetPanel } from './PropertySheetPanel'
 import { createMockForgeApi } from '../test/mockApi'
-import { DialogHost } from '../shell/dialogService'
+import { DialogHost } from '../core/dialogService'
 import type { PropertySheet, WireValue } from '../wire/types'
 
 vi.mock('monaco-editor', () => import('../test/monacoMock'))

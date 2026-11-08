@@ -1,0 +1,85 @@
+/* ---- all dialogs: one structure (title bar, form grid, option groups, footer strip) ---- */
+
+.forge-modal { border-radius: 6px; overflow: hidden; }
+
+.forge-modal-title { padding: 8px 14px; background: var(--bg-panel); font-size: 13px; letter-spacing: 0.01em; }
+
+.forge-modal-body, .forge-os-dialog .forge-modal-body { padding: 16px 18px; }
+
+.forge-modal-body .forge-deploy,
+.forge-modal-body .forge-dialog-form { display: flex; flex-direction: column; gap: 10px; }
+
+.forge-modal-body .forge-field,
+.forge-os-dialog .forge-field { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 4px 12px; }
+
+.forge-modal-body .forge-field > :not(:first-child):not(.forge-field-row),
+.forge-os-dialog .forge-field > :not(:first-child):not(.forge-field-row) { min-width: 0; }
+
+.forge-modal-body .forge-field > .forge-field-hint,
+.forge-modal-body .forge-field > .forge-field-error,
+.forge-os-dialog .forge-field > .forge-field-hint,
+.forge-os-dialog .forge-field > .forge-field-error { grid-column: 2; }
+
+.forge-modal-body .forge-field > :first-child,
+.forge-os-dialog .forge-field > :first-child { color: var(--fg-muted); }
+
+.forge-modal-body input[type='text'], .forge-modal-body input[type='search'], .forge-modal-body input[type='password'],
+.forge-modal-body input[type='number'], .forge-modal-body select, .forge-modal-body textarea,
+.forge-os-dialog input[type='text'], .forge-os-dialog input[type='search'], .forge-os-dialog input[type='password'],
+.forge-os-dialog input[type='number'], .forge-os-dialog select, .forge-os-dialog textarea {
+  box-sizing: border-box;
+  min-height: 26px;
+  padding: 3px 8px;
+  background: var(--bg-inset);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font: inherit;
+}
+
+.forge-modal-body select, .forge-os-dialog select { width: 100%; }
+
+.forge-modal-body input:focus, .forge-modal-body select:focus, .forge-modal-body textarea:focus,
+.forge-os-dialog input:focus, .forge-os-dialog select:focus, .forge-os-dialog textarea:focus {
+  outline: none;
+  border-color: var(--focus-ring, var(--accent));
+  box-shadow: 0 0 0 1px var(--focus-ring, var(--accent));
+}
+
+.forge-modal-body input[type='checkbox'], .forge-modal-body input[type='radio'],
+.forge-os-dialog input[type='checkbox'], .forge-os-dialog input[type='radio'] { accent-color: var(--accent); width: 14px; height: 14px; margin: 0; flex: none; }
+
+.forge-modal-body .forge-check, .forge-os-dialog .forge-check { display: flex; align-items: center; gap: 8px; min-height: 22px; cursor: default; }
+
+.forge-modal-body .forge-check:has(input:disabled), .forge-os-dialog .forge-check:has(input:disabled) { opacity: 0.55; }
+
+.forge-check-hint { display: block; margin: -2px 0 2px 22px; color: var(--fg-muted); font-size: 11px; }
+
+.forge-modal-body .forge-field-error, .forge-os-dialog .forge-field-error {
+  margin: 0;
+  padding: 6px 10px;
+  border-left: 3px solid var(--error);
+  border-radius: 0 3px 3px 0;
+  background: color-mix(in srgb, var(--error) 12%, transparent);
+}
+
+.forge-modal-body .forge-field-hint, .forge-os-dialog .forge-field-hint { font-size: 12px; line-height: 1.45; }
+
+.forge-modal-footer, .forge-os-dialog .forge-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+}
+
+.forge-os-dialog .forge-modal-footer { margin: 0 -12px -10px; }
+
+.forge-modal-footer button, .forge-os-dialog .forge-modal-footer button { min-width: 76px; padding: 4px 14px; border-radius: 3px; font: inherit; cursor: pointer; }
+
+.forge-modal-footer button:not(:disabled):hover { background: color-mix(in srgb, var(--fg) 10%, var(--bg-panel)); }
+
+.forge-modal-footer button.is-primary { background: var(--button-bg, var(--selection)); color: var(--button-fg, #fff); border-color: var(--button-bg, var(--selection)); }
+
+.forge-modal-footer button.is-primary:not(:disabled):hover { filter: brightness(1.12); background: var(--button-bg, var(--selection)); }

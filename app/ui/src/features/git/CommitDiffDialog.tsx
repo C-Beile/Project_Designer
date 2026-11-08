@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type * as Monaco from 'monaco-editor'
-import type { ForgeApi } from '../api/ForgeApi'
-import type { DiffContent } from '../wire/types'
-import { Modal } from './Dialogs'
+import type { ForgeApi } from '../../api/ForgeApi'
+import type { DiffContent } from '../../wire/types'
+import { Modal } from '../../core/Modal'
+import { errorText } from '../../core/errorText'
 
 // "Show Changes" of the commit window: the committed version (HEAD) against the working copy of one
 // file, side by side and read-only, with the whitespace choice of the original Designer.
@@ -25,7 +26,7 @@ export function CommitDiffDialog({ api, root, path, onClose }: { api: ForgeApi; 
     api
       .scmDiff(root, path, 'unstaged', null)
       .then((c) => !cancelled && setContent(c))
-      .catch((e) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
+      .catch((e) => !cancelled && setError(errorText(e)))
     return () => {
       cancelled = true
     }
@@ -36,7 +37,7 @@ export function CommitDiffDialog({ api, root, path, onClose }: { api: ForgeApi; 
     if (!host || !content || content.binary || content.too_large) return
     let disposed = false
     let cleanup = () => {}
-    void Promise.all([import('monaco-editor'), import('../theme/monacoTheme'), import('../tabs/TextFileEditor'), import('../theme/monacoWorkers').then((w) => w.ensureMonacoWorkers())]).then(([monaco, theme, text]) => {
+    void Promise.all([import('monaco-editor'), import('../../theme/monacoTheme'), import('../../tabs/TextFileEditor'), import('../../theme/monacoWorkers').then((w) => w.ensureMonacoWorkers())]).then(([monaco, theme, text]) => {
       const { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForgeThemeForMonaco } = theme
       const { languageForFile } = text
       if (disposed || !hostRef.current) return

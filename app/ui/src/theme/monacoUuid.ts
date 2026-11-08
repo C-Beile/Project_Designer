@@ -1,5 +1,5 @@
 import * as monaco from 'monaco-editor'
-import { newUuid } from '../shell/uuid'
+import { newUuid } from '../core/uuid'
 
 // "Generate" menu of the original Designer (Alt+Ins > UUID): inserts a new UUID at the caret or
 // over the selection. Read-only editors are left alone.

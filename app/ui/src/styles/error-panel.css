@@ -1,0 +1,201 @@
+/* ---- 1.0.0-rc2: error panel instead of a silent crash ---- */
+
+.forge-error-panel {
+  padding: 16px;
+  max-width: 720px;
+}
+
+.forge-error-detail {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  padding: 8px;
+  max-height: 160px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-size: 12px;
+}
+
+.forge-error-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.system-db-unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 28px auto;
+  color: var(--fg-muted);
+}
+
+.system-db-icon {
+  position: relative;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.system-db-banned {
+  position: absolute;
+  right: -10px;
+  bottom: -6px;
+  font-size: 30px;
+  color: var(--error);
+}
+
+.system-db-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.system-db-bar {
+  margin: 6px 0;
+}
+
+.dashlet-box label {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  align-items: center;
+  column-gap: 8px;
+  color: var(--fg-muted);
+}
+
+.dashlet-box input {
+  border-color: transparent;
+  background: transparent;
+  padding: 1px 2px;
+}
+
+.dashlet-box input:hover,
+.dashlet-box input:focus {
+  border-color: var(--border-strong);
+  background: var(--bg);
+}
+
+/* Git decorations: colour of changed rows in the tree and the tabs, letter badge, editor gutter. */
+:root {
+  --git-modified: #e2c08d;
+  --git-added: #81b88b;
+  --git-deleted: #c74e39;
+  --git-untracked: #73c991;
+  --git-conflict: #e4676b;
+}
+
+[data-git='M'] { --git-color: var(--git-modified); }
+
+[data-git='A'], [data-git='R'] { --git-color: var(--git-added); }
+
+[data-git='U'] { --git-color: var(--git-untracked); }
+
+[data-git='D'] { --git-color: var(--git-deleted); }
+
+[data-git='C'] { --git-color: var(--git-conflict); }
+
+.project-tree [data-git] .project-tree-label,
+.forge-tab[data-git] .forge-tab-label,
+.scm-row[data-git] .scm-name {
+  color: var(--git-color);
+}
+
+.git-badge {
+  margin-left: auto;
+  padding: 0 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--git-color);
+}
+
+.forge-panel-tab-badge {
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--brand-teal, #00b7be);
+  color: #04202a;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.forge-git-gutter-added { background: var(--git-added); width: 3px !important; margin-left: 3px; }
+
+.forge-git-gutter-modified { background: var(--git-modified); width: 3px !important; margin-left: 3px; }
+
+.forge-git-gutter-deleted { border-top: 4px solid var(--git-deleted); width: 0 !important; margin-left: 3px; }
+
+/* Source Control panel */
+.scm-panel { display: flex; flex-direction: column; height: 100%; overflow: auto; font-size: 12px; }
+
+.scm-head { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+
+.scm-branch { background: none; border: none; color: var(--fg); cursor: pointer; font: inherit; font-weight: 600; text-align: left; }
+
+.scm-sync-state { color: var(--fg-muted); font-weight: 400; }
+
+.scm-head-actions { margin-left: auto; display: flex; gap: 2px; }
+
+.scm-head-actions button, .scm-actions button, .scm-section-action { background: none; border: none; color: var(--fg); cursor: pointer; padding: 0 5px; font-size: 14px; }
+
+.scm-head-actions button:hover, .scm-actions button:hover, .scm-section-action:hover { background: var(--hover, rgba(255, 255, 255, 0.1)); }
+
+.scm-branches { display: flex; flex-direction: column; max-height: 220px; overflow: auto; border-bottom: 1px solid var(--border); }
+
+.scm-branch-item { background: none; border: none; color: var(--fg); text-align: left; padding: 2px 10px; cursor: pointer; font: inherit; }
+
+.scm-branch-item:hover { background: var(--hover, rgba(255, 255, 255, 0.1)); }
+
+.scm-branch-item.is-remote { color: var(--fg-muted); }
+
+.scm-commit { padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+
+.scm-commit input { width: 100%; box-sizing: border-box; }
+
+.scm-commit-buttons { display: flex; gap: 6px; }
+
+.scm-section header { display: flex; align-items: center; padding: 2px 4px; background: var(--bg-panel-header, rgba(255, 255, 255, 0.04)); }
+
+.scm-twisty { flex: 1; background: none; border: none; color: var(--fg); text-align: left; cursor: pointer; font: inherit; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+
+.scm-count { color: var(--fg-muted); padding: 0 6px; }
+
+.scm-row { display: flex; align-items: center; gap: 6px; height: 22px; padding: 0 6px 0 14px; cursor: pointer; white-space: nowrap; }
+
+.scm-row:hover { background: var(--hover, rgba(255, 255, 255, 0.07)); }
+
+.scm-name { overflow: hidden; text-overflow: ellipsis; }
+
+.scm-dir { color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; font-size: 11px; }
+
+.scm-actions { display: none; }
+
+.scm-code { width: 14px; text-align: center; font-weight: 700; color: var(--git-color); }
+
+.scm-commit-row { border-bottom: 1px solid var(--border); }
+
+.scm-commit-line { display: flex; flex-direction: column; width: 100%; background: none; border: none; color: var(--fg); text-align: left; padding: 3px 8px; cursor: pointer; font: inherit; }
+
+.scm-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.scm-meta { color: var(--fg-muted); font-size: 10px; }
+
+.scm-commit-files { padding-left: 8px; }
+
+.scm-diff-head { display: flex; justify-content: space-between; gap: 12px; padding: 3px 10px; font-size: 11px; color: var(--fg-muted); border-bottom: 1px solid var(--border); }
+
+.scm-diff-path { color: var(--fg); }
+
+.scm-diff .forge-monaco-host { flex: 1; min-height: 0; }
+
+/* Dialogs and panels in their own operating-system window. */
+.forge-os-dialog-frame { position: fixed; inset: 0; display: flex; background: var(--bg-panel, var(--bg)); }
+
+.forge-os-dialog { display: flex; flex-direction: column; flex: 1; min-width: 0; padding: 10px 12px; box-sizing: border-box; color: var(--fg); }
+
+.forge-os-dialog .forge-modal-body { flex: 1; min-height: 0; overflow: auto; }
+
+.forge-os-dialog .forge-modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 10px; }
+
+.forge-float { display: flex; flex-direction: column; height: 100vh; background: var(--bg); color: var(--fg); }
+
+.forge-float-bar { display: flex; align-items: center; gap: 8px; padding: 3px 8px; border-bottom: 1px solid var(--border); font-size: 12px; }
+
+.forge-float-body { flex: 1; min-height: 0; overflow: auto; }

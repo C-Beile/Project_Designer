@@ -1,0 +1,98 @@
+/* ---- rc5: system editor list and users grid ---- */
+
+.system-editor-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.alias-table {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+.alias-body {
+  overflow: auto;
+  flex: 1 1 auto;
+}
+
+.alias-head {
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+}
+
+.alias-refresh {
+  background: none;
+  border: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.alias-row:nth-child(even) {
+  background: var(--bg-inset);
+}
+
+.alias-row.is-selected {
+  background: var(--selection, #1d3b53);
+}
+
+.alias-cell-icon {
+  display: flex;
+  justify-content: center;
+  color: var(--fg-muted);
+}
+
+.alias-outdated {
+  color: var(--error);
+  font-size: 11px;
+  margin: 2px 4px;
+}
+
+.system-diagnosis {
+  margin: 6px 4px;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.users-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 6px;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 1;
+}
+
+.users-count {
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.users-pager {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.users-grid {
+  width: 100%;
+  table-layout: auto;
+}
+
+.users-grid th {
+  background: var(--bg-panel);
+  padding: 0;
+  position: sticky;
+  top: 30px;
+}
+
+.users-grid .users-check {
+  text-align: center;
+  width: 64px;
+}

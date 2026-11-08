@@ -1,0 +1,12 @@
+.forge-output-btn:hover:not(:disabled) {
+  background: var(--bg-panel);
+  border-color: var(--border);
+}
+
+.forge-output-btn:disabled {
+  opacity: 0.35;
+}
+
+.forge-output-main .forge-output-log {
+  flex: 1 1 auto;
+}

@@ -1,0 +1,11 @@
+.entity-editor th,
+.entity-editor td {
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  text-align: left;
+}
+
+.entity-toolbar button:hover:not(:disabled) {
+  background: var(--bg-panel);
+  border-color: var(--border);
+}

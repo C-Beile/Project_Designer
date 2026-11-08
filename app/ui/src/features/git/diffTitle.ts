@@ -1,4 +1,4 @@
-import type { DiffTarget } from '../wire/types'
+import type { DiffTarget } from '../../wire/types'
 
 export const SIDE_LABEL = { unstaged: ['Index', 'Working Tree'], staged: ['HEAD', 'Index'], commit: ['Parent', 'Commit'] } as const
 

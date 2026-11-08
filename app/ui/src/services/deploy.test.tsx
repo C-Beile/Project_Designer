@@ -6,7 +6,7 @@ import { DeployDialog } from '../shell/DeployDialog'
 import { diffRows } from '../shell/DeployDiffDialog'
 import { ServicesPanel } from './ServicesPanel'
 import { UsersTab, SystemAliasConfigs } from './UsersTable'
-import { newUuid } from '../shell/uuid'
+import { newUuid } from '../core/uuid'
 import { createMockForgeApi } from '../test/mockApi'
 import type { AliasConfigTable, DbStatus, DeployOverview, DeployPlan, TableDump } from '../wire/types'
 

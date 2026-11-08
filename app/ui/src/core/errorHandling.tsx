@@ -2,7 +2,8 @@ import { Component, useEffect, useState } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { isTauriRuntime } from '../chrome/tauriWindow'
-import { Modal } from './Dialogs'
+import { Modal } from './Modal'
+import { errorText } from './errorText'
 
 // No silent failures: a render crash of one editor shows an error panel inside that editor area
 // (the rest of the app keeps working), a crash of the whole shell shows a full-window message, and
@@ -22,7 +23,7 @@ export function isBenignWindowError(message: string): boolean {
 // Monaco's JSON service asks a worker that has no schema handler (resetSchema); the editor keeps
 // working, so this must neither fill the log nor open a crash dialog.
 export function isBenignRejection(reason: unknown): boolean {
-  const text = reason instanceof Error ? reason.message : String(reason)
+  const text = errorText(reason)
   return /Missing requestHandler or method: (resetSchema|\$?[A-Za-z]*[Ss]chema\w*)/.test(text)
 }
 

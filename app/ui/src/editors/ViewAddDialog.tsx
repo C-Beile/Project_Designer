@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Modal } from '../shell/Dialogs'
+import { Modal } from '../core/Modal'
 import { acceptsEntityFields } from './viewFields'
 
 // "Add..." of the view preview: puts something into the open view. Two things are offered because

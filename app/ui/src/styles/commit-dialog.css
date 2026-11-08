@@ -1,0 +1,184 @@
+/* ---- Commit dialog of the original Designer (reference shots 61, 62, 66): layout; colours stay on the app palette ---- */
+
+.forge-modal:has(.forge-commit) {
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  max-height: none;
+  border-radius: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.forge-modal:has(.forge-commit) .forge-modal-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.forge-git,
+.forge-commit {
+  flex: 1;
+  min-height: 0;
+}
+
+.forge-commit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 8px 18px;
+}
+
+.forge-commit-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.forge-commit-toolbar {
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.forge-commit-toolbar button {
+  width: 30px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.forge-commit-toolbar button:hover,
+.forge-commit-toolbar button.is-active {
+  background: var(--bg-panel);
+}
+
+.forge-commit-treebox {
+  flex: 1;
+  max-height: none;
+  min-height: 160px;
+  border: 1px solid var(--border-strong);
+  padding: 2px 4px;
+  overflow: auto;
+}
+
+.forge-commit-tree .forge-commit-tree {
+  padding-left: 14px;
+}
+
+.forge-commit-row {
+  min-height: 24px;
+  gap: 6px;
+}
+
+.forge-commit-file {
+  padding-left: 20px;
+}
+
+.forge-commit-name.is-modified {
+  color: var(--accent);
+}
+
+.forge-commit-name.is-new {
+  color: var(--success);
+}
+
+.forge-commit-count {
+  color: var(--fg-muted);
+}
+
+.forge-commit-row input[type='checkbox'] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+}
+
+.forge-titled-rule {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 6px;
+  color: var(--fg);
+}
+
+.forge-titled-rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.forge-commit-message {
+  width: 100%;
+  min-height: 110px;
+  box-sizing: border-box;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 0;
+  padding: 6px;
+  font: inherit;
+  resize: vertical;
+}
+
+.forge-commit-side {
+  gap: 0;
+}
+
+.forge-commit-author {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 4px 18px;
+}
+
+.forge-commit-author input {
+  background: var(--bg);
+  color: var(--fg-muted);
+  font-style: italic;
+  border: 1px solid var(--border-strong);
+  border-radius: 0;
+  padding: 3px 6px;
+}
+
+.forge-commit-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 26px;
+}
+
+.forge-modal:has(.forge-commit) .forge-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border: none;
+  padding: 8px 14px 12px;
+}
+
+.forge-modal:has(.forge-commit) .forge-modal-footer button {
+  min-width: 92px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 0;
+  color: var(--fg);
+  padding: 5px 14px;
+}
+
+.forge-modal:has(.forge-commit) .forge-modal-footer button.is-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--selected-fg);
+}
+
+.forge-modal:has(.forge-commit) .forge-modal-footer button:disabled {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--fg-muted);
+}

@@ -1,0 +1,39 @@
+/* ---- Config editor like the original (shots 15/16): plain Name | Value rows, 50 % split, description area ---- */
+
+.alias-config-panel .forge-props-row { grid-template-columns: minmax(120px, 50%) minmax(0, 1fr); min-height: 20px; font-size: 12px; border-top-color: color-mix(in srgb, var(--border) 38%, transparent); }
+
+.alias-config-panel .forge-props-name { padding: 1px 6px 1px 16px; }
+
+.alias-config-panel .forge-props-value { padding: 1px 8px; }
+
+.alias-config-panel .forge-props-input {
+  height: 18px;
+  margin: 0;
+  padding: 0 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0;
+  font: inherit;
+}
+
+.alias-config-panel .forge-props-row:hover .forge-props-input { border-color: var(--border); background: var(--bg-inset); }
+
+.alias-config-panel .forge-props-input:focus { background: var(--bg-inset); border-color: var(--focus-ring, var(--accent)); }
+
+.alias-config-panel .forge-props-row.is-draft .forge-props-input { border-color: var(--warning); background: color-mix(in srgb, var(--warning) 10%, transparent); }
+
+.alias-config-panel input[type='checkbox'] { margin: 0 8px; }
+
+.alias-config-panel .alias-config-desc { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 0; padding: 6px 10px; border-top: 1px solid var(--border); background: transparent; }
+
+.alias-config-panel .alias-config-desc strong { font-size: 12px; }
+
+.alias-config-panel .alias-config-desc .forge-field-hint { margin-left: auto; padding: 0; font-size: 11px; }
+
+.alias-config-state { order: 2; margin-left: auto; width: 12px; height: 12px; border-radius: 50%; background: var(--border-strong); }
+
+.alias-config-desc .forge-field-hint { order: 1; }
+
+.alias-config-tab .alias-config-panel { display: flex; flex-direction: column; }
+
+.alias-config-tab .alias-config-panel .alias-config-desc { margin-top: auto; position: sticky; bottom: 0; background: var(--bg); }

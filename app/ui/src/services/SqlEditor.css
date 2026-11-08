@@ -1,0 +1,56 @@
+.forge-sql-confirm pre {
+  margin: 4px 0;
+  max-height: 80px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.forge-sql-grid table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.forge-sql-toolbar button.forge-sql-ibtn {
+  padding: 0 4px;
+  background: transparent;
+  border-color: transparent;
+}
+
+.forge-sql-ibtn:disabled {
+  opacity: 0.35;
+}
+
+.forge-sql-history-head strong {
+  flex: 1;
+}
+
+.forge-sql-history li button {
+  display: block;
+  width: 100%;
+  padding: 3px 8px;
+  text-align: left;
+  background: transparent;
+  color: var(--fg);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forge-sql-history li button:hover {
+  background: var(--bg-panel);
+}
+
+.forge-sql-grid td input {
+  width: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--focus-ring);
+}
+
+.forge-sql-grid th {
+  cursor: default;
+}

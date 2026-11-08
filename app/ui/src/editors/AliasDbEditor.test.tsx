@@ -6,7 +6,7 @@ import { AliasDbEditor } from './AliasDbEditor'
 import type { WireValue } from '../wire/types'
 import { createMockForgeApi } from '../test/mockApi'
 
-// Mirrors THHIT_System_alias.aod's real shape (app/core/tests/fixtures/DemoProject/aliasDefinition) -
+// Mirrors THHIT_System_alias.aod's real shape (crates/aod/tests/fixtures/DemoProject/aliasDefinition) -
 // a small, single-table-free DB alias.
 function sampleDbAlias(): WireValue {
   return {

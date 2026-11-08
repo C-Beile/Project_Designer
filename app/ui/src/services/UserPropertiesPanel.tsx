@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { UserPropertyDto } from '../wire/types'
-import { confirmDialog } from '../shell/dialogService'
+import { confirmDialog } from '../core/dialogService'
 import { notifyUsersChanged, type UserSelection } from './userSelection'
+import { errorText } from '../core/errorText'
 
 // Properties panel of a user selected in the Users tab, laid out like the original Designer:
 // the tabs Properties, Extended and Internal; General, Security and Personal as sections. Values
@@ -65,7 +66,7 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
       return api.systemUserProperties(user)
     })()
       .then((p) => !cancelled && setProps(p))
-      .catch((e) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
+      .catch((e) => !cancelled && setError(errorText(e)))
     return () => {
       cancelled = true
     }
@@ -109,7 +110,7 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
       notifyUsersChanged()
       setTick((n) => n + 1)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     } finally {
       setSaving(false)
     }

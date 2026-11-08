@@ -1,7 +1,8 @@
-import { pathKey } from '../platform/pathKey'
+import { pathKey } from '../../platform/pathKey'
 import { useSyncExternalStore } from 'react'
-import type { ForgeApi } from '../api/ForgeApi'
-import type { ScmFile, ScmOverview } from '../wire/types'
+import type { ForgeApi } from '../../api/ForgeApi'
+import type { ScmFile, ScmOverview } from '../../wire/types'
+import { errorText } from '../../core/errorText'
 
 // One shared picture of the Git status of the active project: the Source Control panel, the colours
 // in the project tree and the editor tabs, the status bar and the editor gutters all read it. It is
@@ -54,7 +55,7 @@ export async function refreshScm(api: ForgeApi, root: string): Promise<void> {
     const overview = await api.scmStatus(root)
     if (ticket === inflight) set({ overview, error: null, loading: false, version: state.version + 1 })
   } catch (e) {
-    if (ticket === inflight) set({ overview: null, error: e instanceof Error ? e.message : String(e), loading: false, version: state.version + 1 })
+    if (ticket === inflight) set({ overview: null, error: errorText(e), loading: false, version: state.version + 1 })
   }
 }
 

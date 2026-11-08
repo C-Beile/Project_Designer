@@ -1,0 +1,13 @@
+.forge-editor-window { display: flex; flex-direction: column; height: 100vh; background: var(--bg); color: var(--fg); }
+
+.forge-ew-bar { display: flex; align-items: center; gap: 6px; padding: 3px 8px; border-bottom: 1px solid var(--border); font-size: 12px; }
+
+.forge-ew-grip { cursor: grab; padding: 0 4px; opacity: 0.7; user-select: none; }
+
+.forge-ew-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.forge-ew-fill { flex: 1; }
+
+.forge-ew-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+
+.forge-ew-status { padding: 2px 8px; border-top: 1px solid var(--border); font-size: 11px; min-height: 18px; opacity: 0.85; }

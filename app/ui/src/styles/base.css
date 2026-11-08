@@ -1,0 +1,60 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  /* LAYOUT_SPEC §11.8: density like the original Designer. */
+  font-size: 12px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: var(--border);
+  color: var(--fg);
+}
+
+/* Scrollbars - themed rather than left at the browser default, which would otherwise be the one
+   remaining light-on-dark seam even after the titlebar fix (WebKit-based Tauri webviews respect
+   these). */
+* {
+  scrollbar-color: var(--border-strong) var(--bg-panel);
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-panel);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 5px;
+}
+
+/* Visible, high-contrast keyboard focus ring everywhere - Night Owl's own `focusBorder` value is
+   near-invisible against --bg (see tokens.css comment), so this uses the AA-checked --focus-ring
+   token instead. Keeps "Fertig"-Kriterium 3 (fully keyboard-operable) visually honest: a focused
+   element that cannot be *seen* is not really keyboard-operable. */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}

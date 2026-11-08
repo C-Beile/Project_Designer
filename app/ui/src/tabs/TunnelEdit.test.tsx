@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { TunnelConfigEditor } from './TunnelConfigEditor'
-import { DialogHost, _resetDialogsForTests } from '../shell/dialogService'
+import { DialogHost, _resetDialogsForTests } from '../core/dialogService'
 import { createMockForgeApi } from '../test/mockApi'
 import type { DbStatus, TunnelRowDto } from '../wire/types'
 

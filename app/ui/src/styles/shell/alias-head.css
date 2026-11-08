@@ -1,0 +1,72 @@
+.nav-toggle {
+  flex: 0 0 12px;
+  text-align: center;
+  color: var(--fg-muted);
+}
+
+.nav-origin {
+  margin-left: 6px;
+  color: var(--fg-muted);
+}
+
+.nav-filter-row {
+  cursor: pointer;
+}
+
+.psheet-row.is-unset .psheet-value input,
+.psheet-row.is-unset .psheet-value select,
+.psheet-row.is-unset .psheet-text {
+  font-style: italic;
+  color: var(--fg-muted);
+}
+
+.psheet-pencil {
+  flex: 0 0 auto;
+}
+
+.alias-table {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  overflow: auto;
+  max-height: 60%;
+}
+
+.alias-head,
+.alias-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.alias-head {
+  background: var(--bg-panel);
+  font-size: 11px;
+  padding: 1px 4px;
+}
+
+.alias-row {
+  cursor: default;
+  padding: 2px 4px;
+}
+
+.alias-row.is-selected {
+  background: var(--selection, #1d3b53);
+}
+
+.alias-cell-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.alias-type {
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.alias-url {
+  color: var(--fg-muted);
+  font-size: 11px;
+  padding-left: 12px;
+}

@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { isMacPlatform } from '../shell/shortcuts'
+import { isMacPlatform } from '../core/shortcuts'
 import { useSshKeyPath } from '../settings/sshKey'
 import { setForwardsUp, setTunnelError, tunnelConnecting } from '../services/tunnelState'
 import type { ForgeApi } from '../api/ForgeApi'
-import { logOutput } from '../shell/outputBus'
+import { logOutput } from '../core/outputBus'
 import type { MenuEntry } from '../tree/contextMenu'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
-import { confirmDialog, promptDialog } from '../shell/dialogService'
+import { confirmDialog, promptDialog } from '../core/dialogService'
 import type { DbStatus, ForwardStatusDto, TunnelRowDto } from '../wire/types'
 import { TunnelPorts } from './TunnelPorts'
+import { errorText } from '../core/errorText'
 
 const VIEW_KEY = 'forge.tunnelView'
 
@@ -261,7 +262,7 @@ export function TunnelConfigEditor({
       setSelected(next.length - 1)
       setError(null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     }
   }
 
@@ -274,7 +275,7 @@ export function TunnelConfigEditor({
       setSelected(Math.max(0, Math.min(selected, next.length - 1)))
       setError(null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     }
   }
 
@@ -359,7 +360,7 @@ export function TunnelConfigEditor({
           onConnect={(list) => void (async () => { for (const r of list) await connectRow(r) })()}
           onDisconnect={(list) => void (async () => { for (const r of list) await disconnectRow(r) })()}
           onCopy={copy}
-          onBrowser={(url) => void api.openLocalUrl(url).catch((e) => setError(e instanceof Error ? e.message : String(e)))}
+          onBrowser={(url) => void api.openLocalUrl(url).catch((e) => setError(errorText(e)))}
         />
       ) : null}
       {rows && view === 'table' ? (

@@ -1,0 +1,73 @@
+.forge-titlebar {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  flex: 0 0 32px;
+  background: var(--bg-titlebar);
+  color: var(--fg-titlebar);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+  /* Falls back gracefully outside Tauri (plain browser preview during `npm run dev`) - this
+     attribute is inert HTML there, so the bar just isn't draggable, no error. */
+}
+
+/* Dimmed "inactive window" state, driven by chrome/TitleBar.tsx via tauriWindow.ts's
+   `watchWindowFocus` - mirrors what a native OS title bar does when the window loses focus,
+   using Night Owl's own titleBar.inactiveBackground token instead of leaving that cue unstyled. */
+.forge-titlebar[data-window-focused='false'] {
+  background: var(--bg-titlebar-inactive);
+  color: var(--fg-titlebar-inactive);
+}
+
+.forge-titlebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  height: 100%;
+}
+
+.forge-titlebar-logo {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.forge-titlebar-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.forge-titlebar-spacer {
+  flex: 1 1 auto;
+  height: 100%;
+}
+
+.forge-titlebar-controls {
+  display: flex;
+  height: 100%;
+  flex: 0 0 auto;
+}
+
+.forge-titlebar-btn {
+  width: 44px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--fg-titlebar);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.forge-titlebar-btn:hover {
+  background: var(--bg-panel);
+}
+
+.forge-titlebar-close:hover {
+  background: var(--error);
+  color: #ffffff;
+}

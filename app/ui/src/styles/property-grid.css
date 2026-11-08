@@ -1,0 +1,144 @@
+/* ---------------------------------------------------------------------------------------------
+   Property-grid consistency across every editor family
+   (ui-reference-car-training.md 3.3: "Identisches Zwei-Spalten-Muster (Label | Wert) über alle
+   Editortypen hinweg"). Every P4 editor already emits the same `<label>Field name<EditableText/>
+   </label>` markup (EntityFieldsEditor/SystemEditor/LanguageEditor/... all follow this shape) -
+   this rule turns that already-shared structure into the two-column label/value grid the real
+   Designer uses, for every editor at once, without touching a single editor's JSX/tests.
+   --------------------------------------------------------------------------------------------- */
+
+.entity-editor > label,
+.system-editor > label,
+.language-editor > label,
+.alias-db-editor > label,
+.preferences-editor > label,
+.preferences-editor-bank > label,
+.application-editor > label,
+.webservice-editor > label,
+.view-editor > label,
+.context-editor > label,
+.dashboard-editor > label,
+.report-editor > label {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) 1fr;
+  align-items: center;
+  column-gap: 12px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+
+.entity-editor input,
+.system-editor input,
+.language-editor input,
+.alias-db-editor input,
+.preferences-editor input,
+.application-editor input,
+.webservice-editor input,
+.view-editor input,
+.context-editor input,
+.dashboard-editor input,
+.report-editor input {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font: inherit;
+}
+
+.entity-editor input:focus-visible,
+.system-editor input:focus-visible,
+.language-editor input:focus-visible,
+.alias-db-editor input:focus-visible,
+.preferences-editor input:focus-visible,
+.application-editor input:focus-visible,
+.webservice-editor input:focus-visible,
+.view-editor input:focus-visible,
+.context-editor input:focus-visible,
+.dashboard-editor input:focus-visible,
+.report-editor input:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -1px;
+}
+
+.entity-editor h2,
+.system-editor h2,
+.language-editor h2,
+.alias-db-editor h2,
+.preferences-editor h2,
+.application-editor h2,
+.webservice-editor h2,
+.view-editor h2,
+.context-editor h2,
+.dashboard-editor h2,
+.report-editor h2 {
+  color: var(--fg);
+  border-bottom: 1px solid var(--border-strong);
+  padding-bottom: 6px;
+}
+
+.entity-editor table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.entity-editor th {
+  background: var(--bg-panel);
+  color: var(--fg-muted);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.system-editor-meta,
+.system-editor-readonly,
+.report-editor-meta,
+.report-editor-alias,
+.webservice-editor-meta {
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
+.report-editor-warning,
+.webservice-editor-warning {
+  color: var(--warning);
+}
+
+.diagnostic-error {
+  color: var(--error);
+}
+
+.diagnostic-warning {
+  color: var(--warning);
+}
+
+.diagnostics-panel {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+}
+
+.jdito-code-field-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: var(--bg-panel);
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.jdito-code-field-toolbar button {
+  background: var(--button-bg);
+  color: var(--button-fg);
+  border: none;
+  border-radius: 3px;
+  padding: 2px 10px;
+  cursor: pointer;
+  font: inherit;
+}

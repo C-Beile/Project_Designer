@@ -2,6 +2,7 @@ import type { PanelId } from './layoutState'
 import type { TranspilerEngineId } from '../settings/transpilerEngine'
 import { TOOLBAR_GROUPS, type ToolbarPrefs } from './toolbarPrefs'
 import type { EditorPrefs } from '../theme/editorPrefs'
+import { getMenuContributions } from '../core/plugins/registry'
 
 // Main menu as data. Content, order, separators and shortcuts follow the original Designer's
 // menus (LAYOUT_SPEC §9.1a, screenshots 27-35). Entries Forge cannot do yet stay visible at their
@@ -10,6 +11,7 @@ import type { EditorPrefs } from '../theme/editorPrefs'
 // by the focused text field itself (cut/copy/paste); the menu only shows them.
 
 export const NOT_YET_AVAILABLE = 'Not available yet'
+export const NO_PROJECT_HINT = 'Open a project first'
 
 export interface MenuItemDef {
   id: string
@@ -103,7 +105,7 @@ export interface MenuContext {
 let separatorCount = 0
 const sep = (): MenuItemDef => ({ id: `sep-${separatorCount++}`, kind: 'separator', label: '', enabled: false })
 
-function item(id: string, label: string, enabled: boolean, extra: Partial<MenuItemDef> = {}): MenuItemDef {
+export function item(id: string, label: string, enabled: boolean, extra: Partial<MenuItemDef> = {}): MenuItemDef {
   return { id, kind: 'item', label, command: id, enabled, hint: enabled ? undefined : NOT_YET_AVAILABLE, ...extra }
 }
 
@@ -138,14 +140,11 @@ const windowItem = (id: ToolWindowId, label: string, shortcut?: string) =>
 
 export function buildMenus(ctx: MenuContext): MenuDef[] {
   separatorCount = 0
-  const noProjectHint = 'Open a project first'
+  const noProjectHint = NO_PROJECT_HINT
   const transpileEnabled = ctx.hasProject && !ctx.transpileRunning
   const transpileHint = ctx.transpileRunning ? 'A transpile is already running' : noProjectHint
-  const gitActive = ctx.gitActive !== false
-  const teamOn = ctx.hasProject && gitActive
-  const teamHint = !gitActive ? 'The Git plugin is deactivated (Tools > Plugins)' : ctx.hasProject ? undefined : noProjectHint
 
-  return [
+  const menus: MenuDef[] = [
     {
       id: 'file',
       label: 'File',
@@ -350,29 +349,6 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
       mnemonic: 't',
       items: [
         later('team.shelve', 'Shelve Changes'),
-        sep(),
-        {
-          id: 'team.git',
-          kind: 'submenu',
-          label: 'Git',
-          enabled: teamOn,
-          hint: teamHint,
-          children: [
-            item('team.commit', 'Commit...', teamOn, { hint: teamHint }),
-            item('team.pull', 'Pull...', teamOn, { hint: teamHint }),
-            item('team.push', 'Push...', teamOn, { hint: teamHint }),
-            item('team.switchBranch', 'Switch Branch...', teamOn, { hint: teamHint }),
-          ],
-        },
-        sep(),
-        {
-          id: 'team.historyMenu',
-          kind: 'submenu',
-          label: 'History',
-          enabled: teamOn,
-          hint: teamHint,
-          children: [item('team.history', 'Show Project History', teamOn, { hint: teamHint })],
-        },
       ],
     },
     {
@@ -521,6 +497,11 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
       ],
     },
   ]
+  // Beiträge aus dem Plugin-Register (z. B. Git im Menü Team) hinter die festen Einträge.
+  return menus.map((m) => {
+    const extra = getMenuContributions(m.id, ctx)
+    return extra.length ? { ...m, items: [...m.items, ...extra] } : m
+  })
 }
 
 /** Enabled entries reachable by a keyboard shortcut, including those inside submenus. */

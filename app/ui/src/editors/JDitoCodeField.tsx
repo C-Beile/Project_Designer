@@ -8,6 +8,7 @@ import { ensureMonacoWorkers } from '../theme/monacoWorkers'
 import { attachAditoStyle, registerAditoModel } from '../theme/monacoAdito'
 import { setProblems } from '../problems/problemStore'
 import { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForgeThemeForMonaco } from '../theme/monacoTheme'
+import { errorText } from '../core/errorText'
 
 // Ziel B.3: JDito code field for a `valueProcess`/`displayValueProcess` linked `.js` file.
 // Monaco embed ported from the already-verified `spike-editor.md` pattern (plain `monaco-editor`,
@@ -130,7 +131,7 @@ export function JDitoCodeField({
       setDirty(false)
       setSaveError(null)
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : String(e))
+      setSaveError(errorText(e))
     }
   }
 

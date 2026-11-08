@@ -1,0 +1,7 @@
+.svt ul ul { padding-left: 14px; margin-left: 7px; border-left: 1px solid color-mix(in srgb, var(--fg) 12%, transparent); }
+
+.svt-chevron { flex: none; color: var(--fg-muted); transition: transform 0.12s; }
+
+.svt-grow { flex: 1; }
+
+.svt-table svg { flex: none; color: var(--fg-muted); }

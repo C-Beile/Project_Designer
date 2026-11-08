@@ -1,5 +1,5 @@
 import type { ForgeApi } from '../api/ForgeApi'
-import { CrashListener } from '../shell/errorHandling'
+import { CrashListener } from '../core/errorHandling'
 import { useTheme } from '../theme/useTheme'
 import { DialogWindowApp } from './DialogWindowApp'
 import { EditorWindowApp } from './EditorWindowApp'

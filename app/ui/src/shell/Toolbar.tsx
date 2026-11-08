@@ -3,14 +3,10 @@ import type { ReactNode } from 'react'
 import {
   IconBack,
   IconFind,
-  IconCommit,
   IconDeploy,
   IconForward,
-  IconHistory,
   IconNew,
   IconOpenProject,
-  IconPull,
-  IconPush,
   IconRedo,
   IconRefresh,
   IconRun,
@@ -23,7 +19,8 @@ import { TranspilerEngineSelector } from '../settings/TranspilerEngineSelector'
 import type { TranspilerEngineId } from '../settings/transpilerEngine'
 import { TOOLBAR_GROUPS, type ToolbarGroup, type ToolbarPrefs } from './toolbarPrefs'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
-import { formatShortcut } from './shortcuts'
+import { formatShortcut } from '../core/shortcuts'
+import { useToolbarItems, type ToolbarContext } from '../core/plugins/registry'
 
 export const DEPLOY_DISABLED_HINT = 'Deploy (open a project first)'
 export const RUN_DISABLED_HINT = 'Not available yet: Dito Designer cannot start a server or client'
@@ -65,6 +62,25 @@ const tip = (text: string, shortcut: string) => `${text} (${formatShortcut(short
 
 const Sep = () => <span className="forge-toolbar-sep" aria-hidden="true" />
 
+/** Knöpfe einer Toolbar-Gruppe, die Plugins über das Register liefern; ohne Beiträge erscheint nichts. */
+function PluginToolbarGroup({ group, ctx, onCommand }: { group: string; ctx: ToolbarContext; onCommand: (command: string) => void }) {
+  const items = useToolbarItems(group)
+  if (items.length === 0) return null
+  return (
+    <>
+      {items.map((i) => {
+        const st = i.state?.(ctx) ?? { enabled: true }
+        return (
+          <ToolButton key={i.id} label={i.label} hint={st.hint} enabled={st.enabled} onClick={() => onCommand(i.command)}>
+            {i.icon}
+          </ToolButton>
+        )
+      })}
+      <Sep />
+    </>
+  )
+}
+
 export interface ToolbarProps {
   hasProject: boolean
   hasSelection: boolean
@@ -105,8 +121,6 @@ export function Toolbar(p: ToolbarProps) {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const heap = useHeapMb(p.prefs.groups.performance)
   const g = p.prefs.groups
-  const gitOn = p.hasProject && p.gitActive !== false
-  const gitHint = (what: string) => (p.gitActive === false ? `${what} (Git plugin deactivated)` : p.hasProject ? what : `${what} (open a project first)`)
   const sqlOn = p.sqlActive !== false
   const hasSystems = p.systems.length > 0
 
@@ -225,23 +239,7 @@ export function Toolbar(p: ToolbarProps) {
           <Sep />
         </>
       ) : null}
-      {g.git ? (
-        <>
-          <ToolButton label="Pull" hint={gitHint('Pull: show and merge new commits of the remote')} enabled={gitOn} onClick={() => p.onCommand('team.pullView')}>
-            <IconPull />
-          </ToolButton>
-          <ToolButton label="Commit Changed Files" hint={gitHint('Commit Changed Files')} enabled={gitOn} onClick={() => p.onCommand('team.commit')}>
-            <IconCommit />
-          </ToolButton>
-          <ToolButton label="Push" hint={gitHint('Push: choose the local commits to push')} enabled={gitOn} onClick={() => p.onCommand('team.pushView')}>
-            <IconPush />
-          </ToolButton>
-          <ToolButton label="Show Project History" hint={gitHint('Show Project History')} enabled={gitOn} onClick={() => p.onCommand('team.history')}>
-            <IconHistory />
-          </ToolButton>
-          <Sep />
-        </>
-      ) : null}
+      {g.git ? <PluginToolbarGroup group="git" ctx={{ hasProject: p.hasProject, pluginActive: p.gitActive !== false }} onCommand={p.onCommand} /> : null}
       {g.analytics ? (
         <>
           <Sep />

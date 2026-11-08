@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Shell } from './Shell'
-import { createMockForgeApi } from '../test/mockApi'
-import type { GitOverview } from '../wire/types'
+import { Shell } from '../../shell/Shell'
+import { createMockForgeApi } from '../../test/mockApi'
+import type { GitOverview } from '../../wire/types'
 
 const git: GitOverview = {
   root: 'C:/demo',

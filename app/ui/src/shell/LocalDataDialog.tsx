@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { LocalDataInfo } from '../wire/types'
-import { Modal } from './Dialogs'
+import { Modal } from '../core/Modal'
 import { getOptions } from '../settings/options'
 
 // Help > Local Data (manual chapter 12, screenshot 185): where the Designer keeps its local files.

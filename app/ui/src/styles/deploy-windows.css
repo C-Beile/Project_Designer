@@ -1,0 +1,66 @@
+/* ===== Deploy windows ===== */
+
+.forge-deploy-question { font-weight: 600; font-size: 14px; }
+
+.forge-deploy-box li { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; }
+
+.forge-deploy-op { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 16px; border-radius: 3px; font-size: 10px; font-weight: 700; color: #fff; }
+
+.forge-deploy-op.forge-deploy-op-I { background: #2f8f46; color: #fff; }
+
+.forge-deploy-op.forge-deploy-op-U { background: #b7791f; color: #fff; }
+
+.forge-deploy-op.forge-deploy-op-D { background: #c0392b; color: #fff; }
+
+.forge-deploy-summary { display: flex; gap: 8px; margin: 0 0 10px; flex-wrap: wrap; }
+
+.forge-deploy-chip { padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; color: #fff; }
+
+.forge-deploy-chip.is-I { background: #2f8f46; }
+
+.forge-deploy-chip.is-U { background: #b7791f; }
+
+.forge-deploy-chip.is-D { background: #c0392b; }
+
+.forge-deploy-loading { display: flex; align-items: center; gap: 10px; padding: 18px 8px; color: var(--fg-muted); }
+
+.forge-ddiff-bar { padding: 6px 2px 8px; }
+
+.forge-ddiff-head { font-weight: 600; background: color-mix(in srgb, var(--bg-panel) 70%, transparent); }
+
+/* Tunnel state line and action button of the deploy options window */
+.forge-tunnel-state { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px 0 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: color-mix(in srgb, var(--warning) 10%, transparent); font-size: 12.5px; }
+
+.forge-tunnel-state.is-open { background: color-mix(in srgb, var(--success) 12%, transparent); }
+
+.forge-tunnel-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warning); flex: 0 0 auto; }
+
+.forge-tunnel-state.is-open .forge-tunnel-dot { background: var(--success); }
+
+.forge-action-button { margin-left: auto; min-height: 26px; padding: 0 14px; border-radius: 5px; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--fg); cursor: pointer; font-weight: 500; transition: background-color 0.12s, filter 0.12s; }
+
+.forge-action-button:not(:disabled):hover { background: color-mix(in srgb, var(--accent) 38%, transparent); }
+
+.forge-action-button:disabled { opacity: 0.55; cursor: progress; }
+
+/* Primary action stays clearly recognisable while it waits for the comparison */
+.forge-modal-footer button.is-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg, #fff); font-weight: 600; }
+
+.forge-modal-footer button.is-primary:disabled { opacity: 0.6; background: color-mix(in srgb, var(--accent) 55%, var(--bg-panel)); border-color: transparent; }
+
+.forge-modal-footer button.is-primary.is-busy { opacity: 1; }
+
+/* Own icon of a context or entity in the Projects tree */
+.project-tree-icon-art { display: inline-flex; width: 16px; height: 16px; color: var(--folder-context, var(--fg)); }
+
+.project-tree-icon-art svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* Own icon of a context or entity in the application editor lists */
+.app-own-icon { display: inline-flex; width: 13px; height: 13px; flex: 0 0 13px; color: var(--folder-context, var(--fg)); }
+
+.app-own-icon svg { width: 13px; height: 13px; fill: currentColor; }
+
+/* UI-Baukasten (core/ui): ausgewählte Tabellenzeile wie in den Listen */
+.forge-data-table tr.is-selected td { background: var(--selected-bg); color: var(--selected-fg); }
+
+.forge-data-table th .forge-link { color: inherit; font: inherit; text-transform: inherit; letter-spacing: inherit; }

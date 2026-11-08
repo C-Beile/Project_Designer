@@ -1,0 +1,9 @@
+/* ---- rc10: language editor grid (shot 103) ---- */
+
+.lang-toolbar input[type='search'] { width: 200px; }
+
+.lang-row.is-selected { background: var(--selection, #1d3b53); }
+
+.lang-row.is-dup { box-shadow: inset 3px 0 0 var(--warning); }
+
+.lang-row input { width: 100%; box-sizing: border-box; height: 20px; }

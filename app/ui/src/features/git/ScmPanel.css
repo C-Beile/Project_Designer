@@ -1,0 +1,5 @@
+.scm-branches input { margin: 4px 6px; }
+
+.scm-section ul { list-style: none; margin: 0; padding: 0; }
+
+.scm-row:hover .scm-actions, .scm-row:focus-within .scm-actions { display: inline-flex; }

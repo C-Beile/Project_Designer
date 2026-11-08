@@ -1,0 +1,46 @@
+/* ---- rc5: alias editor cards ---- */
+
+.alias-db-target > :last-child {
+  flex: 1 1 auto;
+  max-width: 420px;
+}
+
+.alias-card-head h3 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.alias-card-head label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.alias-columns th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  padding: 3px 8px;
+  color: var(--fg-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.alias-columns td {
+  padding: 1px 8px;
+  height: 24px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.forge-ctx-shortcut {
+  float: right;
+  margin-left: 28px;
+  color: var(--fg-muted);
+}
+
+.alias-db-toolbar input[type='search'] {
+  min-width: 260px;
+}

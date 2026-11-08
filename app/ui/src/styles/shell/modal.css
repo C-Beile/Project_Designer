@@ -1,0 +1,77 @@
+.forge-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.45);
+  z-index: 100;
+}
+
+.forge-modal {
+  width: min(560px, calc(100vw - 32px));
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+}
+
+.forge-modal-title {
+  padding: 6px 10px;
+  background: var(--bg-inset);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.forge-modal-body {
+  padding: 10px;
+}
+
+.forge-modal-body p {
+  margin: 4px 0;
+}
+
+.forge-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.forge-modal-footer button,
+.forge-field-row button {
+  padding: 2px 12px;
+  background: var(--bg-panel);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+}
+
+.forge-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.forge-field-row {
+  display: flex;
+  gap: 6px;
+}
+
+.forge-field-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px 6px;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+}
+
+.forge-field-hint {
+  color: var(--fg-muted);
+}
+
+.forge-field-error {
+  color: var(--error);
+}

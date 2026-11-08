@@ -1,0 +1,144 @@
+/* ---- rc5: application editor (menu tiles and list) ---- */
+
+.app-readonly {
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.app-tile.is-selected,
+.app-entry.is-selected {
+  outline: 1px solid var(--selection-border, var(--brand-link));
+}
+
+.app-tile.is-drop,
+.app-entry.is-drop {
+  background: var(--selection, #1d3b53);
+}
+
+.app-tile-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.app-tile-head .app-title {
+  flex: 1 1 auto;
+  min-width: 60px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.app-tile-head .app-title:focus,
+.app-icon-field:focus {
+  border-color: var(--border);
+}
+
+.app-icon-field {
+  width: 110px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg-muted);
+  font-size: 11px;
+}
+
+.app-name {
+  color: var(--fg-muted);
+  font-weight: 400;
+}
+
+.app-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  margin: 2px 0;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: default;
+}
+
+.app-entry.is-broken {
+  border-color: var(--error);
+}
+
+.app-warn {
+  color: var(--error);
+}
+
+.app-tools {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 2px;
+}
+
+.app-tools button,
+.app-remove {
+  background: none;
+  border: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0 3px;
+}
+
+.app-empty {
+  color: var(--fg-muted);
+  font-size: 11px;
+  padding: 4px 6px;
+}
+
+.app-glyph {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+  background: var(--fg-muted);
+}
+
+.app-glyph-context {
+  background: var(--folder-context);
+}
+
+.app-glyph-dashboard {
+  background: var(--folder-dashboard);
+}
+
+.app-glyph-role {
+  background: var(--folder-role);
+}
+
+.app-right input[type='search'] {
+  margin-bottom: 6px;
+}
+
+.app-palette {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+  flex: 1 1 auto;
+  columns: 2 220px;
+  border: 1px solid var(--border);
+  background: var(--bg-inset);
+}
+
+.app-palette li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  cursor: grab;
+  break-inside: avoid;
+}
+
+.app-palette li:hover,
+.app-palette li:focus-visible {
+  background: var(--selection, #1d3b53);
+}
+
+.app-palette li.is-used {
+  color: var(--fg-muted);
+}

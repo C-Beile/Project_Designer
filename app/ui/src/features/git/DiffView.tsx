@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import * as monaco from 'monaco-editor'
-import type { ForgeApi } from '../api/ForgeApi'
-import type { DiffContent, DiffTarget } from '../wire/types'
-import { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForgeThemeForMonaco } from '../theme/monacoTheme'
-import { languageForFile } from '../tabs/TextFileEditor'
+import type { ForgeApi } from '../../api/ForgeApi'
+import type { DiffContent, DiffTarget } from '../../wire/types'
+import { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForgeThemeForMonaco } from '../../theme/monacoTheme'
+import { languageForFile } from '../../tabs/TextFileEditor'
 import { useScm } from './scmStore'
 import { diffTitle, SIDE_LABEL } from './diffTitle'
+import { errorText } from '../../core/errorText'
 
 // Diff tab of the Source Control panel: the two versions of one file side by side in the Monaco
 // diff editor, read-only. Which versions depends on where the file was clicked: Changes (index
@@ -29,7 +30,7 @@ export function DiffView({ api, target }: { api: ForgeApi; target: DiffTarget })
         setContent(c)
         setError(null)
       })
-      .catch((e) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
+      .catch((e) => !cancelled && setError(errorText(e)))
     return () => {
       cancelled = true
     }

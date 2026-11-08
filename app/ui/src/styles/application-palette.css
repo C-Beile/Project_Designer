@@ -1,0 +1,33 @@
+/* ---- rc11: application editor, palette and tiles as in shot 104 ---- */
+
+.app-left { flex: 0 0 150px; }
+
+.app-tree { background: transparent; border: none; padding: 2px; }
+
+.app-tile { background: var(--app-tile-bg, #2f4f78); border: 1px solid var(--app-tile-border, #4b72a3); border-radius: 2px; margin: 10px 0; padding: 0 0 6px; }
+
+.app-tile-head { background: var(--app-tile-head, #1f3a5f); padding: 3px 5px; color: #e8eef6; }
+
+.app-tile-head .app-title, .app-tile-head .app-name { color: #e8eef6; font-weight: 700; font-size: 11px; }
+
+.app-tile .app-tile .app-tile-head { background: transparent; }
+
+.app-icon-field { display: none; }
+
+.app-entry { background: #262b33; border: 1px solid transparent; margin: 1px 0; padding: 1px 4px; font-size: 11px; color: #e8eef6; min-width: 0; }
+
+.app-entry .app-name { color: #e8eef6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+.app-entry .app-remove, .app-tile-head .app-remove { color: #cdd8e6; }
+
+.app-palette { border: none; background: transparent; columns: 4 220px; column-gap: 24px; padding: 2px 6px; }
+
+.app-palette li { padding: 2px 2px; gap: 5px; border: none; background: none; font-size: 12px; }
+
+.app-palette li:hover, .app-palette li:focus-visible { background: rgb(255 255 255 / 0.08); }
+
+.app-palette li.is-used { color: inherit; }
+
+.app-right { padding-left: 8px; }
+
+.lang-row.is-selected { background: var(--selection, #1d3b53); }

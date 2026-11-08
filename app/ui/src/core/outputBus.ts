@@ -1,4 +1,4 @@
-import type { OutputLine, OutputSubTab } from './OutputPanel'
+import type { OutputLine, OutputSubTab } from '../shell/OutputPanel'
 
 // Lets editors and dialogs (SQL window, deploy, tunnel) write into the Output window without
 // threading a callback through every component. The shell is the only subscriber.

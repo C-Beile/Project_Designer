@@ -6,7 +6,7 @@ import { ContextEditor } from './ContextEditor'
 import type { WireValue } from '../wire/types'
 import { createMockForgeApi } from '../test/mockApi'
 
-// Mirrors THHIT_Tour.aod's real shape (app/core/tests/fixtures/DemoProject/neonContext).
+// Mirrors THHIT_Tour.aod's real shape (crates/aod/tests/fixtures/DemoProject/neonContext).
 function sampleContext(): WireValue {
   return {
     kind: 'object',

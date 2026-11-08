@@ -1,0 +1,10 @@
+// UI-Baukasten: fertige Masken für Plugins. Alles hier ist aus vorhandenen Dialogen herausgezogen.
+export { FormDialog } from './FormDialog'
+export type { FieldDef, FormDialogProps, FormValue, FormValues } from './FormDialog'
+export { ListDialog } from './ListDialog'
+export type { ListDialogProps, ListItem } from './ListDialog'
+export { DataTable } from './DataTable'
+export type { DataColumn, DataTableProps } from './DataTable'
+export { ProgressBar } from './ProgressBar'
+export { defineFormDialog, defineListDialog, openUiDialog, registerUiDialog, renderUiDialog, UiDialogHost } from './uiDialogs'
+export type { FormDialogSpec, ListDialogSpec, UiDialogSpec } from './uiDialogs'

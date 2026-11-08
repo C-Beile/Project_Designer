@@ -7,6 +7,7 @@ import { EditableText } from './EditableText'
 import { PREFERENCES_DESCRIPTIONS } from './preferencesDescriptions.generated'
 import { setCustomProperty, setTopLevelValue, shapeOfTag, type CustomBank, type PropertyShape } from './preferencesOps'
 import { useSheetSplit } from '../properties/useSheetSplit'
+import { errorText } from '../core/errorText'
 
 // Project preferences drawn like the original Designer: groups with Name | Value rows. A click
 // selects a row and shows its description below. A value that exists as text is written with the
@@ -86,7 +87,7 @@ export function PreferencesEditor({ nodeId, tree, api, projectRoot, onTreeChange
       const updated = await api.setProperty(nodeId, path, textValue(next))
       onTreeChange(updated)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     }
   }
 
@@ -103,7 +104,7 @@ export function PreferencesEditor({ nodeId, tree, api, projectRoot, onTreeChange
       setSource({ text: next, read_only: false })
       onTreeChange(outcome.tree)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     }
   }
 

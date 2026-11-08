@@ -6,7 +6,7 @@ import { ReportEditor } from './ReportEditor'
 import type { WireValue } from '../wire/types'
 import { createMockForgeApi } from '../test/mockApi'
 
-// Mirrors Organisation_report.aod's real shape (app/core/tests/fixtures/DemoProject/report) - the
+// Mirrors Organisation_report.aod's real shape (crates/aod/tests/fixtures/DemoProject/report) - the
 // real R26 (RISKS.md) array side: 4 `subreport`s and 3 `image`s project as indexed arrays.
 function sampleReportArrayShape(): WireValue {
   return {

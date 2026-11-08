@@ -1,4 +1,4 @@
-// Mirrors app/core/src/wire.rs's `WireValue`/`WireField` exactly (same tag names, same field
+// Mirrors crates/project/src/wire.rs's `WireValue`/`WireField` exactly (same tag names, same field
 // order semantics) - this is the one place the frontend needs to know the IPC shape. Business
 // meaning: one ADITO object's whole property tree, or one field's value.
 
@@ -31,7 +31,7 @@ export function textField(value: WireValue | undefined, name: string): string | 
 }
 
 /** Convenience for a typed-scalar `<foo v="0" />` field (core-model projects it as a leaf `Int`
- * scalar directly, see `app/core/src/view_context_dashboard_validators.rs`'s own comment on this)
+ * scalar directly, see `crates/project/src/view_context_dashboard_validators.rs`'s own comment on this)
  * - read-only display use, used by `DashboardEditor.tsx` for grid position fields that
  * `forge-core`'s write-back path does not support editing yet (only `Text`-content scalars do). */
 export function intField(value: WireValue | undefined, name: string): number | undefined {
@@ -51,7 +51,7 @@ export function asArray(value: WireValue | undefined): WireValue[] {
   return value?.kind === 'array' ? value.items : []
 }
 
-// Mirrors app/core/src/tree.rs's `TreeNode`. Optional fields are omitted by the backend when
+// Mirrors crates/project/src/tree.rs's `TreeNode`. Optional fields are omitted by the backend when
 // empty/false. `id` is the absolute file path for objects and files (what getPropertyTree/save
 // take) and not unique within a tree: the same entity shows in `entity` and below its context.
 export type TreeNodeKind = 'project' | 'folder' | 'object' | 'file' | 'dir' | 'libraries' | 'module' | 'service' | 'tunnel' | 'aliasconfig'
@@ -122,7 +122,7 @@ export interface UndoRedoOutcome {
   can_redo: boolean
 }
 
-// Mirrors app/core/src/settings.rs's `ForgeSettings`.
+// Mirrors crates/project/src/settings.rs's `ForgeSettings`.
 export interface ForgeSettings {
   designer_install_dir: string | null
   open_projects?: string[]
@@ -132,7 +132,7 @@ export interface ForgeSettings {
   ssh_accept_new_host_keys?: boolean | null
 }
 
-// Mirrors app/core/src/catalog/sheet.rs (P8 step 3/5): the Properties panel and the Navigator.
+// Mirrors crates/project/src/catalog/sheet.rs (P8 step 3/5): the Properties panel and the Navigator.
 export type PropKind = 'text' | 'bool' | 'int' | 'number' | 'enum' | 'linked' | 'reference' | 'list' | 'object'
 
 export interface SheetRow {
@@ -215,7 +215,7 @@ export interface NavNode {
   children: NavNode[]
 }
 
-// Mirrors app/core/src/project_actor.rs `SourceDto`: the raw `.aod` text of an object,
+// Mirrors crates/project/src/project_actor.rs `SourceDto`: the raw `.aod` text of an object,
 // including edits that are not saved yet.
 export interface ObjectSource {
   text: string
@@ -439,7 +439,7 @@ export interface DiffTarget {
   side: ScmDiffSide
   hash?: string
 }
-// Mirrors app/core/src/system_config.rs: secrets are never part of these records.
+// Mirrors crates/project/src/system_config.rs: secrets are never part of these records.
 export interface AliasProp {
   name: string
   value: string
@@ -474,7 +474,7 @@ export interface TunnelRowDto {
   user: string
 }
 
-// Mirrors app/core/src/problems.rs.
+// Mirrors crates/project/src/problems.rs.
 export interface ProblemDto {
   node_id: string
   object: string
@@ -487,7 +487,7 @@ export interface ProblemDto {
   column?: number | null
 }
 
-// Mirrors app/core/src/problems.rs (find_usages).
+// Mirrors crates/project/src/problems.rs (find_usages).
 export interface UsageDto {
   node_id: string
   object: string
@@ -498,7 +498,7 @@ export interface UsageDto {
   kind: string
 }
 
-// Mirrors app/core/src/new_object.rs.
+// Mirrors crates/project/src/new_object.rs.
 export interface NewObjectKind {
   folder: string
   label: string
@@ -510,7 +510,7 @@ export interface NewObjectKind {
   fixed_name?: string | null
 }
 
-// Mirrors app/core/src/rename.rs.
+// Mirrors crates/project/src/rename.rs.
 export interface RenameHit {
   file: string
   line: number
@@ -524,7 +524,7 @@ export interface RenamePlan {
   hits: RenameHit[]
 }
 
-// Mirrors app/core/src/project_zip.rs.
+// Mirrors crates/project/src/project_zip.rs.
 export interface ModelEntry {
   folder: string
   name: string
@@ -537,7 +537,7 @@ export interface ImportOutcome {
   skipped: string[]
 }
 
-// Mirrors app/core/src/jdito_types.rs.
+// Mirrors crates/project/src/jdito_types.rs.
 export interface JditoTypeFile {
   path: string
   content: string
@@ -547,7 +547,7 @@ export interface JditoTypes {
   files: JditoTypeFile[]
 }
 
-// Mirrors app/core/src/local_data.rs.
+// Mirrors crates/project/src/local_data.rs.
 export interface LocalEntry {
   name: string
   is_dir: boolean
