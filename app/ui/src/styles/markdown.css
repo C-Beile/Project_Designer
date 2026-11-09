@@ -1,0 +1,43 @@
+/* ---- Markdown files: Source | Split | Preview and the rendered view ---- */
+
+.forge-md-tab.is-active { color: var(--fg); border-bottom-color: var(--accent); }
+
+.forge-md-body.is-split .forge-md { border-left: 1px solid var(--border); }
+
+.forge-md-body.is-preview .forge-md-source { display: none; }
+
+.forge-md-body.is-source .forge-md { display: none; }
+
+.forge-md > :first-child { margin-top: 0; }
+
+.forge-md h1, .forge-md h2, .forge-md h3, .forge-md h4, .forge-md h5, .forge-md h6 { margin: 1.4em 0 0.5em; line-height: 1.25; font-weight: 650; }
+
+.forge-md h1 { font-size: 1.9em; padding-bottom: 0.3em; border-bottom: 1px solid var(--border); }
+
+.forge-md h2 { font-size: 1.5em; padding-bottom: 0.25em; border-bottom: 1px solid var(--border); }
+
+.forge-md h3 { font-size: 1.2em; }
+
+.forge-md h4, .forge-md h5, .forge-md h6 { font-size: 1em; color: var(--fg-muted); }
+
+.forge-md p, .forge-md ul, .forge-md ol, .forge-md blockquote, .forge-md pre, .forge-md table { margin: 0 0 1em; }
+
+.forge-md ul, .forge-md ol { padding-left: 1.6em; }
+
+.forge-md a { color: var(--accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); }
+
+.forge-md code { font-family: var(--font-mono, 'Cascadia Code', Consolas, monospace); font-size: 0.9em; padding: 0.15em 0.4em; border-radius: 4px; background: var(--bg-inset); color: var(--warm, var(--fg)); }
+
+.forge-md pre { padding: 12px 14px; border-radius: 6px; background: var(--bg-inset); border: 1px solid var(--border); overflow: auto; line-height: 1.5; }
+
+.forge-md blockquote { padding: 2px 14px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--bg-panel) 60%, transparent); color: var(--fg-muted); border-radius: 0 4px 4px 0; }
+
+.forge-md blockquote > :last-child { margin-bottom: 0; }
+
+.forge-md hr { border: none; border-top: 1px solid var(--border); margin: 1.6em 0; }
+
+.forge-md table { border-collapse: collapse; width: max-content; max-width: 100%; display: block; overflow: auto; }
+
+.forge-md th, .forge-md td { padding: 5px 12px; border: 1px solid var(--border); text-align: left; }
+
+.forge-md th { background: var(--bg-panel); font-weight: 600; }

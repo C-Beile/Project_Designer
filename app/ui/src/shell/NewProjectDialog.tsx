@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
-import { Modal } from './Dialogs'
+import { Modal } from '../core/Modal'
+import { errorText } from '../core/errorText'
 
 // New Project, like the original Designer: first the source of the project, then its details. A clone
 // from a Git repository ends with the choice of the branch to check out. Sources that need a server or
@@ -102,7 +103,7 @@ export function NewProjectDialog({ api, currentProject, onClose, onCreated }: { 
       setBranch(current)
       setStep('branch')
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     } finally {
       setBusy(false)
     }
@@ -118,7 +119,7 @@ export function NewProjectDialog({ api, currentProject, onClose, onCreated }: { 
       }
       onCreated(created)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     } finally {
       setBusy(false)
     }

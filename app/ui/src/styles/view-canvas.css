@@ -1,0 +1,63 @@
+/* ---- View editor: calmer canvas (segmented switch, cards, timeline that no longer overlaps) ---- */
+
+.vp-modebar { display: inline-flex; gap: 0; margin: 0 0 10px; padding: 2px; background: var(--bg-inset); border: 1px solid var(--border); border-radius: 6px; }
+
+.vp-mode { padding: 3px 14px; border: none; border-radius: 4px; background: transparent; color: var(--fg-muted); font: inherit; cursor: pointer; }
+
+.vp-mode:hover { color: var(--fg); }
+
+.vp-mode.is-active { background: var(--selected-bg); color: var(--selected-fg); }
+
+.vp-fields-toggle { margin-left: 8px; border-left: 1px solid var(--border); border-radius: 0 4px 4px 0; }
+
+.vp-split { gap: 12px; }
+
+.vp-root { padding: 16px 18px; background: var(--bg-inset); border-radius: 6px; }
+
+.vp-stack, .vp-hf-body { gap: 12px; }
+
+.vp-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+
+.vp-card-head { margin-bottom: 8px; font-size: 11px; font-weight: 600; letter-spacing: 0.03em; color: var(--fg-muted); }
+
+.vp-frame { border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; background: color-mix(in srgb, var(--bg-panel) 55%, transparent); }
+
+.vp-frame > legend { padding: 0 8px; border-radius: 9px; font-size: 11px; color: var(--fg-muted); background: var(--bg-inset); }
+
+.vp-tabbar { margin-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+.vp-tab { padding: 5px 12px; font: inherit; }
+
+.vp-tab.is-active { border-bottom-color: var(--accent); }
+
+.vp-form { gap: 10px 16px; }
+
+.vp-field-label { font-size: 11px; letter-spacing: 0.02em; }
+
+.vp-field-box { border-radius: 3px; }
+
+.vp-field-box:not(.is-edit) { background: var(--bg-elevated); }
+
+.vp-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.vp-timeline-row { grid-template-columns: minmax(96px, 26%) minmax(0, 1fr) auto; gap: 14px; padding: 8px 0; }
+
+.vp-tl-left { min-width: 0; flex-wrap: wrap; align-items: flex-start; }
+
+.vp-tl-left .vp-muted { min-width: 0; overflow-wrap: anywhere; font-size: 11px; line-height: 1.35; }
+
+.vp-timeline-row .vp-tile-text { min-width: 0; }
+
+.vp-timeline-row .vp-title { overflow-wrap: anywhere; font-size: 14px; }
+
+.vp-timeline-row .vp-muted { overflow-wrap: anywhere; }
+
+.vp-tl-right { text-align: right; overflow-wrap: anywhere; max-width: 28ch; }
+
+.vp-entity-list { border-radius: 6px; background: var(--bg-panel); }
+
+.vp-entity-list h3 { padding: 6px 10px; text-transform: uppercase; letter-spacing: 0.05em; font-size: 10.5px; }
+
+.vp-entity-item { padding: 4px 10px; }
+
+.vp-entity-item .vp-type { font-size: 10px; letter-spacing: 0.04em; }

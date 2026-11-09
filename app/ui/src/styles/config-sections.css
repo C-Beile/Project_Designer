@@ -1,0 +1,11 @@
+/* ---- rc10: config sections ---- */
+
+.forge-props-name.is-unset { color: var(--fg-muted); font-style: italic; }
+
+.alias-config-tab .forge-props-row { display: grid; grid-template-columns: 30% 1fr; align-items: center; }
+
+.alias-config-tab .forge-props-input { width: 100%; }
+
+.nav-config .nav-row { display: block; width: 100%; text-align: left; background: none; border: none; color: inherit; cursor: pointer; padding-top: 1px; padding-bottom: 1px; }
+
+.nav-config .nav-row.is-selected { background: var(--selection, #1d3b53); }

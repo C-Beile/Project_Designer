@@ -1,0 +1,16 @@
+.forge-status-branch {
+  min-width: 60px;
+  text-align: right;
+}
+
+.forge-status-branch {
+  min-width: 60px;
+}
+
+.forge-branch-popup > header {
+  padding: 4px 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.forge-branch-item:hover .forge-branch-arrow { opacity: 1; }

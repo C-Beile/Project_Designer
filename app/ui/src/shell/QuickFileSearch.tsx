@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
+import { errorText } from '../core/errorText'
 
 // Double Ctrl: search the file names of the open projects (names only, never the content). The
 // files are listed once per open; typing narrows the list, Enter or a click opens the file.
@@ -61,7 +62,7 @@ export function QuickFileSearch({ api, projectRoots, onOpen, onClose }: { api: F
     let cancelled = false
     Promise.all(projectRoots.map((r) => api.listProjectFiles(r).then((list) => list.map((f) => `${r.replace(/[\\/]+$/, '').replace(/\\/g, '/')}/${f}`))))
       .then((all) => !cancelled && setFiles(all.flat()))
-      .catch((e) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
+      .catch((e) => !cancelled && setError(errorText(e)))
     return () => {
       cancelled = true
     }

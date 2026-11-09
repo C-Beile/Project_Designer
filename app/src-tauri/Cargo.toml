@@ -1,38 +1,56 @@
 [package]
-name = "forge-app"
+name = "designer-app"
 version = "0.1.0"
 description = "Forge - ADITO Designer rebuild, Tauri shell (architecture.md app/src-tauri)"
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
-# R13: no `cdylib` here on purpose - GNU/MinGW `ld` hits "export ordinal too large" on the full
-# windows-rs dependency chain with Tauri's default mobile-oriented crate-type list. See
-# spike-editor.md and RISKS.md R13.
+# Kein `cdylib`, bewusst. Früher brach der GNU/MinGW-`ld` mit "export ordinal too large" bei der
+# windows-rs-Kette. Heute gilt MSVC (`rust-toolchain.toml`). Ob der Grund noch zutrifft, ist nicht geprüft.
 [lib]
-name = "forge_app_lib"
+name = "designer_app_lib"
 crate-type = ["staticlib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
+
+[features]
+# Feature-Plugins: ohne das jeweilige Feature enthält die App den Code des Plugins nicht.
+default = ["git", "ssh-tunnel", "database", "deploy", "liquibase", "adito-transpiler"]
+git = ["dep:git"]
+ssh-tunnel = ["dep:ssh-tunnel"]
+database = ["ssh-tunnel", "dep:database"]
+deploy = ["database", "dep:deploy"]
+liquibase = ["database", "dep:liquibase"]
+adito-transpiler = ["dep:adito-transpiler"]
 
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-updater = "2"
 log = "0.4"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-forge-core = { path = "../../crates/forge-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+designer-core = { path = "../../crates/designer-core" }
 # All framework-agnostic logic (tree scan, wire format, undo history, validators, action
-# dispatch) lives in this sibling crate specifically so it never links tauri/wry/webview2-com -
-# see forge-app-core's lib.rs doc for why (GNU-toolchain test-binary DLL issue, candidate R22).
+# dispatch) lives in this sibling crate specifically so it never links tauri/wry/webview2-com.
+# Früherer Grund: DLL-Problem der GNU-Toolchain bei Testbinaries. Heute MSVC, Grund nicht geprüft.
 # This crate itself stays a genuinely thin Tauri command/event adapter with no tests of its own.
-forge-app-core = { path = "../core" }
+project = { path = "../../crates/project" }
+app-base = { path = "../../crates/app-base" }
 # P7 (project-open-dialog): the native folder-picker dialog for "Projekt oeffnen" reuses the
 # already-built `platform::FileDialog` trait (Windows impl via `rfd`) rather than pulling in
 # Tauri's own dialog plugin - one native-dialog seam for the whole app, not two.
 platform = { path = "../../crates/platform" }
+
+plugin-api = { path = "../../crates/plugin-api" }
+git = { path = "../../crates/git", optional = true }
+ssh-tunnel = { path = "../../crates/ssh-tunnel", optional = true }
+database = { path = "../../crates/database", optional = true }
+deploy = { path = "../../crates/deploy", optional = true }
+liquibase = { path = "../../crates/liquibase", optional = true }
+adito-transpiler = { path = "../../crates/adito-transpiler", optional = true }
 
 [lints]
 workspace = true

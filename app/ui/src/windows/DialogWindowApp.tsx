@@ -11,13 +11,11 @@ import { LocalDataDialog } from '../shell/LocalDataDialog'
 import { PluginsDialog } from '../shell/PluginsDialog'
 import { ProjectZipDialog } from '../shell/ProjectZipDialog'
 import { UpdatesDialog } from '../shell/UpdatesDialog'
-import { GitDialog } from '../shell/GitDialog'
-import { SyncDialog, type SyncResult } from '../shell/SyncDialog'
-import { CommitDiffDialog } from '../shell/CommitDiffDialog'
+import { getDialog } from '../core/plugins/registry'
 import { RenameDialog } from '../tree/TreeDialogs'
 import type { ThemeName } from '../theme/useTheme'
 import type { TranspilerEngineId } from '../settings/transpilerEngine'
-import { DialogHost } from '../shell/dialogService'
+import { DialogHost } from '../core/dialogService'
 import { OsWindowContext } from './osWindowContext'
 import { getWindowBackend } from './windowService'
 
@@ -29,54 +27,6 @@ type Done = (result: unknown) => void
 
 interface DialogSpec {
   render(api: ForgeApi, payload: Record<string, unknown>, done: Done): ReactNode
-}
-
-// The Git window reports whether the work tree changed, so the main window reloads its tree.
-function GitWindow({ api, payload, done }: { api: ForgeApi; payload: Record<string, unknown>; done: Done }) {
-  const changed = useRef(false)
-  const lastMessage = useRef<{ message: string; ok: boolean } | null>(null)
-  return (
-    <GitDialog
-      api={api}
-      projectRoot={String(payload.project ?? '')}
-      initialTab={payload.tab === 'history' || payload.tab === 'branches' ? payload.tab : 'changes'}
-      initialTarget={(payload.target as { local?: string; remote?: string } | null) ?? null}
-      onChanged={() => {
-        changed.current = true
-      }}
-      onResult={(message, ok) => {
-        lastMessage.current = { message, ok }
-      }}
-      onClose={() => done(changed.current || lastMessage.current ? { changed: changed.current, ...lastMessage.current } : null)}
-    />
-  )
-}
-
-export interface SyncWindowResult {
-  mode: 'pull' | 'push'
-  changed: boolean
-  result: SyncResult
-}
-
-// The Pull and Push window reports what the last run did, so the main window can tell the user and reload its tree.
-function SyncWindow({ api, payload, done }: { api: ForgeApi; payload: Record<string, unknown>; done: Done }) {
-  const changed = useRef(false)
-  const last = useRef<SyncResult | null>(null)
-  const mode = payload.mode === 'push' ? 'push' : 'pull'
-  return (
-    <SyncDialog
-      api={api}
-      projectRoot={String(payload.project ?? '')}
-      mode={mode}
-      onDone={() => {
-        changed.current = true
-      }}
-      onResult={(r) => {
-        last.current = r
-      }}
-      onClose={() => done(last.current ? ({ mode, changed: changed.current, result: last.current } satisfies SyncWindowResult) : null)}
-    />
-  )
 }
 
 export interface OptionsWindowResult {
@@ -142,6 +92,11 @@ function ZipWindow({ api, payload, done }: { api: ForgeApi; payload: Record<stri
   )
 }
 
+function pluginDialog(id: string, props: Record<string, unknown>): ReactNode {
+  const Dialog = getDialog(id)?.component
+  return Dialog ? <Dialog {...props} /> : null
+}
+
 export const DIALOG_WINDOWS: Record<string, DialogSpec> = {
   new: {
     render: (api, p, done) => (
@@ -172,14 +127,15 @@ export const DIALOG_WINDOWS: Record<string, DialogSpec> = {
   updates: {
     render: (api, _p, done) => <UpdatesDialog api={api} onClose={() => done(null)} onOpenTableCenter={() => done({ tableCenter: true })} />,
   },
+  // Git-Fenster: Inhalt kommt aus dem Register (Plugin git); ohne Plugin bleibt das Fenster leer.
   git: {
-    render: (api, p, done) => <GitWindow api={api} payload={p} done={done} />,
+    render: (api, p, done) => pluginDialog('git.window', { api, payload: p, done }),
   },
   sync: {
-    render: (api, p, done) => <SyncWindow api={api} payload={p} done={done} />,
+    render: (api, p, done) => pluginDialog('git.syncWindow', { api, payload: p, done }),
   },
   commitdiff: {
-    render: (api, p, done) => <CommitDiffDialog api={api} root={String(p.root ?? '')} path={String(p.path ?? '')} onClose={() => done(null)} />,
+    render: (api, p, done) => pluginDialog('git.commitDiff', { api, root: String(p.root ?? ''), path: String(p.path ?? ''), onClose: () => done(null) }),
   },
   localdata: {
     render: (api, _p, done) => <LocalDataDialog api={api} onClose={() => done(null)} />,

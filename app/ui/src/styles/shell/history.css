@@ -1,0 +1,77 @@
+.forge-subtabs-fill {
+  flex: 1 1 auto;
+}
+
+.forge-object-editor-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.forge-source {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.forge-monaco-host {
+  flex: 1 1 auto;
+  min-height: 120px;
+}
+
+.forge-source-note,
+.forge-source-error {
+  flex: 0 0 auto;
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.forge-source-note {
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+}
+
+.forge-source-error {
+  background: var(--bg-inset);
+  color: var(--error);
+  border-top: 1px solid var(--border);
+}
+
+.forge-history {
+  overflow: auto;
+}
+
+.forge-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.forge-history-table th,
+.forge-history-table td {
+  padding: 2px 10px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+.forge-history-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+
+.forge-history-table td:last-child {
+  width: 100%;
+  white-space: normal;
+}
+
+.forge-history-hash {
+  font-family: var(--font-mono, monospace);
+  color: var(--accent);
+}

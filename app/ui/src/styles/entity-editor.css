@@ -1,0 +1,155 @@
+/* ---- 0.7.0: entity editor (diagram of providers and consumers) ---- */
+
+.entity-editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 260px;
+}
+
+/* The editor host of the entity must hand its whole area to the diagram, else the canvas collapses to a bar. */
+.forge-editor-host:has(> .entity-editor) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+}
+
+.entity-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-inset);
+}
+
+.entity-toolbar button {
+  padding: 1px 8px;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid transparent;
+  border-radius: 2px;
+}
+
+.entity-toolbar button:disabled {
+  opacity: 0.4;
+}
+
+.entity-toolbar button[aria-pressed="true"] {
+  background: var(--bg-panel);
+  border-color: var(--border-strong);
+}
+
+.entity-new {
+  position: relative;
+  margin-left: 4px;
+}
+
+.entity-new ul {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  left: 0;
+  min-width: 190px;
+  margin: 0;
+  padding: 3px 0;
+  list-style: none;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+}
+
+.entity-new li {
+  padding: 2px 14px;
+  opacity: 0.45;
+}
+
+.entity-canvas {
+  flex: 1 1 auto;
+  min-height: 160px;
+  overflow: auto;
+  padding: 8px;
+}
+
+.entity-stage {
+  position: relative;
+}
+
+.entity-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.entity-box {
+  position: absolute;
+  background: var(--diagram-box);
+  color: var(--diagram-box-fg);
+  border: 1px solid var(--diagram-box-head);
+  font-size: 12px;
+}
+
+.entity-box-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--diagram-box-head);
+  font-weight: 700;
+}
+
+.entity-box-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: default;
+}
+
+.entity-box-row.is-selected {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.entity-box-arrow {
+  width: 14px;
+  text-align: center;
+}
+
+.entity-fields {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.entity-fields table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.entity-fields th,
+.entity-fields td {
+  padding: 2px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.entity-fields th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-inset);
+  color: var(--fg-muted);
+}
+
+.entity-fields tr.is-selected td {
+  background: var(--bg-panel);
+}
+
+.entity-fields input {
+  width: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+}

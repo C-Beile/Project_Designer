@@ -1,0 +1,39 @@
+/* ---- rc10: application editor like the original (shot 99) ---- */
+
+.app-left { flex: 0 0 250px; }
+
+.app-tile { margin: 8px 0; padding: 3px 5px 6px; }
+
+.app-tile-head { font-weight: 700; font-size: 12px; }
+
+.app-tile-head .app-name { font-weight: 700; color: var(--fg); }
+
+.app-entry { border-color: transparent; background: var(--bg-inset); padding: 1px 5px; font-size: 12px; }
+
+.app-entry.is-broken { border-color: var(--error); }
+
+.app-invalid { color: var(--fg-muted); }
+
+.app-kind-icon { flex: 0 0 auto; }
+
+button.app-issues { background: none; border: none; cursor: pointer; text-decoration: underline; }
+
+.app-filter-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+
+.app-filter-row input[type='search'] { flex: 1 1 160px; margin-bottom: 0; }
+
+.app-chips { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+
+.app-chip { display: inline-flex; align-items: center; gap: 4px; background: none; border: 1px solid var(--border); border-radius: 10px; color: var(--fg-muted); padding: 1px 8px; cursor: pointer; }
+
+.app-chip.is-on { color: var(--fg); background: var(--selection, #1d3b53); }
+
+.app-count { color: var(--fg-muted); font-size: 11px; }
+
+.app-palette { columns: 4 200px; }
+
+.app-palette li.is-static { cursor: default; opacity: 0.8; }
+
+.app-popup { position: fixed; z-index: 50; background: var(--bg-panel); border: 1px solid var(--border); padding: 4px 8px; font-size: 11px; pointer-events: none; box-shadow: 0 2px 8px rgb(0 0 0 / 0.4); }
+
+.app-entry.is-drop, .app-tile.is-drop { box-shadow: inset 0 2px 0 var(--brand-link); }

@@ -1,0 +1,15 @@
+/* ===== Buttons: clear states, comfortable click size, busy indicator ===== */
+
+.forge-modal-footer button, .forge-os-dialog .forge-modal-footer button { min-height: 30px; min-width: 84px; padding: 0 18px; border-radius: 5px; font-weight: 500; cursor: pointer; transition: background-color 0.12s, border-color 0.12s, box-shadow 0.12s, filter 0.12s, transform 0.05s; }
+
+.forge-modal-footer button:not(:disabled):hover { border-color: var(--accent); }
+
+.forge-modal-footer button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.forge-modal-footer button.is-primary { box-shadow: 0 1px 0 rgb(0 0 0 / 0.25); }
+
+.forge-modal-footer button.is-busy { position: relative; cursor: progress; pointer-events: none; }
+
+.forge-btn-spinner { display: inline-block; width: 11px; height: 11px; margin-right: 8px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: forge-spin 0.7s linear infinite; vertical-align: -2px; }
+
+.forge-modal-footer { gap: 10px; }

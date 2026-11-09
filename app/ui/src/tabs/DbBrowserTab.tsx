@@ -4,10 +4,11 @@ import { useTunnelState } from '../services/tunnelState'
 import { useProjectIndex } from '../editors/projectIndex'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
-import { promptDialog } from '../shell/dialogService'
+import { promptDialog } from '../core/dialogService'
 import { parseAliasConfigRef } from './AliasConfigTab'
 import { CATALOG_SQL, PROCEDURES_SQL, TABLES_SQL, changelogFor, columnInfos, columnsSql, foreignKeyInfos, foreignKeysSql, indexInfos, indexesSql, viewDataSql, type ColumnInfo, type ForeignKeyInfo, type IndexInfo } from './dbBrowserSql'
 import { setSystemsDb } from '../services/tunnelState'
+import { errorText } from '../core/errorText'
 
 // "Database" tab of a database alias (original Designer, shots 95-98): tree Alias > Catalog >
 // Tables / Views, columns of the selected table on the right. The tree is loaded lazily: the table
@@ -61,7 +62,7 @@ export function DbBrowserTab({ api, path }: { api: ForgeApi; path: string | unde
       setCatalog(cat.rows[0]?.[0] ?? null)
       setTables(list.rows.map((r) => ({ name: r[0] ?? '', view: (r[1] ?? '').toUpperCase().includes('VIEW') })))
     })().catch((e) => {
-      if (!cancelled) setError(e instanceof Error ? e.message : String(e))
+      if (!cancelled) setError(errorText(e))
     })
     return () => {
       cancelled = true
@@ -87,7 +88,7 @@ export function DbBrowserTab({ api, path }: { api: ForgeApi; path: string | unde
     api
       .dbQuery(columnsSql(selected), false)
       .then((r) => !cancelled && setColumns(columnInfos(r.rows)))
-      .catch((e) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
+      .catch((e) => !cancelled && setError(errorText(e)))
     return () => {
       cancelled = true
     }

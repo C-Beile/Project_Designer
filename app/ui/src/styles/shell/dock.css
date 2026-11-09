@@ -1,0 +1,103 @@
+.forge-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 1px;
+  height: 28px;
+  padding: 0 6px;
+  background: var(--bg-titlebar);
+  border-bottom: 1px solid var(--border);
+}
+
+.forge-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--fg);
+  cursor: default;
+}
+
+.forge-toolbar-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 5px;
+  background: var(--border);
+}
+
+.forge-runconfig,
+.forge-engine-select {
+  height: 20px;
+  margin: 0 4px;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+}
+
+.forge-runconfig {
+  width: 220px;
+}
+
+.forge-engine-select[data-engine="experimental"] {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.transpiler-engine-warning {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 3px 10px;
+  background: var(--bg-inset);
+  color: var(--warning);
+  border-bottom: 1px solid var(--warning);
+}
+
+.forge-dock {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--bg);
+}
+
+.forge-dock-left {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.forge-dock-slot {
+  display: flex;
+  min-height: 0;
+}
+
+.forge-dock-fill {
+  flex: 1 1 auto;
+}
+
+.forge-dock-center {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.forge-dock-top {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.forge-dock-right,
+.forge-dock-bottom {
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 0;
+  min-height: 0;
+}

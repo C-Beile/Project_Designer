@@ -155,6 +155,23 @@ export const PLUGINS: PluginInfo[] = [
   },
 ]
 
+/**
+ * Liste für den Plugins-Dialog: die feste Liste, aber Name, Kategorie, Version, Beschreibung und
+ * "abschaltbar" kommen aus dem UI-Register, sobald sich ein Plugin dort angemeldet hat.
+ * Ein Plugin, das im Register steht, aber nicht in der festen Liste, wird angehängt.
+ */
+export function mergePluginList(registered: { id: string; name: string; category: string; version: string; description: string; switchable: boolean }[]): PluginInfo[] {
+  const byId = new Map(registered.map((r) => [r.id, r]))
+  const merged = PLUGINS.map((p) => {
+    const r = byId.get(p.id)
+    if (!r) return p
+    byId.delete(p.id)
+    return { ...p, name: r.name, category: r.category, version: r.version, description: r.description, switchable: r.switchable, implemented: true }
+  })
+  for (const r of byId.values()) merged.push({ ...r, author: AUTHOR, implemented: true, notes: [] })
+  return merged
+}
+
 export const PLUGINS_KEY = 'forge.plugins.v1'
 
 export interface PluginPrefs {

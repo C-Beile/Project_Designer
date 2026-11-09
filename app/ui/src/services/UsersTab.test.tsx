@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { UsersTab } from './UsersTable'
 import { UserPropertiesPanel } from './UserPropertiesPanel'
 import { getUserSelection, setUserSelection } from './userSelection'
-import { DialogHost, _resetDialogsForTests } from '../shell/dialogService'
+import { DialogHost, _resetDialogsForTests } from '../core/dialogService'
 import { createMockForgeApi } from '../test/mockApi'
 
 const db = { connected: true, tunnel_up: true, database: 'sys', host: 'h' }

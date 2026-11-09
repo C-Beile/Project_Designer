@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { DbStatus, SqlResult } from '../wire/types'
-import { Modal } from './Dialogs'
+import { Modal } from '../core/Modal'
+import { errorText } from '../core/errorText'
 
 // System Table Control Center (manual 13.2, screenshot 192), read-only: the ASYS_ tables of the
 // connected system database with the version information of ASYS_VERSIONHISTORY. Creating,
@@ -76,7 +77,7 @@ export function TableCenterDialog({ api, db, onClose }: { api: ForgeApi; db: DbS
         try {
           history = await api.dbQuery('SELECT * FROM ASYS_VERSIONHISTORY', false)
         } catch (e) {
-          setHistoryNote(`The version history could not be read: ${e instanceof Error ? e.message : String(e)}`)
+          setHistoryNote(`The version history could not be read: ${errorText(e)}`)
         }
       } else {
         setHistoryNote('ASYS_VERSIONHISTORY does not exist in this database, so no version information is available.')
@@ -84,7 +85,7 @@ export function TableCenterDialog({ api, db, onClose }: { api: ForgeApi; db: DbS
       setRows(buildRows(tables, history))
     } catch (e) {
       setRows(null)
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     }
   }, [api])
 

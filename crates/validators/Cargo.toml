@@ -1,0 +1,15 @@
+[package]
+name = "validators"
+version = "0.1.0"
+description = "Prüfer für ADITO-Objekte (Entity, View, Context, Dashboard, Alias, Sprache, ...) und die Tabelle object_type -> Validatoren"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+aod = { path = "../aod" }
+designer-core = { path = "../designer-core" }
+plugin-api = { path = "../plugin-api" }
+
+[lints]
+workspace = true

@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
-import { Modal } from './Dialogs'
+import { Modal } from '../core/Modal'
 import { getOptions, saveOptions, type DesignerOptions } from '../settings/options'
 import { ENGINE_LABELS, type TranspilerEngineId } from '../settings/transpilerEngine'
 import { getEditorPrefs, setEditorPref, type EditorPrefs } from '../theme/editorPrefs'
 import type { ThemeName } from '../theme/useTheme'
-import { formatShortcut, isMacPlatform } from './shortcuts'
+import { formatShortcut, isMacPlatform } from '../core/shortcuts'
 import { OptionIcon } from './optionIcons'
 import { customThemes, removeCustomTheme, saveCustomTheme, subscribeCustomThemes } from '../theme/customThemes'
 import { parseThemePack } from '../theme/vscodeTheme'
+import { errorText } from '../core/errorText'
+import { useOptionsPages } from '../core/plugins/registry'
 
 // Tools > Options (manual 4.8.3, screenshots 037/038): an icon bar with the categories General,
 // Editor, Fonts & Colors, Keymap, Team, Appearance, Miscellaneous, ADITO and iReport; categories
@@ -17,18 +19,18 @@ import { parseThemePack } from '../theme/vscodeTheme'
 // transpiler) live on ADITO > General. Pages whose feature does not exist yet keep their
 // controls visible but dimmed, with the reason.
 
-type Category = 'general' | 'editor' | 'fonts' | 'keymap' | 'team' | 'appearance' | 'misc' | 'adito' | 'ireport'
+// 'team' kommt aus dem Plugin-Register (Git), siehe das Git-Plugin.
+type Category = 'general' | 'editor' | 'fonts' | 'keymap' | 'appearance' | 'misc' | 'adito' | 'ireport'
 
-const CATEGORIES: { id: Category; label: string }[] = [
-  { id: 'general', label: 'General' },
-  { id: 'editor', label: 'Editor' },
-  { id: 'fonts', label: 'Fonts & Colors' },
-  { id: 'keymap', label: 'Keymap' },
-  { id: 'team', label: 'Team' },
-  { id: 'appearance', label: 'Appearance' },
-  { id: 'misc', label: 'Miscellaneous' },
-  { id: 'adito', label: 'ADITO' },
-  { id: 'ireport', label: 'iReport' },
+const CATEGORIES: { id: string; label: string; order: number }[] = [
+  { id: 'general', label: 'General', order: 10 },
+  { id: 'editor', label: 'Editor', order: 20 },
+  { id: 'fonts', label: 'Fonts & Colors', order: 30 },
+  { id: 'keymap', label: 'Keymap', order: 40 },
+  { id: 'appearance', label: 'Appearance', order: 50 },
+  { id: 'misc', label: 'Miscellaneous', order: 60 },
+  { id: 'adito', label: 'ADITO', order: 70 },
+  { id: 'ireport', label: 'iReport', order: 80 },
 ]
 
 const PAGES: Partial<Record<Category, { id: string; label: string }[]>> = {
@@ -122,7 +124,9 @@ export function OptionsDialog({
   onThemeChange: (theme: ThemeName) => void
   keymap: KeymapEntry[]
 }) {
-  const [category, setCategory] = useState<Category>('adito')
+  const registeredPages = useOptionsPages()
+  const categories = [...CATEGORIES, ...registeredPages.map((p) => ({ id: p.category, label: p.title, order: p.order }))].sort((a, b) => a.order - b.order)
+  const [category, setCategory] = useState<string>('adito')
   const [page, setPage] = useState<Record<string, string>>({ misc: 'csv', adito: 'general', ireport: 'general', editor: 'general', fonts: 'fonts' })
   const [opts, setOpts] = useState<DesignerOptions>(() => getOptions())
   const [prefs, setPrefs] = useState<EditorPrefs>(() => getEditorPrefs())
@@ -154,7 +158,7 @@ export function OptionsDialog({
         text: imported.length === 1 ? `Installed "${imported[0].name}" (${imported[0].data.rules.length} token colours). It is applied when you press OK.` : `Installed ${imported.length} themes (${imported.map((t) => t.name).join(', ')}). "${imported[0].name}" is applied when you press OK.`,
       })
     } catch (e) {
-      setThemeMessage({ ok: false, text: e instanceof Error ? e.message : String(e) })
+      setThemeMessage({ ok: false, text: errorText(e) })
     }
   }
 
@@ -351,14 +355,6 @@ export function OptionsDialog({
           </table>
         </div>
         <p className="forge-field-hint">The shortcuts follow the original Designer and cannot be reassigned yet.</p>
-      </>
-    )
-  } else if (category === 'team') {
-    body = (
-      <>
-        <h3>Team</h3>
-        <p>Git actions run from Team &gt; Commit, Pull, Push and Switch Branch. Every action needs its own click; commit messages are a single line without co-author lines, and package-lock.json is deselected by default.</p>
-        <p className="forge-field-hint">Git is used through the git installation on this computer.</p>
       </>
     )
   } else if (category === 'appearance') {
@@ -577,7 +573,8 @@ export function OptionsDialog({
     )
   }
 
-  const pages = PAGES[category]
+  const pages = PAGES[category as Category]
+  const RegisteredPage = registeredPages.find((p) => p.category === category)?.component
   return (
     <Modal
       title="Options"
@@ -598,7 +595,7 @@ export function OptionsDialog({
     >
       <div className="forge-options">
         <div className="forge-opt-cats" role="tablist" aria-label="Option categories">
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <button key={c.id} type="button" role="tab" aria-selected={category === c.id} className={`forge-opt-cat${category === c.id ? ' is-active' : ''}`} onClick={() => setCategory(c.id)}>
               <span className="forge-opt-glyph" aria-hidden="true">
                 <OptionIcon id={c.id} />
@@ -608,7 +605,7 @@ export function OptionsDialog({
           ))}
         </div>
         {pages ? (
-          <div className="forge-opt-pages" role="tablist" aria-label={`${CATEGORIES.find((c) => c.id === category)!.label} pages`}>
+          <div className="forge-opt-pages" role="tablist" aria-label={`${categories.find((c) => c.id === category)!.label} pages`}>
             {pages.map((p) => (
               <button key={p.id} type="button" role="tab" aria-selected={subPage === p.id} className={`forge-opt-page${subPage === p.id ? ' is-active' : ''}`} onClick={() => setPage((s) => ({ ...s, [category]: p.id }))}>
                 {p.label}
@@ -617,7 +614,7 @@ export function OptionsDialog({
           </div>
         ) : null}
         <div className="forge-opt-body" role="tabpanel">
-          {body}
+          {RegisteredPage ? <RegisteredPage /> : body}
           {error ? (
             <p className="forge-field-error" role="alert">
               {error}

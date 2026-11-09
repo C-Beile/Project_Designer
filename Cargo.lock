@@ -3,6 +3,17 @@
 version = 4
 
 [[package]]
+name = "adito-transpiler"
+version = "0.1.0"
+dependencies = [
+ "app-base",
+ "platform",
+ "plugin-api",
+ "serde",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -121,12 +132,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
-name = "aod-io"
+name = "aod"
 version = "0.1.0"
 dependencies = [
  "quick-xml 0.36.2",
  "thiserror 1.0.69",
  "walkdir",
+]
+
+[[package]]
+name = "app-base"
+version = "0.1.0"
+dependencies = [
+ "platform",
 ]
 
 [[package]]
@@ -780,14 +798,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "core-model"
-version = "0.1.0"
-dependencies = [
- "aod-io",
- "thiserror 1.0.69",
-]
-
-[[package]]
 name = "core_detect"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -934,11 +944,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "db-layer"
+name = "database"
 version = "0.1.0"
 dependencies = [
+ "app-base",
  "async-trait",
+ "platform",
+ "plugin-api",
+ "quick-xml 0.36.2",
+ "serde",
+ "serde_json",
  "sqlx",
+ "ssh-tunnel",
  "thiserror 2.0.20",
  "tiberius",
  "tokio",
@@ -985,6 +1002,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "10d60334b3b2e7c9d91ef8150abfb6fa4c1c39ebbcf4a81c2e346aad939fee3e"
 dependencies = [
  "thiserror 2.0.20",
+]
+
+[[package]]
+name = "deploy"
+version = "0.1.0"
+dependencies = [
+ "database",
+ "plugin-api",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -1040,18 +1068,48 @@ dependencies = [
 ]
 
 [[package]]
-name = "differential-harness"
+name = "designer-app"
 version = "0.1.0"
 dependencies = [
- "aod-io",
- "clap",
- "module-graph",
+ "adito-transpiler",
+ "app-base",
+ "database",
+ "deploy",
+ "designer-core",
+ "git",
+ "liquibase",
+ "log",
  "platform",
- "semver",
+ "plugin-api",
+ "project",
  "serde",
  "serde_json",
+ "ssh-tunnel",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-log",
+ "tauri-plugin-updater",
+]
+
+[[package]]
+name = "designer-cli"
+version = "0.1.0"
+dependencies = [
+ "adito-transpiler",
+ "aod",
+ "clap",
+ "designer-core",
+]
+
+[[package]]
+name = "designer-core"
+version = "0.1.0"
+dependencies = [
+ "aod",
+ "npm-modules",
+ "platform",
+ "plugin-api",
  "thiserror 1.0.69",
- "transpiler",
 ]
 
 [[package]]
@@ -1457,67 +1515,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b"
 
 [[package]]
-name = "forge"
-version = "0.1.0"
-dependencies = [
- "clap",
- "forge-core",
-]
-
-[[package]]
-name = "forge-app"
-version = "0.1.0"
-dependencies = [
- "forge-app-core",
- "forge-core",
- "log",
- "platform",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-log",
- "tauri-plugin-updater",
-]
-
-[[package]]
-name = "forge-app-core"
-version = "0.1.0"
-dependencies = [
- "aod-io",
- "core-model",
- "db-layer",
- "differential-harness",
- "forge-core",
- "module-graph",
- "platform",
- "plugin-kernel",
- "quick-xml 0.36.2",
- "refs",
- "serde",
- "serde_json",
- "tokio",
- "transpiler",
- "zip 2.4.2",
-]
-
-[[package]]
-name = "forge-core"
-version = "0.1.0"
-dependencies = [
- "aod-io",
- "core-model",
- "db-layer",
- "module-graph",
- "platform",
- "plugin-kernel",
- "refs",
- "server-comm",
- "thiserror 1.0.69",
- "transpiler",
-]
-
-[[package]]
 name = "form_urlencoded"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1804,6 +1801,17 @@ dependencies = [
  "libc",
  "system-deps",
  "winapi",
+]
+
+[[package]]
+name = "git"
+version = "0.1.0"
+dependencies = [
+ "app-base",
+ "platform",
+ "plugin-api",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2626,6 +2634,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
 
 [[package]]
+name = "liquibase"
+version = "0.1.0"
+dependencies = [
+ "app-base",
+ "database",
+ "platform",
+ "plugin-api",
+ "serde",
+ "serde_json",
+ "ssh-tunnel",
+]
+
+[[package]]
 name = "litemap"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2747,16 +2768,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "module-graph"
-version = "0.1.0"
-dependencies = [
- "semver",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
-]
-
-[[package]]
 name = "muda"
 version = "0.19.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2803,6 +2814,21 @@ name = "multiversion_no_op"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
+
+[[package]]
+name = "native-transpiler"
+version = "0.1.0"
+dependencies = [
+ "adito-transpiler",
+ "aod",
+ "clap",
+ "npm-modules",
+ "platform",
+ "semver",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+]
 
 [[package]]
 name = "ndk"
@@ -2864,6 +2890,16 @@ dependencies = [
  "mio 0.8.11",
  "walkdir",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "npm-modules"
+version = "0.1.0"
+dependencies = [
+ "semver",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -3436,8 +3472,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "plugin-kernel"
+name = "plugin-api"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "png"
@@ -3599,11 +3639,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "qa-corpus-roundtrip"
+name = "project"
 version = "0.1.0"
 dependencies = [
- "aod-io",
- "walkdir",
+ "adito-transpiler",
+ "aod",
+ "app-base",
+ "database",
+ "deploy",
+ "designer-core",
+ "git",
+ "native-transpiler",
+ "npm-modules",
+ "platform",
+ "plugin-api",
+ "quick-xml 0.36.2",
+ "serde",
+ "serde_json",
+ "validators",
+ "zip 2.4.2",
 ]
 
 [[package]]
@@ -3727,14 +3781,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.6",
-]
-
-[[package]]
-name = "refs"
-version = "0.1.0"
-dependencies = [
- "core-model",
- "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -4313,13 +4359,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "server-comm"
-version = "0.1.0"
-dependencies = [
- "thiserror 1.0.69",
-]
-
-[[package]]
 name = "servo_arc"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4655,6 +4694,18 @@ dependencies = [
  "thiserror 2.0.20",
  "tracing",
  "whoami",
+]
+
+[[package]]
+name = "ssh-tunnel"
+version = "0.1.0"
+dependencies = [
+ "app-base",
+ "platform",
+ "plugin-api",
+ "quick-xml 0.36.2",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -5570,15 +5621,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "transpiler"
-version = "0.1.0"
-dependencies = [
- "platform",
- "serde",
- "thiserror 1.0.69",
-]
-
-[[package]]
 name = "tray-icon"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5762,6 +5804,15 @@ dependencies = [
  "js-sys",
  "serde_core",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "validators"
+version = "0.1.0"
+dependencies = [
+ "aod",
+ "designer-core",
+ "plugin-api",
 ]
 
 [[package]]

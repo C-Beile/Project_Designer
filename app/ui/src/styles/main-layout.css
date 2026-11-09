@@ -1,0 +1,26 @@
+/* ---------------------------------------------------------------------------------------------
+   Main layout
+   --------------------------------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------------------------------
+   Projects tree (LAYOUT_SPEC §4.2/§4.4): fixed 19 px rows (virtualised, see ProjectTree.tsx),
+   names never cut - the viewport scrolls horizontally, the row title shows the full text.
+   --------------------------------------------------------------------------------------------- */
+
+.project-tree-row.is-selected .project-tree-toggle,
+[aria-selected="true"] > .project-tree-toggle { color: inherit; }
+
+.project-tree-label.is-bold,
+.project-tree-type.is-bold {
+  font-weight: 700;
+}
+
+.projects-active-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 4px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-inset);
+}

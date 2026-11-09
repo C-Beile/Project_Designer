@@ -1,0 +1,13 @@
+[package]
+name = "app-base"
+version = "0.1.0"
+description = "Basis der App: Crashlog, Backup, Schreibschutz, Designer-Pfade, Fensternamen, Maskierung von Geheimnissen"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+platform = { path = "../platform" }
+
+[lints]
+workspace = true

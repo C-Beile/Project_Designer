@@ -1,0 +1,36 @@
+.language-grid { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+
+.lang-toolbar { display: flex; align-items: center; gap: 6px; padding: 4px 0; flex-wrap: wrap; }
+
+.lang-count { color: var(--fg-muted); font-size: 11px; }
+
+.lang-fields { display: flex; gap: 12px; padding-bottom: 4px; font-size: 11px; color: var(--fg-muted); }
+
+.lang-head { display: grid; grid-template-columns: 160px 1fr 1fr; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+
+.lang-head .lang-col { background: none; border: none; color: var(--fg); text-align: left; padding: 3px 6px; cursor: pointer; }
+
+.lang-body { flex: 1 1 auto; overflow: auto; min-height: 0; border: 1px solid var(--border); background: var(--bg-inset); outline: none; }
+
+.lang-row { display: grid; grid-template-columns: 160px 1fr 1fr; align-items: center; font-size: 12px; }
+
+.lang-row:nth-child(odd) { background: var(--bg-zebra, rgb(255 255 255 / 0.02)); }
+
+.lang-col { padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+.lang-sep { width: 1px; height: 16px; background: var(--border); margin: 0 4px; }
+
+.language-grid .lang-toolbar button:disabled { opacity: 0.35; cursor: default; }
+
+.language-grid .lang-toolbar button[aria-pressed='true'] { background: color-mix(in srgb, var(--accent) 22%, transparent); border-color: var(--accent); }
+
+.language-grid .lang-toolbar input[type='search'] { width: 220px; height: 24px; padding: 0 8px; box-sizing: border-box; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: 3px; }
+
+.language-grid .lang-toolbar input:focus, .language-grid .lang-toolbar select:focus { outline: none; border-color: var(--focus-ring, var(--accent)); }
+
+.lang-head, .lang-row { grid-template-columns: minmax(110px, 16%) minmax(0, 1fr) minmax(0, 1fr); }
+
+/* Language editor: the list always has room, also when the surrounding panel has no fixed height */
+.language-grid { min-height: 320px; }
+
+.lang-body { flex: 1 1 0; min-height: 240px; }

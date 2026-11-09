@@ -1,16 +1,18 @@
 [package]
-name = "forge"
+name = "designer-cli"
 version = "0.1.0"
 edition.workspace = true
 license.workspace = true
 publish.workspace = true
 
 [[bin]]
-name = "forge"
+name = "designer-cli"
 path = "src/main.rs"
 
 [dependencies]
-forge-core = { path = "../../crates/forge-core" }
+designer-core = { path = "../../crates/designer-core" }
+adito-transpiler = { path = "../../crates/adito-transpiler" }
+aod = { path = "../../crates/aod" }
 clap = { version = "4", features = ["derive"] }
 
 [lints]

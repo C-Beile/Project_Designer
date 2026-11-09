@@ -4,10 +4,11 @@ import { field, textField, textValue } from '../wire/types'
 import { EditableText } from './EditableText'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
-import { confirmDialog, promptDialog } from '../shell/dialogService'
+import { confirmDialog, promptDialog } from '../core/dialogService'
 import { useProjectIndex } from './projectIndex'
 import { addEntry, deleteEntry, parseLanguageEntries, setEntry } from './languageEntries'
 import { copyValuesPlan, removeKeysPlan } from './languageOps'
+import { errorText } from '../core/errorText'
 
 // Language editor (original Designer, shot 103): table Module | Key | Value, sortable by column,
 // thousands of rows drawn through a window of rows. Key and value of every row can be edited
@@ -76,7 +77,7 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
     api
       .getObjectSource(nodeId)
       .then((s) => setSource(s))
-      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+      .catch((e) => setError(errorText(e)))
   }, [api, nodeId])
   useEffect(reload, [reload, tree])
 
@@ -113,7 +114,7 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
         setSource({ text: next, read_only: false })
         onTreeChange(outcome.tree)
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e))
+        setError(errorText(e))
       } finally {
         busy.current = false
       }
@@ -192,7 +193,7 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
     if (!(await confirmDialog(`Remove ${keys.size} key${keys.size === 1 ? '' : 's'} from ${plans.length} language file${plans.length === 1 ? '' : 's'}?\n\n${lines}\n\nLanguage files of modules are not changed.`, { title: 'Remove rows form all languages', okLabel: 'Remove' }))) return
     for (const p of plans) {
       if (p.node.id === nodeId) await apply(p.text)
-      else await api.setObjectSource(p.node.id, p.text).catch((e) => setError(e instanceof Error ? e.message : String(e)))
+      else await api.setObjectSource(p.node.id, p.text).catch((e) => setError(errorText(e)))
     }
     setMarked(new Set())
     setSelected(null)

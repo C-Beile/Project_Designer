@@ -6,7 +6,7 @@ import type { WireValue } from '../wire/types'
 import fixture from '../test/fixtures/activity_entity.tree.json'
 
 // Real data: the property tree of Activity_entity from the module @aditosoftware/activity,
-// dumped by the Rust backend itself (app/core/examples/dump_tree.rs), so the JSON tags are the
+// dumped by the Rust backend itself (crates/project/examples/dump_tree.rs), so the JSON tags are the
 // ones the running app really receives, not the ones the mocks assume.
 const activity = fixture as unknown as WireValue
 

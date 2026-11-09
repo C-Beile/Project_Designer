@@ -1,0 +1,7 @@
+.alias-config-desc { margin-top: 12px; padding: 6px 4px; border-top: 1px solid var(--border); }
+
+.alias-config-panel { font-size: 12px; }
+
+.alias-config-panel .forge-props-input:focus { outline: none; border-color: var(--focus-ring, var(--accent)); }
+
+.alias-sheet-rows { position: relative; }

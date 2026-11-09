@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { DeployChangeView, DeployPlan } from '../wire/types'
-import { Modal } from './Dialogs'
+import { Modal } from '../core/Modal'
 import { DeployDiffDialog } from './DeployDiffDialog'
+import { errorText } from '../core/errorText'
 
 // Deploy review as in the original Designer: "Are you sure to deploy into this system?" with one
 // checkbox per model that differs (I added, U changed, D deleted from the system). Double-click (or
@@ -62,7 +63,7 @@ export function DeployDialog({
       setSelected(new Set(p.items.filter((i) => i.selected_by_default).map((i) => i.key)))
     } catch (e) {
       setPlan(null)
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     } finally {
       setBusy(false)
     }
@@ -88,7 +89,7 @@ export function DeployDialog({
     try {
       setDiff({ key, view: await api.deployShowChanges(projectRoot, key, null) })
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     }
   }
 
@@ -102,7 +103,7 @@ export function DeployDialog({
       onDeployed?.(`Deployed ${outcome.executed} model${outcome.executed === 1 ? '' : 's'} to ${outcome.target}`)
       onClose()
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     } finally {
       setBusy(false)
       setDeploying(false)

@@ -1,0 +1,68 @@
+/* ---- All editors: the same sheet as the config files (group bars, 38/62 label | value rows, plain values, calm tables) ---- */
+
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) { font-size: 12px; }
+
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) h2 {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 15px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) > label,
+.sheet-group > label {
+  display: grid;
+  grid-template-columns: 38% minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0;
+  min-height: 24px;
+  padding: 0;
+  border-bottom: none;
+  border-top: 1px solid color-mix(in srgb, var(--border) 38%, transparent);
+  font-size: 12px;
+  color: var(--fg-muted);
+  background-image: linear-gradient(to right, transparent calc(38% - 1px), color-mix(in srgb, var(--border) 38%, transparent) calc(38% - 1px), color-mix(in srgb, var(--border) 38%, transparent) 38%, transparent 38%);
+}
+
+.sheet-group > label { padding-left: 0; text-indent: 16px; }
+
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) > label:hover,
+.sheet-group > label:hover { background-color: color-mix(in srgb, var(--fg) 5%, transparent); }
+
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) input:not([type='checkbox']):not([type='radio']),
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) select {
+  box-sizing: border-box;
+  height: 20px;
+  padding: 0 8px;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid transparent;
+  border-radius: 0;
+  font: inherit;
+}
+
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) :is(label, td):hover > input:not([type='checkbox']):not([type='radio']) { border-color: var(--border); background: var(--bg-inset); }
+
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) input:not([type='checkbox']):not([type='radio']):focus { outline: none; background: var(--bg-inset); border-color: var(--focus-ring, var(--accent)); }
+
+:is(.entity-editor, .system-editor, .language-editor, .alias-db-editor, .preferences-editor, .application-editor, .webservice-editor, .context-editor, .dashboard-editor, .report-editor) input[type='checkbox'] { accent-color: var(--accent); width: 14px; height: 14px; margin: 0 8px; }
+
+.sheet-group-head::before { content: '\25BE'; font-size: 10px; color: var(--fg-muted); }
+
+.sheet-table th { padding: 3px 12px; text-align: left; font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-muted); background: color-mix(in srgb, var(--bg-panel) 60%, transparent); border: none; border-top: 1px solid color-mix(in srgb, var(--border) 38%, transparent); }
+
+.sheet-table td { padding: 2px 12px; height: 24px; box-sizing: border-box; border: none; border-top: 1px solid color-mix(in srgb, var(--border) 38%, transparent); vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sheet-table .sheet-value > input { width: 100%; }
+
+/* Problems, Refactoring and Scan Services own the whole panel: no outer padding, so rows cannot show above or beside the sticky bars. */
+.forge-output-scroll:has(.forge-problems, .forge-refactoring, .forge-scan) { padding: 0; }
+
+.forge-problems { background: var(--bg); }
+
+.forge-problems-bar { position: sticky; top: 0; z-index: 3; box-shadow: 0 1px 0 var(--border); }
+
+.forge-problems-table th { top: 34px; z-index: 2; background: var(--bg-panel); box-shadow: 0 1px 0 var(--border); }
+
+.forge-problems-table.is-problems tbody td { background-clip: padding-box; }

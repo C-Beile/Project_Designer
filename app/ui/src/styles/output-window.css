@@ -1,0 +1,85 @@
+/* ---- 0.7.0: Output window (manual chapter 7) ---- */
+
+.forge-output-subtabs {
+  align-items: flex-end;
+}
+
+.forge-output-count {
+  margin-left: 5px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--bg-panel);
+  color: var(--fg-muted);
+  font-size: 10px;
+}
+
+.forge-output-filter {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
+  padding-bottom: 2px;
+}
+
+.forge-output-filter select,
+.forge-output-filter input {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+  height: 20px;
+  padding: 0 4px;
+}
+
+.forge-output-main {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.forge-output-bar {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 3px;
+  background: var(--bg-inset);
+  border-right: 1px solid var(--border);
+}
+
+.forge-output-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid transparent;
+  border-radius: 2px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.forge-output-btn[aria-pressed="true"] {
+  background: var(--bg-panel);
+  border-color: var(--border-strong);
+}
+
+.forge-output-bar-sep {
+  width: 14px;
+  height: 1px;
+  margin: 3px 0;
+  background: var(--border);
+}
+
+.forge-output-log.is-wrapped {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.forge-output-notice {
+  padding: 1px 8px;
+}
+
+.forge-log-warn {
+  color: var(--warning);
+}

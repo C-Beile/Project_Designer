@@ -1,0 +1,72 @@
+/* ---- property sheet like the original Designer: group bars, Name | Value grid, check boxes ---- */
+
+.alias-config-panel .alias-group { border-bottom: 1px solid var(--border); }
+
+.alias-config-panel .alias-group-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 2px 6px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.alias-config-panel .alias-group-label::-webkit-details-marker { display: none; }
+
+.alias-config-panel .alias-group-label::before { content: '\25BE'; color: var(--fg-muted); font-size: 10px; width: 10px; }
+
+.alias-config-panel .alias-group:not([open]) > .alias-group-label::before { content: '\25B8'; }
+
+.alias-config-panel .forge-props-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 38%) 1fr;
+  align-items: center;
+  min-height: 22px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.alias-config-panel .forge-props-row:hover { background: color-mix(in srgb, var(--fg) 6%, transparent); }
+
+.alias-config-panel .forge-props-name {
+  padding: 2px 8px 2px 18px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alias-config-panel .forge-props-value { padding: 2px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.alias-config-panel .forge-props-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 20px;
+  margin: 1px 4px;
+  padding: 0 6px;
+  background: var(--bg-inset);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+
+.alias-config-panel input[type='checkbox'] { justify-self: start; margin: 0 8px; width: 14px; height: 14px; accent-color: var(--accent); }
+
+.alias-config-panel .forge-field-hint { margin: 0; padding: 6px 8px; color: var(--fg-muted); font-size: 11px; }
+
+.alias-config-panel .alias-config-desc { margin-top: 8px; padding: 6px 8px; border-top: 1px solid var(--border); background: var(--bg-panel); }
+
+.alias-config-tab .alias-config-panel { flex: 1 1 auto; overflow: auto; min-height: 0; }
+
+.alias-config-subtabs { display: flex; gap: 2px; padding: 2px 4px 0; border-bottom: 1px solid var(--border); flex: 0 0 auto; }
+
+.alias-config-subtab { background: none; border: none; border-bottom: 2px solid transparent; color: var(--fg-muted); padding: 2px 10px; font: inherit; cursor: default; }
+
+.alias-config-subtab.is-active { color: var(--fg); border-bottom-color: var(--accent); }

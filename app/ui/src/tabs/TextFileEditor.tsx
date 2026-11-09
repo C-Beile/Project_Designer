@@ -6,7 +6,7 @@ import { GITATTRIBUTES_LANGUAGE, IGNORE_LANGUAGE } from '../theme/monacoLanguage
 import { applyJditoTypes } from '../theme/monacoJdito'
 import { registerFormatter } from '../theme/formatOnSave'
 import { enableImportNavigation } from '../theme/monacoImports'
-import { useScm } from '../scm/scmStore'
+import { useScm } from '../core/scm'
 import type { Gutter } from '../wire/types'
 
 // Editor of a plain project file (package.json, .js, ...). Unsaved text lives in `drafts`, so it

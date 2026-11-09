@@ -1,0 +1,9 @@
+.forge-modal-footer button:disabled {
+  opacity: 0.4;
+}
+
+.forge-modal-footer button:focus-visible { outline: 2px solid var(--focus-ring, var(--accent)); outline-offset: 1px; }
+
+.forge-modal-footer button:not(:disabled):active { transform: translateY(1px); filter: brightness(0.94); }
+
+.forge-modal-footer button:focus-visible { outline: 2px solid var(--focus-ring, var(--accent)); outline-offset: 2px; }

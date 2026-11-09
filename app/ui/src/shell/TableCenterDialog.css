@@ -1,0 +1,7 @@
+.forge-tablecenter-list li {
+  padding: 2px 8px;
+}
+
+.forge-tablecenter-info dt {
+  color: var(--fg-muted);
+}

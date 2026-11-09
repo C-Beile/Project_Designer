@@ -1,0 +1,121 @@
+/* ---- Problems, Usages and Scan Services: calm tables and tree ---- */
+
+.forge-problems-bar { gap: 8px; height: 34px; box-sizing: border-box; padding: 0 10px; z-index: 2; background: var(--bg-panel); }
+
+.forge-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-inset); cursor: pointer; }
+
+.forge-chip:has(input:checked).is-error { border-color: color-mix(in srgb, var(--error) 55%, var(--border)); background: color-mix(in srgb, var(--error) 10%, var(--bg-inset)); }
+
+.forge-chip:has(input:checked).is-warning { border-color: color-mix(in srgb, var(--warning) 55%, var(--border)); background: color-mix(in srgb, var(--warning) 10%, var(--bg-inset)); }
+
+.forge-chip input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+
+.forge-chip:not(:has(input:checked)) { opacity: 0.55; }
+
+.forge-problems-bar input[type='text'] { height: 24px; min-width: 200px; padding: 0 8px; background: var(--bg-inset); border: 1px solid var(--border); border-radius: 3px; }
+
+.forge-problems-table { font-size: 12px; border-spacing: 0; }
+
+.forge-problems-table.is-problems { table-layout: fixed; }
+
+.forge-problems-table th { top: 34px; padding: 5px 10px; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.05em; font-weight: 600; border-bottom: 1px solid var(--border); background: var(--bg-panel); z-index: 1; }
+
+.forge-problems-table td { padding: 4px 10px; height: 24px; box-sizing: border-box; border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent); max-width: none; }
+
+.forge-problems-table tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--fg) 3%, transparent); }
+
+.forge-problems-table .col-icon { width: 34px; }
+
+.forge-problems-table .col-object { width: 19%; }
+
+.forge-problems-table .col-file { width: 26%; }
+
+.forge-problems-table .col-line { width: 58px; }
+
+.forge-problems-table .col-source { width: 92px; }
+
+.forge-problem-icon { text-align: center; padding-left: 12px !important; padding-right: 0 !important; }
+
+.forge-problem-row { cursor: default; }
+
+.forge-problem-row:hover td { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+
+.forge-problem-row.is-selected td { background: var(--selected-bg); color: var(--selected-fg); }
+
+.forge-problem-row.is-selected .forge-file-dir, .forge-problem-row.is-selected .forge-source-badge { color: inherit; }
+
+.forge-problem-row.is-selected .forge-problem-text { white-space: normal; word-break: break-word; }
+
+.forge-problem-row:focus-visible { outline: 1px solid var(--focus-ring, var(--accent)); outline-offset: -1px; }
+
+.forge-problem-row.is-error td:first-child { box-shadow: inset 3px 0 0 var(--error); }
+
+.forge-problem-row.is-warning td:first-child { box-shadow: inset 3px 0 0 var(--warning); }
+
+.forge-file-dir { color: var(--fg-muted); }
+
+.forge-file-name { color: var(--fg); }
+
+.forge-cell-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--fg-muted); }
+
+.forge-problems-table th:nth-child(5) { text-align: right; }
+
+.forge-source-badge { display: inline-block; padding: 0 8px; border: 1px solid var(--border); border-radius: 9px; color: var(--fg-muted); font-size: 11px; line-height: 16px; }
+
+.forge-refactoring-bar { display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: var(--bg-panel); border-bottom: 1px solid var(--border); }
+
+.forge-refactoring-bar button { padding: 3px 14px; border: 1px solid var(--border-strong); border-radius: 3px; background: var(--bg-inset); color: var(--fg); cursor: pointer; }
+
+.forge-refactoring-bar button:not(:disabled):hover { background: color-mix(in srgb, var(--fg) 10%, var(--bg-inset)); }
+
+.forge-refactoring-bar button:disabled { opacity: 0.45; }
+
+.forge-refactoring-note { padding: 6px 10px; margin: 0; }
+
+.forge-scan-bar { gap: 4px; padding: 6px 4px; background: var(--bg-panel); }
+
+.forge-scan-bar button { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: var(--fg-muted); border-radius: 4px; cursor: pointer; }
+
+.forge-scan-bar button:hover:not(:disabled), .forge-scan-bar button[aria-pressed='true'] { color: var(--fg); background: color-mix(in srgb, var(--fg) 10%, transparent); border-color: transparent; }
+
+.forge-scan-main { padding: 0; }
+
+.forge-scan-structure { padding: 8px 12px; background: var(--bg-inset); border-bottom: 1px solid var(--border); }
+
+.forge-scan-actions { padding: 6px 12px; gap: 8px; background: var(--bg-panel); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 2; }
+
+.forge-scan-actions button { padding: 3px 12px; border-radius: 3px; cursor: pointer; }
+
+.forge-scan-actions button:not(:disabled):hover { background: color-mix(in srgb, var(--fg) 10%, var(--bg-panel)); }
+
+.forge-scan-summary { margin-left: auto; }
+
+.forge-scan-tree { padding: 6px 8px 12px; font-size: 12.5px; }
+
+.forge-scan-tree ul { margin: 0 0 0 12px; padding: 0 0 0 10px; border-left: 1px solid var(--border); }
+
+.forge-scan-node { display: flex; align-items: center; gap: 8px; width: 100%; padding: 3px 6px; border-radius: 4px; cursor: pointer; font: inherit; }
+
+.forge-scan-node:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+
+.forge-chevron { flex: none; color: var(--fg-muted); transition: transform 0.12s; }
+
+.forge-scan-label { font-weight: 600; }
+
+.forge-scan-label.is-file { font-weight: 400; color: var(--fg-muted); }
+
+.forge-count { margin-left: 2px; padding: 0 7px; border-radius: 9px; background: var(--bg-panel); border: 1px solid var(--border); color: var(--fg-muted); font-size: 11px; line-height: 16px; font-variant-numeric: tabular-nums; }
+
+.forge-scan-task { display: flex; align-items: flex-start; gap: 8px; padding: 4px 8px; margin: 1px 0; border-radius: 4px; }
+
+.forge-scan-task:hover { background: color-mix(in srgb, var(--fg) 7%, transparent); }
+
+.forge-scan-task.is-selected { background: var(--selected-bg); color: var(--selected-fg); }
+
+.forge-scan-icon { display: inline-flex; flex: none; margin: 2px 0 0; }
+
+.forge-scan-message { flex: 1 1 auto; min-width: 0; line-height: 1.4; word-break: break-word; }
+
+.forge-scan-line { flex: none; margin-left: auto; padding: 0 7px; border-radius: 9px; border: 1px solid var(--border); color: var(--fg-muted); font-size: 11px; line-height: 16px; font-variant-numeric: tabular-nums; }
+
+.forge-scan-task.is-selected .forge-scan-line { color: inherit; border-color: color-mix(in srgb, currentColor 40%, transparent); }

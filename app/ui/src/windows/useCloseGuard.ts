@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { choiceDialog } from '../shell/dialogService'
+import { choiceDialog } from '../core/dialogService'
 import { EVENTS } from './protocol'
 import { getWindowBackend, osWindowsAvailable } from './windowService'
 

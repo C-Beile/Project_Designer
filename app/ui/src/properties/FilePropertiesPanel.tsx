@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { FileInfoDto } from '../wire/types'
+import { errorText } from '../core/errorText'
 
 // Properties of a plain file in the Projects tree (original Designer, reference shot 94): group
 // "Properties" with Name, Extension, File Size, Modification Time and All Files (the full path).
@@ -26,7 +27,7 @@ export function FilePropertiesPanel({ api, path }: { api: ForgeApi; path: string
     api
       .fileInfo(path)
       .then((i) => !cancelled && setInfo(i))
-      .catch((e) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
+      .catch((e) => !cancelled && setError(errorText(e)))
     return () => {
       cancelled = true
     }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { LocalDataInfo, UpdateInfo } from '../wire/types'
-import { Modal } from './Dialogs'
+import { Modal } from '../core/Modal'
+import { errorText } from '../core/errorText'
 
 // Help > Check for Updates (manual chapter 13 / menu Help). Asks the private release repository
 // for a newer Dito Designer, shows its version and release notes and installs it only after the
@@ -23,7 +24,7 @@ export function UpdatesDialog({ api, onClose, onOpenTableCenter }: { api: ForgeA
       const update = await api.checkForUpdate()
       setState(update ? { phase: 'available', update } : { phase: 'current' })
     } catch (e) {
-      setState({ phase: 'error', message: e instanceof Error ? e.message : String(e) })
+      setState({ phase: 'error', message: errorText(e) })
     }
   }
 
@@ -32,7 +33,7 @@ export function UpdatesDialog({ api, onClose, onOpenTableCenter }: { api: ForgeA
     try {
       await api.installUpdate()
     } catch (e) {
-      setState({ phase: 'error', message: e instanceof Error ? e.message : String(e) })
+      setState({ phase: 'error', message: errorText(e) })
     }
   }
 

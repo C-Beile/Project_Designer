@@ -1,0 +1,84 @@
+/* ---- 0.8.0: commit dialog like the original (reference shots 61, 65) ---- */
+
+.forge-modal:has(.forge-commit) {
+  width: min(980px, calc(100vw - 32px));
+}
+
+.forge-commit {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 8px 12px;
+}
+
+.forge-commit-main {
+  min-width: 0;
+}
+
+.forge-commit-toolbar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.forge-commit-toolbar button {
+  width: 24px;
+  padding: 0;
+}
+
+.forge-commit-treebox {
+  max-height: 340px;
+  overflow: auto;
+  border: 1px solid var(--border-strong);
+  padding: 2px 4px;
+}
+
+.forge-commit-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.forge-commit-tree .forge-commit-tree {
+  padding-left: 16px;
+}
+
+.forge-commit-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 20px;
+}
+
+.forge-commit-file {
+  padding-left: 16px;
+}
+
+.forge-commit-twisty {
+  width: 14px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.forge-commit-count {
+  color: var(--fg-muted);
+}
+
+.forge-commit-name.is-new {
+  color: var(--success);
+}
+
+.forge-commit-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.forge-commit-buttons {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}

@@ -2,7 +2,7 @@ import type { EditorProps } from './registry'
 import { asArray, field, textField, textValue } from '../wire/types'
 import { EditableText } from './EditableText'
 
-// Ziel 2 (neonContext editor, P4 second family): "welche Entity, welche Views/Aktionen"
+// Ziel 2 (neonContext-Editor): "welche Entity, welche Views/Aktionen"
 // (feature-matrix.md's MUST subset) - the context's own identity (`title`), its bound `entity`,
 // its three primary view slots (`filterView`/`editView`/`previewView`), and the full
 // `references` catalogue (`neonViewReference`/`webserviceReference`) it keeps in sync with those

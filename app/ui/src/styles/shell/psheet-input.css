@@ -1,0 +1,75 @@
+.psheet-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 40%) minmax(0, 1fr);
+  align-items: stretch;
+  min-height: 19px;
+  border-bottom: 1px solid var(--border);
+}
+
+.psheet-label {
+  padding: 1px 8px 1px 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-right: 1px solid var(--border);
+}
+
+.psheet-row.is-unset .psheet-label {
+  font-style: italic;
+  color: var(--fg-muted);
+}
+
+.psheet-value {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0 2px;
+}
+
+.psheet-row.is-selected {
+  background: var(--selection, #1d3b53);
+}
+
+.psheet-input,
+.psheet-value select {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  height: 17px;
+  box-sizing: border-box;
+  padding: 0 3px;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid transparent;
+  border-radius: 0;
+  font: inherit;
+}
+
+.psheet-input:focus,
+.psheet-value select:focus {
+  background: var(--bg);
+  border-color: var(--accent);
+  outline: none;
+}
+
+.psheet-value input[type='checkbox'] {
+  margin: 0 4px;
+}
+
+.psheet-ref,
+.psheet-linked {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+}
+
+.psheet-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

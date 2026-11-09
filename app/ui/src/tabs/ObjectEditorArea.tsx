@@ -4,7 +4,8 @@ import type { EditorComponent } from '../editors/registry'
 import type { Problem } from '../problems/problemStore'
 import type { DbStatus, UndoRedoOutcome, WireValue } from '../wire/types'
 import { HistoryView } from './HistoryView'
-import { ErrorBoundary } from '../shell/errorHandling'
+import { ErrorBoundary } from '../core/errorHandling'
+import { useDialog } from '../core/plugins/registry'
 import { UsersTab } from '../services/UsersTable'
 import { systemKey, useTunnelState } from '../services/tunnelState'
 import { SUB_TAB_LABELS, isFileNode, isServiceNode, isTunnelNode, isAliasConfigNode, subTabsFor, type EditorTab, type SubTab } from './tabModel'
@@ -18,7 +19,6 @@ const SqlEditor = lazy(() => import('../services/SqlEditor').then((m) => ({ defa
 const DbBrowserTab = lazy(() => import('./DbBrowserTab').then((m) => ({ default: m.DbBrowserTab })))
 const AliasConfigTab = lazy(() => import('./AliasConfigTab').then((m) => ({ default: m.AliasConfigTab })))
 const TunnelConfigEditor = lazy(() => import('./TunnelConfigEditor').then((m) => ({ default: m.TunnelConfigEditor })))
-const DiffView = lazy(() => import('../scm/DiffView').then((m) => ({ default: m.DiffView })))
 const TextFileEditor = lazy(() => import('./TextFileEditor').then((m) => ({ default: m.TextFileEditor })))
 
 function Hint({ children }: { children: string }) {
@@ -77,6 +77,8 @@ export function ObjectEditorArea({
 }) {
   const { node } = tab
   const tunnelShared = useTunnelState()
+  // Diff-Ansicht liefert das SCM-Plugin (Git); ohne Plugin gibt es keine Diff-Tabs.
+  const DiffView = useDialog('git.diffView')?.component
   const subTabs = subTabsFor(node)
   const sub = subTabs.includes(tab.sub) ? tab.sub : 'editor'
 
@@ -94,11 +96,11 @@ export function ObjectEditorArea({
       </Suspense>
     )
   } else if (node.diff) {
-    body = (
+    body = DiffView ? (
       <Suspense fallback={Loading}>
         <DiffView api={api} target={node.diff} />
       </Suspense>
-    )
+    ) : null
   } else if (isServiceNode(node)) {
     body = (
       <Suspense fallback={Loading}>

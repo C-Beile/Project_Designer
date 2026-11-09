@@ -1,0 +1,8 @@
+.forge-tool-btn:hover:not([aria-disabled="true"]) {
+  background: var(--bg-panel);
+  border-color: var(--border);
+}
+
+.forge-tool-btn[aria-disabled="true"] {
+  opacity: 0.4;
+}

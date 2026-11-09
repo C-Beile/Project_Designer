@@ -2,11 +2,10 @@ import type { ComponentType } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { WireValue } from '../wire/types'
 
-// The frontend half of architecture.md §6's extension point: "eine Komponente, die anhand des
-// ausgewählten Objekttyps die passende Editor-View rendert (Registry-Pattern im Frontend, analog
-// zu plugin-kernel's PluginRegistry im Backend)". A later P4 agent adding e.g. the view/context
-// editor family calls `registerEditor("view", ViewEditor)` from its own module and imports that
-// module once from `App.tsx` - this file itself never changes.
+// Das Frontend-Gegenstück zum Erweiterungspunkt aus architecture.md §6: "eine Komponente, die anhand des
+// ausgewählten Objekttyps die passende Editor-View rendert" (Registry-Pattern, analog zur Registry im
+// Backend, `plugin-api`). Ein neuer Editor ruft `registerEditor("view", ViewEditor)` aus seinem eigenen
+// Modul auf und importiert es einmal in `App.tsx`. Diese Datei ändert sich dabei nicht.
 
 export interface EditorProps {
   nodeId: string

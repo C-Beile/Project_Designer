@@ -3,7 +3,7 @@ import type { AliasConfigDto, AliasConfigTable, DeployOverview, DeployPlan, Tabl
 import { getAt, parseNodePath, setAt } from '../wire/path'
 
 // In-memory stand-in for the real Tauri-backed `ForgeApi` (src/api/tauriApi.ts), mirroring
-// `app/core/src/project_actor.rs`'s observable behaviour (per-node_id history, undo clears
+// `crates/project/src/project_actor.rs`'s observable behaviour (per-node_id history, undo clears
 // redo on a new edit, set_property returns the *whole* updated tree) closely enough that UI
 // components under test can't tell the difference. Lets every component test in this app run
 // with zero real Tauri/Rust process, per this agent's role brief ("verifiziere das

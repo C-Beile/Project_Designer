@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { DeployChangeView } from '../wire/types'
-import { Modal } from './Dialogs'
+import { Modal } from '../core/Modal'
 
 // Side-by-side comparison of one model: the version on the system (left) against the version of the
 // project (right), as in the original Designer ("Diff Deploy <model>"). Lines that exist on one side

@@ -6,7 +6,7 @@ import { WebserviceEditor } from './WebserviceEditor'
 import type { WireValue } from '../wire/types'
 import { createMockForgeApi } from '../test/mockApi'
 
-// Mirrors THHIT_Tour_ws.aod's real shape (app/core/tests/fixtures/DemoProject/entityWebservice) -
+// Mirrors THHIT_Tour_ws.aod's real shape (crates/aod/tests/fixtures/DemoProject/entityWebservice) -
 // the real R26 (RISKS.md) shape: a single `webserviceMethods`/`loginTypeId` element projects
 // un-indexed (plain `text`, not `array`), and its single `webserviceFieldConsumer` projects as an
 // `object`, not an array entry, with its own nested `webserviceFields`.

@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { NavigatorPanel } from '../navigator/NavigatorPanel'
 import { ProjectPropertiesPanel, PropertySheetPanel } from '../properties/PropertySheetPanel'
-import { ScmPanel } from '../scm/ScmPanel'
-import { refreshScm, useScm } from '../scm/scmStore'
+import { useDialog } from '../core/plugins/registry'
+import { refreshScm, useScm } from '../core/scm'
 import { ServicesPanel } from '../services/ServicesPanel'
-import { DialogHost } from '../shell/dialogService'
-import { ToastHost } from '../shell/notifications'
-import type { DbStatus } from '../wire/types'
+import { DialogHost } from '../core/dialogService'
+import { ToastHost } from '../core/notifications'
+import type { DbStatus, DiffTarget } from '../wire/types'
 import { OutputBody, type OutputLine, type OutputSubTab } from '../shell/OutputPanel'
 import { EVENTS, FLOAT_TITLES, type FloatAction, type FloatView, type MainState } from './protocol'
 import { getWindowBackend } from './windowService'
@@ -21,9 +21,10 @@ const NO_DB: DbStatus = { connected: false, tunnel_up: false, database: null, ho
 export function FloatApp({ view, api }: { view: FloatView; api: ForgeApi }) {
   const [state, setState] = useState<MainState | null>(null)
   const [db, setDb] = useState<DbStatus>(NO_DB)
-  const [logs, setLogs] = useState<Record<OutputSubTab, OutputLine[]>>({ database: [], build: [], default: [], nodejs: [] })
+  const [logs, setLogs] = useState<Record<OutputSubTab, OutputLine[]>>({ ide: [], database: [], build: [], default: [], nodejs: [] })
   const [sub, setSub] = useState<OutputSubTab>('build')
   const scm = useScm()
+  const ScmPanel = useDialog('git.scmPanel')?.component
 
   const send = (action: FloatAction) => void getWindowBackend().emit(EVENTS.floatAction, action)
 
@@ -37,7 +38,7 @@ export function FloatApp({ view, api }: { view: FloatView; api: ForgeApi }) {
         else unsubs.push(u)
       })
     add(backend.listen(EVENTS.mainState, (p) => setState(p as MainState)))
-    add(backend.listen(EVENTS.outputLines, (p) => setLogs(p as Record<OutputSubTab, OutputLine[]>)))
+    add(backend.listen(EVENTS.outputLines, (p) => setLogs((prev) => ({ ...prev, ...(p as Record<OutputSubTab, OutputLine[]>) }))))
     add(
       backend.listen(EVENTS.scmRefresh, () => {
         const root = latestRoot.current
@@ -105,7 +106,7 @@ export function FloatApp({ view, api }: { view: FloatView; api: ForgeApi }) {
     )
   } else if (!state) body = <div className="forge-panel-empty">Please Wait…</div>
   else if (view === 'scm') {
-    body = <ScmPanel api={api} root={state.root} onOpenDiff={(target) => send({ type: 'openDiff', target })} onChanged={() => send({ type: 'reload' })} />
+    body = ScmPanel ? <ScmPanel api={api} root={state.root} onOpenDiff={(target: DiffTarget) => send({ type: 'openDiff', target })} onChanged={() => send({ type: 'reload' })} /> : null
   } else if (view === 'services') {
     body = <ServicesPanel api={api} db={db} onDbChange={setDb} onOpenSql={(sql) => send({ type: 'openSql', sql })} />
   } else if (view === 'navigator') {

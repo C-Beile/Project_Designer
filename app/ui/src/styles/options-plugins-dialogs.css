@@ -1,0 +1,100 @@
+/* ---- Options and Plugins dialogs: one calm style (icon bar, groups, fields, lists) ---- */
+
+.forge-opt-cats { background: var(--bg-panel); padding: 4px 4px 0; border-radius: 4px 4px 0 0; }
+
+.forge-opt-cat { border-radius: 4px 4px 0 0; color: var(--fg-muted); font-size: 12px; cursor: pointer; }
+
+.forge-opt-cat:hover { color: var(--fg); background: color-mix(in srgb, var(--fg) 7%, transparent); }
+
+.forge-opt-cat.is-active { color: var(--fg); background: var(--bg); border-bottom-color: var(--accent); }
+
+.forge-opt-glyph { display: flex; align-items: center; justify-content: center; height: 28px; color: var(--accent); }
+
+.forge-opt-cat:not(.is-active) .forge-opt-glyph { color: var(--fg-muted); }
+
+.forge-opt-cat.is-active .forge-opt-glyph { color: var(--accent); }
+
+.forge-opt-pages { padding: 6px 4px 0; }
+
+.forge-opt-page { cursor: pointer; border-radius: 3px 3px 0 0; }
+
+.forge-opt-page:hover { color: var(--fg); }
+
+.forge-opt-page.is-active { border-bottom-color: var(--accent); }
+
+.forge-opt-body { padding: 14px 8px; gap: 12px; }
+
+.forge-opt-row { grid-template-columns: 240px 1fr; gap: 4px 16px; min-height: 26px; }
+
+.forge-opt-label { color: var(--fg); }
+
+.forge-opt-body input[type='text'],
+.forge-opt-body input[type='number'],
+.forge-opt-body input[type='password'],
+.forge-opt-body input[type='search'],
+.forge-opt-body select,
+.forge-plugins input[type='text'],
+.forge-plugins select {
+  background: var(--bg-inset);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 3px 8px;
+  min-height: 24px;
+  box-sizing: border-box;
+}
+
+.forge-opt-body input:focus,
+.forge-opt-body select:focus,
+.forge-plugins input:focus,
+.forge-plugins select:focus { outline: none; border-color: var(--focus-ring, var(--accent)); box-shadow: 0 0 0 1px var(--focus-ring, var(--accent)); }
+
+.forge-opt-body input[type='checkbox'],
+.forge-opt-body input[type='radio'],
+.forge-plugins input[type='checkbox'] { accent-color: var(--accent); }
+
+.forge-opt-group { border-radius: 4px; border-color: var(--border); background: color-mix(in srgb, var(--bg-panel) 45%, transparent); padding: 8px 12px 10px; gap: 6px; }
+
+.forge-opt-group > legend { padding: 0 6px; color: var(--fg-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.forge-opt-body .forge-field-hint { color: var(--fg-muted); font-size: 11px; line-height: 1.45; }
+
+.forge-opt-scroll { border-radius: 4px; }
+
+.forge-opt-table tbody tr:nth-child(even) td,
+.forge-plugins-list tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--fg) 3.5%, transparent); }
+
+.forge-opt-table tbody tr:hover td,
+.forge-plugins-list tbody tr:hover td { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+
+.forge-plugins-note { padding: 14px 8px; display: flex; flex-direction: column; gap: 10px; }
+
+.forge-plugins-split { height: 400px; gap: 14px; padding-top: 10px; }
+
+.forge-plugins-list { border: 1px solid var(--border); border-radius: 4px; padding: 0; }
+
+.forge-plugins-search { padding: 6px 8px; background: var(--bg-panel); border-bottom: 1px solid var(--border); }
+
+.forge-plugins-list th { text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.04em; padding: 4px 8px; }
+
+.forge-plugins-list td { padding: 4px 8px; cursor: default; }
+
+.forge-plugins-list table { flex: 1 1 auto; }
+
+.forge-plugins-list tr.is-selected td { background: var(--selected-bg); color: var(--selected-fg); }
+
+.forge-plugin-dot { display: inline-flex; vertical-align: middle; }
+
+.forge-plugins-actions { padding: 8px; border-top: 1px solid var(--border); background: var(--bg-panel); }
+
+.forge-plugins-actions button,
+.forge-plugins-note button { border-radius: 3px; padding: 3px 14px; cursor: pointer; }
+
+.forge-plugins-actions button:not(:disabled):hover,
+.forge-plugins-note button:not(:disabled):hover { background: var(--button-bg, var(--selection)); color: var(--button-fg, #fff); }
+
+.forge-plugins-detail { padding: 2px 6px 2px 14px; line-height: 1.5; }
+
+.forge-plugins-detail h3 { margin: 0 0 6px; font-size: 15px; }
+
+.forge-plugins-detail h4 { margin: 14px 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fg-muted); }

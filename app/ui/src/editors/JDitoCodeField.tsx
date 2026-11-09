@@ -8,6 +8,7 @@ import { ensureMonacoWorkers } from '../theme/monacoWorkers'
 import { attachAditoStyle, registerAditoModel } from '../theme/monacoAdito'
 import { setProblems } from '../problems/problemStore'
 import { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForgeThemeForMonaco } from '../theme/monacoTheme'
+import { errorText } from '../core/errorText'
 
 // Ziel B.3: JDito code field for a `valueProcess`/`displayValueProcess` linked `.js` file.
 // Monaco embed ported from the already-verified `spike-editor.md` pattern (plain `monaco-editor`,
@@ -20,7 +21,7 @@ import { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForg
 // **Not wired to the LSP sidecar in this round** (see `lsp_bridge.rs`'s doc comment for why -
 // the bridge commands exist and are reachable, ported near-verbatim from the proven spike, but
 // wiring+re-verifying live Completion/Diagnostics from this component was a deliberate budget
-// tradeoff, documented as an open point in `p4-editor-entity-notes.md`). Syntax highlighting
+// tradeoff, als offener Punkt dokumentiert). Syntax highlighting
 // alone (Monaco's built-in JS support, no LSP needed) is active.
 
 export function JDitoCodeField({
@@ -130,7 +131,7 @@ export function JDitoCodeField({
       setDirty(false)
       setSaveError(null)
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : String(e))
+      setSaveError(errorText(e))
     }
   }
 

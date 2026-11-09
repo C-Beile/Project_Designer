@@ -1,0 +1,7 @@
+.tp-btn:disabled { opacity: 0.45; cursor: default; }
+
+.tp-port-addr code { font-family: var(--font-mono, ui-monospace, monospace); }
+
+.tp-info b { color: var(--fg); font-weight: 600; }
+
+.tp-info code { color: var(--fg); }

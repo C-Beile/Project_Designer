@@ -5,6 +5,7 @@ import type { TreeNode } from '../wire/types'
 import { canMoveToWindow, editorWindowName, forgetEditorWindow, loadEditorWindows, rememberEditorWindow } from './editorWindows'
 import { EVENTS, type EditorCommand, type EditorDockResult, type EditorWindowPayload, type Geometry, type WindowResultEvent } from './protocol'
 import { getWindowBackend, osWindowsAvailable } from './windowService'
+import { errorText } from '../core/errorText'
 
 // Main-window side of the editors that live in windows of their own: which documents moved out,
 // where their windows are, bringing them back, and asking them to save. A document is open in one
@@ -91,7 +92,7 @@ export function useEditorWindows(options: Options) {
       } catch (e) {
         drop(tab.id)
         o.restoreTab(tab.node, tab.project, tab.sub)
-        o.onError(e instanceof Error ? e.message : String(e))
+        o.onError(errorText(e))
         return false
       }
     },

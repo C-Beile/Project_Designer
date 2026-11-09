@@ -1,6 +1,6 @@
 // One shared error type for every platform subsystem. A per-trait error enum was considered
 // (mirroring transpiler::TranspilerError), but the seven interfaces here are thin OS wrappers
-// with overlapping failure shapes (spawn/IO/not-found) - a single enum keeps forge-core's
+// with overlapping failure shapes (spawn/IO/not-found) - a single enum keeps designer-core's
 // error handling code from having to match on seven near-identical types for what is, from a
 // caller's perspective, "the platform layer failed, here is why".
 

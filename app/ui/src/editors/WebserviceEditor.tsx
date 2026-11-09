@@ -5,9 +5,8 @@ import { EditableText } from './EditableText'
 import { useEffect, useState } from 'react'
 import { useProjectIndex } from './projectIndex'
 
-// P4 sixth family (`WebserviceEditor`): the MUST subset of feature-matrix.md's WebserviceEditor
-// entry. Own mini format analysis this agent ran (no P1 `webservice.schema.json` existed, see
-// `p4-editor-webservice-notes.md` §1) - object folder is `entityWebservice` (NOT `webservice`,
+// `WebserviceEditor`: the MUST subset of feature-matrix.md's WebserviceEditor
+// entry. Own mini format analysis this agent ran (no P1 `webservice.schema.json` existed) - object folder is `entityWebservice` (NOT `webservice`,
 // despite aod-format.md §4's `webserviceReference.webservice` reference-type name), root element
 // `entityWebservice`. `name`/`majorModelMode` shown read-only (identity/constant, same precedent
 // `LanguageEditor.tsx`/`SystemEditor.tsx` set). `webserviceMethods`/`loginTypeId` are shown
@@ -172,10 +171,10 @@ interface WebserviceFieldRef {
 
 // Same real R26 shape as `stringListField` above, but for a *mixed*-tag list: `webserviceFields`
 // holds `webserviceField` (leaf) and `webserviceFieldConsumer` (recursive, its own nested
-// `webserviceFields`) side by side, and `group_children` (aod-io) collapses each tag name to
+// `webserviceFields`) side by side, and `group_children` (aod::tree) collapses each tag name to
 // Object-vs-Array independently of the other - the same "one tag Array, a different tag in the same
-// list stays an Object" shape `preferences`'s custom property banks established
-// (`p4-editor-system-preferences-application-notes.md` §3). `THHIT_PersonUpdate_ws`'s single real
+// list stays an Object" shape `preferences`'s custom property banks established.
+// `THHIT_PersonUpdate_ws`'s single real
 // `webserviceField` (no `[0]`) is the minimal real example this must not drop.
 function webserviceFieldEntries(container: WireValue | undefined): WebserviceFieldRef[] {
   if (!container) return []

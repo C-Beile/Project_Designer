@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { moveViewChild, parseViewChildren } from './viewChildren'
 
-const FIXTURES = resolve(__dirname, '../../../../crates/aod-io/tests/fixtures')
+const FIXTURES = resolve(__dirname, '../../../../crates/aod/tests/fixtures')
 
 const SAMPLE = `<?xml version="1.0" encoding="UTF-8"?>\r
 <neonView>\r

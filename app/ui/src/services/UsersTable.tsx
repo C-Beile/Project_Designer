@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { AliasConfigTable, DbStatus, TableDump } from '../wire/types'
-import { confirmDialog, promptDialog } from '../shell/dialogService'
+import { confirmDialog, promptDialog } from '../core/dialogService'
 import { getUserSelection, notifyUsersChanged, setUserSelection, useUsersChanged } from './userSelection'
+import { errorText } from '../core/errorText'
 
 // Users tab and the alias-config list of the system editor, read from the system database
 // (ASYS_USERS, ASYS_ALIASCONFIG). Credential columns are removed by the backend; this view only
@@ -45,7 +46,7 @@ function useRemote<T>(db: DbStatus, load: () => Promise<T>, reload = 0) {
     if (!db.connected) return
     load()
       .then((d) => !cancelled && setData(d))
-      .catch((e) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
+      .catch((e) => !cancelled && setError(errorText(e)))
     return () => {
       cancelled = true
     }
@@ -87,7 +88,7 @@ function UsersGrid({ api, dump, systemKey, systemName, onReload }: { api: ForgeA
       setUserSelection({ systemKey: systemKey ?? '', systemName: systemName ?? '', user: created, title: title.trim() })
       notifyUsersChanged()
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : String(e))
+      setActionError(errorText(e))
     }
   }
 
@@ -104,7 +105,7 @@ function UsersGrid({ api, dump, systemKey, systemName, onReload }: { api: ForgeA
       setUserSelection(null)
       notifyUsersChanged()
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : String(e))
+      setActionError(errorText(e))
     }
   }
   // Every row keeps the user it stands for (the key of the row), also after filtering and sorting.

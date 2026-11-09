@@ -3,6 +3,7 @@ import type { ForgeApi } from '../api/ForgeApi'
 import type { SchemaTable } from '../wire/types'
 import { TunnelGlyph } from '../tree/TunnelGlyph'
 import { useTunnelState, systemNameOf } from './tunnelState'
+import { errorText } from '../core/errorText'
 
 // Services tab: project > system > database alias (System_alias, Data_alias ...) > tables. Every
 // open session of the tunnel state shows up by itself; tables are read when an alias is opened and
@@ -92,7 +93,7 @@ function AliasNode({ api, alias, onOpenSql }: { api: ForgeApi; alias: AliasEntry
       return api.dbSchema()
     })()
       .then((t) => !cancelled && setTables(t))
-      .catch((e) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
+      .catch((e) => !cancelled && setError(errorText(e)))
     return () => {
       cancelled = true
     }

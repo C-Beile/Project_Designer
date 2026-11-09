@@ -1,0 +1,44 @@
+/* ---- Property sheet: movable divider, selected row, description of the selected property ---- */
+
+.alias-config-panel .forge-props-row { grid-template-columns: var(--sheet-split, 50%) minmax(0, 1fr); cursor: default; }
+
+.alias-config-panel .forge-props-row.is-selected { background: var(--selected-bg); color: var(--selected-fg); }
+
+.alias-config-panel .forge-props-row.is-selected .forge-props-name,
+.alias-config-panel .forge-props-row.is-selected .forge-props-value { color: var(--selected-fg); }
+
+.alias-config-panel .forge-props-row.is-selected .forge-props-input { color: var(--selected-fg); }
+
+.alias-config-panel .forge-props-row.is-selected .forge-props-name { border-right-color: color-mix(in srgb, var(--selected-fg) 35%, transparent); }
+
+.sheet-splitter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--sheet-split, 50%);
+  width: 9px;
+  margin-left: -4px;
+  z-index: 3;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.sheet-splitter::after { content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: transparent; transition: background 0.1s; }
+
+.sheet-splitter:hover::after, .sheet-splitter:focus-visible::after, .sheet-splitter:active::after { background: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+.sheet-splitter:focus-visible { outline: none; }
+
+.alias-config-panel .alias-config-desc { align-items: baseline; }
+
+.alias-config-panel .alias-config-text { order: 3; flex: 1 0 100%; margin: 0; padding: 2px 0 0; color: var(--fg); font-size: 12px; line-height: 1.5; white-space: pre-line; }
+
+.alias-config-panel .alias-config-desc .forge-field-hint { align-self: center; }
+
+.psheet-rows { position: relative; }
+
+.psheet-row { grid-template-columns: var(--sheet-split, 40%) minmax(0, 1fr); }
+
+.psheet-row.is-selected { background: var(--selected-bg); color: var(--selected-fg); }
+
+.psheet-row.is-selected .psheet-label { color: var(--selected-fg); border-right-color: color-mix(in srgb, var(--selected-fg) 35%, transparent); }

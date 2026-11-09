@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { LiquibaseConnection } from '../api/ForgeApi'
-import { Modal } from './Dialogs'
+import { Modal } from '../core/Modal'
 
 // "Select Database Connection", as in the original Designer: the connection the update goes to, the
 // contexts, the choice to run from the transpiled directory (dist) and a button for a partial

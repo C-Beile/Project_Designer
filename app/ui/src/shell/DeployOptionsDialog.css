@@ -1,0 +1,3 @@
+.forge-action-button:not(:disabled):active { filter: brightness(0.92); }
+
+.forge-action-button:focus-visible { outline: 2px solid var(--focus-ring, var(--accent)); outline-offset: 2px; }

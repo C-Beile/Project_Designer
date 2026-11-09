@@ -1,6 +1,5 @@
 import { registerEditor } from './registry'
 import { PreferencesEditor } from './PreferencesEditor'
 
-// P4 fifth family's own registration call (part 2/3: `preferences`), same one-liner pattern every
-// prior family established (p4-editor-entity-notes.md §2).
+// Meldet `preferences` an. `registry.ts` bleibt unverändert, dieses Modul wird einmal in `App.tsx` importiert.
 registerEditor('preferences', PreferencesEditor)

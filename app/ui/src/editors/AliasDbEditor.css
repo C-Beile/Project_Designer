@@ -1,0 +1,110 @@
+.alias-db-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.alias-db-meta {
+  color: var(--fg-muted);
+  font-size: 11px;
+  margin: 0;
+}
+
+.alias-db-target {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+}
+
+.alias-card {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  margin: 12px 0;
+  max-width: 900px;
+  background: var(--bg-inset);
+}
+
+.alias-card-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 8px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.alias-card-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.alias-columns {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  font-size: 12px;
+}
+
+.alias-columns tbody tr:nth-child(even) {
+  background: var(--bg-panel);
+}
+
+.alias-col-pk {
+  width: 28px;
+}
+
+.alias-col-name {
+  width: 32%;
+}
+
+.alias-col-override {
+  width: 28%;
+}
+
+.alias-col-type {
+  width: 15%;
+}
+
+.alias-col-size {
+  width: 8%;
+}
+
+.alias-col-null {
+  width: 9%;
+}
+
+.alias-num {
+  text-align: right;
+}
+
+.alias-pk {
+  color: var(--brand-link);
+  text-align: center;
+}
+
+.alias-type-name {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+}
+
+.alias-columns td input {
+  width: 100%;
+}
+
+.alias-db-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 0;
+  max-width: 900px;
+}
+
+.alias-card-toggle {
+  background: none;
+  border: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0 2px;
+}

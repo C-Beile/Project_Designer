@@ -1,0 +1,24 @@
+.forge-md {
+  flex: 1 1 50%;
+  min-width: 0;
+  overflow: auto;
+  padding: 18px 28px 32px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.forge-md li + li { margin-top: 0.2em; }
+
+.forge-md a:hover { border-bottom-color: var(--accent); }
+
+.forge-md pre code { padding: 0; background: none; color: var(--fg); font-size: 0.88em; }
+
+.forge-md tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--fg) 3.5%, transparent); }
+
+.forge-md img { max-width: 100%; }
+
+.forge-md strong { font-weight: 650; }
+
+.forge-md li input[type='checkbox'] { margin-right: 6px; accent-color: var(--accent); }

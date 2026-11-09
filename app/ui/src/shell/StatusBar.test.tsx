@@ -34,7 +34,6 @@ function setup(extra: Partial<Parameters<typeof StatusBar>[0]> = {}) {
       onPickSystem={calls.pick}
       message=""
       task={null}
-      branch="main"
       tunnel={true}
       errors={2}
       onShowProblems={calls.problems}
@@ -42,9 +41,7 @@ function setup(extra: Partial<Parameters<typeof StatusBar>[0]> = {}) {
       onShowNotifications={calls.notifications}
       onShowServices={calls.services}
       onCloseTunnels={calls.closeTunnels}
-      loadBranches={async () => overview}
-      onGit={calls.git}
-      onCheckoutBranch={calls.checkout}
+      pluginData={{ git: { branch: 'main', gitEnabled: true, loadBranches: async () => overview, onGit: calls.git, onCheckoutBranch: calls.checkout } }}
       {...extra}
     />,
   )

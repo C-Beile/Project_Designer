@@ -98,7 +98,7 @@ describe('Execute SQL window (manual chapter 8)', () => {
 
   it('writes the executed statements into the Database output', async () => {
     const user = userEvent.setup()
-    const { subscribeOutput } = await import('../shell/outputBus')
+    const { subscribeOutput } = await import('../core/outputBus')
     const seen: string[] = []
     const off = subscribeOutput((sub, lines) => lines.forEach((l) => seen.push(`${sub}:${l.text}`)))
     await setup('select 2')

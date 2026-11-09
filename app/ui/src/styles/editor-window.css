@@ -1,0 +1,3 @@
+/* ---- rc12: editor in a window of its own ---- */
+
+.forge-ew-body > .forge-object-editor { flex: 1; min-height: 0; }

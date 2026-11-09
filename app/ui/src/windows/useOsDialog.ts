@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { notify } from '../shell/notifications'
+import { notify } from '../core/notifications'
 import { openDialogWindow, osWindowsAvailable } from './windowService'
+import { errorText } from '../core/errorText'
 
 // A dialog of the main window that opens as an operating-system window of its own when windows are
 // available (modal: the main window is locked while it is open). `active` switches on a request; the
@@ -25,7 +26,7 @@ export function useOsDialog<T>(active: boolean, build: () => OsDialogSpec, onRes
     const spec = latest.current.build()
     void openDialogWindow<T>(spec.name, spec.title, spec.size, spec.payload, { modal: spec.modal ?? true, resizable: spec.resizable })
       .then((r) => latest.current.onResult(r))
-      .catch((e) => notify(e instanceof Error ? e.message : String(e), { kind: 'error' }))
+      .catch((e) => notify(errorText(e), { kind: 'error' }))
       .finally(() => {
         open.current = false
         latest.current.onFinished()

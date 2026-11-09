@@ -1,0 +1,70 @@
+/* ---- 0.8.0: clickable status bar (reference shots 58-60) ---- */
+
+.forge-status-btn {
+  padding: 0 6px;
+  background: transparent;
+  color: inherit;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  height: 100%;
+}
+
+.forge-status-btn:hover:not(:disabled),
+.forge-status-btn:focus-visible {
+  background: var(--bg-hover, rgb(255 255 255 / 0.08));
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.forge-status-btn:disabled {
+  cursor: default;
+}
+
+.forge-status-system {
+  text-align: left;
+}
+
+.forge-branch-popup {
+  position: fixed;
+  z-index: 130;
+  width: 320px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.4);
+  font-size: 12px;
+}
+
+.forge-branch-list {
+  overflow: auto;
+  padding: 4px 0;
+}
+
+.forge-branch-list h4 {
+  margin: 6px 8px 2px;
+}
+
+.forge-branch-item {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 3px 14px;
+  background: transparent;
+  color: inherit;
+  border: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.forge-branch-item:hover,
+.forge-branch-item:focus-visible {
+  background: var(--selection);
+}
+
+.forge-branch-item.is-current {
+  font-weight: 700;
+}

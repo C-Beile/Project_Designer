@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
-import { CrashListener } from '../shell/errorHandling'
+import { registerFeaturePlugins } from '../features/registerFeatures'
+import { revealApp } from '../core/revealApp'
+import { CrashListener, ErrorBoundary } from '../core/errorHandling'
 import { useTheme } from '../theme/useTheme'
 import { DialogWindowApp } from './DialogWindowApp'
 import { EditorWindowApp } from './EditorWindowApp'
@@ -20,12 +23,28 @@ import '../editors/registerReportBuiltins'
 
 export function WindowRoot({ api, kind, name }: { api: ForgeApi; kind: string; name: string }) {
   useTheme()
+  // Auch dieses Fenster hat sein eigenes Register: Plugins (Git-Dialoge, Panels) erst anmelden, dann zeichnen.
+  const [ready, setReady] = useState(!api.pluginList)
+  useEffect(() => {
+    if (!api.pluginList) return
+    let alive = true
+    void registerFeaturePlugins(api).finally(() => alive && setReady(true))
+    return () => {
+      alive = false
+    }
+  }, [api])
+  useEffect(() => {
+    if (ready) revealApp(true)
+  }, [ready])
+  if (!ready) return null
   return (
     <>
       <CrashListener api={api} />
-      {kind === 'float' && isFloatView(name) ? <FloatApp view={name} api={api} /> : null}
-      {kind === 'dialog' ? <DialogWindowApp name={name} api={api} /> : null}
-      {kind === 'editor' ? <EditorWindowApp name={name} api={api} /> : null}
+      <ErrorBoundary api={api} label={`Window ${kind}/${name}`}>
+        {kind === 'float' && isFloatView(name) ? <FloatApp view={name} api={api} /> : null}
+        {kind === 'dialog' ? <DialogWindowApp name={name} api={api} /> : null}
+        {kind === 'editor' ? <EditorWindowApp name={name} api={api} /> : null}
+      </ErrorBoundary>
       {kind !== 'float' && kind !== 'dialog' && kind !== 'editor' ? <p>Unknown window.</p> : null}
     </>
   )

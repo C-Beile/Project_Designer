@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
-import { isMacPlatform } from '../shell/shortcuts'
+import { isMacPlatform } from '../core/shortcuts'
 import type { ReactNode } from 'react'
 import { useSshKeyPath } from '../settings/sshKey'
 import { setTunnelError, tunnelConnecting, useTunnelState } from './tunnelState'
 import { ServicesTree } from './ServicesTree'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { DbStatus, SchemaTable } from '../wire/types'
-import { Modal } from '../shell/Dialogs'
+import { Modal } from '../core/Modal'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
+import { errorText } from '../core/errorText'
 
 // Services tab of the left panel (LAYOUT_SPEC section 4.3): the database connection, its tables
 // and the tunnel. The two export files are chosen here (also through the Tunnel node's menu or a
@@ -116,7 +117,7 @@ export function ServicesPanel({
       const basic = authMode === 'basic' && tunnelPassword !== ''
       onDbChange(await api.dbConnect(tunnelConfig.trim(), serverConfig.trim(), basic ? null : keyFile.trim() || null, basic ? tunnelPassword : null))
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e)
+      const message = errorText(e)
       setError(message)
       setTunnelError(message)
     } finally {

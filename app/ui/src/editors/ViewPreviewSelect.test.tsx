@@ -5,7 +5,7 @@ import { ViewCanvasEditor } from './ViewCanvasEditor'
 import { ProjectIndexContext, type ProjectIndex } from './projectIndex'
 import type { TreeNode, WireValue } from '../wire/types'
 import { createMockForgeApi } from '../test/mockApi'
-import { DialogHost } from '../shell/dialogService'
+import { DialogHost } from '../core/dialogService'
 
 const text = (value: string): WireValue => ({ kind: 'text', value })
 const obj = (...fields: [string, WireValue][]): WireValue => ({ kind: 'object', fields: fields.map(([key, value]) => ({ key, value })) })

@@ -10,9 +10,10 @@ import type { MenuEntry } from '../tree/contextMenu'
 import { PATH_VARIABLE_PROPERTIES, resolvePathVariables } from './pathVariables'
 import { layoutSheet } from './sheetLayout'
 import { useSheetSplit } from './useSheetSplit'
-import { confirmDialog } from '../shell/dialogService'
-import { notify } from '../shell/notifications'
+import { confirmDialog } from '../core/dialogService'
+import { notify } from '../core/notifications'
 import type { CodeTarget, ModificationOutcome, PropertySheet, SheetRow, UndoRedoOutcome, WireValue } from '../wire/types'
+import { errorText } from '../core/errorText'
 
 // Properties panel (LAYOUT_SPEC §5): the central place where object properties are edited, as in
 // the Designer. All properties the installed Designer knows for the object are listed in its own
@@ -189,7 +190,7 @@ export function PropertySheetPanel({
         }
         setReload((r) => r + 1)
       } catch (e) {
-        onStatus(e instanceof Error ? e.message : String(e))
+        onStatus(errorText(e))
         setReload((r) => r + 1)
       }
     },
@@ -205,7 +206,7 @@ export function PropertySheetPanel({
       await commit(row, { kind: 'text', value: ref })
       onStatus(`${row.name}: ${ref} (copied into the project)`)
     } catch (e) {
-      onStatus(e instanceof Error ? e.message : String(e))
+      onStatus(errorText(e))
     }
   }
 
@@ -235,7 +236,7 @@ export function PropertySheetPanel({
         }
         setReload((r) => r + 1)
       } catch (e) {
-        onStatus(e instanceof Error ? e.message : String(e))
+        onStatus(errorText(e))
       }
     },
     [api, sheet, projectRoot, target.nodeId, target.path, onEdited, onStatus, onModificationChanged],

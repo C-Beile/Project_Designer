@@ -3,9 +3,9 @@ import { field, textField, textValue } from '../wire/types'
 import type { WireValue } from '../wire/types'
 import { EditableText } from './EditableText'
 
-// P4 seventh family (`ReportEditor`): the MUST subset of feature-matrix.md's `ReportEditor` entry
+// `ReportEditor`: the MUST subset of feature-matrix.md's `ReportEditor` entry
 // (`ReportEditor`/`iReport` -> JasperReports, per the role brief). Own mini format analysis this
-// agent ran against the real corpus (no P1 schema existed, see `p4-editor-report-notes.md` §1) -
+// agent ran against the real corpus (no P1 schema existed) -
 // the object folder is `report` (the naively guessed name turned out correct this time, unlike
 // `entityWebservice`), root element `report`. `name`/`majorModelMode` shown read-only (identity/
 // constant, same precedent `LanguageEditor.tsx`/`SystemEditor.tsx` set). `title`/`description`/

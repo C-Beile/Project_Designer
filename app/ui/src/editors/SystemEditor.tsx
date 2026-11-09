@@ -9,6 +9,7 @@ import { textField } from '../wire/types'
 import { AliasIcon } from './aliasIcons'
 import { useProjectIndex } from './projectIndex'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
+import { errorText } from '../core/errorText'
 
 // System editor (original Designer, shots 43 and 87): every alias config of the system as a
 // two-column list Icon | Config (name, type line, JDBC URL right-aligned for database aliases). The
@@ -70,7 +71,7 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
       )
     } catch (e) {
       setTestResult(null)
-      setReconnectError(e instanceof Error ? e.message : String(e))
+      setReconnectError(errorText(e))
     } finally {
       setReconnecting(false)
     }
@@ -89,7 +90,7 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
       setConnectedSystem(key)
       requestSystemReload()
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e)
+      const message = errorText(e)
       setReconnectError(message)
       setTunnelError(message, key)
     } finally {
@@ -113,13 +114,13 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
       } catch (e) {
         if (!reference) throw e
         list = await api.readAliasConfigs(projectRoot, reference)
-        if (!cancelled) setError(`The alias configs could not be read from the system database (${e instanceof Error ? e.message : String(e)}); showing the server config file instead.`)
+        if (!cancelled) setError(`The alias configs could not be read from the system database (${errorText(e)}); showing the server config file instead.`)
       }
       if (!cancelled) setConfigs(list)
       const plan = await api.deployPlan(projectRoot, false, null).catch(() => null)
       if (!cancelled && plan) setOutdated(plan.outdated)
     })().catch((e) => {
-      if (!cancelled) setError(e instanceof Error ? e.message : String(e))
+      if (!cancelled) setError(errorText(e))
     })
     return () => {
       cancelled = true

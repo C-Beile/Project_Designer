@@ -1,5 +1,5 @@
 import type { ForgeApi } from '../api/ForgeApi'
-import { notify } from '../shell/notifications'
+import { notify } from '../core/notifications'
 import { objectRoot } from './objectRoot'
 import type { CodeTarget, TreeNode, UndoRedoOutcome } from '../wire/types'
 

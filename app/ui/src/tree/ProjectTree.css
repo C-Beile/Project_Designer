@@ -1,0 +1,81 @@
+.project-tree-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+}
+
+.project-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  min-width: 100%;
+}
+
+.project-tree li {
+  position: absolute;
+  left: 0;
+  min-width: 100%;
+  width: max-content;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 19px;
+  padding-right: 8px;
+  cursor: default;
+  white-space: nowrap;
+}
+
+.project-tree li:focus {
+  outline: none;
+}
+
+.project-tree li:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--focus-ring);
+}
+
+.project-tree li[aria-selected='true'] {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.project-tree li:hover:not([aria-selected='true']) {
+  background: var(--bg-elevated);
+}
+
+.project-tree-toggle {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg);
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.project-tree-toggle:hover { background: color-mix(in srgb, var(--fg) 18%, transparent); }
+
+.project-tree-arrow { opacity: 0.9; transition: transform 0.1s; }
+
+.project-tree-icon {
+  flex: 0 0 16px;
+  display: inline-flex;
+}
+
+.project-tree li[data-dimmed='true'] .project-tree-label,
+.project-tree-dim {
+  color: var(--fg-muted);
+}
+
+.project-tree li[aria-selected='true'] .project-tree-dim,
+.project-tree li[aria-selected='true'][data-dimmed='true'] .project-tree-label {
+  color: inherit;
+  opacity: 0.75;
+}
+
+/* project is still loading: thin bar on top of the tree and a note while it is empty */
+.project-tree-viewport { position: relative; }

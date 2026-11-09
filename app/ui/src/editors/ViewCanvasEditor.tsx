@@ -4,15 +4,16 @@ import { EditableText } from './EditableText'
 import { FIELD_DRAG, ViewPreview, useViewEntityFields, type PreviewActions } from './ViewPreview'
 import { ViewAddDialog, type AddChoice, type AddTemplate } from './ViewAddDialog'
 import { addEntityFieldToTemplate, addViewReference } from './viewFields'
-import { newUuid } from '../shell/uuid'
+import { newUuid } from '../core/uuid'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useProjectIndex } from './projectIndex'
 import { moveViewChild, parseViewChildren } from './viewChildren'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
-import { confirmDialog } from '../shell/dialogService'
+import { confirmDialog } from '../core/dialogService'
+import { errorText } from '../core/errorText'
 
-// Ziel 1 (neonView editor, P4 second family): a structured list view of the view's layout
+// Ziel 1 (neonView-Editor): a structured list view of the view's layout
 // reference table, not a full drag-and-drop canvas. architecture.md names "ein eigener
 // Canvas-Layer" as the long-term target for view rendering, but a real WYSIWYG canvas needs a
 // layout engine that mirrors the ADITO client's own rendering rules (grid/tab/master-slave
@@ -21,11 +22,11 @@ import { confirmDialog } from '../shell/dialogService'
 // covered by a table: every `neonViewReference` (the view's children/composition) with its
 // `entityField`/`view` binding, plus which one is the layout's master - which is exactly the
 // information a canvas would visualise, just as rows instead of positioned boxes. Documented as a
-// deliberate choice, not a shortcut, in p4-editor-view-context-dashboard-notes.md.
+// deliberate choice, not a shortcut.
 //
 // `name` (each reference's own id) and the layout's `master` pointer are both Designer-generated
-// UUIDs (aod-format.md §1.1) that address *identity*, not editable content - shown read-only, same
-// treatment `EntityFieldsEditor.tsx` gives the read-only DB column. `entityField`/`view` are plain
+// UUIDs (aod-format.md §1.1) that address *identity*, not editable content - shown read-only.
+// `entityField`/`view` are plain
 // business-name references (bare strings) and are the actual MUST-subset editable content.
 
 export function ViewCanvasEditor({ nodeId, tree, api, onTreeChange }: EditorProps) {
@@ -73,7 +74,7 @@ export function ViewCanvasEditor({ nodeId, tree, api, onTreeChange }: EditorProp
         setSource({ text: next, read_only: false })
         onTreeChange(outcome.tree)
       } catch (e) {
-        setMoveError(e instanceof Error ? e.message : String(e))
+        setMoveError(errorText(e))
       }
     },
     [api, nodeId, onTreeChange, source],
@@ -88,7 +89,7 @@ export function ViewCanvasEditor({ nodeId, tree, api, onTreeChange }: EditorProp
         setSource({ text: next, read_only: false })
         onTreeChange(outcome.tree)
       } catch (e) {
-        setMoveError(e instanceof Error ? e.message : String(e))
+        setMoveError(errorText(e))
       }
     },
     [api, nodeId, onTreeChange],

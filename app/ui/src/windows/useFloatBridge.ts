@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { forgetFloating, loadFloating, rememberFloating } from './floatStore'
 import { EVENTS, FLOAT_SIZES, FLOAT_TITLES, FLOAT_VIEWS, isFloatView, type FloatAction, type FloatView, type Geometry, type MainState, type WindowResultEvent } from './protocol'
 import { closeFloatWindow, getWindowBackend, openFloatWindow, osWindowsAvailable } from './windowService'
+import { errorText } from '../core/errorText'
 
 // Main-window side of the floating panels: which views float, the state they draw from, the
 // actions they send back, and the arrangement per project. Panels that float are removed from the
@@ -74,7 +75,7 @@ export function useFloatBridge({ root, state, onAction, onError }: { root: strin
     } catch (e) {
       setFloating((f) => f.filter((v) => v !== view))
       forgetFloating(rootRef.current, view)
-      errorRef.current(e instanceof Error ? e.message : String(e))
+      errorRef.current(errorText(e))
     }
   }, [])
 

@@ -39,17 +39,30 @@ function isMacOs(): boolean {
   return /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent || '')
 }
 
+const payloadCache = new Map<string, Promise<string | null>>()
+
 const tauriBackend: WindowBackend = {
   // macOS freezes the app when a second window opens from inside it, so there every dialog and
   // tool window stays embedded in the main window.
   available: () => isTauriRuntime() && !isMacOs(),
   async open(req) {
     const { invoke } = await import('@tauri-apps/api/core')
-    await invoke('window_open', { req: { ...req, modal: !!req.modal, payload: req.payload === undefined ? null : JSON.stringify(req.payload) } })
+    // Aktuelle Hintergrundfarbe des Themes: das neue Fenster startet schon in dieser Farbe.
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
+    const background = /^#[0-9a-f]{6}$/i.test(bg) ? bg : null
+    await invoke('window_open', { req: { ...req, modal: !!req.modal, payload: req.payload === undefined ? null : JSON.stringify(req.payload), background } })
   },
-  async payload(kind, name) {
-    const { invoke } = await import('@tauri-apps/api/core')
-    return invoke<string | null>('window_payload', { kind, name })
+  // Das Backend gibt die Nutzlast nur einmal heraus (`remove`). Im Entwicklungsmodus startet React (StrictMode) jeden
+  // Effekt zweimal; der zweite Aufruf bekäme `null` und das Fenster liefe mit leerer Nutzlast (z. B. leerer Projektordner).
+  // Darum wird die Antwort je Fenster gemerkt: ein Fenster hat genau eine Nutzlast.
+  payload(kind, name) {
+    const key = `${kind}:${name}`
+    let cached = payloadCache.get(key)
+    if (!cached) {
+      cached = import('@tauri-apps/api/core').then(({ invoke }) => invoke<string | null>('window_payload', { kind, name }))
+      payloadCache.set(key, cached)
+    }
+    return cached
   },
   async result(kind, name, result) {
     const { invoke } = await import('@tauri-apps/api/core')

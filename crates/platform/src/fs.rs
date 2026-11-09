@@ -36,7 +36,7 @@ fn temp_path_for(target: &Path) -> PathBuf {
 
 /// Writes `bytes` to `path` without ever leaving a half-written `path` on disk. `path`'s parent
 /// directory must already exist (this function never creates directories - that stays a
-/// caller/`aod-io` decision, not a platform-layer default).
+/// caller/`aod::document` decision, not a platform-layer default).
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), PlatformError> {
     if let Some(hook) = BEFORE_OVERWRITE.get() {
         if path.is_file() {

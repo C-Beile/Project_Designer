@@ -1,0 +1,99 @@
+/* ---------------------------------------------------------------------------------------------
+   Main window shell (P8 step 1, LAYOUT_SPEC §3/§9): menu bar, toolbar, docking layout, output
+   area and status bar. Tokens only, density like the original (12 px UI text).
+   --------------------------------------------------------------------------------------------- */
+.forge-menubar {
+  display: flex;
+  flex: 0 0 auto;
+  height: 22px;
+  align-items: stretch;
+  background: var(--bg-titlebar);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+  position: relative;
+  z-index: 30;
+}
+
+.forge-menubar-entry {
+  position: relative;
+}
+
+.forge-menubar-title {
+  height: 100%;
+  padding: 0 8px;
+  border: none;
+  background: transparent;
+  color: var(--fg);
+  cursor: default;
+}
+
+.forge-menubar-title:hover,
+.forge-menubar-title.is-open {
+  background: var(--bg-panel);
+}
+
+.forge-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 240px;
+  margin: 0;
+  padding: 3px 0;
+  list-style: none;
+  background: var(--bg-elevated);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.35);
+  z-index: 40;
+}
+
+.forge-submenu {
+  top: -4px;
+  left: 100%;
+}
+
+.forge-menu-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px 1fr auto 14px;
+  align-items: center;
+  height: 22px;
+  padding: 0 6px 0 4px;
+  white-space: nowrap;
+  cursor: default;
+  outline: none;
+}
+
+.forge-menu-item.is-active {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+}
+
+.forge-menu-item.is-disabled {
+  color: var(--fg-muted);
+}
+
+.forge-menu-item.is-disabled.is-active {
+  background: var(--bg-panel);
+  color: var(--fg-muted);
+}
+
+.forge-menu-check {
+  text-align: center;
+  font-size: 10px;
+}
+
+.forge-menu-shortcut {
+  padding-left: 24px;
+  opacity: 0.8;
+}
+
+.forge-menu-arrow {
+  text-align: right;
+}
+
+.forge-menu-separator {
+  height: 1px;
+  margin: 3px 0;
+  background: var(--border);
+}

@@ -1,5 +1,5 @@
 import type { ForgeApi } from './ForgeApi'
-import { logStatement } from '../shell/outputBus'
+import { logStatement } from '../core/outputBus'
 
 // Wraps the API so that every database statement the app runs shows up in Output > Database, in the
 // wording of the original Designer. The reads of the system editor and the deploy preview are

@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
-import { Modal } from './Dialogs'
+import { Modal } from '../core/Modal'
 import { useSshKeyPath } from '../settings/sshKey'
 import { resolvePathVariables } from '../properties/pathVariables'
 import { systemKey } from '../services/tunnelState'
+import { errorText } from '../core/errorText'
 
 // First dialog of a deploy (original Designer, manual chapter 11, picture 178): Project, System and
 // the three check boxes. Added by Dito Designer: "Build before deploy" (Build and Deploy) and the tunnel
@@ -103,7 +104,7 @@ export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: For
       setConnected(systemKey(project, current.name))
       setOpened((o) => (o.includes(systemKey(project, current.name)) ? o : [...o, systemKey(project, current.name)]))
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     } finally {
       setOpening(false)
     }

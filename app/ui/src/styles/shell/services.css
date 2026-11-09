@@ -1,0 +1,129 @@
+.forge-link-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* View preview (neonView rendering) */
+.vp-modebar { display: flex; gap: 4px; margin-bottom: 8px; }
+
+.vp-mode { padding: 2px 10px; border: 1px solid var(--border); background: var(--button-bg); color: var(--button-fg); cursor: pointer; }
+
+.vp-mode.is-active { background: var(--selected-bg); color: var(--selected-fg); }
+
+.vp-root { background: var(--bg-inset); padding: 12px; min-height: 200px; color: var(--fg); font-size: 12px; }
+
+.vp-stack, .vp-hf-body { display: flex; flex-direction: column; gap: 10px; }
+
+.vp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+
+.vp-header-footer { display: flex; flex-direction: column; gap: 10px; }
+
+.vp-master-slave { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr); gap: 12px; align-items: start; }
+
+.vp-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; }
+
+.vp-card-head { font-weight: 600; margin-bottom: 8px; color: var(--fg-muted); }
+
+.vp-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 14px; }
+
+.vp-field { display: flex; flex-direction: column; gap: 2px; }
+
+.vp-field-label { color: var(--fg-muted); font-size: 11px; }
+
+.vp-field-box { min-height: 22px; padding: 2px 6px; border-bottom: 1px solid var(--border-strong); color: var(--fg-muted); }
+
+.vp-field-box.is-edit { border: 1px solid var(--border-strong); border-radius: 3px; background: var(--bg); }
+
+.vp-profile { display: flex; gap: 12px; align-items: center; }
+
+.vp-avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--border); }
+
+.vp-title { font-size: 15px; font-weight: 600; }
+
+.vp-sub, .vp-muted { color: var(--fg-muted); }
+
+.vp-scores { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.vp-score { flex: 1; min-width: 90px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; padding: 8px; text-align: center; }
+
+.vp-score-value { font-size: 18px; font-weight: 600; color: var(--accent); }
+
+.vp-table { width: 100%; border-collapse: collapse; }
+
+.vp-table th { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border-strong); color: var(--fg-muted); font-weight: 600; }
+
+.vp-table td { padding: 5px 6px; border-bottom: 1px solid var(--border); }
+
+.vp-skeleton { display: block; height: 8px; width: 70%; background: var(--border); border-radius: 3px; }
+
+.vp-tabbar { display: flex; gap: 2px; border-bottom: 1px solid var(--border-strong); margin-bottom: 8px; flex-wrap: wrap; }
+
+.vp-tab { background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--fg-muted); padding: 4px 10px; cursor: pointer; }
+
+.vp-tab.is-active { color: var(--fg); border-bottom-color: var(--brand-underline); }
+
+.vp-ref { border: 1px dashed var(--border-strong); padding: 10px; color: var(--fg-muted); border-radius: 4px; }
+
+.vp-frame { border: 1px dashed var(--border-strong); border-radius: 3px; padding: 8px 10px; margin: 0; min-width: 0; }
+
+.vp-frame > legend { padding: 0 6px; font-size: 11px; color: var(--fg); background: var(--bg-elevated); border: 1px solid var(--border); }
+
+.vp-field-box:not(.is-edit) { background: var(--bg-elevated); border: 0; }
+
+/* Services tab: connection form, tree, SQL editor, tunnel badge */
+.forge-services {
+  padding: 6px 8px;
+  overflow: auto;
+  height: 100%;
+  font-size: 12px;
+}
+
+.forge-services-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.forge-services-form > button {
+  align-self: flex-start;
+  padding: 2px 12px;
+  background: var(--bg-panel);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 2px;
+}
+
+.forge-services-tree,
+.forge-services-tree ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 14px;
+}
+
+.forge-services-group {
+  font-weight: 600;
+}
+
+.forge-services-db,
+.forge-services-table {
+  padding: 0 2px;
+  border: none;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+  text-align: left;
+}
+
+.forge-services-db {
+  font-weight: 600;
+}
+
+.forge-services-table:hover,
+.forge-services-db:hover {
+  color: var(--accent);
+}

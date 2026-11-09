@@ -1,0 +1,15 @@
+.dbb { display: flex; gap: 12px; height: 100%; min-height: 0; padding: 8px; }
+
+.dbb-tree { flex: 0 0 280px; overflow: auto; display: flex; flex-direction: column; gap: 4px; }
+
+.dbb-root { font-weight: 600; }
+
+.dbb-catalog { color: var(--fg-muted); }
+
+.dbb-table { cursor: pointer; padding: 1px 4px; }
+
+.dbb-detail { flex: 1 1 auto; overflow: auto; min-width: 0; }
+
+.dbb-grid { border-collapse: collapse; width: 100%; }
+
+.dbb-props { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin-top: 12px; }
