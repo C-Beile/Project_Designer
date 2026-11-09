@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Dito Designer",
   "mainBinaryName": "dito-designer",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "identifier": "de.threehillsit.dito-designer",
   "build": {
     "frontendDist": "../ui/dist",
