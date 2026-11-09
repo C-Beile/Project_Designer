@@ -177,8 +177,38 @@ pub fn get_recent_project(app: tauri::AppHandle) -> Result<Option<String>, Strin
 pub fn set_recent_project(path: String, app: tauri::AppHandle) -> Result<(), String> {
     crate::commands::guard("set_recent_project", || {
     let file = recent_project_file(&app)?;
-    let bytes = serde_json::to_vec_pretty(&serde_json::json!({ "path": path })).map_err(|e| e.to_string())?;
+    let mut paths = read_recent_paths(&file);
+    paths.retain(|p| !p.eq_ignore_ascii_case(&path));
+    paths.insert(0, path.clone());
+    paths.truncate(MAX_RECENT_PROJECTS);
+    let bytes = serde_json::to_vec_pretty(&serde_json::json!({ "path": path, "paths": paths })).map_err(|e| e.to_string())?;
     platform::fs::atomic_write(&file, &bytes).map_err(|e| e.to_string())
+})
+}
+
+const MAX_RECENT_PROJECTS: usize = 12;
+
+/// The recently opened projects, newest first; folders that no longer exist are left out. Files written by older
+/// versions only know the single `path`.
+fn read_recent_paths(file: &std::path::Path) -> Vec<String> {
+    let Ok(bytes) = std::fs::read(file) else { return Vec::new() };
+    let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) else { return Vec::new() };
+    let mut paths: Vec<String> = value.get("paths").and_then(|v| v.as_array()).map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect()).unwrap_or_default();
+    if paths.is_empty() {
+        if let Some(single) = value.get("path").and_then(|v| v.as_str()) {
+            paths.push(single.to_string());
+        }
+    }
+    paths.retain(|p| std::path::Path::new(p).is_dir());
+    paths
+}
+
+/// All recently opened projects for the "Open recent" list.
+#[tauri::command(async)]
+pub fn get_recent_projects(app: tauri::AppHandle) -> Result<Vec<String>, String> {
+    crate::commands::guard("get_recent_projects", || {
+    let file = recent_project_file(&app)?;
+    Ok(read_recent_paths(&file))
 })
 }
 

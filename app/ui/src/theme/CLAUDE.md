@@ -7,6 +7,8 @@
 | `uiTheme.ts` | Macht aus einem importierten VS-Code-Theme CSS-Tokens für die ganze Oberfläche. |
 | `vscodeTheme.ts` | Liest eine VS-Code-Theme-Datei in Monaco-Daten. |
 | `customThemes.ts` | Importierte Themes, je Nutzer in `localStorage`. |
+| `colorOverrides.ts` | Farben und Oberflächenschrift, die der Nutzer von Hand ändert (liegen über dem Theme), samt Gruppen für Options > Appearance. |
+| `workbenchColors.ts` | Leitet fehlende Fensterfarben aus den Editorfarben ab (für TextMate-Themes). |
 | `monacoTheme.ts` | Monaco-Themes passend zu den drei Paletten. |
 | `editorPrefs.ts` | Ansicht-Schalter der Code-Editoren (Zeilennummern, Leerzeichen ...). |
 | `monacoWorkers.ts` | Web-Worker für Monaco (Editor, TypeScript). |

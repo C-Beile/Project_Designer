@@ -446,7 +446,7 @@ export function ProjectTree({
               </span>
               <span className="project-tree-icon">
                 {node.icon && iconSvg?.(node.icon) ? (
-                  <span className="project-tree-icon-art" title={node.icon} dangerouslySetInnerHTML={{ __html: iconSvg(node.icon) ?? '' }} />
+                  <span className={`project-tree-icon-art${node.object_type === 'entity' ? ' is-entity' : ''}`} title={node.icon} dangerouslySetInnerHTML={{ __html: iconSvg(node.icon) ?? '' }} />
                 ) : (
                   <NodeIcon node={node} expanded={isExpanded} />
                 )}

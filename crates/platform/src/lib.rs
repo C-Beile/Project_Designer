@@ -25,6 +25,7 @@ pub mod error;
 pub mod fs;
 pub mod git;
 pub mod node;
+pub mod ppk;
 pub mod process;
 pub mod shell;
 pub mod watcher;

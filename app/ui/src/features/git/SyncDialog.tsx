@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import type { ForgeApi } from '../../api/ForgeApi'
-import type { GitCommit, GitOutput } from '../../wire/types'
+import type { CommitFile, GitCommit, GitOutput } from '../../wire/types'
+import { LazyDiffView } from './LazyDiffView'
 import { Modal } from '../../core/Modal'
 import { errorText } from '../../core/errorText'
 
@@ -40,6 +41,30 @@ export function SyncDialog({
   const [count, setCount] = useState(0)
   const [busy, setBusy] = useState(false)
   const [output, setOutput] = useState<GitOutput | null>(null)
+  // The commit whose changes are shown below the list, its files and the file whose diff is open.
+  const [selected, setSelected] = useState<string | null>(null)
+  const [files, setFiles] = useState<CommitFile[] | null>(null)
+  const [filesError, setFilesError] = useState<string | null>(null)
+  const [openFile, setOpenFile] = useState<string | null>(null)
+
+  useEffect(() => {
+    setFiles(null)
+    setFilesError(null)
+    setOpenFile(null)
+    if (!selected) return
+    let cancelled = false
+    api
+      .scmCommitFiles(projectRoot, selected)
+      .then((list) => {
+        if (cancelled) return
+        setFiles(list)
+        setOpenFile(list[0]?.path ?? null)
+      })
+      .catch((e) => !cancelled && setFilesError(errorText(e)))
+    return () => {
+      cancelled = true
+    }
+  }, [api, projectRoot, selected])
 
   async function load() {
     setCommits(null)
@@ -83,6 +108,7 @@ export function SyncDialog({
     }
   }
 
+  const selectedCommit = commits?.find((c) => c.hash === selected) ?? null
   const title = mode === 'pull' ? 'Pull' : 'Push'
   const canRun = !busy && commits !== null && (mode === 'pull' || count > 0)
   let heading: string
@@ -126,10 +152,10 @@ export function SyncDialog({
             </thead>
             <tbody>
               {commits.map((c, i) => (
-                <tr key={c.hash} className={mode === 'push' && !isChecked(i) ? 'is-unchecked' : undefined}>
+                <tr key={c.hash} className={`${mode === 'push' && !isChecked(i) ? 'is-unchecked' : ''}${c.hash === selected ? ' is-selected' : ''}`.trim() || undefined} aria-selected={c.hash === selected} onClick={() => setSelected(c.hash)}>
                   {mode === 'push' ? (
                     <td>
-                      <input type="checkbox" aria-label={`Push ${c.subject}`} checked={isChecked(i)} onChange={(e) => toggle(i, e.target.checked)} />
+                      <input type="checkbox" aria-label={`Push ${c.subject}`} checked={isChecked(i)} onClick={(e) => e.stopPropagation()} onChange={(e) => toggle(i, e.target.checked)} />
                     </td>
                   ) : null}
                   <td className="forge-history-hash" title={c.hash}>
@@ -142,6 +168,50 @@ export function SyncDialog({
               ))}
             </tbody>
           </table>
+        ) : null}
+        {selectedCommit ? (
+          <div className="sync-changes">
+            <div className="sync-changes-bar">
+              <strong>
+                {selectedCommit.hash.slice(0, 8)} {selectedCommit.subject}
+              </strong>
+              <span className="forge-field-hint">
+                {selectedCommit.author} · {when(selectedCommit.date)}
+              </span>
+              <button type="button" onClick={() => void navigator.clipboard?.writeText(selectedCommit.hash)}>
+                Copy hash
+              </button>
+              {mode === 'push' ? (
+                <button type="button" onClick={() => toggle(commits!.indexOf(selectedCommit), true)} title="Ticks this commit and every older one">
+                  Push up to here
+                </button>
+              ) : null}
+            </div>
+            {filesError ? <p className="forge-field-error">{filesError}</p> : null}
+            {files === null && !filesError ? <p className="forge-field-hint">Please Wait…</p> : null}
+            {files && files.length === 0 ? <p className="forge-field-hint">This commit changes no files.</p> : null}
+            {files && files.length > 0 ? (
+              <div className="sync-changes-body">
+                <ul className="sync-changes-files" aria-label="Changed files">
+                  {files.map((f) => (
+                    <li key={f.path} className={f.path === openFile ? 'is-selected' : undefined} data-git={f.status === 'A' ? 'A' : f.status === 'D' ? 'D' : 'M'} title={f.path} onClick={() => setOpenFile(f.path)}>
+                      <span className="sync-changes-code">{f.status}</span> {f.path.split('/').pop()}
+                      <span className="forge-field-hint"> {f.path.includes('/') ? f.path.slice(0, f.path.lastIndexOf('/')) : ''}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="sync-changes-diff">
+                  {openFile ? (
+                    <Suspense fallback={<p className="forge-field-hint">Please Wait…</p>}>
+                      <LazyDiffView api={api} target={{ root: projectRoot, path: openFile, side: 'commit', hash: selected ?? undefined }} />
+                    </Suspense>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : commits && total > 0 ? (
+          <p className="forge-field-hint">Click a commit to see its changes.</p>
         ) : null}
         {output ? (
           <pre className={output.ok ? 'forge-git-output' : 'forge-git-output is-error'} role="status">

@@ -77,7 +77,7 @@ Var WixMode
 Var OldMainBinaryName
 
 Name "${PRODUCTNAME}"
-BrandingText " "
+BrandingText "Dito Designer  |  by C.Beile"
 OutFile "${OUTFILE}"
 
 ; We don't actually use this value as default install path,

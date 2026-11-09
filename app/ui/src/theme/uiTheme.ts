@@ -1,4 +1,5 @@
 import type { MonacoThemeData } from './vscodeTheme'
+import { deriveWorkbenchColors } from './workbenchColors'
 
 // Makes an imported VS Code theme colour the whole interface and not only the editor: the theme's
 // workbench colours (`colors`) are turned into the interface's own colour tokens (tokens.css).
@@ -32,10 +33,14 @@ const TOKEN_SOURCES: [string, string[]][] = [
 
 /** The interface tokens a theme defines, and whether the theme is a light one. */
 export function uiTokensFor(data: MonacoThemeData): { tokens: Record<string, string>; light: boolean } {
+  // Window colours the theme does not bring are derived from its editor colours, also for themes installed earlier.
+  const colors = { ...data.colors }
+  const rule = (token: string) => data.rules.find((r) => r.token === token && r.foreground)?.foreground
+  deriveWorkbenchColors(colors, { keyword: rule('keyword') ? `#${rule('keyword')}` : undefined, string: rule('string') ? `#${rule('string')}` : undefined, comment: rule('comment') ? `#${rule('comment')}` : undefined })
   const tokens: Record<string, string> = {}
   for (const [token, keys] of TOKEN_SOURCES) {
-    const key = keys.find((k) => data.colors[k])
-    if (key) tokens[token] = data.colors[key]
+    const key = keys.find((k) => colors[k])
+    if (key) tokens[token] = colors[key]
   }
   return { tokens, light: data.base === 'vs' || data.base === 'hc-light' }
 }

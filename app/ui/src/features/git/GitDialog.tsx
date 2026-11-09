@@ -23,6 +23,26 @@ const TABS: { id: GitTab; label: string }[] = [
 // Machine-generated file that a commit by hand normally leaves out.
 const UNCHECKED_BY_DEFAULT = /(^|\/)package-lock\.json$/
 
+// Files the user took out of the commit stay out the next time the dialog opens, per project.
+const excludedKey = (root: string) => `forge.commit.excluded:${root}`
+function readExcluded(root: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(excludedKey(root))
+    const list: unknown = raw ? JSON.parse(raw) : []
+    return new Set(Array.isArray(list) ? list.filter((x): x is string => typeof x === 'string') : [])
+  } catch {
+    return new Set()
+  }
+}
+function writeExcluded(root: string, paths: string[]) {
+  try {
+    if (paths.length) localStorage.setItem(excludedKey(root), JSON.stringify(paths))
+    else localStorage.removeItem(excludedKey(root))
+  } catch {
+    // storage unavailable: the choice simply is not remembered
+  }
+}
+
 interface TreeFolder {
   name: string
   path: string
@@ -191,12 +211,19 @@ export function GitDialog({
     }
   }
 
+  // Remember the unchecked files whenever the selection changes; a file that left the change list is forgotten.
+  useEffect(() => {
+    if (!overview) return
+    writeExcluded(projectRoot, overview.files.map((f) => f.path).filter((p) => !checked.has(p) && !UNCHECKED_BY_DEFAULT.test(p)))
+  }, [checked, overview, projectRoot])
+
   const load = useCallback(async () => {
     try {
       const o = await api.gitOverview(projectRoot)
       setOverview(o)
       setError(null)
-      setChecked(new Set(o.files.filter((f) => !UNCHECKED_BY_DEFAULT.test(f.path)).map((f) => f.path)))
+      const remembered = readExcluded(projectRoot)
+      setChecked(new Set(o.files.filter((f) => !UNCHECKED_BY_DEFAULT.test(f.path) && !remembered.has(f.path)).map((f) => f.path)))
       setTarget((prev) => (o.branches.some((b) => b.name === prev && !b.is_current) ? prev : (o.branches.find((b) => !b.is_current)?.name ?? '')))
     } catch (e) {
       setOverview(null)

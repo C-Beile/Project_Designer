@@ -251,6 +251,27 @@ mod tests {
     }
 
     #[test]
+    fn push_of_a_new_local_branch_sets_the_upstream() {
+        let remote = std::env::temp_dir().join(format!("forge-app-git-newbranch-remote-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&remote);
+        fs::create_dir_all(&remote).unwrap();
+        git(&remote, &["init", "--bare", "--quiet", "-b", "main"]);
+        let dir = scratch("pushnew");
+        git(&dir, &["remote", "add", "origin", remote.to_str().unwrap()]);
+        fs::write(dir.join("a.txt"), "a").unwrap();
+        commit(&dir, "Init", &["a.txt".into()]).unwrap();
+        git(&dir, &["push", "--quiet", "-u", "origin", "main"]);
+        assert!(create_branch(&dir, "fix/new", None).unwrap().ok);
+        fs::write(dir.join("b.txt"), "b").unwrap();
+        commit(&dir, "Add b", &["b.txt".into()]).unwrap();
+        let out = push(&dir).unwrap();
+        assert!(out.ok, "{}", out.text);
+        assert!(unpushed(&dir).unwrap().is_empty());
+        let _ = fs::remove_dir_all(&dir);
+        let _ = fs::remove_dir_all(&remote);
+    }
+
+    #[test]
     fn create_branch_validates_the_name_and_switches() {
         let dir = scratch("newbranch");
         fs::write(dir.join("a.txt"), "a").unwrap();
@@ -346,7 +367,10 @@ pub fn unpushed(dir: &Path) -> Result<Vec<GitCommit>, String> {
 pub fn incoming(dir: &Path) -> Result<Vec<GitCommit>, String> {
     prepare();
     let root = repo_root(dir)?;
-    let fetch = platform::console::command("git").args(["fetch"]).current_dir(&root).output().map_err(|e| e.to_string())?;
+    let mut fetch_command = platform::console::command("git");
+    fetch_command.args(["fetch"]).current_dir(&root);
+    let _keys = platform::git::use_ppk_keys(&mut fetch_command, &root);
+    let fetch = fetch_command.output().map_err(|e| e.to_string())?;
     if !fetch.status.success() {
         return Err(String::from_utf8_lossy(&fetch.stderr).trim().to_string());
     }
@@ -364,7 +388,17 @@ pub fn push_up_to(dir: &Path, hash: &str) -> Result<GitOutput, String> {
     let status = CommandGitOperations::new().status(&root).map_err(|e| e.to_string())?;
     let branch = status.branch.ok_or("There is no current branch (detached HEAD).")?;
     let refspec = format!("{hash}:refs/heads/{branch}");
-    let out = platform::console::command("git").args(["push", "origin", &refspec]).current_dir(&root).output().map_err(|e| e.to_string())?;
+    // A branch without a counterpart on the server is created and linked on its first push.
+    let has_upstream = platform::console::command("git").args(["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"]).current_dir(&root).output().map(|o| o.status.success()).unwrap_or(false);
+    let mut args = vec!["push"];
+    if !has_upstream {
+        args.push("--set-upstream");
+    }
+    args.extend(["origin", refspec.as_str()]);
+    let mut push_command = platform::console::command("git");
+    push_command.args(&args).current_dir(&root);
+    let _keys = platform::git::use_ppk_keys(&mut push_command, &root);
+    let out = push_command.output().map_err(|e| e.to_string())?;
     let text = format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr)).trim().to_string();
     Ok(GitOutput { ok: out.status.success(), text })
 }

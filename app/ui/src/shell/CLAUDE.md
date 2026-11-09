@@ -40,6 +40,8 @@
 | `nativeGuard.tsx` | Sperrt Browser-Tasten und -Menüs im Release. |
 | `icons.tsx` | Eigene Toolbar- und Panel-Icons. |
 | `optionIcons.tsx` | Icons der Options-Kategorien. |
+| `ThemePicker.tsx` | Options > Appearance > Theme: Galerie der Themes mit Vorschaubild, `LivePreview` der Farben. |
+| `ColorSample.tsx` | Options > Appearance > Colours: Beispiel neben jeder Farbe. |
 | `shellHelpers.ts` | Kleine reine Helfer (`findNodeByPath`, `baseName`, `samePath`). |
 <!-- AUTO:END -->
 

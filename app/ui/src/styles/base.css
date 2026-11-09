@@ -12,7 +12,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-ui, 'Segoe UI', system-ui, sans-serif);
   /* LAYOUT_SPEC §11.8: density like the original Designer. */
   font-size: 12px;
 }

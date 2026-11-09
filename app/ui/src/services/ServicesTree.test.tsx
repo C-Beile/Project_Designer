@@ -31,11 +31,29 @@ describe('ServicesTree', () => {
     act(() => setSystemsDb([{ system: 'c:/p/FZ|dev1', status: st('sys'), active: true }, { system: 'c:/p/FZ|dev1|alias:Data_alias', status: st('data'), active: false }]))
     const tree = await screen.findByRole('tree', { name: 'Database connections' })
     const user = userEvent.setup()
-    await user.click(within(tree).getByText('FZ'))
-    await user.click(within(tree).getByText('dev1'))
+    await user.click(within(tree).getAllByText('FZ')[0])
+    await user.click(within(tree).getAllByText('dev1')[0])
     expect(within(tree).getByText('System_alias')).toBeInTheDocument()
     expect(within(tree).getByText('Data_alias')).toBeInTheDocument()
     await user.click(within(tree).getByRole('button', { name: 'Open SQL for System_alias' }))
     expect(opened).toEqual([''])
+  })
+})
+
+describe('ServicesTree tunnels and project names', () => {
+  it('writes the project as on disk and lists the open tunnels with a close button', async () => {
+    const api = createMockForgeApi({ projectTree: [], documents: {} })
+    const closed: string[] = []
+    api.dbDisconnect = async (system) => {
+      closed.push(String(system))
+    }
+    render(<ServicesTree api={api} onOpenSql={() => {}} projects={['C:/Users/Dev/Pichler']} />)
+    act(() => setSystemsDb([{ system: 'c:/users/dev/pichler|dev1', status: st('sys'), active: true }]))
+    const tree = await screen.findByRole('tree', { name: 'Database connections' })
+    expect(within(tree).getAllByText('Pichler').length).toBeGreaterThan(0)
+    expect(within(tree).queryByText('pichler')).toBeNull()
+    const user = userEvent.setup()
+    await user.click(within(tree).getByRole('button', { name: 'Close dev1 of Pichler' }))
+    expect(closed).toContain('c:/users/dev/pichler|dev1')
   })
 })

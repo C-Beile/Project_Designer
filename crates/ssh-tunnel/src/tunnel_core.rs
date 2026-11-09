@@ -117,9 +117,33 @@ pub fn wait_for_port_cancellable(child: &mut Child, port: u16, timeout: Duration
 
 /// Bereinigt die Tunnel-Eingaben der Oberflaeche (leere Strings zaehlen als nicht gesetzt).
 pub fn clean_tunnel_inputs(key_file: Option<String>, tunnel_password: Option<String>) -> (Option<PathBuf>, Option<String>) {
-    let key = key_file.filter(|k| !k.trim().is_empty()).map(PathBuf::from);
+    let key = key_file.filter(|k| !k.trim().is_empty()).map(|k| key_path(k.trim()));
     let password = tunnel_password.filter(|p| !p.is_empty());
     (key, password)
+}
+
+/// The path of a key file as typed: `~` and `~/...` mean the home folder (macOS and Linux users write it that way), and
+/// the home folder is looked up in `HOME` or `USERPROFILE`. Every other path is taken as it is.
+pub fn key_path(typed: &str) -> PathBuf {
+    let rest = if typed == "~" { Some("") } else { typed.strip_prefix("~/").or_else(|| typed.strip_prefix("~\\")) };
+    match (rest, std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))) {
+        (Some(rest), Some(home)) => PathBuf::from(home).join(rest),
+        _ => PathBuf::from(typed),
+    }
+}
+
+#[cfg(test)]
+mod key_path_tests {
+    use super::*;
+
+    #[test]
+    fn a_tilde_means_the_home_folder_and_other_paths_stay() {
+        assert_eq!(key_path("/keys/id_ed25519"), PathBuf::from("/keys/id_ed25519"));
+        assert_eq!(key_path("C:\\keys\\dev.ppk"), PathBuf::from("C:\\keys\\dev.ppk"));
+        if let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) {
+            assert_eq!(key_path("~/.ssh/id_rsa"), PathBuf::from(home).join(".ssh/id_rsa"));
+        }
+    }
 }
 
 /// Auth-Schema zu den Eingaben aus [`clean_tunnel_inputs`]: Passwort vor Schluesseldatei, ohne beides ein laufender Pageant.

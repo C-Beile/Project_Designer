@@ -14,11 +14,13 @@ export interface PluginInfo {
   implemented: boolean
   /** The user may deactivate it (menus and buttons of the component are then dimmed). */
   switchable: boolean
+  /** Off until the user switches it on (for example the VS Code theme import). */
+  defaultOff?: boolean
   notes: string[]
 }
 
 const VERSION = '1.0.0-rc11'
-const AUTHOR = '3HillsIT'
+const AUTHOR = 'C.Beile'
 
 export const PLUGINS: PluginInfo[] = [
   {
@@ -99,6 +101,18 @@ export const PLUGINS: PluginInfo[] = [
     notes: ['Deactivating dims the Team menu, the git toolbar buttons and the Git entries of the context menus.'],
   },
   {
+    id: 'vscode-themes',
+    name: 'VS Code Theme Import',
+    category: 'Dito / Appearance',
+    version: VERSION,
+    author: AUTHOR,
+    description: 'Installs colour themes of VS Code (.json, .tmTheme, .vsix, the folder of an extension) and lists them in Options > Appearance. Colours can always be changed by hand, with or without this plugin.',
+    implemented: true,
+    switchable: true,
+    defaultOff: true,
+    notes: ['Off by default. Switching it off brings the standard theme back.'],
+  },
+  {
     id: 'sql',
     name: 'Execute SQL',
     category: 'Dito / Database',
@@ -176,6 +190,8 @@ export const PLUGINS_KEY = 'forge.plugins.v1'
 
 export interface PluginPrefs {
   deactivated: string[]
+  /** Plugins that are off by default and that the user switched on. */
+  activated: string[]
   /** How often the (non-existing) catalog would be checked; kept for the Settings tab. */
   checkFrequency: 'startup' | 'weekly' | 'monthly' | 'never'
 }
@@ -187,10 +203,11 @@ function load(): PluginPrefs {
     const freq = parsed.checkFrequency
     return {
       deactivated: Array.isArray(parsed.deactivated) ? parsed.deactivated.filter((x): x is string => typeof x === 'string') : [],
+      activated: Array.isArray(parsed.activated) ? parsed.activated.filter((x): x is string => typeof x === 'string') : [],
       checkFrequency: freq === 'weekly' || freq === 'monthly' || freq === 'never' ? freq : 'startup',
     }
   } catch {
-    return { deactivated: [], checkFrequency: 'startup' }
+    return { deactivated: [], activated: [], checkFrequency: 'startup' }
   }
 }
 
@@ -232,7 +249,18 @@ export function subscribePluginPrefs(listener: () => void): () => void {
 
 export function pluginState(plugin: PluginInfo, prefs: PluginPrefs): 'active' | 'deactivated' | 'missing' {
   if (!plugin.implemented) return 'missing'
+  if (plugin.defaultOff) return prefs.activated.includes(plugin.id) ? 'active' : 'deactivated'
   return prefs.deactivated.includes(plugin.id) ? 'deactivated' : 'active'
+}
+
+/** The prefs with the given plugins switched on or off; a plugin that is off by default is tracked the other way round. */
+export function withPluginActive(prefs: PluginPrefs, ids: string[], active: boolean): PluginPrefs {
+  let { deactivated, activated } = prefs
+  for (const id of ids) {
+    if (PLUGINS.find((p) => p.id === id)?.defaultOff) activated = active ? [...activated.filter((x) => x !== id), id] : activated.filter((x) => x !== id)
+    else deactivated = active ? deactivated.filter((x) => x !== id) : [...deactivated.filter((x) => x !== id), id]
+  }
+  return { ...prefs, deactivated, activated }
 }
 
 export function isPluginActive(id: string, prefs: PluginPrefs = current): boolean {
@@ -241,7 +269,7 @@ export function isPluginActive(id: string, prefs: PluginPrefs = current): boolea
 }
 
 export function resetPluginsForTests(): void {
-  current = { deactivated: [], checkFrequency: 'startup' }
+  current = { deactivated: [], activated: [], checkFrequency: 'startup' }
   try {
     window.localStorage.removeItem(PLUGINS_KEY)
   } catch {

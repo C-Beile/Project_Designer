@@ -2,7 +2,7 @@ import { useState, useSyncExternalStore } from 'react'
 import { Modal } from '../core/Modal'
 import { PluginStateIcon } from './optionIcons'
 import { usePlugins } from '../core/plugins/registry'
-import { mergePluginList, getPluginPrefs, pluginState, setPluginPrefs, subscribePluginPrefs, type PluginInfo } from '../settings/plugins'
+import { mergePluginList, getPluginPrefs, pluginState, setPluginPrefs, subscribePluginPrefs, withPluginActive, type PluginInfo } from '../settings/plugins'
 
 // Tools > Plugins (manual 14.1, screenshot 202): tabs Updates, Available Plugins, Downloaded,
 // Installed (n) and Settings. Dito Designer's plugins are built-in components, so there is no catalog and
@@ -50,8 +50,7 @@ export function PluginsDialog({ onClose }: { onClose: () => void }) {
   function apply(to: 'activate' | 'deactivate') {
     const ids = targets.filter((p) => canToggle(p, to)).map((p) => p.id)
     if (ids.length === 0) return
-    const rest = prefs.deactivated.filter((id) => !ids.includes(id))
-    setPluginPrefs({ ...prefs, deactivated: to === 'deactivate' ? [...rest, ...ids] : rest })
+    setPluginPrefs(withPluginActive(prefs, ids, to === 'activate'))
   }
 
   return (

@@ -32,6 +32,7 @@
   "bundle": {
     "active": true,
     "createUpdaterArtifacts": true,
+    "publisher": "C.Beile",
     "targets": ["nsis"],
     "icon": [
       "icons/32x32.png",

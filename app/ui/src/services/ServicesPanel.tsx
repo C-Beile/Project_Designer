@@ -65,11 +65,14 @@ export function ServicesPanel({
   db,
   onDbChange,
   onOpenSql,
+  projects = [],
 }: {
   api: ForgeApi
   db: DbStatus
   onDbChange: (status: DbStatus) => void
   onOpenSql: (sql: string) => void
+  /** The open projects, for the real spelling of their names. */
+  projects?: string[]
 }) {
   const tunnels = useTunnelState()
   const hasSessions = Object.entries(tunnels.bySystem).some(([k, v]) => k !== '' && v.connected)
@@ -173,7 +176,7 @@ export function ServicesPanel({
           {error}
         </p>
       ) : null}
-      {hasSessions ? <ServicesTree api={api} onOpenSql={onOpenSql} /> : null}
+      {hasSessions ? <ServicesTree api={api} onOpenSql={onOpenSql} projects={projects} /> : null}
       <ul className="forge-services-tree" role="tree" aria-label="Services tree" hidden={hasSessions}>
         <li role="treeitem" aria-expanded="true">
           <span className="forge-services-group">Databases</span>

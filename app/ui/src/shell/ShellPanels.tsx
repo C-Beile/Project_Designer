@@ -1,6 +1,7 @@
-import { useMemo, type ComponentProps, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
+import { useEffect, useMemo, type ComponentProps, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { getEditorFor } from '../editors/registry'
+import { runCommandById } from '../core/plugins/registry'
 import { ProjectIndexContext, type ProjectIndex } from '../editors/projectIndex'
 import { collectByType } from '../core/treeIndex'
 import { EditorTabBar } from '../tabs/EditorTabBar'
@@ -12,6 +13,7 @@ import { NavigatorPanel } from '../navigator/NavigatorPanel'
 import { isConfigurationAlias, sectionLabel, useConfigSection } from '../properties/configSections'
 import { normId, type Problem } from '../problems/problemStore'
 import { useUserSelection } from '../services/userSelection'
+import { useTunnelState } from '../services/tunnelState'
 import { osWindowsAvailable } from '../windows/windowService'
 import type { useEditorWindows } from '../windows/useEditorWindows'
 import type { AliasConfigDto, TreeNode, TreeNodeKind, UndoRedoOutcome, WireValue } from '../wire/types'
@@ -49,6 +51,7 @@ export interface ShellPanelsDeps {
   setCanUndo: (v: boolean) => void
   setCanRedo: (v: boolean) => void
   recent: string | null
+  recentList: string[]
   unsaved: Set<string>
   hasProject: boolean
   totalErrors: number
@@ -113,12 +116,18 @@ export interface ShellPanelsDeps {
 
 // Baut den Editorbereich und die vier Panels (Projects, Properties, Navigator, Output) des Hauptfensters.
 export function useShellPanels({
-  api, root, projects, tree, objectsByType, tabState, setTabState, selected, selectedProject, value, setValue, sheetVersion, setSheetVersion, setCanUndo, setCanRedo, recent, unsaved, hasProject, totalErrors,
+  api, root, projects, tree, objectsByType, tabState, setTabState, selected, selectedProject, value, setValue, sheetVersion, setSheetVersion, setCanUndo, setCanRedo, recent, recentList, unsaved, hasProject, totalErrors,
   problemList, problemCounts, scanning, logs, clearLog, db, changeDb, drafts, historyFlags, sqlTexts, sqlNonce, reveal, setReveal, projectIndex, editorWindows, bridge, systemBadge, gitFor, loadingProjects,
   iconSvgs, projectsTab, setProjectsTab, outputTab, setOutputTab, outputSub, setOutputSub, aliasSel, inspected, inspectedKind, inspectedObject, elementSel, focusLabel, setNavSel, resetNavElement,
   activateNavElement, refactoring, setRefactoring, doRefactoring, setCtxMenu, runTreeAction, handleActivateTab, handleCloseTab, handleCloseOthers, handleCloseAll, handleTreeSelect, handleOpen,
   openProjectAt, closeProjects, openSql, openProblem, markUnsaved, refreshDiagnostics, applyOutcome, registerFlush, setScanTick, setReloadToken, setStatus,
 }: ShellPanelsDeps) {
+  // The Services tab only exists while a system is connected; it is the place to see and close the connections.
+  const tunnelStates = useTunnelState()
+  const servicesVisible = Object.entries(tunnelStates.bySystem).some(([k, v]) => k !== '' && (v.connected || v.tunnel_up))
+  useEffect(() => {
+    if (!servicesVisible && projectsTab === 'services') setProjectsTab('projects')
+  }, [servicesVisible, projectsTab, setProjectsTab])
   const configSection = useConfigSection()
   const Editor = getEditorFor(selected?.object_type ?? null)
   const currentTab = activeTab(tabState)
@@ -212,7 +221,7 @@ export function useShellPanels({
   const panels: Record<PanelId, PanelContent> = {
     projects: {
       title: projectsTab === 'projects' ? 'Projects' : 'Services',
-      header: <ProjectsPanelHeader tab={projectsTab} floating={bridge.floating} onTab={setProjectsTab} />,
+      header: <ProjectsPanelHeader tab={projectsTab} floating={bridge.floating} onTab={setProjectsTab} servicesVisible={servicesVisible} />,
       body: (
         <ProjectsPanelBody
           api={api}
@@ -233,6 +242,10 @@ export function useShellPanels({
           onCloseProject={() => closeProjects([root])}
           onOpenSql={openSql}
           setStatus={setStatus}
+          recentProjects={recentList}
+          openProjects={projects}
+          onOpenProjects={() => void runCommandById('file.openProject')}
+          onOpenRecent={openProjectAt}
         />
       ),
     },

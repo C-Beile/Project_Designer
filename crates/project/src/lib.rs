@@ -25,6 +25,7 @@ pub mod project_create;
 pub mod transpile_compare;
 pub mod file_ops;
 pub mod problems;
+pub(crate) mod parallel;
 pub mod new_object;
 pub mod object_names;
 pub mod jdito_types;

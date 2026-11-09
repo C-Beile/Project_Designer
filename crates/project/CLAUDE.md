@@ -17,6 +17,7 @@
 | `src/object_names.rs` | Namensprüfung für neue Objekte. |
 | `src/rename.rs` | Umbenennen mit Verweisen: `plan` und `apply`. |
 | `src/problems.rs` | Problem-Scan und Fundstellen (`scan_project`, `find_usages`). |
+| `src/parallel.rs` | `parallel_map`: viele Dateien auf mehreren Threads lesen (Baum- und Problem-Scan). |
 | `src/catalog/` | Eigenschafts-Katalog (`mod.rs`), Sheet je Objekt (`sheet.rs`), XSD und Klassendateien lesen. |
 | `src/wire.rs` | Wire-Format zur UI (`WireValue`, Pfad-Text). |
 | `src/history.rs` | Undo/Redo-Verlauf je Objekt. |

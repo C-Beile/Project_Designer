@@ -55,6 +55,7 @@
 @import './editors/DashboardEditor.css';
 @import './features/git/ScmPanel.css';
 @import './features/git/DiffView.css';
+@import './features/git/SyncDialog.css';
 @import './windows/FloatApp.css';
 @import './styles/error-panel.css';
 @import './services/UsersTable.css';

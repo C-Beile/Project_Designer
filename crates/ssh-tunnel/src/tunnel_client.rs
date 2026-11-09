@@ -123,17 +123,34 @@ impl TunnelClient for OpenSshClient {
 
     fn spawn(&self, entry: &TunnelEntry, auth: &TunnelAuth<'_>, local_port: u16) -> Result<Child, String> {
         let ssh = find_ssh().ok_or_else(|| "ssh was not found".to_string())?;
-        if let TunnelAuth::Key(Some(k)) = auth {
-            if is_putty_key(k) {
-                return Err("OpenSSH cannot use a PuTTY .ppk key: convert it (puttygen key.ppk -O private-openssh -o key) and choose the converted key.".into());
-            }
-        }
+        // A PuTTY .ppk key is converted to an OpenSSH copy for this one connection; ssh reads it at start, so the copy is
+        // removed shortly after. The .ppk file itself stays as it is.
+        let converted = match auth {
+            TunnelAuth::Key(Some(k)) if is_putty_key(k) => Some(platform::ppk::openssh_copy(k)?),
+            _ => None,
+        };
+        let openssh_auth = match &converted {
+            Some(copy) => TunnelAuth::Key(Some(copy.as_path())),
+            None => auth.clone(),
+        };
         let mut cmd = Command::new(ssh);
-        cmd.args(openssh_args(entry, auth, local_port, self.accept_new_host_keys)).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::piped());
+        cmd.args(openssh_args(entry, &openssh_auth, local_port, self.accept_new_host_keys)).stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::piped());
         if let TunnelAuth::Basic { password } = auth {
             cmd.env("SSH_ASKPASS", askpass_script()?).env("SSH_ASKPASS_REQUIRE", "force").env("DISPLAY", ":0").env(PASSWORD_ENV, password);
         }
-        cmd.spawn().map_err(|e| plugin_api::at!(format!("ssh could not be started: {e}")))
+        let child = cmd.spawn().map_err(|e| {
+            if let Some(copy) = &converted {
+                platform::ppk::remove_key_file(copy);
+            }
+            plugin_api::at!(format!("ssh could not be started: {e}"))
+        });
+        if let Some(copy) = converted {
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_secs(20));
+                platform::ppk::remove_key_file(&copy);
+            });
+        }
+        child
     }
 }
 

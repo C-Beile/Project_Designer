@@ -195,6 +195,8 @@ pub fn run() {
             commands::misc::open_local_url,
             commands::files::write_linked_file,
             commands::dialogs::pick_project_folder,
+            commands::dialogs::pick_project_folders,
+            commands::project::get_recent_projects,
             commands::project::get_recent_project,
             commands::project::set_recent_project,
             commands::settings::get_settings,

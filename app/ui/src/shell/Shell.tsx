@@ -107,6 +107,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   // The last opened project is only offered, never opened automatically (see
   // p7-bugfix-empty-project-root-notes.md).
   const [recent, setRecent] = useState<string | null>(null)
+  const [recentList, setRecentList] = useState<string[]>([])
   const [sheetVersion, setSheetVersion] = useState(0)
 
   const [layout, setLayout] = useState<LayoutState>(loadLayout)
@@ -160,6 +161,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
 
   useEffect(() => {
     api.getRecentProject().then(setRecent).catch(() => setRecent(null))
+    api.getRecentProjects().then(setRecentList).catch(() => setRecentList([]))
     api
       .getSettings()
       .then((s) => setInstallDir(s.designer_install_dir))
@@ -415,7 +417,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     gitActive, sqlActive, floatingViews, editorWindows, toolbarPrefs, editorPrefs, layoutBeforeOnlyEditor,
     extraCommands: [transpileCommands, deployCommands, refactoringCommands, treeCommands, floatingCommands],
     openProjectAt, closeProjects, saveIds, applyOutcome, markUnsaved, showToolWindow, openSql, toggleToolbarGroup, updateToolbar,
-    setStatus, setNewProjectOpen, setRecent, setReloadToken, setDialog, setLayout, setTreeSelection,
+    setStatus, setNewProjectOpen, setRecent, setRecentList, setReloadToken, setDialog, setLayout, setTreeSelection,
   })
 
   const hasProject = root.trim() !== ''
@@ -424,7 +426,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   useDialogWindows({ dialog, setDialog, hasProject, root, engine, setEngine, theme, toggleTheme, menus, setInstallDir, openableModels, tree, handleOpen, setStatus })
 
   const { editor, panels } = useShellPanels({
-    api, root, projects, tree, objectsByType, tabState, setTabState, selected, selectedProject, value, setValue, sheetVersion, setSheetVersion, setCanUndo, setCanRedo, recent, unsaved, hasProject, totalErrors,
+    api, root, projects, tree, objectsByType, tabState, setTabState, selected, selectedProject, value, setValue, sheetVersion, setSheetVersion, setCanUndo, setCanRedo, recent, recentList, unsaved, hasProject, totalErrors,
     problemList, problemCounts, scanning, logs, clearLog, db, changeDb, drafts, historyFlags, sqlTexts, sqlNonce, reveal, setReveal, projectIndex, editorWindows, bridge, systemBadge, gitFor, loadingProjects,
     iconSvgs, projectsTab, setProjectsTab, outputTab, setOutputTab, outputSub, setOutputSub, aliasSel, inspected, inspectedKind, inspectedObject, elementSel, focusLabel, setNavSel, resetNavElement,
     activateNavElement, refactoring, setRefactoring, doRefactoring, setCtxMenu, runTreeAction, handleActivateTab, handleCloseTab, handleCloseOthers, handleCloseAll, handleTreeSelect, handleOpen,

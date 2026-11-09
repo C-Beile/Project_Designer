@@ -16,6 +16,19 @@ pub fn pick_project_folder(title: Option<String>) -> Option<String> {
 })
 }
 
+/// Open Project: the same folder picker, with several folders selectable at once; empty on cancel.
+#[tauri::command]
+pub fn pick_project_folders(title: Option<String>) -> Vec<String> {
+    crate::commands::guard("pick_project_folders", || {
+    let title = title.filter(|t| !t.trim().is_empty()).unwrap_or_else(|| "Open projects".to_string());
+    platform_file_dialog()
+        .pick_folders(PickFolderOptions { title: Some(title), starting_dir: None })
+        .into_iter()
+        .map(|path| path.to_string_lossy().into_owned())
+        .collect()
+})
+}
+
 pub fn platform_file_dialog() -> platform::native::RfdFileDialog {
     platform::native::RfdFileDialog::new()
 }

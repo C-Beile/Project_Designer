@@ -142,8 +142,7 @@ pub fn scan_project(project_root: &Path) -> Vec<ProblemDto> {
     let entities = existing_names(project_root, "entity");
     let views = existing_names(project_root, "neonView");
     let webservices = existing_names(project_root, "entityWebservice");
-    let mut out = Vec::new();
-
+    let mut jobs: Vec<(&str, String, PathBuf)> = Vec::new();
     for (folder, object_type) in OBJECT_FOLDERS {
         let Ok(entries) = std::fs::read_dir(project_root.join(folder)) else { continue };
         let mut dirs: Vec<_> = entries.flatten().filter(|e| e.path().is_dir()).collect();
@@ -151,6 +150,15 @@ pub fn scan_project(project_root: &Path) -> Vec<ProblemDto> {
         for entry in dirs {
             let name = entry.file_name().to_string_lossy().into_owned();
             let file = entry.path().join(format!("{name}.aod"));
+            jobs.push((object_type, name, file));
+        }
+    }
+    // Every object is read and checked on its own, so many objects are worked on at the same time (a project has
+    // thousands of small files; waiting for the disk dominates). The order of the findings stays that of the objects.
+    let per_object = crate::parallel::parallel_map(&jobs, crate::parallel::io_threads(), |(object_type, name, file)| {
+        let mut out = Vec::new();
+        let (object_type, name, file) = (*object_type, name.clone(), file.clone());
+        for _ in 0..1 {
             let Ok(bytes) = std::fs::read(&file) else { continue };
             let strict = xml_error(&bytes);
             if let Some((message, l, c)) = &strict {
@@ -170,7 +178,7 @@ pub fn scan_project(project_root: &Path) -> Vec<ProblemDto> {
             };
             let Some(root) = handle.value_at(&NodePath::root()).cloned() else { continue };
 
-            if let Some((_, validate)) = VALIDATORS_BY_OBJECT_TYPE.iter().find(|(t, _)| t == object_type) {
+            if let Some((_, validate)) = VALIDATORS_BY_OBJECT_TYPE.iter().find(|(t, _)| *t == object_type) {
                 for d in validate(&root) {
                     let mut p = dto(&file, &name, object_type, "validator", &format!("{:?}", d.severity), d.message);
                     if let Some(path) = d.path.as_deref() {
@@ -218,8 +226,9 @@ pub fn scan_project(project_root: &Path) -> Vec<ProblemDto> {
                 out.push(p);
             }
         }
-    }
-    out
+        out
+    });
+    per_object.into_iter().flatten().collect()
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]

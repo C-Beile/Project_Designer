@@ -213,8 +213,10 @@ fn external_libraries_list_modules_with_lazy_read_only_file_trees() {
     assert!(alpha.path.as_deref().unwrap().ends_with("node_modules/@mods/alpha"));
     let files = list_tree_children(&alpha.id).unwrap();
     let names: Vec<&str> = files.iter().map(|c| c.label.as_str()).collect();
-    assert_eq!(names, ["entity", "neonContext", "neonView", "package.json"]);
-    assert!(files.iter().all(|f| f.read_only));
+    // The module shows the same type folders as a project, only those it brings, then its top-level files.
+    assert_eq!(names, ["context", "entity", "package.json"]);
+    let writable: Vec<&str> = files.iter().filter(|f| !f.read_only).map(|f| f.label.as_str()).collect();
+    assert!(writable.is_empty(), "writable: {writable:?}");
 }
 
 #[test]

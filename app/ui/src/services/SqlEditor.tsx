@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { KeyboardEvent, ReactNode } from 'react'
+import type { KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { DbStatus, SqlResult } from '../wire/types'
 import { MonacoText, type MonacoTextHandle } from '../tabs/MonacoText'
@@ -80,6 +80,26 @@ export function SqlEditor({
   const [keepPrior, setKeepPrior] = useState(false)
   const [maxRows, setMaxRows] = useState(100)
   const [history, setHistory] = useState<string[] | null>(null)
+  // Height of the statement area in pixels once the user dragged the divider; before that the stylesheet decides.
+  const [editorHeight, setEditorHeight] = useState<number | null>(null)
+  const editorBox = useRef<HTMLDivElement | null>(null)
+
+  // The divider between statement area and results: drag to resize, double click to go back to the default.
+  const startResize = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const box = editorBox.current
+    if (!box) return
+    e.preventDefault()
+    const startY = e.clientY
+    const startHeight = box.getBoundingClientRect().height
+    const max = Math.max(120, (box.parentElement?.getBoundingClientRect().height ?? 600) - 140)
+    const move = (ev: PointerEvent) => setEditorHeight(Math.min(max, Math.max(60, startHeight + ev.clientY - startY)))
+    const stop = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', stop)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', stop)
+  }
   const gridRun = useRef<(() => Promise<void>) | null>(null)
 
   const shared = useTunnelState()
@@ -287,7 +307,15 @@ export function SqlEditor({
           <span className="forge-sql-glyph">/-</span>
         </Btn>
       </div>
-      <div className="forge-sql-editor">
+      <div
+        ref={editorBox}
+        className="forge-sql-editor"
+        style={editorHeight === null ? undefined : { flex: `0 0 ${editorHeight}px` }}
+        onMouseDown={(e) => {
+          // A click on the empty area below the text puts the cursor into the editor, so typing works anywhere.
+          if (e.target === e.currentTarget || !(e.target as HTMLElement).closest('.monaco-editor, .forge-sql-history')) handle.current?.focus()
+        }}
+      >
         <MonacoText initial={initial} language="sql" readOnly={false} label={label} onChange={onTextChange} handleRef={handle} />
         {history ? (
           <div className="forge-sql-history" role="dialog" aria-label="SQL history">
@@ -328,6 +356,7 @@ export function SqlEditor({
           </div>
         ) : null}
       </div>
+      <div className="forge-sql-divider" role="separator" aria-orientation="horizontal" aria-label="Resize statement area" title="Drag to resize, double click to reset" onPointerDown={startResize} onDoubleClick={() => setEditorHeight(null)} />
       {pending !== null ? (
         <div className="forge-sql-confirm" role="alertdialog" aria-label="Confirm write statement">
           <p>

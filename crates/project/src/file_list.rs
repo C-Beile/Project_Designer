@@ -55,8 +55,8 @@ const THEME_FILE_LIMIT: u64 = 2 * 1024 * 1024;
 /// `.json` and `.jsonc` files up to 2 MB are read, as text; nothing is written or executed.
 pub fn read_theme_file(path: &Path) -> Result<String, String> {
     let ext = path.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase());
-    if !matches!(ext.as_deref(), Some("json") | Some("jsonc")) {
-        return Err("Choose a .json theme file.".into());
+    if !matches!(ext.as_deref(), Some("json") | Some("jsonc") | Some("tmtheme") | Some("plist")) {
+        return Err("Choose a .json or .tmTheme theme file.".into());
     }
     let meta = std::fs::metadata(path).map_err(|e| format!("Cannot read the file: {e}"))?;
     if !meta.is_file() || meta.len() > THEME_FILE_LIMIT {
@@ -79,7 +79,7 @@ const THEME_PACK_TOTAL: usize = 24 * 1024 * 1024;
 
 fn is_theme_text_file(name: &str) -> bool {
     let lower = name.to_ascii_lowercase();
-    lower.ends_with(".json") || lower.ends_with(".jsonc")
+    lower.ends_with(".json") || lower.ends_with(".jsonc") || lower.ends_with(".tmtheme") || lower.ends_with(".plist")
 }
 
 fn clean_text(bytes: &[u8]) -> String {
@@ -125,11 +125,11 @@ pub fn read_theme_pack(path: &Path) -> Result<Vec<ThemePackFile>, String> {
         let mut out = Vec::new();
         let mut total = 0;
         collect_pack_dir(path, path, 0, &mut out, &mut total);
-        return if out.is_empty() { Err("The folder holds no .json theme files.".into()) } else { Ok(out) };
+        return if out.is_empty() { Err("The folder holds no theme files (.json or .tmTheme).".into()) } else { Ok(out) };
     }
     let ext = path.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase());
     match ext.as_deref() {
-        Some("json") | Some("jsonc") => {
+        Some("json") | Some("jsonc") | Some("tmtheme") | Some("plist") => {
             let text = read_theme_file(path)?;
             let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "theme.json".into());
             Ok(vec![ThemePackFile { name, text }])
@@ -158,9 +158,9 @@ pub fn read_theme_pack(path: &Path) -> Result<Vec<ThemePackFile>, String> {
                 }
                 out.push(ThemePackFile { name, text: clean_text(&bytes) });
             }
-            if out.is_empty() { Err("The package holds no .json theme files.".into()) } else { Ok(out) }
+            if out.is_empty() { Err("The package holds no theme files (.json or .tmTheme).".into()) } else { Ok(out) }
         }
-        _ => Err("Choose a .json theme file, a .vsix extension package or the folder of an extension.".into()),
+        _ => Err("Choose a .json or .tmTheme theme file, a .vsix extension package or the folder of an extension.".into()),
     }
 }
 

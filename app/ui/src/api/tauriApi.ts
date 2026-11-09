@@ -80,6 +80,8 @@ export const tauriForgeApi: ForgeApi = {
     invoke<void>('write_linked_file', { projectRoot, reference, content }),
   pickProjectFolder: (title) => invoke<string | null>('pick_project_folder', { title: title ?? null }),
   getRecentProject: () => invoke<string | null>('get_recent_project'),
+  getRecentProjects: () => invoke<string[]>('get_recent_projects'),
+  pickProjectFolders: (title) => invoke<string[]>('pick_project_folders', { title: title ?? null }),
   setRecentProject: (path) => invoke<void>('set_recent_project', { path }),
   getSettings: () => invoke<ForgeSettings>('get_settings'),
   setSettings: (settings) => invoke<void>('set_settings', { settings }),

@@ -61,6 +61,17 @@ impl FileDialog for RfdFileDialog {
         }
         dialog.pick_folder()
     }
+
+    fn pick_folders(&self, options: PickFolderOptions) -> Vec<PathBuf> {
+        let mut dialog = rfd::FileDialog::new();
+        if let Some(title) = &options.title {
+            dialog = dialog.set_title(title);
+        }
+        if let Some(dir) = &options.starting_dir {
+            dialog = dialog.set_directory(dir);
+        }
+        dialog.pick_folders().unwrap_or_default()
+    }
 }
 
 #[cfg(test)]

@@ -281,7 +281,7 @@ describe('Shell - menus and toolbar of round 2', () => {
     await user.click(within(screen.getByRole('menu', { name: 'Tools' })).getByRole('menuitem', { name: /^Options/ }))
     const dialog = screen.getByRole('dialog', { name: 'Options' })
     const cats = within(dialog).getByRole('tablist', { name: 'Option categories' })
-    for (const c of ['General', 'Editor', 'Fonts & Colors', 'Keymap', 'Team', 'Appearance', 'Miscellaneous', 'ADITO', 'iReport']) {
+    for (const c of ['General', 'Editor', 'Appearance', 'Keymap', 'Team', 'Miscellaneous', 'ADITO', 'iReport']) {
       expect(within(cats).getByRole('tab', { name: new RegExp(c) })).toBeInTheDocument()
     }
     expect(within(dialog).getByLabelText(/ADITO Designer installation/)).toBeInTheDocument()

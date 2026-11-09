@@ -84,6 +84,9 @@ export interface MenuContext {
   canRedo: boolean
   recentProject: string | null
   theme: 'dark' | 'light' | 'lion'
+  /** Installed VS Code themes (only while the import plugin is on) and the one in use; empty: a built-in theme. */
+  customThemes?: { id: string; name: string }[]
+  colorTheme?: string
   transpileRunning: boolean
   engine: TranspilerEngineId
   /** A code editor (Source tab, SQL, plain file) is open: Edit, Source and Navigate act on it. */
@@ -405,9 +408,10 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
           label: 'Theme',
           enabled: true,
           children: [
-            item('view.theme', 'Dark (Night Owl)', true, { id: 'view.theme.dark', arg: 'dark', check: 'radio', checked: ctx.theme === 'dark' }),
-            item('view.theme', 'Light', true, { id: 'view.theme.light', arg: 'light', check: 'radio', checked: ctx.theme === 'light' }),
-            item('view.theme', 'Lion in der City', true, { id: 'view.theme.lion', arg: 'lion', check: 'radio', checked: ctx.theme === 'lion' }),
+            item('view.theme', 'Dark (Night Owl)', true, { id: 'view.theme.dark', arg: 'dark', check: 'radio', checked: !ctx.colorTheme && ctx.theme === 'dark' }),
+            item('view.theme', 'Light', true, { id: 'view.theme.light', arg: 'light', check: 'radio', checked: !ctx.colorTheme && ctx.theme === 'light' }),
+            item('view.theme', 'Lion in der City', true, { id: 'view.theme.lion', arg: 'lion', check: 'radio', checked: !ctx.colorTheme && ctx.theme === 'lion' }),
+            ...(ctx.customThemes ?? []).map((t) => item('view.theme', t.name, true, { id: `view.theme.custom.${t.id}`, arg: `custom:${t.id}`, check: 'radio', checked: ctx.colorTheme === t.id })),
           ],
         },
         item('help.localData', 'Local Data...', true),
