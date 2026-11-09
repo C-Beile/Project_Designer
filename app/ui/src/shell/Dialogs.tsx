@@ -54,14 +54,14 @@ export function AboutDialog({ api, onClose }: { api?: ForgeApi; onClose: () => v
           <img className="forge-about-icon" src={appIcon256} alt="Dito Designer logo" />
           <img className="forge-about-wordmark" src={wordmarkWhite} alt="Dito Designer" />
           <p className="forge-about-title">Dito Designer</p>
-          <p className="forge-about-by">by 3HillsIT</p>
+          <p className="forge-about-by">by C.Beile</p>
           <p className="forge-about-version">Version {shownVersion ?? 'development build'}</p>
           <p className="forge-field-hint">A rebuild of the designer for low-code CRM projects.</p>
         </div>
       ) : null}
       {tab === 'licence' ? (
         <div className="forge-about-licence">
-          <p>Dito Designer is a product of 3HillsIT. No separate licence file is shipped with this build.</p>
+          <p>Dito Designer was made by C.Beile. No separate licence file is shipped with this build.</p>
           <p className="forge-field-hint">Third-party parts: the Montserrat font (SIL Open Font License 1.1, from @fontsource/montserrat 5.3.0; the licence text lies next to the font files) and the Monaco editor (MIT).</p>
         </div>
       ) : null}

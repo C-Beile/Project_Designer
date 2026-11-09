@@ -61,6 +61,27 @@ export function useGit({ api, root, branch, dialog, setDialog, setReloadToken, h
     [api, root, setReloadToken],
   )
 
+  // Pull without a window: the notification says whether anything new came in, and when the dependency files
+  // changed it says so too, so the user knows right away that `npm install` is due.
+  const runPull = useCallback(async () => {
+    const onBranch = branch ? ` on branch ${branch}` : ''
+    try {
+      const r = await api.gitPull(root)
+      if (!r.ok) {
+        notify(`Pull failed${onBranch}: ${r.text.split('\n').find((l) => l.trim()) || 'see the output'}`, { kind: 'error', timeoutMs: 12000 })
+      } else if (/already up[ -]to[ -]date/i.test(r.text)) {
+        notify(`Pull finished${onBranch}: nothing new, everything is up to date.`, { kind: 'success' })
+      } else {
+        const dependencies = /(^|[\s/|])package(-lock)?\.json\b/.test(r.text)
+        notify(`Pull finished${onBranch}: new changes were merged.${dependencies ? ' package.json changed: run npm install.' : ''}`, { kind: 'success', timeoutMs: dependencies ? 12000 : undefined })
+        setReloadToken((t) => t + 1)
+      }
+    } catch (e) {
+      notify(errorText(e), { kind: 'error', timeoutMs: 10000 })
+    }
+    if (root.trim()) void refreshScm(api, root)
+  }, [api, root, branch, setReloadToken])
+
   // Diff of a Source Control file as an editor tab (service-like tab: no file behind it).
   const openDiff = useCallback(
     (target: DiffTarget) => {
@@ -122,7 +143,7 @@ export function useGit({ api, root, branch, dialog, setDialog, setReloadToken, h
 
   useOsDialog<SyncWindowResult>(
     dialog === 'sync' && hasProject,
-    () => ({ name: 'sync', title: syncMode === 'pull' ? 'Pull' : 'Push', size: { width: 900, height: 560 }, payload: { project: root, mode: syncMode } }),
+    () => ({ name: 'sync', title: syncMode === 'pull' ? 'Pull' : 'Push', size: { width: 1200, height: 800 }, payload: { project: root, mode: syncMode } }),
     (r) => {
       if (r) {
         if (r.changed) setReloadToken((t) => t + 1)
@@ -146,7 +167,7 @@ export function useGit({ api, root, branch, dialog, setDialog, setReloadToken, h
       setDialog('sync')
     },
     'team.pull': () => {
-      void runGit('Pull', () => api.gitPull(root))
+      void runPull()
     },
     'team.push': () => {
       void runGit('Push', () => api.gitPush(root))

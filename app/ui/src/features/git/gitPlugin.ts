@@ -65,7 +65,7 @@ export function registerGitPlugin(): () => void {
     registerMenuContribution({ plugin: 'git', menu: 'team', order: 10, items: teamItems }),
     // Zwischen Keymap (40) und Appearance (50) wie die feste Kategorie vorher.
     registerOptionsPage({ plugin: 'git', id: 'git', category: 'team', title: 'Team', order: 45, component: GitOptionsPage }),
-    registerToolbarItem({ plugin: 'git', id: 'git.pull', group: 'git', order: 10, label: 'Pull', icon: createElement(IconPull), command: 'team.pullView', state: gitButton('Pull: show and merge new commits of the remote') }),
+    registerToolbarItem({ plugin: 'git', id: 'git.pull', group: 'git', order: 10, label: 'Pull', icon: createElement(IconPull), command: 'team.pull', state: gitButton('Pull: fetch and merge new commits of the remote, the result shows as a notification') }),
     registerToolbarItem({ plugin: 'git', id: 'git.commit', group: 'git', order: 20, label: 'Commit Changed Files', icon: createElement(IconCommit), command: 'team.commit', state: gitButton('Commit Changed Files') }),
     registerToolbarItem({ plugin: 'git', id: 'git.push', group: 'git', order: 30, label: 'Push', icon: createElement(IconPush), command: 'team.pushView', state: gitButton('Push: choose the local commits to push') }),
     registerToolbarItem({ plugin: 'git', id: 'git.history', group: 'git', order: 40, label: 'Show Project History', icon: createElement(IconHistory), command: 'team.history', state: gitButton('Show Project History') }),

@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useMemo, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
+import { useCallback, useEffect, useMemo, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
 import type { ForgeApi } from '../../api/ForgeApi'
 import { runCommandAsync } from '../../core/plugins/registry'
 import { copyNewUuid } from '../../core/uuid'
 import { matchesShortcut } from '../../core/shortcuts'
 import { closeWindow } from '../../chrome/tauriWindow'
 import { getEditorPrefs, setEditorPref, type EditorPrefs } from '../../theme/editorPrefs'
+import { customThemes, subscribeCustomThemes } from '../../theme/customThemes'
+import { getOptions, saveOptions, subscribeOptions } from '../../settings/options'
+import { isPluginActive, subscribePluginPrefs } from '../../settings/plugins'
 import { runEditorAction } from '../../theme/monacoActions'
 import type { ThemeName } from '../../theme/useTheme'
 import { activeTab, isFileNode, isServiceNode, isTunnelNode, type TabState } from '../../tabs/tabModel'
@@ -62,6 +65,7 @@ export interface ShellCommandsDeps {
   setStatus: (text: string) => void
   setNewProjectOpen: (open: boolean) => void
   setRecent: (path: string | null) => void
+  setRecentList: (paths: string[]) => void
   setReloadToken: (update: (t: number) => number) => void
   setDialog: (dialog: ShellDialog) => void
   setLayout: Dispatch<SetStateAction<LayoutState>>
@@ -72,7 +76,7 @@ export interface ShellCommandsDeps {
 export function useShellCommands({
   api, root, projects, activeTree, tabState, unsaved, editNode, selected, canUndo, canRedo, recent, dialog, layout, theme, toggleTheme, transpile, engine, transpileRunning, usageNode, startRefactoring,
   gitActive, sqlActive, floatingViews, editorWindows, toolbarPrefs, editorPrefs, layoutBeforeOnlyEditor, extraCommands, openProjectAt, closeProjects, saveIds, applyOutcome, markUnsaved,
-  showToolWindow, openSql, toggleToolbarGroup, updateToolbar, setStatus, setNewProjectOpen, setRecent, setReloadToken, setDialog, setLayout, setTreeSelection,
+  showToolWindow, openSql, toggleToolbarGroup, updateToolbar, setStatus, setNewProjectOpen, setRecent, setRecentList, setReloadToken, setDialog, setLayout, setTreeSelection,
 }: ShellCommandsDeps) {
   const commands: CommandMap = {
     ...Object.assign({}, ...extraCommands),
@@ -80,11 +84,15 @@ export function useShellCommands({
       setNewProjectOpen(true)
     },
     'file.openProject': async () => {
-      const picked = await api.pickProjectFolder()
-      if (!picked) return
-      openProjectAt(picked)
-      api.setRecentProject(picked).catch(() => {})
-      setRecent(picked)
+      const picked = await api.pickProjectFolders()
+      if (picked.length === 0) return
+      // Several folders can be chosen at once; each opens as its own project, the first one stays active.
+      for (const dir of picked) {
+        openProjectAt(dir)
+        await api.setRecentProject(dir).catch(() => {})
+      }
+      setRecent(picked[picked.length - 1])
+      void api.getRecentProjects().then(setRecentList).catch(() => {})
     },
     'file.openRecent': (arg) => {
       if (arg) openProjectAt(arg)
@@ -133,6 +141,15 @@ export function useShellCommands({
       setReloadToken((t) => t + 1)
     },
     'view.theme': (arg) => {
+      // A VS Code theme is the editor colour theme of the options; a built-in one clears it.
+      const setColorTheme = (id: string) => {
+        if (getOptions().editor.colorTheme !== id) saveOptions({ ...getOptions(), editor: { ...getOptions().editor, colorTheme: id } })
+      }
+      if (arg?.startsWith('custom:')) {
+        setColorTheme(arg.slice('custom:'.length))
+        return
+      }
+      setColorTheme('')
       if (arg && arg !== theme) toggleTheme(arg as ThemeName)
     },
     'tools.generateUuid': async () => {
@@ -232,6 +249,14 @@ export function useShellCommands({
   const codeEditorOpen = !!currentTabForMenu && !isTunnelNode(currentTabForMenu.node) && (isFileNode(currentTabForMenu.node) || isServiceNode(currentTabForMenu.node) || currentTabForMenu.sub === 'source')
 
   const currentTabNode = activeTab(tabState)?.node ?? null
+  // The Theme menu follows the installed themes, the plugin switch and the chosen theme.
+  const [themeStamp, setThemeStamp] = useState(0)
+  useEffect(() => {
+    const bump = () => setThemeStamp((n) => n + 1)
+    const offs = [subscribeCustomThemes(bump), subscribeOptions(bump), subscribePluginPrefs(bump)]
+    return () => offs.forEach((off) => off())
+  }, [])
+  const importOn = isPluginActive('vscode-themes')
   const menus = useMemo(
     () =>
       buildMenus({
@@ -242,6 +267,8 @@ export function useShellCommands({
         canRedo,
         recentProject: recent,
         theme,
+        customThemes: importOn ? customThemes().map((t) => ({ id: t.id, name: t.name })) : [],
+        colorTheme: importOn && customThemes().some((t) => t.id === getOptions().editor.colorTheme) ? getOptions().editor.colorTheme : '',
         projectName: root.trim() ? baseName(root) : null,
         projectCount: projects.length,
         transpileRunning,
@@ -257,7 +284,7 @@ export function useShellCommands({
         onlyEditor: layoutBeforeOnlyEditor.current !== null,
         fullScreen: typeof document !== 'undefined' && !!document.fullscreenElement,
       }),
-    [layout, floatingViews, currentTabNode, editorWindows.detached, root, projects.length, selected, unsaved, canUndo, canRedo, recent, theme, transpileRunning, engine, codeEditorOpen, toolbarPrefs, editorPrefs, gitActive, usageNode],
+    [layout, floatingViews, currentTabNode, editorWindows.detached, root, projects.length, selected, unsaved, canUndo, canRedo, recent, theme, themeStamp, importOn, transpileRunning, engine, codeEditorOpen, toolbarPrefs, editorPrefs, gitActive, usageNode],
   )
 
   useEffect(() => {

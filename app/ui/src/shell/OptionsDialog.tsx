@@ -10,6 +10,10 @@ import { formatShortcut, isMacPlatform } from '../core/shortcuts'
 import { OptionIcon } from './optionIcons'
 import { customThemes, removeCustomTheme, saveCustomTheme, subscribeCustomThemes } from '../theme/customThemes'
 import { parseThemePack } from '../theme/vscodeTheme'
+import { COLOR_GROUPS, applyColorOverrides, getColorOverrides, saveColorOverrides } from '../theme/colorOverrides'
+import { LivePreview, ThemePicker } from './ThemePicker'
+import { ColorSample } from './ColorSample'
+import { isPluginActive } from '../settings/plugins'
 import { errorText } from '../core/errorText'
 import { useOptionsPages } from '../core/plugins/registry'
 
@@ -19,15 +23,30 @@ import { useOptionsPages } from '../core/plugins/registry'
 // transpiler) live on ADITO > General. Pages whose feature does not exist yet keep their
 // controls visible but dimmed, with the reason.
 
+/** The colour an interface token currently has as `#rrggbb`, for the colour field of a colour that was not changed. */
+function defaultColorOf(key: string): string {
+  const token = key.startsWith('--') ? key : key.startsWith('syntax:') ? '--fg' : key === 'editor:editor.background' ? '--bg' : key === 'editor:editor.foreground' ? '--fg' : '--fg-muted'
+  try {
+    const probe = document.createElement('span')
+    probe.style.color = `var(${token})`
+    document.body.appendChild(probe)
+    const rgb = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(getComputedStyle(probe).color)
+    probe.remove()
+    if (rgb) return '#' + [rgb[1], rgb[2], rgb[3]].map((n) => Number(n).toString(16).padStart(2, '0')).join('')
+  } catch {
+    // no document: the field just starts black
+  }
+  return '#000000'
+}
+
 // 'team' kommt aus dem Plugin-Register (Git), siehe das Git-Plugin.
-type Category = 'general' | 'editor' | 'fonts' | 'keymap' | 'appearance' | 'misc' | 'adito' | 'ireport'
+type Category = 'general' | 'editor' | 'keymap' | 'appearance' | 'misc' | 'adito' | 'ireport'
 
 const CATEGORIES: { id: string; label: string; order: number }[] = [
   { id: 'general', label: 'General', order: 10 },
   { id: 'editor', label: 'Editor', order: 20 },
-  { id: 'fonts', label: 'Fonts & Colors', order: 30 },
   { id: 'keymap', label: 'Keymap', order: 40 },
-  { id: 'appearance', label: 'Appearance', order: 50 },
+  { id: 'appearance', label: 'Appearance', order: 30 },
   { id: 'misc', label: 'Miscellaneous', order: 60 },
   { id: 'adito', label: 'ADITO', order: 70 },
   { id: 'ireport', label: 'iReport', order: 80 },
@@ -40,9 +59,10 @@ const PAGES: Partial<Record<Category, { id: string; label: string }[]>> = {
     { id: 'code', label: 'Code' },
     { id: 'save', label: 'On Save' },
   ],
-  fonts: [
+  appearance: [
+    { id: 'theme', label: 'Theme' },
+    { id: 'colours', label: 'Colours' },
     { id: 'fonts', label: 'Fonts' },
-    { id: 'themes', label: 'Color Themes' },
   ],
   misc: [
     { id: 'csv', label: 'CSV Editor' },
@@ -127,11 +147,13 @@ export function OptionsDialog({
   const registeredPages = useOptionsPages()
   const categories = [...CATEGORIES, ...registeredPages.map((p) => ({ id: p.category, label: p.title, order: p.order }))].sort((a, b) => a.order - b.order)
   const [category, setCategory] = useState<string>('adito')
-  const [page, setPage] = useState<Record<string, string>>({ misc: 'csv', adito: 'general', ireport: 'general', editor: 'general', fonts: 'fonts' })
+  const [page, setPage] = useState<Record<string, string>>({ misc: 'csv', adito: 'general', ireport: 'general', editor: 'general', appearance: 'theme' })
   const [opts, setOpts] = useState<DesignerOptions>(() => getOptions())
   const [prefs, setPrefs] = useState<EditorPrefs>(() => getEditorPrefs())
   const [engineChoice, setEngineChoice] = useState<TranspilerEngineId>(engine)
   const [themeChoice, setThemeChoice] = useState<ThemeName>(theme)
+  const [colorDraft, setColorDraft] = useState(() => getColorOverrides())
+  const [openGroup, setOpenGroup] = useState<string | null>('primary')
   const [installDir, setInstallDir] = useState('')
   const [sshKey, setSshKey] = useState('')
   const [acceptNewHostKeys, setAcceptNewHostKeys] = useState(false)
@@ -147,7 +169,7 @@ export function OptionsDialog({
     setThemeMessage(null)
     const picked = fromFolder
       ? await api.pickProjectFolder('Choose the folder of a VS Code theme extension').catch(() => null)
-      : await api.pickFile('Install a VS Code colour theme', 'Theme (.json, .vsix, .zip)', ['json', 'jsonc', 'vsix', 'zip']).catch(() => null)
+      : await api.pickFile('Install a VS Code colour theme', 'Theme (.json, .tmTheme, .vsix, .zip)', ['json', 'jsonc', 'tmtheme', 'plist', 'vsix', 'zip']).catch(() => null)
     if (!picked) return
     try {
       const imported = parseThemePack(await api.readThemePack(picked))
@@ -175,19 +197,38 @@ export function OptionsDialog({
     if (picked) setInstallDir(picked)
   }
 
-  async function save() {
+  // Stores and applies every choice. The other windows see it through the shared storage (see useDialogWindows).
+  async function commit(): Promise<boolean> {
     const value = installDir.trim() || null
     try {
       await api.setSettings({ ...(await api.getSettings()), designer_install_dir: value, ssh_key_path: sshKey.trim() || null })
       saveOptions(opts)
+      saveColorOverrides(colorDraft)
       for (const key of Object.keys(prefs) as (keyof EditorPrefs)[]) if (prefs[key] !== getEditorPrefs()[key]) setEditorPref(key, prefs[key])
       if (engineChoice !== engine) onEngineChange(engineChoice)
       if (themeChoice !== theme) onThemeChange(themeChoice)
+      try {
+        window.localStorage.setItem('forge.theme', themeChoice)
+      } catch {
+        // the choice still applies through the callbacks
+      }
       onSaved(value)
-      onClose()
+      setError(null)
+      return true
     } catch (e) {
       setError(String(e))
+      return false
     }
+  }
+
+  async function save() {
+    if (await commit()) onClose()
+  }
+
+  // Apply keeps the window open, so the result can be looked at and changed again.
+  const [applied, setApplied] = useState(false)
+  async function apply() {
+    setApplied(await commit())
   }
 
   let body: ReactNode = null
@@ -271,62 +312,6 @@ export function OptionsDialog({
           <Check label="Show indent guide lines" checked={prefs.indentGuides} onChange={(v) => setPrefs({ ...prefs, indentGuides: v })} />
         </>
       )
-  } else if (category === 'fonts') {
-    const ed = opts.editor
-    body =
-      page.fonts === 'themes' ? (
-        <>
-          <h3>Color Themes</h3>
-          <Row label="Editor colours" hint="Colours the code editor only. The rest of the window keeps the application theme.">
-            <select aria-label="Editor color theme" value={themes.some((t) => t.id === ed.colorTheme) ? ed.colorTheme : ''} onChange={(e) => patch('editor', { colorTheme: e.target.value })}>
-              <option value="">Follow the application theme</option>
-              {themes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </Row>
-          <div className="forge-opt-buttons">
-            <button type="button" onClick={() => void importTheme()}>
-              Install theme (.json, .vsix)...
-            </button>
-            <button type="button" onClick={() => void importTheme(true)}>
-              Install from folder...
-            </button>
-            <button
-              type="button"
-              disabled={!themes.some((t) => t.id === ed.colorTheme)}
-              onClick={() => {
-                removeCustomTheme(ed.colorTheme)
-                patch('editor', { colorTheme: '' })
-              }}
-            >
-              Remove selected theme
-            </button>
-          </div>
-          {themeMessage ? (
-            <p className={themeMessage.ok ? 'forge-field-hint' : 'forge-field-error'} role={themeMessage.ok ? 'status' : 'alert'}>
-              {themeMessage.text}
-            </p>
-          ) : null}
-          <p className="forge-field-hint">Choose a theme file of VS Code (a .json file from a theme extension or from Code's theme folder). The token colours and the editor colours are taken over.</p>
-        </>
-      ) : (
-        <>
-          <h3>Fonts</h3>
-          <Row label="Editor font" hint="Name of an installed font, for example JetBrains Mono. Empty uses Consolas.">
-            <input type="text" value={ed.fontFamily} aria-label="Editor font family" placeholder="Consolas" onChange={(e) => patch('editor', { fontFamily: e.target.value })} />
-          </Row>
-          <Row label="Editor font size">
-            <input type="number" min={9} max={28} value={ed.fontSize} aria-label="Editor font size" onChange={(e) => patch('editor', { fontSize: Math.max(9, Math.min(28, Number(e.target.value) || 13)) })} />
-          </Row>
-          <Row label="Line height" hint="0 sets it automatically from the font size.">
-            <input type="number" min={0} max={60} value={ed.lineHeight} aria-label="Line height" onChange={(e) => patch('editor', { lineHeight: Math.max(0, Math.min(60, Number(e.target.value) || 0)) })} />
-          </Row>
-          <Check label="Font ligatures (for fonts that have them, such as Fira Code)" checked={ed.fontLigatures} onChange={(v) => patch('editor', { fontLigatures: v })} />
-        </>
-      )
   } else if (category === 'keymap') {
     const needle = keyFilter.trim().toLowerCase()
     const rows = keymap.filter((k) => !needle || `${k.group} ${k.label} ${k.shortcut}`.toLowerCase().includes(needle))
@@ -358,26 +343,140 @@ export function OptionsDialog({
       </>
     )
   } else if (category === 'appearance') {
-    body = (
-      <>
-        <h3>Appearance</h3>
-        <fieldset className="forge-opt-group">
-          <legend>Look and feel</legend>
-          <label className="forge-check">
-            <input type="radio" name="theme" checked={themeChoice === 'dark'} onChange={() => setThemeChoice('dark')} />
-            <span>Dark (Night Owl)</span>
-          </label>
-          <label className="forge-check">
-            <input type="radio" name="theme" checked={themeChoice === 'light'} onChange={() => setThemeChoice('light')} />
-            <span>Light</span>
-          </label>
-          <label className="forge-check">
-            <input type="radio" name="theme" checked={themeChoice === 'lion'} onChange={() => setThemeChoice('lion')} />
-            <span>Lion in der City</span>
-          </label>
-        </fieldset>
-      </>
-    )
+    const importOn = isPluginActive('vscode-themes')
+    const activeCustom = importOn && themes.some((t) => t.id === opts.editor.colorTheme) ? opts.editor.colorTheme : ''
+    const choose = (builtin: ThemeName | null, customId: string) => {
+      if (builtin) setThemeChoice(builtin)
+      patch('editor', { colorTheme: customId })
+    }
+    const setColor = (key: string, value: string | null) => {
+      setColorDraft((d) => {
+        const colors = { ...d.colors }
+        if (value === null) delete colors[key]
+        else colors[key] = value.toLowerCase()
+        const next = { ...d, colors }
+        applyColorOverrides(next)
+        return next
+      })
+    }
+    const shownColor = (key: string) => colorDraft.colors[key] ?? defaultColorOf(key)
+    const changed = Object.keys(colorDraft.colors).length
+    const ed = opts.editor
+    const sub = page.appearance
+    body =
+      sub === 'colours' ? (
+        <>
+          <h3>Colours</h3>
+          <p className="forge-field-hint">Change any colour of the window or of the code. Your colours lie on top of the chosen theme; “Reset” gives a colour back to the theme.</p>
+          <LivePreview />
+          <div className="forge-color-groups">
+            {COLOR_GROUPS.map((group) => {
+              const count = group.items.filter((i) => colorDraft.colors[i.key]).length
+              return (
+                <section key={group.id} className={`forge-color-card${openGroup === group.id ? ' is-open' : ''}`}>
+                  <button type="button" className="forge-color-group-head" aria-expanded={openGroup === group.id} onClick={() => setOpenGroup(openGroup === group.id ? null : group.id)}>
+                    <span className="forge-color-chips" aria-hidden="true">
+                      {group.items.slice(0, 5).map((i) => (
+                        <i key={i.key} style={{ background: shownColor(i.key) }} />
+                      ))}
+                    </span>
+                    <span className="forge-color-group-name">{group.label}</span>
+                    {count > 0 ? <span className="forge-color-count">{count} changed</span> : null}
+                    <span className="forge-color-caret">{openGroup === group.id ? '\u25be' : '\u25b8'}</span>
+                  </button>
+                  {openGroup === group.id ? (
+                    <div className="forge-color-items">
+                      <p className="forge-field-hint">{group.hint}</p>
+                      {group.items.map((item) => (
+                        <div key={item.key} className="forge-color-row">
+                          <input type="color" aria-label={item.label} value={shownColor(item.key)} onChange={(e) => setColor(item.key, e.target.value)} />
+                          <span className="forge-color-label">{item.label}</span>
+                          <ColorSample itemKey={item.key} value={shownColor(item.key)} editorBg={shownColor('editor:editor.background')} editorFg={shownColor('editor:editor.foreground')} />
+                          <code className="forge-color-hex">{colorDraft.colors[item.key] ?? 'theme'}</code>
+                          <button type="button" disabled={!colorDraft.colors[item.key]} onClick={() => setColor(item.key, null)}>
+                            Reset
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </section>
+              )
+            })}
+          </div>
+          <div className="forge-opt-buttons">
+            <button
+              type="button"
+              disabled={changed === 0}
+              onClick={() => {
+                const cleared = { ...colorDraft, colors: {} }
+                setColorDraft(cleared)
+                applyColorOverrides(cleared)
+              }}
+            >
+              Reset all colours
+            </button>
+          </div>
+        </>
+      ) : sub === 'fonts' ? (
+        <>
+          <h3>Fonts</h3>
+          <p className="forge-field-hint">Use the name of a font that is installed on this computer. An unknown name falls back to the default.</p>
+          <fieldset className="forge-opt-group">
+            <legend>Interface</legend>
+            <Row label="Font" hint="Menus, trees, tabs and dialogs. Empty: Segoe UI.">
+              <input type="text" aria-label="Interface font family" value={colorDraft.uiFont} placeholder="Segoe UI" onChange={(e) => setColorDraft((d) => { const next = { ...d, uiFont: e.target.value }; applyColorOverrides(next); return next })} />
+            </Row>
+            <p className="forge-font-sample" style={{ fontFamily: colorDraft.uiFont || undefined }}>Project, Services, Problems — Aa Bb 0123</p>
+          </fieldset>
+          <fieldset className="forge-opt-group">
+            <legend>Code editor</legend>
+            <Row label="Font" hint="For example JetBrains Mono. Empty: Consolas.">
+              <input type="text" value={ed.fontFamily} aria-label="Editor font family" placeholder="Consolas" onChange={(e) => patch('editor', { fontFamily: e.target.value })} />
+            </Row>
+            <Row label="Size">
+              <input type="number" min={9} max={28} value={ed.fontSize} aria-label="Editor font size" onChange={(e) => patch('editor', { fontSize: Math.max(9, Math.min(28, Number(e.target.value) || 13)) })} />
+            </Row>
+            <Row label="Line height" hint="0 sets it automatically from the font size.">
+              <input type="number" min={0} max={60} value={ed.lineHeight} aria-label="Line height" onChange={(e) => patch('editor', { lineHeight: Math.max(0, Math.min(60, Number(e.target.value) || 0)) })} />
+            </Row>
+            <Check label="Font ligatures (for fonts that have them, such as Fira Code)" checked={ed.fontLigatures} onChange={(v) => patch('editor', { fontLigatures: v })} />
+            <pre className="forge-font-sample forge-font-code" style={{ fontFamily: ed.fontFamily || 'Consolas, monospace', fontSize: ed.fontSize, lineHeight: ed.lineHeight ? `${ed.lineHeight}px` : undefined, fontVariantLigatures: ed.fontLigatures ? 'normal' : 'none' }}>{'const total = items.filter((i) => i.active) => 0;\nif (a != b && c >= d) { return "ok" }'}</pre>
+          </fieldset>
+          <div className="forge-opt-buttons">
+            <button type="button" disabled={!colorDraft.uiFont} onClick={() => setColorDraft((d) => { const next = { ...d, uiFont: '' }; applyColorOverrides(next); return next })}>
+              Use the default interface font
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <h3>Theme</h3>
+          <p className="forge-field-hint">The look of the whole Designer: window, trees, dialogs and the code editor.</p>
+          <ThemePicker
+            selected={activeCustom || themeChoice}
+            themes={importOn ? themes : []}
+            canImport={importOn}
+            onSelect={(id) => (themes.some((x) => x.id === id) ? choose(null, id) : choose(id as ThemeName, ''))}
+            onRemove={(id) => {
+              removeCustomTheme(id)
+              if (id === opts.editor.colorTheme) patch('editor', { colorTheme: '' })
+            }}
+            onInstallFile={() => void importTheme()}
+            onInstallFolder={() => void importTheme(true)}
+          />
+          {themeMessage ? (
+            <p className={themeMessage.ok ? 'forge-field-hint' : 'forge-field-error'} role={themeMessage.ok ? 'status' : 'alert'}>
+              {themeMessage.text}
+            </p>
+          ) : null}
+          <p className="forge-field-hint">
+            {importOn
+              ? 'A VS Code theme colours the whole window and the editor. Use Apply to see it right away.'
+              : 'VS Code themes can be installed with the plugin “VS Code Theme Import” (Tools > Plugins). Colours and fonts can always be changed on the other pages.'}
+          </p>
+        </>
+      )
   } else if (category === 'misc') {
     if (subPage === 'csv') {
       body = (
@@ -581,12 +680,16 @@ export function OptionsDialog({
       onClose={onClose}
       footer={
         <>
-          <button type="button" onClick={save}>
+          <button type="button" className="is-primary" onClick={save}>
             OK
+          </button>
+          <button type="button" onClick={() => void apply()} title="Applies the changes and keeps this window open">
+            Apply
           </button>
           <button type="button" onClick={onClose}>
             Cancel
           </button>
+          {applied ? <span className="forge-field-hint" role="status">Applied.</span> : null}
           <button type="button" disabled title="No help pages yet">
             Help
           </button>

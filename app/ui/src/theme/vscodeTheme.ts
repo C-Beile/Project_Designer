@@ -2,6 +2,8 @@
 // Monaco understands. Pure text work, no Monaco import, so it can be tested and used anywhere.
 // Only the editor is coloured; the surrounding interface keeps its own theme.
 
+import { deriveWorkbenchColors } from './workbenchColors'
+
 export interface MonacoThemeRule {
   token: string
   foreground?: string
@@ -59,38 +61,48 @@ export function stripJsonc(text: string): string {
   return out.replace(/,(\s*[}\]])/g, '$1')
 }
 
-// TextMate scope prefix -> Monaco token name. The longest matching prefix wins.
-const SCOPE_TO_TOKEN: [string, string][] = [
-  ['comment', 'comment'],
-  ['string.regexp', 'regexp'],
-  ['string', 'string'],
-  ['constant.numeric', 'number'],
-  ['constant.character.escape', 'string.escape'],
-  ['constant', 'constant'],
-  ['keyword.operator', 'operator'],
-  ['keyword', 'keyword'],
-  ['storage', 'keyword'],
-  ['entity.name.function', 'function'],
-  ['support.function', 'function'],
-  ['meta.function-call', 'function'],
-  ['entity.name.type', 'type'],
-  ['entity.name.class', 'type'],
-  ['support.class', 'type'],
-  ['support.type', 'type'],
-  ['entity.name.tag', 'tag'],
-  ['entity.other.attribute-name', 'attribute.name'],
-  ['variable', 'variable'],
-  ['punctuation', 'delimiter'],
-  ['invalid', 'invalid'],
+// Monaco colours code with its own tokenizers (Monarch), not with TextMate grammars, so one scope often stands for
+// several Monaco tokens (a JSON key is `string.key.json`, a JavaScript name is `identifier`, ...).
+const SCOPE_TO_TOKEN: [string, string[]][] = [
+  ['comment', ['comment']],
+  ['string.regexp', ['regexp']],
+  ['string', ['string', 'attribute.value', 'string.value']],
+  ['constant.numeric', ['number', 'number.float', 'number.hex']],
+  ['constant.character.escape', ['string.escape']],
+  ['constant.language', ['keyword.json', 'constant']],
+  ['constant', ['constant']],
+  ['keyword.operator', ['operator', 'delimiter.operator']],
+  ['keyword', ['keyword', 'keyword.flow']],
+  ['storage', ['keyword', 'storage']],
+  ['entity.name.function', ['function', 'support.function']],
+  ['support.function', ['function', 'support.function']],
+  ['meta.function-call', ['function']],
+  ['entity.name.type', ['type', 'type.identifier']],
+  ['entity.name.class', ['type', 'type.identifier']],
+  ['support.class', ['type', 'type.identifier']],
+  ['support.type.property-name', ['string.key', 'attribute.name']],
+  ['support.type', ['type', 'type.identifier']],
+  ['meta.property-name', ['string.key']],
+  ['meta.property-value', ['string.value']],
+  ['meta.object-literal.key', ['string.key']],
+  ['entity.name.tag', ['tag', 'metatag']],
+  ['entity.other.attribute-name', ['attribute.name']],
+  ['variable.parameter', ['identifier']],
+  ['variable', ['variable', 'identifier']],
+  ['support.other.variable', ['variable', 'identifier']],
+  ['meta.brace', ['delimiter.bracket', 'delimiter.square', 'delimiter.parenthesis', 'delimiter.curly']],
+  ['punctuation', ['delimiter', 'delimiter.bracket']],
+  ['invalid', ['invalid']],
 ]
 
-function tokenFor(scope: string): string | null {
+/** The Monaco tokens a TextMate scope colours; the longest matching scope prefix wins. */
+function tokensFor(scope: string): string[] {
   const s = scope.trim()
-  let best: [string, string] | null = null
+  let best: [string, string[]] | null = null
   for (const entry of SCOPE_TO_TOKEN) {
     if ((s === entry[0] || s.startsWith(entry[0] + '.')) && (!best || entry[0].length > best[0].length)) best = entry
   }
-  return best ? best[1] : null
+  return best ? best[1] : []
 }
 
 /** `#RGB`, `#RGBA`, `#RRGGBB` or `#RRGGBBAA` -> `#rrggbb[aa]`, otherwise null. */
@@ -116,11 +128,65 @@ export function themeIdFor(name: string): string {
   return 'imported-' + (name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'theme')
 }
 
+// ---- TextMate themes (.tmTheme, .plist): the older XML format many VS Code theme extensions still ship ----
+
+type PlistValue = string | PlistValue[] | { [key: string]: PlistValue }
+
+function plistValue(el: Element): PlistValue {
+  const children = Array.from(el.children)
+  if (el.tagName === 'dict') {
+    const out: { [key: string]: PlistValue } = {}
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].tagName === 'key' && children[i + 1]) out[children[i].textContent ?? ''] = plistValue(children[++i])
+    }
+    return out
+  }
+  if (el.tagName === 'array') return children.map(plistValue)
+  return el.textContent ?? ''
+}
+
+/** The theme as the object of a VS Code theme file: the first settings block holds the editor colours. */
+export function tmThemeToObject(text: string): Record<string, unknown> | null {
+  if (!text.trimStart().startsWith('<')) return null
+  const doc = new DOMParser().parseFromString(text, 'application/xml')
+  const root = doc.querySelector('plist > dict')
+  if (!root || doc.querySelector('parsererror')) return null
+  const theme = plistValue(root) as { name?: string; settings?: { scope?: string; name?: string; settings?: Record<string, string> }[] }
+  if (!Array.isArray(theme.settings)) return null
+  const global = theme.settings.find((s) => s.scope === undefined)?.settings ?? {}
+  const colors: Record<string, string> = {}
+  const set = (key: string, value: unknown) => {
+    const c = normalizeColor(value)
+    if (c) colors[key] = c
+  }
+  set('editor.background', global.background)
+  set('editor.foreground', global.foreground)
+  set('editorCursor.foreground', global.caret)
+  set('editor.selectionBackground', global.selection)
+  set('editor.lineHighlightBackground', global.lineHighlight)
+  set('editorWhitespace.foreground', global.invisibles)
+  set('editorIndentGuide.background', global.guide)
+  const tokenColors = theme.settings.filter((s) => s.scope !== undefined).map((s) => ({ name: s.name, scope: s.scope, settings: s.settings ?? {} }))
+  const scopeColour = (scope: string) => normalizeColor(tokenColors.find((x) => (x.scope ?? '').split(',').map((y) => y.trim()).includes(scope))?.settings.foreground)
+  deriveWorkbenchColors(colors, { keyword: scopeColour('keyword') ?? undefined, string: scopeColour('string') ?? undefined, comment: scopeColour('comment') ?? undefined })
+  // The brightness of the background decides between a dark and a light base.
+  const bg = colors['editor.background']
+  const luminance = bg ? (parseInt(bg.slice(1, 3), 16) * 299 + parseInt(bg.slice(3, 5), 16) * 587 + parseInt(bg.slice(5, 7), 16) * 114) / 1000 : 0
+  return { name: theme.name, type: luminance > 160 ? 'light' : 'dark', colors, tokenColors }
+}
+
+/** The JSON text of a theme file, whatever its format: JSON or a TextMate plist. */
+function themeObjectOf(text: string): unknown {
+  const tm = tmThemeToObject(text)
+  if (tm) return tm
+  return JSON.parse(stripJsonc(text))
+}
+
 /** Reads a VS Code theme file. Throws an Error with a readable message when it is not a colour theme. */
 export function parseVsCodeTheme(text: string, fallbackName: string): ImportedTheme {
   let raw: unknown
   try {
-    raw = JSON.parse(stripJsonc(text))
+    raw = themeObjectOf(text)
   } catch {
     throw new Error('The file is not valid JSON.')
   }
@@ -155,10 +221,11 @@ export function parseVsCodeTheme(text: string, fallbackName: string): ImportedTh
     if (!foreground && fontStyle === undefined) continue
     const seen = new Set<string>()
     for (const scope of scopes) {
-      const token = tokenFor(scope)
-      if (!token || seen.has(token)) continue
-      seen.add(token)
-      rules.push({ token, ...(foreground ? { foreground } : {}), ...(fontStyle !== undefined ? { fontStyle } : {}) })
+      for (const token of tokensFor(scope)) {
+        if (seen.has(token)) continue
+        seen.add(token)
+        rules.push({ token, ...(foreground ? { foreground } : {}), ...(fontStyle !== undefined ? { fontStyle } : {}) })
+      }
     }
   }
 
@@ -196,7 +263,7 @@ function withIncludes(path: string, files: Map<string, string>, depth = 0): RawT
   if (text === undefined || depth > 8) return null
   let raw: RawTheme
   try {
-    raw = JSON.parse(stripJsonc(text)) as RawTheme
+    raw = themeObjectOf(text) as RawTheme
   } catch {
     return null
   }

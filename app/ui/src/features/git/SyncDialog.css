@@ -1,0 +1,38 @@
+/* Pull and Push window: commit list on top, the changes of the chosen commit below. */
+.sync-dialog { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
+
+.sync-dialog .forge-history-table { flex: 0 0 auto; max-height: 34%; overflow: auto; display: block; }
+
+.sync-dialog .forge-history-table tbody tr { cursor: pointer; }
+
+.sync-dialog .forge-history-table tbody tr:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+
+.sync-dialog .forge-history-table tbody tr.is-selected { background: color-mix(in srgb, var(--accent, var(--fg)) 28%, transparent); }
+
+.sync-changes { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; border-top: 1px solid var(--border); padding-top: 6px; }
+
+.sync-changes-bar { display: flex; align-items: center; gap: 10px; padding-bottom: 6px; }
+
+.sync-changes-bar strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sync-changes-bar button { margin-left: auto; }
+
+.sync-changes-bar button + button { margin-left: 0; }
+
+.sync-changes-body { display: flex; flex: 1 1 auto; min-height: 0; gap: 8px; }
+
+.sync-changes-files { list-style: none; margin: 0; padding: 0; flex: 0 0 280px; overflow: auto; border: 1px solid var(--border); }
+
+.sync-changes-files li { padding: 2px 8px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.sync-changes-files li:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+
+.sync-changes-files li.is-selected { background: color-mix(in srgb, var(--accent, var(--fg)) 28%, transparent); }
+
+.sync-changes-code { display: inline-block; width: 1.2em; font-weight: 600; }
+
+.sync-changes-files li[data-git='A'] .sync-changes-code { color: var(--success); }
+
+.sync-changes-files li[data-git='D'] .sync-changes-code { color: var(--error); }
+
+.sync-changes-diff { flex: 1 1 auto; min-width: 0; min-height: 200px; display: flex; border: 1px solid var(--border); }

@@ -9,6 +9,10 @@ publish.workspace = true
 serde = { workspace = true }
 thiserror = { workspace = true }
 
+# PuTTY .ppk keys are turned into OpenSSH keys so `ssh` (macOS, Linux, git) can use them.
+base64 = "0.22"
+ssh-key = { version = "0.6", default-features = false, features = ["alloc", "ed25519"] }
+
 # Cross-platform backends: file watching (ReadDirectoryChangesW on Windows, FSEvents on macOS)
 # and native file dialogs. Both are shared by platform::windows and platform::unix (macOS port).
 notify = "6"

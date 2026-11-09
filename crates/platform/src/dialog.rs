@@ -36,4 +36,8 @@ pub trait FileDialog: Send + Sync {
     fn open_file(&self, options: OpenFileOptions) -> Option<PathBuf>;
     fn save_file(&self, options: SaveFileOptions) -> Option<PathBuf>;
     fn pick_folder(&self, options: PickFolderOptions) -> Option<PathBuf>;
+    /// Several folders at once; a dialog without multi-select returns the one folder it offers.
+    fn pick_folders(&self, options: PickFolderOptions) -> Vec<PathBuf> {
+        self.pick_folder(options).into_iter().collect()
+    }
 }

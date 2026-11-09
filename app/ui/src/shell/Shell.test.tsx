@@ -146,7 +146,7 @@ describe('Shell - docking', () => {
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     render(<Shell api={api} projectRoot="" />)
     expect(screen.getByRole('tab', { name: 'Projects' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Services' })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Services' })).not.toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Properties' })).toHaveTextContent('<No Properties>')
     expect(screen.getByRole('region', { name: 'Navigator' })).toBeInTheDocument()
     for (const t of [/^Output/, 'Search Results', 'Notifications', 'Refactoring', 'Problems']) {
@@ -205,7 +205,7 @@ describe('Shell - menu keyboard', () => {
   it('Enter runs the focused entry (File > Open Project…)', async () => {
     const user = userEvent.setup()
     const api = createMockForgeApi({ projectTree: [], documents: {}, pickedFolder: null })
-    const pick = vi.spyOn(api, 'pickProjectFolder')
+    const pick = vi.spyOn(api, 'pickProjectFolders')
     render(<Shell api={api} projectRoot="" />)
     await user.keyboard('{F10}')
     for (let i = 0; i < 8 && !/^Open Project/.test(document.activeElement?.textContent ?? ''); i++) await user.keyboard('{ArrowDown}')

@@ -5,6 +5,7 @@ import { notify } from '../../core/notifications'
 import { reloadPluginPrefs } from '../../settings/plugins'
 import { reloadOptions } from '../../settings/options'
 import { reloadCustomThemes } from '../../theme/customThemes'
+import { reloadColorOverrides } from '../../theme/colorOverrides'
 import { reloadEditorPrefs } from '../../theme/editorPrefs'
 import type { ThemeName } from '../../theme/useTheme'
 import type { TranspilerEngineId } from '../../settings/transpilerEngine'
@@ -51,6 +52,19 @@ export function useDialogWindows({ dialog, setDialog, hasProject, root, engine, 
   const optionsWindowOpen = useRef(false)
 
   // Options and Open open as windows of their own (modal: the main window is locked meanwhile); in a plain browser the embedded dialogs below are used.
+  // Apply in the Options window stores the choices at once; this window reads them without waiting for the window to close.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key?.startsWith('forge.')) return
+      reloadCustomThemes()
+      reloadColorOverrides()
+      reloadOptions()
+      reloadEditorPrefs()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
   useEffect(() => {
     if (dialog !== 'options' || !osWindowsAvailable() || optionsWindowOpen.current) return
     optionsWindowOpen.current = true
@@ -58,6 +72,7 @@ export function useDialogWindows({ dialog, setDialog, hasProject, root, engine, 
       .then((r) => {
         if (!r) return
         reloadCustomThemes()
+        reloadColorOverrides()
         reloadOptions()
         reloadEditorPrefs()
         setInstallDir(r.installDir)

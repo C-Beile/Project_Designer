@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { SchemaTable } from '../wire/types'
 import { TunnelGlyph } from '../tree/TunnelGlyph'
-import { useTunnelState, systemNameOf } from './tunnelState'
+import { useTunnelState, systemNameOf, projectOfPath } from './tunnelState'
 import { errorText } from '../core/errorText'
 
 // Services tab: project > system > database alias (System_alias, Data_alias ...) > tables. Every
@@ -173,9 +173,20 @@ function AliasNode({ api, alias, onOpenSql }: { api: ForgeApi; alias: AliasEntry
   )
 }
 
-export function ServicesTree({ api, onOpenSql }: { api: ForgeApi; onOpenSql: (sql: string) => void }) {
+/** Name of a project as written on disk; the session keys only know it in the lower case form used for comparing paths. */
+function projectNameOf(key: string, projects: string[]): string {
+  const real = projectOfPath(projects, key)
+  return baseName(real ?? key)
+}
+
+export function ServicesTree({ api, onOpenSql, projects = [] }: { api: ForgeApi; onOpenSql: (sql: string) => void; projects?: string[] }) {
   const { bySystem } = useTunnelState()
-  const groups = useMemo(() => groupSessions(bySystem), [bySystem])
+  const groups = useMemo(() => groupSessions(bySystem).map((g) => ({ ...g, label: projectNameOf(g.project, projects) })), [bySystem, projects])
+  const [tunnelsOpen, setTunnelsOpen] = useState(true)
+  const closeSystem = (systemKey: string, sessions: string[]) => {
+    for (const key of sessions) void api.dbDisconnect(key).catch(() => {})
+    void api.dbDisconnect(systemKey).catch(() => {})
+  }
   const [opened, setOpened] = useState<Set<string>>(() => new Set())
   const toggle = (k: string) =>
     setOpened((prev) => {
@@ -213,6 +224,19 @@ export function ServicesTree({ api, onOpenSql }: { api: ForgeApi; onOpenSql: (sq
                     <span className="svt-dot" aria-hidden="true" />
                     <span className="svt-name">{systemNameOf(s.systemKey)}</span>
                     <span className="svt-meta">{s.aliases.length} {s.aliases.length === 1 ? 'database' : 'databases'}</span>
+                    <span className="svt-grow" />
+                    <button
+                      type="button"
+                      className="svt-icon-btn"
+                      title={`Close the connections and the tunnel of ${systemNameOf(s.systemKey)}`}
+                      aria-label={`Disconnect ${systemNameOf(s.systemKey)}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        closeSystem(s.systemKey, s.aliases.map((a) => a.sessionKey))
+                      }}
+                    >
+                      ✕
+                    </button>
                   </div>
                   {!opened.has(s.systemKey) ? null : (
                     <ul role="group">
@@ -229,12 +253,32 @@ export function ServicesTree({ api, onOpenSql }: { api: ForgeApi; onOpenSql: (sq
       ))}
       </ul>
       </li>
-      <li role="treeitem" aria-expanded="false" className="svt-root">
-        <div className="svt-row svt-root-row" title="The tunnels are opened in the tunnel manager of a system (tunnel button in the Projects tree)">
+      <li role="treeitem" aria-expanded={tunnelsOpen} className="svt-root">
+        <div className="svt-row svt-root-row" title="The tunnels are opened with the tunnel button of a system in the Projects tree" onClick={() => setTunnelsOpen((v) => !v)}>
+          <Chevron open={tunnelsOpen} />
           <TunnelGlyph size={14} />
           <strong className="svt-name">Tunnel</strong>
           <span className="svt-meta">{tunnelCount} open</span>
         </div>
+        {tunnelsOpen ? (
+          <ul role="group" aria-label="Open tunnels">
+            {groups.flatMap((g) =>
+              g.systems.map((s) => (
+                <li key={s.systemKey} role="treeitem" className="svt-tunnel">
+                  <div className="svt-row svt-tunnel-row">
+                    <span className="svt-dot" aria-hidden="true" />
+                    <span className="svt-name">{systemNameOf(s.systemKey)}</span>
+                    <span className="svt-meta">{g.label}</span>
+                    <span className="svt-grow" />
+                    <button type="button" className="svt-icon-btn" title={`Close the tunnel and the connections of ${systemNameOf(s.systemKey)} (${g.label})`} aria-label={`Close ${systemNameOf(s.systemKey)} of ${g.label}`} onClick={() => closeSystem(s.systemKey, s.aliases.map((a) => a.sessionKey))}>
+                      Close
+                    </button>
+                  </div>
+                </li>
+              )),
+            )}
+          </ul>
+        ) : null}
       </li>
     </ul>
   )

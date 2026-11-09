@@ -53,6 +53,8 @@
 /* Own icon of a context or entity in the Projects tree */
 .project-tree-icon-art { display: inline-flex; width: 16px; height: 16px; color: var(--folder-context, var(--fg)); }
 
+.project-tree-icon-art.is-entity { color: var(--folder-entity, var(--fg)); }
+
 .project-tree-icon-art svg { width: 16px; height: 16px; fill: currentColor; }
 
 /* Own icon of a context or entity in the application editor lists */

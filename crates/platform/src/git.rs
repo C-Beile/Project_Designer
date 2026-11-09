@@ -107,6 +107,47 @@ pub trait GitOperations: Send + Sync {
     fn log(&self, repo: &Path, limit: usize) -> Result<Vec<GitCommit>, PlatformError>;
 }
 
+/// OpenSSH copies of the user's PuTTY keys for one git command that talks to a remote. Many Windows users only have
+/// `.ppk` keys (PuTTY, Pageant), which `ssh` cannot read, so git would fail with "Permission denied (publickey)".
+/// The copies are removed when this value is dropped.
+#[derive(Default)]
+pub struct SshKeys(Vec<PathBuf>);
+
+impl Drop for SshKeys {
+    fn drop(&mut self) {
+        for key in &self.0 {
+            crate::ppk::remove_key_file(key);
+        }
+    }
+}
+
+/// Lets `cmd` (a git command that contacts the remote) log in with the `.ppk` keys of `~/.ssh`. Nothing is changed when
+/// the user set up SSH themselves: a `GIT_SSH`/`GIT_SSH_COMMAND`/`core.sshCommand`, or an OpenSSH key in `~/.ssh`.
+pub fn use_ppk_keys(cmd: &mut std::process::Command, repo: &Path) -> SshKeys {
+    if std::env::var_os("GIT_SSH").is_some() || std::env::var_os("GIT_SSH_COMMAND").is_some() {
+        return SshKeys::default();
+    }
+    let Some(home) = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")) else { return SshKeys::default() };
+    let ssh_dir = PathBuf::from(home).join(".ssh");
+    if ["id_ed25519", "id_rsa", "id_ecdsa", "id_dsa"].iter().any(|name| ssh_dir.join(name).is_file()) {
+        return SshKeys::default();
+    }
+    let configured = crate::console::command("git").args(["config", "core.sshCommand"]).current_dir(repo).output().map(|o| !o.stdout.iter().all(u8::is_ascii_whitespace)).unwrap_or(false);
+    if configured {
+        return SshKeys::default();
+    }
+    let Ok(entries) = std::fs::read_dir(&ssh_dir) else { return SshKeys::default() };
+    let mut ppks: Vec<PathBuf> = entries.flatten().map(|e| e.path()).filter(|p| crate::ppk::is_ppk(p)).collect();
+    ppks.sort();
+    let keys: Vec<PathBuf> = ppks.iter().filter_map(|p| crate::ppk::openssh_copy(p).ok()).collect();
+    if keys.is_empty() {
+        return SshKeys::default();
+    }
+    let identities: String = keys.iter().map(|k| format!(" -i \"{}\"", k.to_string_lossy().replace('\\', "/"))).collect();
+    cmd.env("GIT_SSH_COMMAND", format!("ssh -o IdentitiesOnly=yes -o BatchMode=yes{identities}"));
+    SshKeys(keys)
+}
+
 /// Shells out to the system `git` binary found on `PATH`.
 #[derive(Default)]
 pub struct CommandGitOperations;
@@ -118,9 +159,10 @@ impl CommandGitOperations {
 
     fn run(&self, repo: &Path, args: &[&str]) -> Result<GitCommandOutcome, PlatformError> {
         let program = PathBuf::from("git");
-        let output = crate::console::command(&program)
-            .args(args)
-            .current_dir(repo)
+        let mut command = crate::console::command(&program);
+        command.args(args).current_dir(repo);
+        let _keys = if matches!(args.first().copied(), Some("pull" | "push" | "fetch" | "clone" | "ls-remote")) { use_ppk_keys(&mut command, repo) } else { SshKeys::default() };
+        let output = command
             .output()
             .map_err(|source| PlatformError::Spawn { program: program.display().to_string(), source })?;
 
@@ -171,7 +213,14 @@ impl GitOperations for CommandGitOperations {
     }
 
     fn push(&self, repo: &Path) -> Result<GitCommandOutcome, PlatformError> {
-        self.run(repo, &["push"])
+        // A branch that exists only locally has no counterpart on the server yet; it is published and linked
+        // in one step, so the first push of a new branch works like in the original Designer.
+        let has_upstream = self.run(repo, &["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])?.success();
+        if has_upstream {
+            self.run(repo, &["push"])
+        } else {
+            self.run(repo, &["push", "--set-upstream", "origin", "HEAD"])
+        }
     }
 
     fn checkout_branch(&self, repo: &Path, branch: &str) -> Result<GitCommandOutcome, PlatformError> {

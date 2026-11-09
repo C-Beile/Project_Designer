@@ -16,17 +16,70 @@ pub struct TunnelRowDto {
     pub user: String,
 }
 
-/// Resolves `$PROJECTHOME/...` (or a project-relative path) and refuses anything outside the
-/// project folder.
-pub fn resolve_config_path(project_root: &Path, reference: &str) -> Result<PathBuf, String> {
-    let relative = reference
-        .strip_prefix("$PROJECTHOME/")
-        .or_else(|| reference.strip_prefix("%aditoprj%/"))
-        .unwrap_or(reference);
-    if relative.split(['/', '\\']).any(|p| p == "..") || Path::new(relative).is_absolute() {
+/// The path variables of a project reference, in any letter case.
+const PROJECT_VARIABLES: [&str; 4] = ["${PROJECTHOME}", "$PROJECTHOME", "%PROJECTHOME%", "%ADITOPRJ%"];
+
+/// Takes the project variable off the front of a reference; the rest lies below the project folder.
+fn strip_project_variable(reference: &str) -> &str {
+    let text = reference.trim();
+    for variable in PROJECT_VARIABLES {
+        if text.len() >= variable.len() && text.is_char_boundary(variable.len()) && text[..variable.len()].eq_ignore_ascii_case(variable) {
+            let rest = &text[variable.len()..];
+            if rest.is_empty() || rest.starts_with('/') || rest.starts_with('\\') {
+                return rest;
+            }
+        }
+    }
+    text
+}
+
+/// The folders and the file of a reference below the project, whatever separators the system that wrote it used (a
+/// project made on Windows carries backslashes). Refuses anything outside the project folder.
+fn project_segments(reference: &str) -> Result<Vec<String>, String> {
+    let unified = strip_project_variable(reference).replace('\\', "/");
+    // A drive letter or a leading double slash is the absolute path of another computer.
+    let bytes = unified.as_bytes();
+    let is_drive = bytes.len() >= 2 && bytes[1] == b':' && bytes[0].is_ascii_alphabetic();
+    if is_drive || unified.starts_with("//") {
         return Err("Config path must stay inside the project folder.".into());
     }
-    Ok(project_root.join(relative))
+    let mut segments = Vec::new();
+    for part in unified.split('/') {
+        match part.trim() {
+            "" | "." => {}
+            ".." => return Err("Config path must stay inside the project folder.".into()),
+            other => segments.push(other.to_string()),
+        }
+    }
+    if segments.is_empty() {
+        return Err("Config path is empty.".into());
+    }
+    Ok(segments)
+}
+
+/// Finds a folder entry by name ignoring the letter case, for file systems that tell `Others` from `others` (Linux).
+fn entry_ignoring_case(dir: &Path, name: &str) -> Option<PathBuf> {
+    std::fs::read_dir(dir).ok()?.flatten().find(|e| e.file_name().to_string_lossy().eq_ignore_ascii_case(name)).map(|e| e.path())
+}
+
+/// Resolves `$PROJECTHOME/...` (or a project-relative path) and refuses anything outside the project folder. Works the
+/// same on Windows and macOS: both kinds of separator are read, and where the exact spelling does not exist the
+/// folders are searched without regard to letter case.
+pub fn resolve_config_path(project_root: &Path, reference: &str) -> Result<PathBuf, String> {
+    let segments = project_segments(reference)?;
+    let mut exact = project_root.to_path_buf();
+    for s in &segments {
+        exact.push(s);
+    }
+    if exact.exists() {
+        return Ok(exact);
+    }
+    let mut found = project_root.to_path_buf();
+    for s in &segments {
+        let direct = found.join(s);
+        found = if direct.exists() { direct } else { entry_ignoring_case(&found, s).unwrap_or(direct) };
+    }
+    Ok(if found.exists() { found } else { exact })
 }
 
 /// All `TunnelConfigDataModel` entries of `tunnelconfig.xml`.
@@ -200,6 +253,31 @@ mod tests {
         assert!(resolve_config_path(root, "$PROJECTHOME/others/a.xml").is_ok());
         assert!(resolve_config_path(root, "$PROJECTHOME/../x.xml").is_err());
         assert!(resolve_config_path(root, "C:/x.xml").is_err());
+    }
+
+    #[test]
+    fn references_written_on_windows_resolve_the_same_way_on_any_system() {
+        let root = Path::new("/Users/dev/proj");
+        let expected = root.join("others").join("cloud").join("x.xml");
+        assert_eq!(resolve_config_path(root, r"$PROJECTHOME\others\cloud\x.xml").unwrap(), expected);
+        assert_eq!(resolve_config_path(root, "${PROJECTHOME}/others//cloud/./x.xml").unwrap(), expected);
+        assert_eq!(resolve_config_path(root, "%aditoprj%/others/cloud/x.xml").unwrap(), expected);
+        assert_eq!(resolve_config_path(root, r"%aditoprj%\others\cloud\x.xml").unwrap(), expected);
+        assert_eq!(resolve_config_path(root, "$projecthome/others/cloud/x.xml").unwrap(), expected);
+        assert_eq!(resolve_config_path(root, "others/cloud/x.xml").unwrap(), expected);
+        assert!(resolve_config_path(root, r"$PROJECTHOME\..\x.xml").is_err());
+        assert!(resolve_config_path(root, r"C:\x.xml").is_err());
+        assert!(resolve_config_path(root, "$PROJECTHOME").is_err());
+    }
+
+    #[test]
+    fn a_differently_spelled_folder_is_found_where_letter_case_matters() {
+        let root = std::env::temp_dir().join(format!("forge-cfgcase-{}", std::process::id()));
+        std::fs::create_dir_all(root.join("Others").join("Cloud")).unwrap();
+        std::fs::write(root.join("Others").join("Cloud").join("X.xml"), "<a/>").unwrap();
+        let found = resolve_config_path(&root, "$PROJECTHOME/others/cloud/x.xml").unwrap();
+        assert!(found.exists());
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]

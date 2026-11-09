@@ -65,6 +65,10 @@ export interface ForgeApi {
   // P7: "recently opened project" hint - purely a suggestion for the empty state, never
   // auto-loaded (see App.tsx).
   getRecentProject(): Promise<string | null>
+  /** Recently opened projects, newest first. */
+  getRecentProjects(): Promise<string[]>
+  /** Folder picker with several folders selectable at once; empty when cancelled. */
+  pickProjectFolders(title?: string): Promise<string[]>
   setRecentProject(path: string): Promise<void>
   // P8 Tools > Options: Forge's own settings, stored in its app data folder.
   getSettings(): Promise<ForgeSettings>

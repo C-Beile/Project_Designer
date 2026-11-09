@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
-import { getOptions, subscribeOptions } from '../settings/options'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { getOptions, saveOptions, subscribeOptions } from '../settings/options'
+import { isPluginActive, subscribePluginPrefs } from '../settings/plugins'
 import { findCustomTheme, subscribeCustomThemes } from './customThemes'
 import { applyUiTheme } from './uiTheme'
+import { applyColorOverrides, subscribeColorOverrides } from './colorOverrides'
 
 export type ThemeName = 'dark' | 'light' | 'lion'
 
@@ -36,20 +38,45 @@ export function useTheme(): [ThemeName, (next?: ThemeName) => void] {
     }
   }, [theme])
 
+  // The Options window (another window) changed the choice and Apply keeps it open: follow it right away.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) setTheme(readStoredTheme())
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
   // An imported colour theme colours the whole interface, not only the editor.
   const [themeStamp, setThemeStamp] = useState(0)
   useEffect(() => {
     const bump = () => setThemeStamp((n) => n + 1)
     const offOptions = subscribeOptions(bump)
     const offThemes = subscribeCustomThemes(bump)
+    const offColors = subscribeColorOverrides(bump)
+    const offPlugins = subscribePluginPrefs(bump)
     return () => {
       offOptions()
       offThemes()
+      offColors()
+      offPlugins()
     }
   }, [])
-  const chosen = getOptions().editor.colorTheme
+  // A VS Code theme only counts while the import plugin is on; switching the plugin off brings the standard theme back.
+  const importOn = isPluginActive('vscode-themes')
+  const chosen = importOn ? getOptions().editor.colorTheme : ''
+  const wasOn = useRef(importOn)
+  useEffect(() => {
+    if (wasOn.current && !importOn && getOptions().editor.colorTheme) {
+      saveOptions({ ...getOptions(), editor: { ...getOptions().editor, colorTheme: '' } })
+      setTheme('dark')
+    }
+    wasOn.current = importOn
+  }, [importOn])
   useEffect(() => {
     applyUiTheme(chosen ? findCustomTheme(chosen)?.data : undefined, theme)
+    // The colours the user set by hand lie on top of the theme.
+    applyColorOverrides()
   }, [chosen, theme, themeStamp])
 
   const toggle = useCallback((next?: ThemeName) => setTheme((t) => next ?? (t === 'dark' ? 'light' : 'dark')), [])

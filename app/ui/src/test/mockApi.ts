@@ -226,6 +226,12 @@ export function createMockForgeApi(options: {
     async pickProjectFolder() {
       return options.pickedFolder ?? null
     },
+    async pickProjectFolders() {
+      return options.pickedFolder ? [options.pickedFolder] : []
+    },
+    async getRecentProjects() {
+      return recentProject ? [recentProject] : []
+    },
     async getRecentProject() {
       return recentProject
     },

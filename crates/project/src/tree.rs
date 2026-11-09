@@ -364,50 +364,62 @@ fn sub_dirs(dir: &Path) -> Vec<(String, PathBuf)> {
         .collect()
 }
 
-fn scan_package(pkg: &Package) -> PackageScan {
+/// What one object folder of a package yields; the file reads of different objects are independent.
+enum ObjectRead {
+    /// The folder has no `.aod` of its own.
+    Missing(String, PathBuf),
+    Found { name: String, aod: PathBuf, context: Option<ContextInfo>, icon: Option<String>, group: Option<&'static str> },
+}
+
+/// Scans one package. `threads` is how many threads may read its files: the project itself is one big package and
+/// uses many, the installed modules are already spread over threads by the caller and read their files one by one.
+fn scan_package(pkg: &Package, threads: usize) -> PackageScan {
     let mut scan = PackageScan::default();
     for folder in SCANNED_FOLDERS {
-        for (name, dir) in sub_dirs(&pkg.dir.join(folder)) {
+        let dirs = sub_dirs(&pkg.dir.join(folder));
+        let reads = crate::parallel::parallel_map(&dirs, threads, |(name, dir)| {
             let aod = dir.join(format!("{name}.aod"));
             if !aod.is_file() {
-                if pkg.is_project && *folder == "system" {
-                    scan.incomplete_systems.push((name, dir));
-                }
-                continue;
+                return ObjectRead::Missing(name.clone(), dir.clone());
             }
+            let (mut context, mut icon, mut group) = (None, None, None);
             match *folder {
-                "neonContext" => {
-                    if let Ok(xml) = fs::read_to_string(&aod) {
-                        scan.contexts.insert(name.clone(), parse_context(&xml));
-                    }
-                }
-                "entity" => {
-                    if let Some(icon) = head_of_file(&aod).as_deref().and_then(top_level_icon) {
-                        scan.entity_icons.insert(name.clone(), icon);
-                    }
-                }
-                "process" => {
-                    if let Ok(xml) = fs::read_to_string(&aod) {
-                        scan.process_groups.insert(name.clone(), process_group(&xml));
-                    }
-                }
+                "neonContext" => context = fs::read_to_string(&aod).ok().map(|xml| parse_context(&xml)),
+                "entity" => icon = head_of_file(&aod).as_deref().and_then(top_level_icon),
+                "process" => group = fs::read_to_string(&aod).ok().map(|xml| process_group(&xml)),
                 _ => {}
             }
-            scan.objects.push((folder, name, aod));
+            ObjectRead::Found { name: name.clone(), aod, context, icon, group }
+        });
+        for read in reads {
+            match read {
+                ObjectRead::Missing(name, dir) => {
+                    if pkg.is_project && *folder == "system" {
+                        scan.incomplete_systems.push((name, dir));
+                    }
+                }
+                ObjectRead::Found { name, aod, context, icon, group } => {
+                    if let Some(c) = context {
+                        scan.contexts.insert(name.clone(), c);
+                    }
+                    if let Some(i) = icon {
+                        scan.entity_icons.insert(name.clone(), i);
+                    }
+                    if let Some(g) = group {
+                        scan.process_groups.insert(name.clone(), g);
+                    }
+                    scan.objects.push((folder, name, aod));
+                }
+            }
         }
     }
-    for (_, dir) in sub_dirs(&pkg.dir.join("modification")) {
-        let Ok(entries) = fs::read_dir(&dir) else { continue };
-        for f in entries.flatten() {
-            let p = f.path();
-            if p.extension().and_then(|e| e.to_str()) != Some("aod") {
-                continue;
-            }
-            if let Some(m) = fs::read_to_string(&p).ok().as_deref().and_then(parse_modification) {
-                scan.modifications.push(m);
-            }
-        }
-    }
+    let modification_files: Vec<PathBuf> = sub_dirs(&pkg.dir.join("modification"))
+        .into_iter()
+        .filter_map(|(_, dir)| fs::read_dir(&dir).ok())
+        .flat_map(|entries| entries.flatten().map(|f| f.path()).filter(|p| p.extension().and_then(|e| e.to_str()) == Some("aod")).collect::<Vec<_>>())
+        .collect();
+    let parsed = crate::parallel::parallel_map(&modification_files, threads, |p| fs::read_to_string(p).ok().as_deref().and_then(parse_modification));
+    scan.modifications.extend(parsed.into_iter().flatten());
     scan
 }
 
@@ -578,34 +590,22 @@ fn package_key(pkg: &Package) -> Option<String> {
 fn scan_packages(project_root: &Path, packages: &[Package]) -> Vec<PackageScan> {
     let cache_file = scan_cache_file(project_root);
     let cached = cache_file.as_deref().map(load_scan_cache).unwrap_or_default();
-    let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).clamp(1, 16);
-    let chunk = packages.len().div_ceil(threads).max(1);
+    let threads = crate::parallel::io_threads();
     let cached_ref = &cached;
-    let results: Vec<(PackageScan, Option<(String, String, StoredScan)>)> = std::thread::scope(|s| {
-        let handles: Vec<_> = packages
-            .chunks(chunk)
-            .map(|c| {
-                s.spawn(move || {
-                    c.iter()
-                        .map(|pkg| {
-                            let dir_key = forward(&pkg.dir);
-                            let key = package_key(pkg);
-                            if let (Some(key), Some(entry)) = (&key, cached_ref.entries.get(&dir_key)) {
-                                if &entry.key == key {
-                                    if let Some(scan) = restore_scan(&entry.scan) {
-                                        return (scan, None);
-                                    }
-                                }
-                            }
-                            let scan = scan_package(pkg);
-                            let fresh = key.map(|k| (dir_key, k, store_scan(&scan)));
-                            (scan, fresh)
-                        })
-                        .collect::<Vec<_>>()
-                })
-            })
-            .collect();
-        handles.into_iter().flat_map(|h| h.join().unwrap_or_default()).collect()
+    let results: Vec<(PackageScan, Option<(String, String, StoredScan)>)> = crate::parallel::parallel_map(packages, threads, |pkg| {
+        let dir_key = forward(&pkg.dir);
+        let key = package_key(pkg);
+        if let (Some(key), Some(entry)) = (&key, cached_ref.entries.get(&dir_key)) {
+            if &entry.key == key {
+                if let Some(scan) = restore_scan(&entry.scan) {
+                    return (scan, None);
+                }
+            }
+        }
+        // The project is one big package: its files are read by many threads. A module is one of many packages.
+        let scan = scan_package(pkg, if pkg.is_project { threads } else { 1 });
+        let fresh = key.map(|k| (dir_key, k, store_scan(&scan)));
+        (scan, fresh)
     });
 
     let mut scans = Vec::with_capacity(results.len());
@@ -908,10 +908,71 @@ pub fn list_dir(dir: &Path) -> Result<Vec<TreeNode>, String> {
     Ok(dirs)
 }
 
-/// Children of a lazily loaded node (`dir:<path>` ids: module file trees, `others`).
+/// Children of a lazily loaded node (`dir:<path>` ids: folders of `others`; `module:<path>` ids: an installed module,
+/// shown like a project).
 pub fn list_tree_children(node_id: &str) -> Result<Vec<TreeNode>, String> {
+    if let Some(path) = node_id.strip_prefix("module:") {
+        return Ok(module_children(Path::new(path)));
+    }
     let path = node_id.strip_prefix("dir:").ok_or_else(|| format!("node '{node_id}' has no lazily loaded children"))?;
     list_dir(Path::new(path))
+}
+
+/// What an installed module shows below its name in External Libraries: the same type folders as a project (context,
+/// entity, process ...) with the objects the module brings, then its files of the top level.
+fn module_children(dir: &Path) -> Vec<TreeNode> {
+    let folder_name = dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let coordinate = npm_modules::model::parse_package_json(&dir.join("package.json")).map(|d| coordinate_of(&d)).unwrap_or_else(|_| folder_name.clone());
+    let pkg = Package { dir: dir.to_path_buf(), coordinate, short_name: folder_name, is_project: false };
+    let scan = scan_package(&pkg, crate::parallel::io_threads());
+    let mut nodes = module_folder_nodes(&pkg, &scan);
+    nodes.extend(root_files(dir).into_iter().map(|mut n| {
+        n.read_only = true;
+        n
+    }));
+    nodes
+}
+
+/// The type folders of one module, built with the same code as the folders of a project.
+fn module_folder_nodes(pkg: &Package, scan: &PackageScan) -> Vec<TreeNode> {
+    let packages = std::slice::from_ref(pkg);
+    let mut model = Model { packages, objects: HashMap::new(), modified_by: HashMap::new() };
+    for (folder, name, aod) in &scan.objects {
+        model.objects.entry(*folder).or_default().insert(name.clone(), ObjRef { aod: aod.clone(), pkg: 0 });
+    }
+    let mods: Vec<(bool, &Modification)> = scan.modifications.iter().map(|m| (false, m)).collect();
+    let root_id = forward(&pkg.dir);
+    let mut children = Vec::new();
+    for (label, disk_folders) in TREE_FOLDERS {
+        let id = format!("folder:{root_id}|{label}");
+        let node = match *label {
+            "context" => TreeNode::folder(id, label, label, context_nodes(&model, &scan.contexts, &scan.entity_icons, &mods)),
+            "process" => TreeNode::folder(id.clone(), label, label, process_nodes(&model, &scan.process_groups, &id)),
+            "others" => TreeNode::folder(id, label, label, others_nodes(packages)),
+            _ => {
+                let mut nodes: Vec<TreeNode> = disk_folders
+                    .iter()
+                    .flat_map(|f| model.names(f).into_iter().map(move |n| (*f, n)))
+                    .map(|(f, n)| {
+                        let mut node = model.object_node(f, &n, f);
+                        if f == "entity" {
+                            node.icon = scan.entity_icons.get(&n).cloned();
+                        }
+                        node
+                    })
+                    .collect();
+                sort_nodes(&mut nodes);
+                TreeNode::folder(id, label, label, nodes)
+            }
+        };
+        children.push(node);
+    }
+    // Only the folders the module really brings: an installed module has few of the type folders of a project.
+    children.retain(|c| !c.children.is_empty());
+    for folder in &mut children {
+        folder.read_only = true;
+    }
+    children
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1152,7 +1213,7 @@ fn external_libraries(packages: &[Package], scans: &[PackageScan], root_id: &str
                     .is_ok_and(|d| d.adito_type == npm_modules::AditoType::Module)
         })
         .map(|(p, _)| TreeNode {
-            id: format!("dir:{}", p.dir.to_string_lossy()),
+            id: format!("module:{}", p.dir.to_string_lossy()),
             label: p.short_name.clone(),
             is_leaf: false,
             kind: NodeKind::Module,

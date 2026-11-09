@@ -72,3 +72,53 @@ describe('parseThemePack', () => {
     expect(() => parseThemePack([{ name: 'package.json', text: '{}' }])).toThrow(/No VS Code colour theme/)
   })
 })
+
+describe('TextMate themes (.tmTheme)', () => {
+  const plist = `<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict>
+<key>name</key><string>Sea</string>
+<key>settings</key><array>
+<dict><key>settings</key><dict><key>background</key><string>#1D262F</string><key>foreground</key><string>#88b4e7</string><key>caret</key><string>#34FEBB</string></dict></dict>
+<dict><key>name</key><string>Comment</string><key>scope</key><string>comment</string><key>settings</key><dict><key>foreground</key><string>#444c55</string><key>fontStyle</key><string> italic</string></dict></dict>
+</array></dict></plist>`
+
+  it('reads the editor colours and the token colours of a plist theme', () => {
+    const theme = parseVsCodeTheme(plist, 'Sea.tmTheme')
+    expect(theme.name).toBe('Sea')
+    expect(theme.data.base).toBe('vs-dark')
+    expect(theme.data.colors['editor.background']).toBe('#1d262f')
+    expect(theme.data.colors['editorCursor.foreground']).toBe('#34febb')
+    expect(theme.data.rules.some((r) => r.token === 'comment' && r.fontStyle === 'italic')).toBe(true)
+  })
+
+  it('finds the themes of an extension that ships .tmTheme files', () => {
+    const manifest = JSON.stringify({ contributes: { themes: [{ label: 'DuoTone Dark Sea', uiTheme: 'vs-dark', path: './themes/Sea.tmTheme' }] } })
+    const themes = parseThemePack([
+      { name: 'package.json', text: manifest },
+      { name: 'themes/Sea.tmTheme', text: plist },
+    ])
+    expect(themes.map((t) => t.name)).toEqual(['DuoTone Dark Sea'])
+  })
+})
+
+describe('TextMate themes colour the whole window', () => {
+  const plist = `<plist version="1.0"><dict><key>name</key><string>Sea</string><key>settings</key><array>
+<dict><key>settings</key><dict><key>background</key><string>#1D262F</string><key>foreground</key><string>#88b4e7</string><key>caret</key><string>#34FEBB</string></dict></dict>
+<dict><key>scope</key><string>support.type.property-name</string><key>settings</key><dict><key>foreground</key><string>#ff8800</string></dict></dict>
+<dict><key>scope</key><string>string</string><key>settings</key><dict><key>foreground</key><string>#34FEBB</string></dict></dict>
+</array></dict></plist>`
+
+  it('derives side bar, tabs and title bar from the editor colours', () => {
+    const { colors } = parseVsCodeTheme(plist, 'Sea.tmTheme').data
+    expect(colors['sideBar.background']).toBeTruthy()
+    expect(colors['sideBar.background']).not.toBe(colors['editor.background'])
+    expect(colors['titleBar.activeBackground']).toBeTruthy()
+    expect(colors['button.background']).toBe('#34febb')
+  })
+
+  it('colours JSON keys and values through the Monaco token names', () => {
+    const { rules } = parseVsCodeTheme(plist, 'Sea.tmTheme').data
+    expect(rules.find((r) => r.token === 'string.key')?.foreground).toBe('ff8800')
+    expect(rules.find((r) => r.token === 'string.value')?.foreground).toBe('34febb')
+  })
+})

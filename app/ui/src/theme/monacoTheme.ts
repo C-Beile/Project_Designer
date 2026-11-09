@@ -2,6 +2,8 @@ import * as monaco from 'monaco-editor'
 import { ensureMonacoLanguagesDefined, gitTokenRules } from './monacoLanguages'
 import { getOptions, subscribeOptions } from '../settings/options'
 import { findCustomTheme, subscribeCustomThemes } from './customThemes'
+import { editorOverrides, subscribeColorOverrides } from './colorOverrides'
+import { isPluginActive, subscribePluginPrefs } from '../settings/plugins'
 import type { MonacoThemeData } from './vscodeTheme'
 
 // Monaco ships its own theme engine, entirely separate from tokens.css - defining a proper Night
@@ -24,13 +26,21 @@ export const LION_DARK = 'forge-lion-dark'
 
 let defined = false
 
+// The data of the built-in themes, kept so the colours the user changed can be put on top of them.
+const builtinData = new Map<string, MonacoThemeData>()
+
+function defineBuiltin(id: string, data: MonacoThemeData): void {
+  builtinData.set(id, data)
+  monaco.editor.defineTheme(id, data)
+}
+
 /** Registers both Monaco themes once per process. Safe to call multiple times. */
 export function ensureMonacoThemesDefined(): void {
   if (defined) return
   defined = true
   ensureMonacoLanguagesDefined()
 
-  monaco.editor.defineTheme(NIGHT_OWL_DARK, {
+  defineBuiltin(NIGHT_OWL_DARK, {
     base: 'vs-dark',
     inherit: true,
     rules: [
@@ -74,7 +84,7 @@ export function ensureMonacoThemesDefined(): void {
     },
   })
 
-  monaco.editor.defineTheme(LION_DARK, {
+  defineBuiltin(LION_DARK, {
     base: 'vs-dark',
     inherit: true,
     rules: [
@@ -113,7 +123,7 @@ export function ensureMonacoThemesDefined(): void {
     },
   })
 
-  monaco.editor.defineTheme(NIGHT_OWL_LIGHT, {
+  defineBuiltin(NIGHT_OWL_LIGHT, {
     base: 'vs',
     inherit: true,
     rules: [
@@ -159,19 +169,38 @@ export function ensureMonacoThemesDefined(): void {
 // theme was imported anew (the stored object changes then).
 const registeredCustom = new Map<string, MonacoThemeData>()
 
+const OVERRIDE_THEME = 'forge-user-colours'
+let overrideStamp = ''
+
+/** The theme with the colours the user changed by hand put on top; the same id is defined anew when the colours change. */
+function withUserColours(baseId: string, base: MonacoThemeData | undefined): string {
+  const { colors, rules } = editorOverrides()
+  if (!base || (Object.keys(colors).length === 0 && rules.length === 0)) return baseId
+  const stamp = JSON.stringify([baseId, colors, rules])
+  if (stamp !== overrideStamp) {
+    // A later rule of the same token wins, so the user's rules go to the end.
+    monaco.editor.defineTheme(OVERRIDE_THEME, { ...base, colors: { ...base.colors, ...colors }, rules: [...base.rules, ...rules] })
+    overrideStamp = stamp
+  }
+  return OVERRIDE_THEME
+}
+
 /** Maps Forge's own theme name (theme/useTheme.ts) to the matching Monaco theme id. */
 export function monacoThemeFor(forgeTheme: 'dark' | 'light' | 'lion'): string {
-  const custom = getOptions().editor.colorTheme ? findCustomTheme(getOptions().editor.colorTheme) : undefined
+  const custom = getOptions().editor.colorTheme && isPluginActive('vscode-themes') ? findCustomTheme(getOptions().editor.colorTheme) : undefined
   if (custom) {
     ensureMonacoThemesDefined()
     if (registeredCustom.get(custom.id) !== custom.data) {
       monaco.editor.defineTheme(custom.id, custom.data)
       registeredCustom.set(custom.id, custom.data)
     }
-    return custom.id
+    return withUserColours(custom.id, custom.data)
   }
-  if (forgeTheme === 'lion') return LION_DARK
-  return forgeTheme === 'light' ? NIGHT_OWL_LIGHT : NIGHT_OWL_DARK
+  const id = forgeTheme === 'lion' ? LION_DARK : forgeTheme === 'light' ? NIGHT_OWL_LIGHT : NIGHT_OWL_DARK
+  const mine = editorOverrides()
+  if (Object.keys(mine.colors).length === 0 && mine.rules.length === 0) return id
+  ensureMonacoThemesDefined()
+  return withUserColours(id, builtinData.get(id))
 }
 
 /**
@@ -201,9 +230,13 @@ export function watchForgeThemeForMonaco(onChange: (monacoTheme: string) => void
   // The editor theme can also change through the Options window or a newly imported theme.
   const offOptions = subscribeOptions(apply)
   const offThemes = subscribeCustomThemes(apply)
+  const offColors = subscribeColorOverrides(apply)
+  const offPlugins = subscribePluginPrefs(apply)
   return () => {
     observer.disconnect()
     offOptions()
     offThemes()
+    offColors()
+    offPlugins()
   }
 }
