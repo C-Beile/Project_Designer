@@ -1,4 +1,5 @@
 [toolchain]
-# MSVC-Toolchain (Standard unter Windows). Braucht in Visual Studio / den Build Tools
-# den Workload "Desktopentwicklung mit C++".
-channel = "stable-x86_64-pc-windows-msvc"
+# GNU-Toolchain (MinGW). Braucht keine Admin-Rechte und kein Visual Studio.
+# Voraussetzung: MinGW-w64 (gcc, dlltool, windres) liegt im PATH, z.B.
+#   winget install BrechtSanders.WinLibs.POSIX.UCRT --scope user
+channel = "stable-x86_64-pc-windows-gnu"
