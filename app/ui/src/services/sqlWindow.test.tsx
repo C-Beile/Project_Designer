@@ -59,7 +59,7 @@ describe('Execute SQL window (manual chapter 8)', () => {
     const user = userEvent.setup()
     const api = await setup('select * from t;\nselect 2;')
     await user.click(screen.getByRole('button', { name: 'Run selected statement' }))
-    await waitFor(() => expect(api.dbCalls).toEqual([{ sql: 'select * from t', allowWrite: false }]))
+    await waitFor(() => expect(api.dbCalls).toEqual([{ sql: 'select * from t', allowWrite: true }]))
     expect(JSON.parse(window.localStorage.getItem(HISTORY_KEY)!)).toEqual(['select * from t'])
     await user.click(screen.getByRole('button', { name: 'SQL history' }))
     expect(within(screen.getByRole('dialog', { name: 'SQL history' })).getByText('select * from t')).toBeInTheDocument()
@@ -84,14 +84,12 @@ describe('Execute SQL window (manual chapter 8)', () => {
     const api = await setup('select * from t', { 'select * from t': one, "UPDATE t SET `NAME` = 'beta' WHERE `ID` = '2' AND `NAME` IS NULL LIMIT 1": two })
     await user.click(screen.getByRole('button', { name: 'Run' }))
     const table = await screen.findByRole('table', { name: 'Query result' })
-    expect(screen.getByRole('button', { name: 'Add row' })).toBeDisabled()
-    await user.click(screen.getByRole('checkbox', { name: 'Allow write statements' }))
     await user.dblClick(within(table).getAllByRole('row')[2].querySelectorAll('td')[2] as HTMLElement)
     await user.type(screen.getByRole('textbox', { name: 'Edit NAME' }), 'beta{Enter}')
     await user.click(screen.getByRole('button', { name: 'Save row' }))
     const confirm = screen.getByRole('alertdialog', { name: 'Confirm write statement' })
     expect(confirm).toHaveTextContent("UPDATE t SET `NAME` = 'beta' WHERE `ID` = '2' AND `NAME` IS NULL LIMIT 1")
-    expect(api.dbCalls.filter((c) => c.allowWrite)).toEqual([])
+    expect(api.dbCalls.filter((c) => c.sql.startsWith('UPDATE'))).toEqual([])
     await user.click(within(confirm).getByRole('button', { name: 'Run statement' }))
     await waitFor(() => expect(api.dbCalls.some((c) => c.allowWrite && c.sql.startsWith('UPDATE t SET'))).toBe(true))
   })
@@ -110,7 +108,7 @@ describe('Execute SQL window (manual chapter 8)', () => {
 })
 
 describe('Result grid context menu', () => {
-  it('opens an own menu with copy entries; editing is dimmed without write mode', async () => {
+  it('opens an own menu with copy entries and offers editing', async () => {
     const user = userEvent.setup()
     await setup('select * from t')
     await user.click(screen.getByRole('button', { name: 'Run' }))
@@ -118,6 +116,6 @@ describe('Result grid context menu', () => {
     const cell = within(table).getAllByRole('cell')[1]
     expect(fireEvent.contextMenu(cell)).toBe(false)
     expect((await screen.findAllByRole('menuitem')).map((i) => i.textContent)).toEqual(['Copy Cell', 'Copy Row', 'Copy Result', 'Export CSV', 'Edit Cell'])
-    expect(screen.getByRole('menuitem', { name: 'Edit Cell' })).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByRole('menuitem', { name: 'Edit Cell' })).not.toHaveAttribute('aria-disabled', 'true')
   })
 })

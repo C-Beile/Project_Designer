@@ -7,6 +7,7 @@ import { osWindowsAvailable } from '../../windows/windowService'
 import { GitDialog } from './GitDialog'
 import type { GitStatusAction, GitStatusData } from './GitStatusItem'
 import { SyncDialog } from './SyncDialog'
+import { PullResultDialog } from './PullResultDialog'
 import { useGit } from './useGit'
 
 /**
@@ -17,7 +18,7 @@ export function GitShellBridge({ api, root, hasProject, reloadToken, setReloadTo
   const gitActive = isPluginActive('git')
   const scm = useScm()
   const [branch, setBranch] = useState<string | null>(null)
-  const { gitView, syncMode, notifySync, openGit, quickBranch, openDiff, commands } = useGit({ api, root, branch, dialog, setDialog, setReloadToken, handleOpen })
+  const { gitView, syncMode, pulling, pullResult, setPullResult, notifySync, openGit, quickBranch, openDiff, commands } = useGit({ api, root, branch, dialog, setDialog, setReloadToken, handleOpen })
 
   // Aktueller Branch des Projekts.
   useEffect(() => {
@@ -67,11 +68,12 @@ export function GitShellBridge({ api, root, hasProject, reloadToken, setReloadTo
     () => ({
       branch: scm.root === root && scm.overview ? scm.overview.branch : branch,
       gitEnabled: gitActive && hasProject,
+      pulling,
       loadBranches: () => api.gitOverview(root),
       onCheckoutBranch: (t) => void quickBranch(t),
       onGit: (a: GitStatusAction) => (a === 'newBranch' ? void quickBranch({}) : openGit('branches')),
     }),
-    [scm.root, scm.overview, root, branch, gitActive, hasProject, api, quickBranch, openGit],
+    [scm.root, scm.overview, root, branch, gitActive, hasProject, pulling, api, quickBranch, openGit],
   )
   useEffect(() => {
     setPluginData('git', statusData)
@@ -83,6 +85,7 @@ export function GitShellBridge({ api, root, hasProject, reloadToken, setReloadTo
       {dialog === 'git' && hasProject && !osWindowsAvailable() ? (
         <GitDialog api={api} projectRoot={root} initialTab={gitView.tab} initialTarget={gitView.target} onClose={() => setDialog(null)} onChanged={() => setReloadToken((t) => t + 1)} onResult={(message, ok) => notify(message, { kind: ok ? 'success' : 'error', timeoutMs: ok ? undefined : 12000 })} />
       ) : null}
+      {pullResult ? <PullResultDialog api={api} root={root} result={pullResult} onClose={() => setPullResult(null)} /> : null}
       {dialog === 'sync' && hasProject && !osWindowsAvailable() ? <SyncDialog api={api} projectRoot={root} mode={syncMode} onClose={() => setDialog(null)} onDone={() => setReloadToken((t) => t + 1)} onResult={(r) => notifySync(syncMode, r)} /> : null}
     </>
   )

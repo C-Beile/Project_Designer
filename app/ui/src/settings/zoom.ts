@@ -52,6 +52,17 @@ export function stepUiZoom(delta: number | null): number {
   return next
 }
 
+export function setUiZoom(value: number): number {
+  const next = clampZoom(value)
+  try {
+    window.localStorage.setItem(UI_ZOOM_KEY, String(next))
+  } catch {
+    // the zoom still applies for this session
+  }
+  void applyWebviewZoom(next)
+  return next
+}
+
 type Step = number | null
 
 /** Which zoom a key press asks for, if any. */

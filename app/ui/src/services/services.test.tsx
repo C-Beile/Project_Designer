@@ -82,42 +82,36 @@ describe('SqlEditor', () => {
     await user.click(screen.getByRole('button', { name: 'Run' }))
     expect(await screen.findByRole('table', { name: 'Query result' })).toBeInTheDocument()
     expect(screen.getByText('NULL')).toBeInTheDocument()
-    expect(api.dbCalls).toEqual([{ sql: 'SELECT 1', allowWrite: false }])
+    expect(api.dbCalls).toEqual([{ sql: 'SELECT 1', allowWrite: true }])
   })
 
-  it('does not ask for confirmation while writing is off and reports the backend refusal', async () => {
+  it('runs a write statement at once, without a switch or a warning, and reports the affected rows', async () => {
     const user = userEvent.setup()
     const api = await connected()
     render(<SqlEditor api={api} db={ON} label="SQL 1" initial="DELETE FROM t" onTextChange={() => {}} />)
+    expect(screen.queryByRole('checkbox', { name: 'Allow write statements' })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Run' }))
     expect(screen.queryByRole('alertdialog')).toBeNull()
-    expect(api.dbCalls).toEqual([{ sql: 'DELETE FROM t', allowWrite: false }])
-  })
-
-  it('needs the switch and an explicit confirmation before a write statement runs', async () => {
-    const user = userEvent.setup()
-    const api = await connected()
-    render(<SqlEditor api={api} db={ON} label="SQL 1" initial="DELETE FROM t" onTextChange={() => {}} />)
-    await user.click(screen.getByRole('checkbox', { name: 'Allow write statements' }))
-    await user.click(screen.getByRole('button', { name: 'Run' }))
-    expect(api.dbCalls).toEqual([])
-    expect(screen.getByRole('alertdialog')).toHaveTextContent('DELETE FROM t')
-    await user.click(screen.getByRole('button', { name: 'Cancel' }))
-    expect(api.dbCalls).toEqual([])
-    await user.click(screen.getByRole('button', { name: 'Run' }))
-    await user.click(screen.getByRole('button', { name: 'Run statement' }))
     await waitFor(() => expect(api.dbCalls).toEqual([{ sql: 'DELETE FROM t', allowWrite: true }]))
     expect(await screen.findByTestId('sql-summary')).toHaveTextContent('Statement executed')
   })
 
-  it('takes the current editor text, and reading statements skip the confirmation even with writing on', async () => {
+  it('shows the number of changed rows of an update', async () => {
+    const user = userEvent.setup()
+    const api = createMockForgeApi({ projectTree: [], documents: {}, dbResults: { 'UPDATE t SET a = 1': { columns: [], rows: [], truncated: false, elapsed_ms: 4, rows_affected: 3 } } })
+    await api.dbConnect('t', 's', null)
+    render(<SqlEditor api={api} db={ON} label="SQL 1" initial="UPDATE t SET a = 1" onTextChange={() => {}} />)
+    await user.click(screen.getByRole('button', { name: 'Run' }))
+    expect(await screen.findByTestId('sql-summary')).toHaveTextContent('3 rows affected')
+  })
+
+  it('takes the current editor text', async () => {
     const user = userEvent.setup()
     const api = await connected()
     render(<SqlEditor api={api} db={ON} label="SQL 1" initial="" onTextChange={() => {}} />)
     lastEditor().type('SELECT 1')
-    await user.click(screen.getByRole('checkbox', { name: 'Allow write statements' }))
     await user.click(screen.getByRole('button', { name: 'Run' }))
-    await waitFor(() => expect(api.dbCalls).toEqual([{ sql: 'SELECT 1', allowWrite: false }]))
+    await waitFor(() => expect(api.dbCalls).toEqual([{ sql: 'SELECT 1', allowWrite: true }]))
   })
 
   it('explains that a connection is needed first', () => {

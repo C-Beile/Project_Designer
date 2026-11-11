@@ -87,7 +87,7 @@ pub fn collect_local_models(project_root: &Path) -> Result<Vec<LocalModel>, Stri
     if !dist.is_dir() {
         return Err("The project has no dist folder yet; run a transpile first.".into());
     }
-    let mut out = Vec::new();
+    let mut jobs: Vec<(String, PathBuf, String, i64)> = Vec::new();
     let mut types: Vec<_> = std::fs::read_dir(&dist).map_err(|e| plugin_api::at!(e.to_string()))?.flatten().filter(|e| e.path().is_dir()).collect();
     types.sort_by_key(|e| e.file_name());
     for t in types {
@@ -104,11 +104,33 @@ pub fn collect_local_models(project_root: &Path) -> Result<Vec<LocalModel>, Stri
             if !main_file.is_file() {
                 continue;
             }
-            let content = deploy_encode::encode_model(&dist, &main_file)?;
-            let title = deploy_encode::title_of(&content);
-            let extra_files = count_files(&m.path()).saturating_sub(1);
-            out.push(LocalModel { key: format!("{type_name}/{name}"), main_file, content, kind, title, extra_files });
+            jobs.push((type_name.clone(), main_file, name, kind));
         }
+    }
+    let workers = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(16);
+    let chunk = jobs.len().div_ceil(workers).max(1);
+    let parts: Vec<Result<Vec<LocalModel>, String>> = std::thread::scope(|scope| {
+        let handles: Vec<_> = jobs
+            .chunks(chunk)
+            .map(|slice| {
+                let dist = &dist;
+                scope.spawn(move || {
+                    let mut part = Vec::with_capacity(slice.len());
+                    for (type_name, main_file, name, kind) in slice {
+                        let content = deploy_encode::encode_model(dist, main_file)?;
+                        let title = deploy_encode::title_of(&content);
+                        let extra_files = count_files(main_file.parent().unwrap_or(dist)).saturating_sub(1);
+                        part.push(LocalModel { key: format!("{type_name}/{name}"), main_file: main_file.clone(), content, kind: *kind, title, extra_files });
+                    }
+                    Ok(part)
+                })
+            })
+            .collect();
+        handles.into_iter().map(|h| h.join().unwrap_or_else(|_| Err("A deploy worker stopped unexpectedly.".to_string()))).collect()
+    });
+    let mut out = Vec::with_capacity(jobs.len());
+    for part in parts {
+        out.extend(part?);
     }
     Ok(out)
 }

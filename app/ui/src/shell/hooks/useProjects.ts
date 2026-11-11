@@ -4,6 +4,7 @@ import { collectByType } from '../../core/treeIndex'
 import { clearChannelsWhere } from '../../problems/problemStore'
 import type { TreeNode } from '../../wire/types'
 import { samePath } from '../shellHelpers'
+import { getOptions } from '../../settings/options'
 
 export interface ProjectsDeps {
   api: ForgeApi
@@ -33,6 +34,7 @@ export function useProjects({ api, projectRoot, setStatus }: ProjectsDeps) {
   const root = activeProject && projects.some((p) => samePath(p, activeProject)) ? activeProject : (projects[0] ?? '')
 
   useEffect(() => {
+    if (!getOptions().general.restoreProjects) return
     api
       .restoreOpenProjects()
       .then((restored) => {

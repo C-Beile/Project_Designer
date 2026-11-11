@@ -40,6 +40,7 @@ export function createMockForgeApi(options: {
   // Receives the arguments of every tunnelConnect call (tests check that a password is passed).
   tunnelCalls?: { row: import('../wire/types').TunnelRowDto; keyFile: string | null; hasPassword: boolean }[]
   aliasConfigs?: Record<string, import('../wire/types').AliasConfigDto[]>
+  foundProjects?: import('../wire/types').FoundProjectDto[]
   tunnelRows?: Record<string, import('../wire/types').TunnelRowDto[]>
   dbResults?: Record<string, SqlResult>
   dbTables?: SchemaTable[]
@@ -225,6 +226,9 @@ export function createMockForgeApi(options: {
     },
     async pickProjectFolder() {
       return options.pickedFolder ?? null
+    },
+    async findProjectsInFolder() {
+      return options.foundProjects ?? []
     },
     async pickProjectFolders() {
       return options.pickedFolder ? [options.pickedFolder] : []

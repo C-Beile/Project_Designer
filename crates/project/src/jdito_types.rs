@@ -83,7 +83,7 @@ mod tests {
 
     #[test]
     fn the_real_package_of_a_corpus_project_loads_when_present() {
-        let root = Path::new(r"C:\Users\ClemensBeile\Desktop\GitRepos_ADITO\Vendira_basic");
+        let root = Path::new(r"C:\Users\ClemensBeile\Desktop\GitRepos_ADITO\Hermes");
         if let Some(t) = read(root) {
             assert!(t.files.len() > 40);
             assert!(t.files.iter().any(|f| f.path == "dist/definition_vars.ts"));

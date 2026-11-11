@@ -72,7 +72,7 @@ export function SqlEditor({
 }) {
   const handle = useRef<MonacoTextHandle | null>(null)
   const nextTab = useRef(1)
-  const [writeEnabled, setWriteEnabled] = useState(false)
+  const writeEnabled = true
   const [pending, setPending] = useState<Pending | null>(null)
   const [running, setRunning] = useState(false)
   const [tabs, setTabs] = useState<ResultTab[]>([])
@@ -148,11 +148,7 @@ export function SqlEditor({
 
   function start(statements: string[]) {
     if (statements.length === 0 || running) return
-    if (writeEnabled && statements.some((s) => !looksReadOnly(s))) {
-      setPending({ statements, after: 'run' })
-      return
-    }
-    void runStatements(statements, false)
+    void runStatements(statements, true)
   }
 
   function runAll() {
@@ -220,17 +216,6 @@ export function SqlEditor({
               {db.connected ? <option value="current">{connectionLabel}</option> : <option value="">&lt;not connected&gt;</option>}
             </select>
           )}
-        </label>
-        <label className="forge-sql-write">
-          <input
-            type="checkbox"
-            checked={writeEnabled}
-            onChange={(e) => {
-              setWriteEnabled(e.target.checked)
-              setPending(null)
-            }}
-          />
-          <span>Allow write statements</span>
         </label>
       </div>
       <div className="forge-sql-toolbar" role="toolbar" aria-label="SQL toolbar">
@@ -474,10 +459,18 @@ function ResultPane({
   }
   if (!result) return null
   if (result.columns.length === 0) {
+    const affected = result.rows_affected
     return (
-      <p className="forge-field-hint" data-testid="sql-summary">
-        Statement executed.
-      </p>
+      <div className="forge-sql-done" data-testid="sql-summary" role="status">
+        <span className="forge-sql-done-icon" aria-hidden="true">
+          ✓
+        </span>
+        <div className="forge-sql-done-body">
+          <strong>{affected === null || affected === undefined ? 'Statement executed' : `${affected} row${affected === 1 ? '' : 's'} affected`}</strong>
+          <span className="forge-field-hint"> · {result.elapsed_ms} ms</span>
+          <pre className="forge-sql-done-sql">{tab.sql}</pre>
+        </div>
+      </div>
     )
   }
 
@@ -652,7 +645,7 @@ function ResultPane({
       </div>
       {message ? <p className="forge-field-hint">{message}</p> : null}
       <div className="forge-sql-grid">
-        <table aria-label="Query result">
+        <table className="forge-sql-table" aria-label="Query result">
           <thead>
             <tr>
               <th className="forge-sql-rownum">#</th>

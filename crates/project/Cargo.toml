@@ -23,6 +23,7 @@ serde_json = { workspace = true }
 # Designer's jars at runtime - nothing ADITO-owned is shipped with Forge.
 zip = { version = "2", default-features = false, features = ["deflate"] }
 quick-xml = { workspace = true }
+regex = "1"
 platform = { path = "../../crates/platform" }
 
 # Nur Beispiele (examples/db_live, deploy_*) nutzen die Plugin-Crates; der Kern selbst haengt nicht von ihnen ab.

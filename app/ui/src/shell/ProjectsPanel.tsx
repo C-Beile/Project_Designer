@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ComponentProps } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { ServicesPanel } from '../services/ServicesPanel'
@@ -7,10 +7,12 @@ import { ProjectIcon } from '../tree/treeIcons'
 import { tunnelTabNode } from '../tabs/tabModel'
 import { errorText } from '../core/errorText'
 import { textField } from '../wire/types'
-import type { DbStatus, TreeNode } from '../wire/types'
+import type { DbStatus, FoundProjectDto, TreeNode } from '../wire/types'
 import type { FloatView } from '../windows/protocol'
 import { baseName, samePath } from './shellHelpers'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
+import { chooseWorkspaceFolder, getWorkspaceFolders } from '../settings/workspaceFolder'
+import { requestShell } from '../core/outputBus'
 
 export type ProjectsTab = 'projects' | 'services'
 
@@ -63,11 +65,50 @@ export interface ProjectsPanelBodyProps {
 // Inhalt des Projects-Panels: Projektbaum mit Leiste des aktiven Projekts, oder die Services.
 export function ProjectsPanelBody({ api, tab, tree, root, loading, problemCounts, badgeFor, gitFor, iconSvg, db, onDbChange, onSelect, onOpen, onContextMenu, onFileKey, onCloseProject, onOpenSql, setStatus, recentProjects, openProjects, onOpenProjects, onOpenRecent }: ProjectsPanelBodyProps) {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
+  const [inside, setInside] = useState<Record<string, FoundProjectDto[]>>({})
+  useEffect(() => {
+    if (!menu) return
+    let cancelled = false
+    for (const folder of [...recentProjects, ...getWorkspaceFolders()]) {
+      api
+        .findProjectsInFolder(folder)
+        .then((list) => {
+          if (!cancelled && list.length > 0) setInside((prev) => ({ ...prev, [folder]: list }))
+        })
+        .catch(() => undefined)
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [api, menu, recentProjects])
   if (tab !== 'projects') return <ServicesPanel api={api} db={db} onDbChange={onDbChange} onOpenSql={onOpenSql} projects={openProjects} />
-  const recentEntries = recentProjects.map((p) => {
-    const open = openProjects.some((o) => samePath(o, p))
-    return { id: `recent:${p}`, label: baseName(p), enabled: !open, hint: open ? 'Already open' : p }
-  })
+  const holdsProjects = (p: string) => (inside[p] ?? []).some((f) => !samePath(f.path, p))
+  const folders = [...getWorkspaceFolders(), ...recentProjects.filter(holdsProjects)].filter((f, i, all) => all.findIndex((o) => samePath(o, f)) === i)
+  const recentEntries = recentProjects
+    .filter((p) => !holdsProjects(p))
+    .map((p) => {
+      const open = openProjects.some((o) => samePath(o, p))
+      return { id: `recent:${p}`, label: baseName(p), enabled: !open, hint: open ? 'Already open' : p }
+    })
+  const folderEntries = folders.map((folder) => ({
+    id: `folder:${folder}`,
+    label: baseName(folder),
+    enabled: true,
+    hint: folder,
+    children: [
+      ...(inside[folder] ?? []).map((f) => {
+        const isOpen = openProjects.some((o) => samePath(o, f.path))
+        return { id: `recent:${f.path}`, label: f.name, enabled: !isOpen, hint: isOpen ? 'Already open' : f.path }
+      }),
+      ...((inside[folder] ?? []).length > 0 ? [{ id: 'sep', label: '', enabled: false, separator: true }] : []),
+      { id: `pick:${folder}`, label: 'Select projects...', enabled: true, hint: 'Choose which projects of this folder are shown in the tree' },
+    ],
+  }))
+  const localEntries = [
+    ...folderEntries,
+    ...(folderEntries.length > 0 ? [{ id: 'sep2', label: '', enabled: false, separator: true }] : []),
+    { id: 'pick:', label: 'Choose folder...', enabled: true, hint: 'Choose the folder that holds all your projects' },
+  ]
   return (
     <div
       className="projects-panel"
@@ -117,11 +158,17 @@ export function ProjectsPanelBody({ api, tab, tree, root, loading, problemCounts
           entries={[
             { id: 'open', label: 'Open Project…', enabled: true, hint: 'Choose one or more project folders' },
             { id: 'sep', label: '', enabled: false, separator: true },
+            { id: 'local', label: 'Local projects', enabled: true, children: localEntries },
             recentEntries.length > 0 ? { id: 'recent', label: 'Open recent', enabled: true, children: recentEntries } : { id: 'recent', label: 'Open recent', enabled: false, hint: 'No project opened yet' },
           ]}
           x={menu.x}
           y={menu.y}
-          onPick={(id) => (id === 'open' ? onOpenProjects() : id.startsWith('recent:') ? onOpenRecent(id.slice('recent:'.length)) : undefined)}
+          onPick={(id) =>
+            id === 'open'
+              ? onOpenProjects()
+              : id.startsWith('pick:')
+                ? (chooseWorkspaceFolder(id.slice('pick:'.length) || null), requestShell('workspace'))
+                : id.startsWith('recent:') ? onOpenRecent(id.slice('recent:'.length)) : undefined}
           onClose={() => setMenu(null)}
         />
       ) : null}

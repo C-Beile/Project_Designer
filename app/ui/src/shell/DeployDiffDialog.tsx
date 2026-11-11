@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import type { DeployChangeView } from '../wire/types'
 import { Modal } from '../core/Modal'
+
+const DeployDiffEditor = lazy(() => import('./DeployDiffEditor').then((m) => ({ default: m.DeployDiffEditor })))
 
 // Side-by-side comparison of one model: the version on the system (left) against the version of the
 // project (right), as in the original Designer ("Diff Deploy <model>"). Lines that exist on one side
@@ -134,16 +136,9 @@ export function DeployDiffDialog({ name, view, onClose }: { name: string; view: 
           <span>DB version</span>
           <span>Designer version</span>
         </div>
-        <div className="forge-ddiff-body" role="table" aria-label="Changes of the model">
-          {rows.map((r, i) => (
-            <div key={i} role="row" className={`forge-ddiff-row is-${r.kind}`}>
-              <span className="forge-ddiff-no">{r.left?.no ?? ''}</span>
-              <span className="forge-ddiff-text forge-ddiff-left">{r.left?.text ?? ''}</span>
-              <span className="forge-ddiff-no">{r.right?.no ?? ''}</span>
-              <span className="forge-ddiff-text forge-ddiff-right">{r.right?.text ?? ''}</span>
-            </div>
-          ))}
-        </div>
+        <Suspense fallback={<p className="forge-field-hint">Please Wait…</p>}>
+          <DeployDiffEditor remote={view.remote ?? ''} local={view.local ?? ''} ignoreWhitespace={ignore} label="Changes of the model" />
+        </Suspense>
       </div>
     </Modal>
   )

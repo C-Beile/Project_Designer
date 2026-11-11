@@ -16,17 +16,17 @@ function Harness() {
 }
 
 describe('TranspilerEngineSelector', () => {
-  it('defaults to the built-in Dito_Transpiler, with no warning shown', () => {
+  it('defaults to the ADITO transpiler, with no warning shown', () => {
     render(<Harness />)
-    expect(screen.getByLabelText(/transpiler engine/i)).toHaveValue('experimental')
+    expect(screen.getByLabelText(/transpiler engine/i)).toHaveValue('official')
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
-  it('offers the official engine as a choice and shows no warning for either', async () => {
+  it('offers the Dito_Transpiler as a choice and shows no warning for either', async () => {
     const user = userEvent.setup()
     render(<Harness />)
-    await user.selectOptions(screen.getByLabelText(/transpiler engine/i), 'official')
-    expect(screen.getByLabelText(/transpiler engine/i)).toHaveValue('official')
+    await user.selectOptions(screen.getByLabelText(/transpiler engine/i), 'experimental')
+    expect(screen.getByLabelText(/transpiler engine/i)).toHaveValue('experimental')
     expect(screen.queryByRole('alert')).toBeNull()
   })
 

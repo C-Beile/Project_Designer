@@ -1,12 +1,13 @@
-import { useCallback, useState, type Dispatch, type SetStateAction } from 'react'
+import { useCallback, useRef, useState, type Dispatch, type SetStateAction } from 'react'
 import type { ForgeApi } from '../../api/ForgeApi'
 import { promptDialog } from '../../core/dialogService'
 import { errorText } from '../../core/errorText'
-import { notify } from '../../core/notifications'
+import { dismissToast, notify } from '../../core/notifications'
 import { refreshScm } from '../../core/scm'
 import { diffTitle } from './diffTitle'
 import type { SyncResult } from './SyncDialog'
-import type { DiffTarget, GitOutput, TreeNode } from '../../wire/types'
+import type { DiffTarget, GitCommit, GitOutput, TreeNode } from '../../wire/types'
+import type { PullResult } from './PullResultDialog'
 import { useOsDialog } from '../../windows/useOsDialog'
 import type { CommandMap } from '../../shell/hooks/commandTypes'
 import type { ShellDialog } from '../../shell/hooks/dialogTypes'
@@ -30,6 +31,9 @@ export function useGit({ api, root, branch, dialog, setDialog, setReloadToken, h
   const [gitView, setGitView] = useState<{ tab: 'changes' | 'history' | 'branches'; target: GitTarget }>({ tab: 'changes', target: null })
   const [syncMode, setSyncMode] = useState<'pull' | 'push'>('pull')
   const hasProject = root.trim() !== ''
+  const [pulling, setPulling] = useState(false)
+  const pullingRef = useRef(false)
+  const [pullResult, setPullResult] = useState<PullResult | null>(null)
 
   const openGit = useCallback((tab: 'changes' | 'history' | 'branches', target: { local?: string; remote?: string } | null = null) => {
     setGitView({ tab, target })
@@ -64,20 +68,39 @@ export function useGit({ api, root, branch, dialog, setDialog, setReloadToken, h
   // Pull without a window: the notification says whether anything new came in, and when the dependency files
   // changed it says so too, so the user knows right away that `npm install` is due.
   const runPull = useCallback(async () => {
+    if (pullingRef.current) return
+    pullingRef.current = true
+    setPulling(true)
     const onBranch = branch ? ` on branch ${branch}` : ''
+    // Shown until the pull is over, so it is clear that something is happening.
+    const progress = notify(`Pulling${onBranch}...`, { kind: 'info', timeoutMs: 0 })
     try {
+      // What is coming in, read before the pull (it fetches first): who changed what.
+      const incoming: GitCommit[] = await api.gitIncoming(root).catch(() => [])
       const r = await api.gitPull(root)
+      dismissToast(progress)
       if (!r.ok) {
         notify(`Pull failed${onBranch}: ${r.text.split('\n').find((l) => l.trim()) || 'see the output'}`, { kind: 'error', timeoutMs: 12000 })
       } else if (/already up[ -]to[ -]date/i.test(r.text)) {
         notify(`Pull finished${onBranch}: nothing new, everything is up to date.`, { kind: 'success' })
       } else {
-        const dependencies = /(^|[\s/|])package(-lock)?\.json\b/.test(r.text)
-        notify(`Pull finished${onBranch}: new changes were merged.${dependencies ? ' package.json changed: run npm install.' : ''}`, { kind: 'success', timeoutMs: dependencies ? 12000 : undefined })
+        const touched = await Promise.all(incoming.slice(0, 30).map((c) => api.scmCommitFiles(root, c.hash).catch(() => [])))
+        const dependencies = /(^|[\s/|])package(-lock)?\.json\b/.test(r.text) || touched.some((files) => files.some((f) => /(^|\/)package(-lock)?\.json$/.test(f.path)))
+        const authors = [...new Set(incoming.map((c) => c.author))]
+        const summary = incoming.length > 0 ? `${incoming.length} new commit${incoming.length === 1 ? '' : 's'} from ${authors.join(', ')}` : 'new changes were merged'
+        notify(`Pull finished${onBranch}: ${summary}.${dependencies ? ' package.json changed: run npm install.' : ''}`, {
+          kind: 'success',
+          timeoutMs: 20000,
+          actions: [{ label: 'Show changes', run: () => setPullResult({ branch, commits: incoming, dependenciesChanged: dependencies }) }],
+        })
         setReloadToken((t) => t + 1)
       }
     } catch (e) {
+      dismissToast(progress)
       notify(errorText(e), { kind: 'error', timeoutMs: 10000 })
+    } finally {
+      pullingRef.current = false
+      setPulling(false)
     }
     if (root.trim()) void refreshScm(api, root)
   }, [api, root, branch, setReloadToken])
@@ -180,5 +203,5 @@ export function useGit({ api, root, branch, dialog, setDialog, setReloadToken, h
     },
   }
 
-  return { gitView, syncMode, openGit, notifySync, runGit, openDiff, quickBranch, commands }
+  return { gitView, syncMode, pulling, pullResult, setPullResult, openGit, notifySync, runGit, openDiff, quickBranch, commands }
 }

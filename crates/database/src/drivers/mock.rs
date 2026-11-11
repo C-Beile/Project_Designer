@@ -46,6 +46,7 @@ impl DbConnection for MockConnection {
         Ok(QueryResult {
             columns: vec!["echo".to_string()],
             rows: vec![vec![DbValue::Text(sql.to_string())]],
+            rows_affected: None,
         })
     }
 

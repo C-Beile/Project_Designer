@@ -3,6 +3,7 @@ import type { ForgeApi } from '../api/ForgeApi'
 import type { SchemaTable } from '../wire/types'
 import { TunnelGlyph } from '../tree/TunnelGlyph'
 import { useTunnelState, systemNameOf, projectOfPath } from './tunnelState'
+import { closeSystemTunnel } from './useSystemTunnels'
 import { errorText } from '../core/errorText'
 
 // Services tab: project > system > database alias (System_alias, Data_alias ...) > tables. Every
@@ -184,8 +185,7 @@ export function ServicesTree({ api, onOpenSql, projects = [] }: { api: ForgeApi;
   const groups = useMemo(() => groupSessions(bySystem).map((g) => ({ ...g, label: projectNameOf(g.project, projects) })), [bySystem, projects])
   const [tunnelsOpen, setTunnelsOpen] = useState(true)
   const closeSystem = (systemKey: string, sessions: string[]) => {
-    for (const key of sessions) void api.dbDisconnect(key).catch(() => {})
-    void api.dbDisconnect(systemKey).catch(() => {})
+    void closeSystemTunnel(api, systemKey, sessions)
   }
   const [opened, setOpened] = useState<Set<string>>(() => new Set())
   const toggle = (k: string) =>

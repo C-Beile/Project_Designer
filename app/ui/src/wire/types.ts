@@ -333,6 +333,7 @@ export interface SqlResult {
   rows: (string | null)[][]
   truncated: boolean
   elapsed_ms: number
+  rows_affected?: number | null
 }
 
 export interface SchemaTable {
@@ -464,6 +465,12 @@ export interface ForwardStatusDto {
   target_port: number
   local_port: number
   up: boolean
+}
+
+/** An ADITO project found inside the projects folder. */
+export interface FoundProjectDto {
+  path: string
+  name: string
 }
 
 export interface TunnelRowDto {

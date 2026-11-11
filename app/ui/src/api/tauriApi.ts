@@ -37,7 +37,7 @@ const gitCall = <T,>(command: string, args: Record<string, unknown>) =>
   invoke<T>('plugin_call', { plugin: 'git', command, args })
 
 import type { ForgeApi } from './ForgeApi'
-import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The real implementation - a pure pass-through to the Tauri commands in
 // app/src-tauri/src/lib.rs, one call each, no business logic (architecture.md §1
@@ -81,6 +81,7 @@ export const tauriForgeApi: ForgeApi = {
   pickProjectFolder: (title) => invoke<string | null>('pick_project_folder', { title: title ?? null }),
   getRecentProject: () => invoke<string | null>('get_recent_project'),
   getRecentProjects: () => invoke<string[]>('get_recent_projects'),
+  findProjectsInFolder: (folder) => invoke<FoundProjectDto[]>('find_projects_in_folder', { folder }),
   pickProjectFolders: (title) => invoke<string[]>('pick_project_folders', { title: title ?? null }),
   setRecentProject: (path) => invoke<void>('set_recent_project', { path }),
   getSettings: () => invoke<ForgeSettings>('get_settings'),

@@ -5,6 +5,8 @@ import { copyNewUuid } from '../../core/uuid'
 import { matchesShortcut } from '../../core/shortcuts'
 import { closeWindow } from '../../chrome/tauriWindow'
 import { getEditorPrefs, setEditorPref, type EditorPrefs } from '../../theme/editorPrefs'
+import { requestShell } from '../../core/outputBus'
+import { chooseWorkspaceFolder, getWorkspaceFolders, setWorkspaceFolder, subscribeWorkspaceFolders } from '../../settings/workspaceFolder'
 import { customThemes, subscribeCustomThemes } from '../../theme/customThemes'
 import { getOptions, saveOptions, subscribeOptions } from '../../settings/options'
 import { isPluginActive, subscribePluginPrefs } from '../../settings/plugins'
@@ -78,6 +80,15 @@ export function useShellCommands({
   gitActive, sqlActive, floatingViews, editorWindows, toolbarPrefs, editorPrefs, layoutBeforeOnlyEditor, extraCommands, openProjectAt, closeProjects, saveIds, applyOutcome, markUnsaved,
   showToolWindow, openSql, toggleToolbarGroup, updateToolbar, setStatus, setNewProjectOpen, setRecent, setRecentList, setReloadToken, setDialog, setLayout, setTreeSelection,
 }: ShellCommandsDeps) {
+  const holdsProjects = async (dir: string): Promise<boolean> => {
+    const found = await api.findProjectsInFolder(dir).catch(() => [])
+    if (found.length === 0 || (found.length === 1 && samePath(found[0].path, dir))) return false
+    setWorkspaceFolder(dir)
+    chooseWorkspaceFolder(dir)
+    requestShell('workspace')
+    return true
+  }
+
   const commands: CommandMap = {
     ...Object.assign({}, ...extraCommands),
     'file.newProject': () => {
@@ -87,6 +98,7 @@ export function useShellCommands({
       const picked = await api.pickProjectFolders()
       if (picked.length === 0) return
       // Several folders can be chosen at once; each opens as its own project, the first one stays active.
+      if (picked.length === 1 && (await holdsProjects(picked[0]))) return
       for (const dir of picked) {
         openProjectAt(dir)
         await api.setRecentProject(dir).catch(() => {})
@@ -94,8 +106,10 @@ export function useShellCommands({
       setRecent(picked[picked.length - 1])
       void api.getRecentProjects().then(setRecentList).catch(() => {})
     },
-    'file.openRecent': (arg) => {
-      if (arg) openProjectAt(arg)
+    'file.openRecent': async (arg) => {
+      if (!arg) return
+      if (await holdsProjects(arg)) return
+      openProjectAt(arg)
     },
     'file.closeProject': () => {
       if (root) closeProjects([root])
@@ -200,6 +214,15 @@ export function useShellCommands({
     'tools.sqlPrompt': () => {
       if (sqlActive) openSql('')
     },
+    'file.openWorkspace': () => {
+      chooseWorkspaceFolder(null)
+      requestShell('workspace')
+    },
+    'file.openWorkspaceFolder': (arg) => {
+      if (!arg) return
+      chooseWorkspaceFolder(arg)
+      requestShell('workspace')
+    },
     'editor.action': (arg) => {
       if (arg) runEditorAction(arg)
     },
@@ -253,7 +276,7 @@ export function useShellCommands({
   const [themeStamp, setThemeStamp] = useState(0)
   useEffect(() => {
     const bump = () => setThemeStamp((n) => n + 1)
-    const offs = [subscribeCustomThemes(bump), subscribeOptions(bump), subscribePluginPrefs(bump)]
+    const offs = [subscribeCustomThemes(bump), subscribeOptions(bump), subscribePluginPrefs(bump), subscribeWorkspaceFolders(bump)]
     return () => offs.forEach((off) => off())
   }, [])
   const importOn = isPluginActive('vscode-themes')
@@ -266,6 +289,7 @@ export function useShellCommands({
         canUndo,
         canRedo,
         recentProject: recent,
+        workspaceFolders: getWorkspaceFolders(),
         theme,
         customThemes: importOn ? customThemes().map((t) => ({ id: t.id, name: t.name })) : [],
         colorTheme: importOn && customThemes().some((t) => t.id === getOptions().editor.colorTheme) ? getOptions().editor.colorTheme : '',

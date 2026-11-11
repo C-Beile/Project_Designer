@@ -16,6 +16,8 @@
 //! tests of its own. See `p4-editor-entity-notes.md` for the full writeup (candidate risk R22).
 
 pub mod actions;
+pub mod content_search;
+pub mod discover;
 pub mod file_list;
 pub mod import_resolve;
 pub mod watch;

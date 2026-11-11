@@ -62,6 +62,8 @@ pub enum DbValue {
 pub struct QueryResult {
     pub columns: Vec<String>,
     pub rows: Vec<Vec<DbValue>>,
+    /// Rows changed by a writing statement (UPDATE, INSERT, DELETE); `None` for a statement that reads.
+    pub rows_affected: Option<u64>,
 }
 
 /// One table/view discovered via schema introspection, for the alias

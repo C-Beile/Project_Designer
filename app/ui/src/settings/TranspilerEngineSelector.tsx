@@ -23,8 +23,8 @@ export function TranspilerEngineSelector({
       data-engine={engine}
       onChange={(e) => onChange(e.target.value as TranspilerEngineId)}
     >
+      <option value="official">ADITO Transpiler</option>
       <option value="experimental">Dito_Transpiler</option>
-      <option value="official">Official</option>
     </select>
   )
 }

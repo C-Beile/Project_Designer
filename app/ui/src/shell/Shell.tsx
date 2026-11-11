@@ -51,6 +51,8 @@ import { TranspileProgress, TranspileResult } from './TranspileProgress'
 import { requestSystemReload, UNCONFIGURED_HINT, systemKey, systemNameOf, projectOfPath, systemPhase, TUNNEL_PHASE_LABEL } from '../services/tunnelState'
 import { countsByNode, errorCount, fromDiagnostic, getProblems, normId, setProblems, subscribeProblems, type Problem } from '../problems/problemStore'
 import { subscribeShellRequests } from '../core/outputBus'
+import { WorkspaceDialog } from './WorkspaceDialog'
+import { subscribeOpenFile } from '../core/openFileBus'
 import { errorText } from '../core/errorText'
 import { baseName, findNodeByPath, nodeKind, samePath } from './shellHelpers'
 import { listenBackend } from './hooks/backendEvent'
@@ -120,6 +122,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   // Object whose file changed on disk (for example by Git) while it holds unsaved edits; set when a save is refused.
   const [conflict, setConflict] = useState<string | null>(null)
   const [newProjectOpen, setNewProjectOpen] = useState(false)
+  const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const [dialog, setDialog] = useState<ShellDialog>(null)
   // Services tab: connection state (polled, so a dying tunnel shows up) and the text of the open
   // SQL editors, which survives tab switches.
@@ -331,7 +334,37 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     [tree, objectsByType, handleOpen, showToolWindow, navSel],
   )
 
-  useEffect(() => subscribeShellRequests((r) => r === 'services' && showToolWindow('services')), [showToolWindow])
+  useEffect(
+    () =>
+      subscribeShellRequests((r) => {
+        if (r === 'services') showToolWindow('services')
+        if (r === 'workspace') setWorkspaceOpen(true)
+      }),
+    [showToolWindow, handleOpen],
+  )
+
+
+  // "Open File" in the changes list of the Commit window: opens the file, as an object when it is one of the project.
+  useEffect(
+    () =>
+      subscribeOpenFile((path) => {
+        const wanted = path.replace(/\\/g, '/')
+        const known = findNodeByPath(Object.values(trees).flat(), normId(wanted))
+        if (known) {
+          void handleOpen(known)
+          return
+        }
+        const parts = wanted.split('/')
+        const file = parts[parts.length - 1] ?? wanted
+        const objectFolder = parts.length >= 3 && file === `${parts[parts.length - 2]}.aod` ? parts[parts.length - 3] : null
+        void handleOpen(
+          objectFolder
+            ? { id: wanted, label: parts[parts.length - 2], object_type: objectFolder, is_leaf: true, children: [], kind: 'object' }
+            : { id: wanted, label: file, object_type: null, is_leaf: true, children: [], kind: 'file', path: wanted },
+        )
+      }),
+    [trees, handleOpen],
+  )
 
   // Editors moved into windows of their own: their tab leaves this window while the window exists.
   const unsavedRef = useRef(unsaved)
@@ -684,6 +717,21 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
             const project = matchView.project
             setMatchView(null)
             void compareWithReference(project, true).catch((e) => notify(errorText(e), { kind: 'error', timeoutMs: 10000 }))
+          }}
+        />
+      ) : null}
+      {workspaceOpen ? (
+        <WorkspaceDialog
+          api={api}
+          openProjects={projects}
+          onClose={() => setWorkspaceOpen(false)}
+          onApply={(toOpen, toClose) => {
+            setWorkspaceOpen(false)
+            for (const dir of toOpen) {
+              openProjectAt(dir)
+              api.setRecentProject(dir).catch(() => {})
+            }
+            closeProjects(toClose)
           }}
         />
       ) : null}

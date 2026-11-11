@@ -212,6 +212,29 @@ pub fn get_recent_projects(app: tauri::AppHandle) -> Result<Vec<String>, String>
 })
 }
 
+#[tauri::command(async)]
+pub fn search_in_projects(roots: Vec<String>, query: String, options: project::content_search::SearchOptions) -> Result<project::content_search::SearchResult, String> {
+    crate::commands::guard("search_in_projects", || {
+        let roots: Vec<PathBuf> = roots.into_iter().map(PathBuf::from).collect();
+        project::content_search::search(&roots, &query, &options)
+    })
+}
+
+#[tauri::command(async)]
+pub fn replace_in_projects(roots: Vec<String>, files: Vec<String>, query: String, options: project::content_search::SearchOptions, replacement: String) -> Result<project::content_search::ReplaceResult, String> {
+    crate::commands::guard("replace_in_projects", || {
+        let roots: Vec<PathBuf> = roots.into_iter().map(PathBuf::from).collect();
+        let files: Vec<PathBuf> = files.into_iter().map(PathBuf::from).collect();
+        project::content_search::replace(&roots, &files, &query, &options, &replacement)
+    })
+}
+
+/// "Open Projects from Folder": the ADITO projects inside one folder (read-only, direct subfolders only).
+#[tauri::command(async)]
+pub fn find_projects_in_folder(folder: String) -> Result<Vec<project::discover::FoundProject>, String> {
+    crate::commands::guard("find_projects_in_folder", || project::discover::find_projects(&PathBuf::from(folder)))
+}
+
 /// Export/Import Project: the data models of the project (read-only).
 #[tauri::command(async)]
 pub fn list_project_models(project_root: String) -> Vec<project::project_zip::ModelEntry> {

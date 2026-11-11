@@ -13,6 +13,7 @@
 | `GitOptionsPage.tsx` | Options-Seite "Team". |
 | `GitDialog.tsx` | Commit-, Verlauf- und Branch-Dialog. |
 | `SyncDialog.tsx` | Pull- und Push-Dialog. |
+| `PullResultDialog.tsx` | Was ein Pull gebracht hat: neue Commits mit Autor und Zeit, Dateien je Commit. Öffnet über "Show changes" in der Meldung. |
 | `CommitDiffDialog.tsx` | Diff einer Datei eines Commits. |
 | `DiffView.tsx` | Diff-Ansicht (Monaco). |
 | `ScmPanel.tsx` | Source-Control-Panel (auch als eigenes Fenster). |

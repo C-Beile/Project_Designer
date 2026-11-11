@@ -7,6 +7,7 @@ import { TreeContextMenu } from '../../tree/TreeContextMenu'
 import { openDialogWindow, osWindowsAvailable } from '../../windows/windowService'
 import { Chevron, CollapseAllIcon, ExpandAllIcon, FileIcon, FolderIcon, ListToggleIcon } from './commitIcons'
 import { errorText } from '../../core/errorText'
+import { openFileInDesigner } from '../../core/openFileBus'
 
 // Team menu: basic Git on the repository of the active project (commit, pull, push, switch
 // branch, status, history). Every action runs from exactly one click on its own button and never
@@ -269,6 +270,8 @@ export function GitDialog({
   const tree = useMemo(() => buildTree(visibleFiles), [visibleFiles])
   const nameIssue = newName.trim() !== '' && !/^[A-Za-z0-9._/-]+$/.test(newName.trim()) ? 'Use letters, digits and _ - . / only.' : null
   const canCommit = !busy && checked.size > 0 && message.trim() !== '' && !messageIssue
+  // A deleted file has nothing left to open.
+  const deletedPaths = useMemo(() => new Set((overview?.files ?? []).filter((f) => f.code.includes('D')).map((f) => f.path)), [overview])
   const rootName = (overview?.root ?? projectRoot).replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? ''
   const flatRoot: TreeFolder = { name: '', path: '', folders: [], files: visibleFiles }
   const isCommitView = initialTab === 'changes'
@@ -537,6 +540,7 @@ export function GitDialog({
         <TreeContextMenu
           entries={[
             { id: 'show', label: 'Show Changes', enabled: true },
+            { id: 'open', label: 'Open File', enabled: !deletedPaths.has(fileMenu.path), hint: deletedPaths.has(fileMenu.path) ? 'The file was deleted' : undefined },
             { id: 'revert', label: 'Revert', enabled: true },
           ]}
           x={fileMenu.x}
@@ -546,6 +550,7 @@ export function GitDialog({
             const path = fileMenu.path
             setFileMenu(null)
             if (id === 'show') showChanges(path)
+            else if (id === 'open') openFileInDesigner(`${(overview?.root ?? projectRoot).replace(/[\\/]+$/, '')}/${path}`)
             // Revert goes straight through: the file is reset (a backup is kept) and leaves the change list.
             else if (id === 'revert') void act(() => api.scmDiscard(projectRoot, [path]), false)
           }}

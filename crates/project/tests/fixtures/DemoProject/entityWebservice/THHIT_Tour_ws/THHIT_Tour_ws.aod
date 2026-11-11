@@ -6,7 +6,7 @@
     <element>GET</element>
   </webserviceMethods>
   <loginTypeId>
-    <element>VendiraToken</element>
+    <element>TokenLogin</element>
   </loginTypeId>
   <jditoWebserviceUser></jditoWebserviceUser>
   <writeProvider></writeProvider>

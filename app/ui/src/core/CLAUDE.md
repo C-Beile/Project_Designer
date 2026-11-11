@@ -6,6 +6,7 @@
 | `Modal.tsx` | Rahmen für jeden Dialog (Titel, Inhalt, Fußzeile, Enter). Im OS-Fenster füllt er das Fenster. |
 | `dialogService.tsx` | `confirmDialog`, `promptDialog`, `choiceDialog` als Promise. `DialogHost` zeigt sie und die Masken. |
 | `notifications.tsx` | `notify(text, opts)`: Toast ohne Fokusraub. `ToastHost` zeigt ihn. Liste für den Notifications-Reiter. |
+| `openFileBus.ts` | `openFileInDesigner(path)`: "Open File" aus einem eigenen Fenster (Commit-Fenster) öffnet die Datei im Hauptfenster. |
 | `outputBus.ts` | `logOutput(sub, text)` schreibt ins Output-Fenster. `requestShell` für kleine Bitten an die Shell. SQL-Maskierung. |
 | `shortcuts.ts` | Kürzel als `Mod+Shift+S` schreiben, anzeigen (`formatShortcut`) und prüfen (`matchesShortcut`). |
 | `errorText.ts` | `errorText(e)`: Fehler als Text. |

@@ -13,6 +13,8 @@
 @import './tabs/EditorTabBar.css';
 @import './features/git/GitStatusItem.css';
 @import './services/SqlEditor.css';
+@import './shell/WorkspaceDialog.css';
+@import './features/git/PullResultDialog.css';
 @import './tree/TreeContextMenu.css';
 @import './styles/shell/menu.css';
 @import './styles/shell/dock.css';
@@ -42,6 +44,7 @@
 @import './shell/OptionsDialog.css';
 @import './core/Modal.css';
 @import './styles/options-dialog.css';
+@import './shell/GeneralOptions.css';
 @import './shell/LocalDataDialog.css';
 @import './shell/TableCenterDialog.css';
 @import './styles/toolbar-plugins-dialogs.css';

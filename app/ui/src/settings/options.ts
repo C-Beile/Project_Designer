@@ -10,6 +10,7 @@ export interface DesignerOptions {
     checkScanOnDeploy: boolean
     confirmDestructive: boolean
     showHints: boolean
+    restoreProjects: boolean
   }
   nodejs: { path: string }
   eslint: { analyzeOnSave: boolean }
@@ -47,7 +48,7 @@ export interface DesignerOptions {
 }
 
 export const DEFAULT_OPTIONS: DesignerOptions = {
-  general: { refreshScanOnChange: true, checkScanOnDeploy: false, confirmDestructive: true, showHints: true },
+  general: { refreshScanOnChange: true, checkScanOnDeploy: false, confirmDestructive: true, showHints: true, restoreProjects: true },
   nodejs: { path: '' },
   eslint: { analyzeOnSave: false },
   translators: { provider: 'none' },

@@ -173,6 +173,8 @@ pub struct SqlResult {
     pub rows: Vec<Vec<Option<String>>>,
     pub truncated: bool,
     pub elapsed_ms: u64,
+    /// Rows changed by a writing statement; `None` when the statement read rows.
+    pub rows_affected: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -476,7 +478,7 @@ impl DbManager {
         let cap = limit.unwrap_or(usize::MAX);
         let truncated = result.rows.len() > cap;
         let rows = result.rows.iter().take(cap).map(|r| r.iter().map(display).collect()).collect();
-        Ok(SqlResult { columns: result.columns, rows, truncated, elapsed_ms: started.elapsed().as_millis() as u64 })
+        Ok(SqlResult { columns: result.columns, rows, truncated, elapsed_ms: started.elapsed().as_millis() as u64, rows_affected: result.rows_affected })
     }
 
     /// All statements in one transaction (commit or full rollback); the caller has already
