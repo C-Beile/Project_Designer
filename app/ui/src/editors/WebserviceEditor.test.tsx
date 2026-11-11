@@ -17,7 +17,7 @@ function sampleWebserviceSingleOccurrences(): WireValue {
       { key: 'name', value: { kind: 'text', value: 'THHIT_Tour_ws' } },
       { key: 'majorModelMode', value: { kind: 'text', value: 'DISTRIBUTED' } },
       { key: 'webserviceMethods', value: { kind: 'object', fields: [{ key: 'element', value: { kind: 'text', value: 'GET' } }] } },
-      { key: 'loginTypeId', value: { kind: 'object', fields: [{ key: 'element', value: { kind: 'text', value: 'VendiraToken' } }] } },
+      { key: 'loginTypeId', value: { kind: 'object', fields: [{ key: 'element', value: { kind: 'text', value: 'TokenLogin' } }] } },
       { key: 'jditoWebserviceUser', value: { kind: 'text', value: '' } },
       { key: 'writeProvider', value: { kind: 'text', value: '' } },
       { key: 'readProvider', value: { kind: 'text', value: '' } },
@@ -135,7 +135,7 @@ describe('WebserviceEditor (P4 sixth family, "Fertig"-Kriterium 3)', () => {
 
     expect(screen.getByText('THHIT_Tour_ws')).toBeInTheDocument()
     expect(screen.getByText('GET')).toBeInTheDocument()
-    expect(screen.getByText('VendiraToken')).toBeInTheDocument()
+    expect(screen.getByText('TokenLogin')).toBeInTheDocument()
     expect(screen.getByText('TOURID')).toBeInTheDocument()
     expect(screen.getByText('COUNTRY')).toBeInTheDocument()
     expect(screen.getByText('Documents')).toBeInTheDocument()

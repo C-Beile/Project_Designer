@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { KIND_CONTEXT, KIND_GROUP, addChild, moveNode, nodeAt, parseApplicationTree, removeNode, setNodeField, validateReferences } from './applicationTree'
 
-// Real files of the corpus fixtures: Vendira_basic is LF, Pichler uses CRLF line endings.
+// Real files of the corpus fixtures: Pichler uses CRLF line endings.
 const FIXTURES = resolve(__dirname, '../../../../crates/aod/tests/fixtures')
 const load = (project: string) => readFileSync(resolve(FIXTURES, project, 'application/_____SYSTEM_APPLICATION_NEON/_____SYSTEM_APPLICATION_NEON.aod'), 'utf-8')
 
@@ -15,7 +15,7 @@ function count(node: { kind: number | null; children: unknown[] }, kind: number)
   return (node.kind === kind ? 1 : 0) + (node.children as (typeof node)[]).reduce((n, c) => n + count(c, kind), 0)
 }
 
-describe.each(['Vendira_basic', 'Pichler', 'Hermes'])('application tree of %s', (project) => {
+describe.each(['Pichler', 'Hermes'])('application tree of %s', (project) => {
   const text = load(project)
 
   it('reads the root, groups, contexts and titles', () => {
@@ -84,7 +84,7 @@ describe.each(['Vendira_basic', 'Pichler', 'Hermes'])('application tree of %s', 
 
 describe('reference check', () => {
   it('flags unknown contexts and roles but not INTERNAL_ roles', () => {
-    const root = parseApplicationTree(load('Vendira_basic'))!
+    const root = parseApplicationTree(load('Hermes'))!
     const issues = validateReferences(root, { contexts: new Set(['Person']), dashboards: new Set(), roles: new Set() })
     expect(issues.some((i) => i.message === "Context 'Organisation' not found")).toBe(true)
     expect(issues.some((i) => i.message.includes('INTERNAL_'))).toBe(false)

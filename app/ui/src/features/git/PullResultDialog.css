@@ -1,0 +1,135 @@
+.pull-result {
+  min-width: 520px;
+  max-width: 760px;
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.pull-summary {
+  margin: 0 0 8px;
+}
+
+.pull-banner {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--warning);
+  border-radius: 4px;
+}
+
+.pull-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pull-commit {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-inset);
+}
+
+.pull-commit-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--fg);
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pull-avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--selected-fg);
+}
+
+.pull-commit-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pull-subject {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pull-meta {
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+.pull-files {
+  padding: 2px 10px 8px 48px;
+}
+
+.pull-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 1px 0;
+}
+
+.pull-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pull-badge {
+  flex: none;
+  width: 18px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+}
+
+.pull-badge.is-A {
+  color: var(--success);
+}
+.pull-badge.is-M {
+  color: var(--accent);
+}
+.pull-badge.is-D {
+  color: var(--error);
+}
+.pull-badge.is-R,
+.pull-badge.is-C {
+  color: var(--warm);
+}
+
+.forge-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 5px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: forge-spin 0.8s linear infinite;
+  vertical-align: -1px;
+}
+
+@keyframes forge-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

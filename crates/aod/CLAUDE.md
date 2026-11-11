@@ -49,5 +49,5 @@ Liest und schreibt `.aod`-Dateien byte-genau. Ungeänderte Teile werden nie neu 
 
 ## Tests
 - `cargo test -p aod`.
-- `tests/corpus_round_trip.rs` prüft jede Datei unter `tests/fixtures/` (124 Dateien, 5 Projekte: Hermes, Pichler, SVB, FFG, Vendira_basic) auf identische Bytes. Neue Fixture: einfach die `.aod` unter `tests/fixtures/<Projekt>/...` ablegen. Keine Kundendaten ohne Freigabe.
+- `tests/corpus_round_trip.rs` prüft jede Datei unter `tests/fixtures/` (Projekte: Hermes, Pichler, SVB, FFG) auf identische Bytes. Neue Fixture: einfach die `.aod` unter `tests/fixtures/<Projekt>/...` ablegen. Keine Kundendaten ohne Freigabe.
 - `examples/qa_corpus_roundtrip.rs` und `examples/canon_check.rs` laufen gegen ein großes Korpus auf der Platte (nicht im `cargo test`).

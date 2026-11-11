@@ -4,7 +4,7 @@
 //! Fixture files under `tests/fixtures/` are copies of real `.aod` files from
 //! `C:\Users\ClemensBeile\Desktop\GitRepos_ADITO\` (read-only source, nothing written there —
 //! per the aod::document role's scope guardrail). 124 files across 5 projects (Hermes, Pichler, SVB,
-//! FFG, Vendira_basic), spanning entity, neonView, neonContext, neonDashboard, aliasDefinition,
+//! FFG), spanning entity, neonView, neonContext, neonDashboard, aliasDefinition,
 //! language, process, role, system, modification and application object types — comfortably
 //! above the 40-file / 3-project acceptance bar, and roughly 1.6x the P2 spike's 76-file corpus.
 

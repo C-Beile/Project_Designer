@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<system xmlns="http://www.adito.de/2018/ao/Model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" VERSION="1.2.0" xsi:schemaLocation="http://www.adito.de/2018/ao/Model adito://models/xsd/system/1.2.0">
-  <name>qs_bg</name>
-  <majorModelMode>DISTRIBUTED</majorModelMode>
-  <serverConfigPath>$ADITODATA/config/vendira.qs.adito.cloud_serverconfig_system_bg.xml</serverConfigPath>
-  <tunnelConfigPath>$ADITODATA/config/vendira.qs.adito.cloud_tunnelconfig_bg.xml</tunnelConfigPath>
-  <aditoHomePath>$ADITOHOME</aditoHomePath>
-  <aditoDataPath>$PROJECTHOME/data</aditoDataPath>
-</system>

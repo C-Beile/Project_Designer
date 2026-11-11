@@ -291,7 +291,7 @@ describe('Designer window with operating-system windows', () => {
     await waitFor(() => expect(calls.opened.some((o) => o.name === 'options')).toBe(true))
     const req = calls.opened.find((o) => o.name === 'options')!
     expect(req).toMatchObject({ kind: 'dialog', modal: true })
-    expect((req.payload as { engine: string; theme: string; keymap: unknown[] }).engine).toBe('experimental')
+    expect((req.payload as { engine: string; theme: string; keymap: unknown[] }).engine).toBe('official')
     expect(Array.isArray((req.payload as { keymap: unknown[] }).keymap)).toBe(true)
     expect(screen.queryByRole('dialog', { name: 'Options' })).toBeNull()
     await act(async () => {

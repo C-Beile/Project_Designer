@@ -10,10 +10,10 @@
 // consciously choosing it in the current session.
 export type TranspilerEngineId = 'official' | 'experimental'
 
-export const DEFAULT_ENGINE: TranspilerEngineId = 'experimental'
+export const DEFAULT_ENGINE: TranspilerEngineId = 'official'
 
 export const ENGINE_LABELS: Record<TranspilerEngineId, string> = {
-  official: 'Official ADITO transpiler (needs the ADITO Designer installed)',
+  official: 'ADITO transpiler (default, uses the installed ADITO Designer)',
   experimental: 'Dito_Transpiler (built in, no ADITO Designer needed)',
 }
 

@@ -112,7 +112,7 @@ impl DbConnection for MssqlConnection {
             })
             .collect();
 
-        Ok(QueryResult { columns, rows: values })
+        Ok(QueryResult { columns, rows: values, rows_affected: None })
     }
 
     async fn list_tables(&self) -> Result<Vec<TableInfo>, DbError> {

@@ -98,7 +98,7 @@ pub fn resolve(
             }
         },
         None => discover_install_dir(search_roots).and_then(|d| layout::designer_root(&d)).ok_or_else(|| {
-            "No ADITO Designer installation found. The official transpiler needs an installed ADITO Designer - choose its folder in Tools > Options."
+            "No ADITO Designer installation found. The ADITO transpiler needs an installed ADITO Designer - choose its folder in Tools > Options, or switch to the Dito_Transpiler in Tools > Transpiler."
                 .to_string()
         })?,
     };

@@ -123,8 +123,13 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
   )
 
   // The visible height of the list: rows are only drawn for this window, so it follows the real size of the panel.
+  const [boxEl, setBoxEl] = useState<HTMLDivElement | null>(null)
+  const attachBox = useCallback((el: HTMLDivElement | null) => {
+    box.current = el
+    setBoxEl(el)
+  }, [])
   useEffect(() => {
-    const el = box.current
+    const el = boxEl
     if (!el) return
     const measure = () => setViewport(el.clientHeight || 420)
     measure()
@@ -132,7 +137,7 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
     const observer = new ResizeObserver(measure)
     observer.observe(el)
     return () => observer.disconnect()
-  }, [])
+  }, [boxEl])
   const first = Math.max(0, Math.floor(scrollTop / ROW_H) - 6)
   const last = Math.min(shown.length, Math.ceil((scrollTop + viewport) / ROW_H) + 6)
 
@@ -374,7 +379,7 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
         aria-label="Translation entries"
         aria-rowcount={shown.length}
         tabIndex={0}
-        ref={box}
+        ref={attachBox}
         onScroll={(e) => setScrollTop((e.currentTarget as HTMLDivElement).scrollTop)}
         onKeyDown={onGridKey}
         onContextMenu={(e) => {

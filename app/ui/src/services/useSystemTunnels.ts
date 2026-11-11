@@ -20,6 +20,29 @@ interface SystemRefs {
 }
 
 export const SYSTEM_TUNNEL_POLL_MS = 3000
+
+// The config references of every system seen by the poll, so a close can find the forward of a system.
+const refsByKey = new Map<string, SystemRefs>()
+// Systems the user closed on purpose: the poll must not open their session again before the forward is really down.
+const closing = new Set<string>()
+
+/** Closes the sessions of a system and the forward to its database; without the forward the poll would reconnect at once. */
+export async function closeSystemTunnel(api: ForgeApi, key: string, sessionKeys: string[]): Promise<void> {
+  closing.add(key)
+  try {
+    for (const k of sessionKeys) await api.dbDisconnect(k).catch(() => {})
+    await api.dbDisconnect(key).catch(() => {})
+    const refs = refsByKey.get(key)
+    if (refs) {
+      const st = await api.systemTunnelState(refs.project, refs.tunnelRef, refs.serverRef).catch(() => null)
+      const at = st?.target ? st.target.lastIndexOf(':') : -1
+      if (st?.target && at > 0) await api.tunnelDisconnect(st.target.slice(0, at), Number(st.target.slice(at + 1))).catch(() => {})
+    }
+    setSystemsDb(await api.dbSystems().catch(() => []))
+  } finally {
+    closing.delete(key)
+  }
+}
 /** The paths of a system are read again after this time, so a changed or replaced tunnel config is picked up. */
 export const SYSTEM_REFS_TTL_MS = 5000
 const RETRY_AFTER_FAILURE_MS = 15000
@@ -80,6 +103,10 @@ export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Recor
       const refs = api
         .getPropertyTree(node.id)
         .then((t) => ({ project, name: node.label, tunnelRef: textField(t, 'tunnelConfigPath') ?? '', serverRef: textField(t, 'serverConfigPath') ?? '' }))
+        .then((r) => {
+          refsByKey.set(key, r)
+          return r
+        })
         .catch(() => null)
       refsCache.current.set(key, { at: Date.now(), refs })
       return refs
@@ -94,6 +121,7 @@ export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Recor
             const refs = await refsOf(project, node)
             if (!refs || cancelled) continue
             const key = systemKey(project, refs.name)
+            if (closing.has(key)) continue
             if (!refs.tunnelRef || !refs.serverRef) {
               setForwardFor(key, false)
               setUnconfigured(key, true)

@@ -216,17 +216,17 @@ describe('Shell - menu keyboard', () => {
 })
 
 describe('Shell - toolbar, transpile and options', () => {
-  it('enables Deploy for an open project and keeps Run dimmed', async () => {
+  it('enables Deploy for an open project and shows no Run configuration', async () => {
     const api = createMockForgeApi({ projectTree: treeWithSystems(), documents: {} })
     render(<Shell api={api} projectRoot="C:/demo" />)
     const deploy = screen.getByRole('button', { name: 'Deploy Project' })
     expect(deploy).not.toHaveAttribute('aria-disabled')
     expect(deploy).toHaveAttribute('title', expect.stringMatching(/^Deploy Project \(.*F8\)$/))
-    expect(screen.getByRole('button', { name: 'Execute selected configuration' })).toHaveAttribute('aria-disabled', 'true')
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Run configuration' })).toHaveValue('default'))
+    expect(screen.queryByRole('button', { name: 'Execute selected configuration' })).toBeNull()
+    expect(screen.queryByRole('combobox', { name: 'Run configuration' })).toBeNull()
   })
 
-  it('transpiles with the Dito_Transpiler, locks the button meanwhile and logs the result in Output - Build', async () => {
+  it('transpiles with the ADITO transpiler by default, locks the button meanwhile and logs the result in Output - Build', async () => {
     const user = userEvent.setup()
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     let finish!: () => void
@@ -234,7 +234,7 @@ describe('Shell - toolbar, transpile and options', () => {
     render(<Shell api={api} projectRoot="C:/demo" />)
 
     await user.click(screen.getByRole('button', { name: 'Transpile' }))
-    expect(exec).toHaveBeenCalledWith('transpile', 'C:/demo', { engine: 'experimental', mode: 'full' })
+    expect(exec).toHaveBeenCalledWith('transpile', 'C:/demo', { engine: 'official', mode: 'full' })
     expect(screen.getByRole('button', { name: 'Transpile' })).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByRole('progressbar', { name: /^Transpiling \(/ })).toBeInTheDocument()
 
@@ -243,7 +243,7 @@ describe('Shell - toolbar, transpile and options', () => {
     expect(screen.queryByRole('progressbar')).toBeNull()
   })
 
-  it('Tools > Transpiler > Official is used for the next run', async () => {
+  it('Tools > Transpiler > Dito_Transpiler is used for the next run', async () => {
     const user = userEvent.setup()
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     const exec = vi.spyOn(api, 'executeAction').mockRejectedValue(new Error('engine exploded'))
@@ -251,18 +251,18 @@ describe('Shell - toolbar, transpile and options', () => {
 
     await user.click(screen.getByRole('menuitem', { name: 'Tools' }))
     await user.hover(screen.getByRole('menuitem', { name: /Transpiler/ }))
-    await user.click(screen.getByRole('menuitemradio', { name: /Official/ }))
+    await user.click(screen.getByRole('menuitemradio', { name: /Dito_Transpiler/ }))
 
     await user.click(screen.getByRole('menuitem', { name: 'Tools' }))
     await user.click(screen.getByRole('menuitem', { name: /Transpile \(Partial\)/ }))
-    expect(exec).toHaveBeenCalledWith('transpile', 'C:/demo', { engine: 'official', mode: 'partial' })
+    expect(exec).toHaveBeenCalledWith('transpile', 'C:/demo', { engine: 'experimental', mode: 'partial' })
     expect(await screen.findByText(/BUILD FAILED: engine exploded/)).toBeInTheDocument()
   })
 
-  it('a fresh start is always back on the Dito_Transpiler', () => {
+  it('a fresh start is always back on the ADITO transpiler', () => {
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     render(<Shell api={api} projectRoot="" />)
-    expect(screen.getByRole('combobox', { name: 'Transpiler engine' })).toHaveValue('experimental')
+    expect(screen.getByRole('combobox', { name: 'Transpiler engine' })).toHaveValue('official')
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
@@ -285,7 +285,7 @@ describe('Shell - toolbar, transpile and options', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Transpile' }))
-    expect(exec).toHaveBeenCalledWith('transpile', 'C:/demo', { engine: 'experimental', mode: 'full', install_dir: 'D:/ADITO/designer' })
+    expect(exec).toHaveBeenCalledWith('transpile', 'C:/demo', { engine: 'official', mode: 'full', install_dir: 'D:/ADITO/designer' })
   })
 
   it('shows the Git branch and the selected system in the status bar', async () => {
@@ -392,12 +392,6 @@ describe('Projects - several projects at once (LAYOUT_SPEC §4.2/§4.5)', () => 
     await openMenuItem(user, 'File', /^Close Project$/)
     await waitFor(() => expect(rootLabels()).toEqual(['Pichler']))
     expect(remove).toHaveBeenCalledWith('C:/r/Hermes')
-  })
-
-  it('the default system preselects the run configuration', async () => {
-    render(<Shell api={setup(['C:/r/Pichler'])} projectRoot="" />)
-    await waitFor(() => expect(rootLabels()).toEqual(['Pichler']))
-    expect(screen.getByRole('combobox', { name: /run configuration/i })).toHaveValue('Pichler_qs_bg')
   })
 
   it('Close Other Projects keeps the active one, Close All Projects empties the tree', async () => {

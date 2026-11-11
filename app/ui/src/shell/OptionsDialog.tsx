@@ -13,6 +13,7 @@ import { parseThemePack } from '../theme/vscodeTheme'
 import { COLOR_GROUPS, applyColorOverrides, getColorOverrides, saveColorOverrides } from '../theme/colorOverrides'
 import { LivePreview, ThemePicker } from './ThemePicker'
 import { ColorSample } from './ColorSample'
+import { GeneralOptions } from './GeneralOptions'
 import { isPluginActive } from '../settings/plugins'
 import { errorText } from '../core/errorText'
 import { useOptionsPages } from '../core/plugins/registry'
@@ -233,16 +234,7 @@ export function OptionsDialog({
 
   let body: ReactNode = null
   if (category === 'general') {
-    body = (
-      <>
-        <h3>General</h3>
-        <Check label="Confirm destructive actions (delete, deploy, write statements)" checked={opts.general.confirmDestructive} onChange={(v) => patch('general', { confirmDestructive: v })} disabled hint="Always on: Dito Designer never deletes or writes without a confirmation." />
-        <Check label="Show hints in dialogs" checked={opts.general.showHints} onChange={(v) => patch('general', { showHints: v })} />
-        <Row label="Default encoding of new files">
-          <input type="text" value="UTF-8" readOnly aria-label="Default encoding" />
-        </Row>
-      </>
-    )
+    body = <GeneralOptions api={api} opts={opts.general} onChange={(values) => patch('general', values)} />
   } else if (category === 'editor') {
     const sub = page.editor
     const ed = opts.editor
@@ -575,13 +567,13 @@ export function OptionsDialog({
           <p className="forge-field-hint">Leave empty to use the automatically detected installation for each transpile.</p>
           <fieldset className="forge-opt-group">
             <legend>Transpiler</legend>
-            {(['experimental', 'official'] as const).map((id) => (
+            {(['official', 'experimental'] as const).map((id) => (
               <label key={id} className="forge-check">
                 <input type="radio" name="engine" checked={engineChoice === id} onChange={() => setEngineChoice(id)} />
                 <span>{ENGINE_LABELS[id]}</span>
               </label>
             ))}
-            <p className="forge-field-hint">The Dito_Transpiler works without the ADITO Designer. The choice applies to this session only; every start begins with the Dito_Transpiler.</p>
+            <p className="forge-field-hint">The ADITO transpiler is the default and uses the installed ADITO Designer. The Dito_Transpiler works without it. The choice applies to this session only; every start begins with the ADITO transpiler.</p>
           </fieldset>
           <fieldset className="forge-opt-group">
             <legend>Dialogs</legend>

@@ -44,7 +44,7 @@
 .forge-action-button:disabled { opacity: 0.55; cursor: progress; }
 
 /* Primary action stays clearly recognisable while it waits for the comparison */
-.forge-modal-footer button.is-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg, #fff); font-weight: 600; }
+.forge-modal-footer button.is-primary { background: var(--button-bg, var(--accent)); border-color: var(--button-bg, var(--accent)); color: var(--button-fg, var(--accent-fg, #fff)); font-weight: 600; }
 
 .forge-modal-footer button.is-primary:disabled { opacity: 0.6; background: color-mix(in srgb, var(--accent) 55%, var(--bg-panel)); border-color: transparent; }
 

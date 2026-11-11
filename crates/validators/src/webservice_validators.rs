@@ -11,7 +11,7 @@
 //! <Name>_ws.aod` or `entityWebservice/<Name>_webservice/<Name>_webservice.aod` per instance
 //! (suffix varies by project, same "constant top-level folder, varying instance-folder suffix"
 //! shape `aliasDefinition`/`language` already established). Root element `entityWebservice`,
-//! VERSION `1.1.0`. Real fields, verified across 47+ instances in Hermes/BHB/Pichler/Vendira/
+//! VERSION `1.1.0`. Real fields, verified across 47+ instances in Hermes/BHB/Pichler/
 //! Car_Training: `name`/`majorModelMode` (plain text, identity/constant), `webserviceMethods`
 //! (a list of HTTP verb tokens, `<element>GET</element>` etc. - never empty in any real instance,
 //! 1 to 5 methods observed), `loginTypeId` (an optional list of auth-type tokens, always exactly
@@ -63,7 +63,7 @@ fn flatten(root: &CoreValue) -> ProjectModel {
 
 /// Real rule #1: `webserviceMethods` with zero `element` entries means this webservice endpoint
 /// answers no HTTP method at all - it is published but unreachable, a real deploy-time defect, not
-/// a cosmetic gap. Verified against every real instance found across Hermes/BHB/Pichler/Vendira/
+/// a cosmetic gap. Verified against every real instance found across Hermes/BHB/Pichler/
 /// Car_Training (47+ files): never empty, so this rule does not fire on legitimate, untouched
 /// project files. Handles both real R26 shapes uniformly - `webserviceMethods.element` (1 method,
 /// un-indexed) and `webserviceMethods.element[N]` (2+ methods, indexed).

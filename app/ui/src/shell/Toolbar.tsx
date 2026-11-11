@@ -9,7 +9,6 @@ import {
   IconOpenProject,
   IconRedo,
   IconRefresh,
-  IconRun,
   IconSaveAll,
   IconSql,
   IconTranspile,
@@ -122,7 +121,6 @@ export function Toolbar(p: ToolbarProps) {
   const heap = useHeapMb(p.prefs.groups.performance)
   const g = p.prefs.groups
   const sqlOn = p.sqlActive !== false
-  const hasSystems = p.systems.length > 0
 
   return (
     <div
@@ -200,41 +198,6 @@ export function Toolbar(p: ToolbarProps) {
             onClick={() => p.onCommand('tools.transpilePartial')}
           >
             <IconTranspile />
-          </ToolButton>
-          <select
-            className="forge-runconfig"
-            aria-label="Run configuration"
-            value={hasSystems ? p.runConfig : ''}
-            disabled={!hasSystems}
-            onChange={(e) => p.onRunConfigChange(e.target.value)}
-          >
-            {hasSystems ? null : <option value="">&lt;no config&gt;</option>}
-            {hasSystems ? (
-              <>
-                <optgroup label="Clients">
-                  {p.systems.map((s) => (
-                    <option key={`c-${s}`} value={s}>
-                      Web-Client (Neon) - {s}
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="Servers">
-                  {p.systems.map((s) => (
-                    <option key={`s-${s}`} value={s} disabled>
-                      Server - {s}
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="Scripts">
-                  <option value="" disabled>
-                    (no scripts)
-                  </option>
-                </optgroup>
-              </>
-            ) : null}
-          </select>
-          <ToolButton label="Execute selected configuration" hint={`${RUN_DISABLED_HINT} (${formatShortcut('F9')})`} enabled={false} className="forge-tool-run">
-            <IconRun />
           </ToolButton>
           <Sep />
         </>

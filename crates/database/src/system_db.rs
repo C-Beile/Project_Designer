@@ -469,6 +469,7 @@ mod tests {
             rows: rows.into_iter().map(|r| r.into_iter().map(|c| c.map(String::from)).collect()).collect(),
             truncated: false,
             elapsed_ms: 0,
+            rows_affected: None,
         }
     }
 

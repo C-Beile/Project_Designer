@@ -21,9 +21,9 @@ pub const NATIVE_ID: &str = "native";
 /// ID des offiziellen ADITO-Transpilers in der Registry.
 pub const OFFICIAL_ID: &str = "adito";
 
-/// Welche Engine ein `"transpile"`-Aufruf nutzt. Standard ist `ExperimentalForge` (die eigene
-/// Engine). Nur der Wert `"official"` wählt den offiziellen Transpiler. Fehlt der Param oder ist
-/// er unbekannt, gilt `ExperimentalForge`.
+/// Welche Engine ein `"transpile"`-Aufruf nutzt. Standard ist `Official` (der ADITO-Transpiler).
+/// Nur der Wert `"experimental"` wählt die eigene Engine. Fehlt der Param oder ist er unbekannt,
+/// gilt `Official`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TranspilerEngine {
     Official,
@@ -32,17 +32,17 @@ pub enum TranspilerEngine {
 
 impl Default for TranspilerEngine {
     fn default() -> Self {
-        TranspilerEngine::ExperimentalForge
+        TranspilerEngine::Official
     }
 }
 
 impl TranspilerEngine {
-    /// Liest den Action-Param `engine`. Nur der genaue Wert `"official"` wählt `Official`,
-    /// alles andere ist `ExperimentalForge` (kein Fehler).
+    /// Liest den Action-Param `engine`. Nur der genaue Wert `"experimental"` wählt
+    /// `ExperimentalForge`, alles andere ist `Official` (kein Fehler).
     pub fn from_param(value: Option<&str>) -> Self {
         match value {
-            Some("official") => TranspilerEngine::Official,
-            _ => TranspilerEngine::ExperimentalForge,
+            Some("experimental") => TranspilerEngine::ExperimentalForge,
+            _ => TranspilerEngine::Official,
         }
     }
 }
@@ -263,11 +263,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn engine_from_param_defaults_to_the_built_in_engine_for_missing_or_unknown_values() {
-        assert_eq!(TranspilerEngine::from_param(None), TranspilerEngine::ExperimentalForge);
-        assert_eq!(TranspilerEngine::from_param(Some("")), TranspilerEngine::ExperimentalForge);
-        assert_eq!(TranspilerEngine::from_param(Some("typo")), TranspilerEngine::ExperimentalForge);
-        assert_eq!(TranspilerEngine::default(), TranspilerEngine::ExperimentalForge);
+    fn engine_from_param_defaults_to_the_adito_transpiler_for_missing_or_unknown_values() {
+        assert_eq!(TranspilerEngine::from_param(None), TranspilerEngine::Official);
+        assert_eq!(TranspilerEngine::from_param(Some("")), TranspilerEngine::Official);
+        assert_eq!(TranspilerEngine::from_param(Some("typo")), TranspilerEngine::Official);
+        assert_eq!(TranspilerEngine::default(), TranspilerEngine::Official);
     }
 
     #[test]

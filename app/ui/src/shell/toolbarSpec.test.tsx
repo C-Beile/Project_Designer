@@ -12,6 +12,7 @@ const RUNTIME = resolve(__dirname, '../../../../../../60_design/designer_gui/run
 // same as another button (Diff/Show Local Changes open the Commit window like Commit).
 const LEFT_OUT = [
   'Show Dependencies',
+  'Execute selected configuration',
   'Deploy opened models',
   'Deploy local changes',
   'Build and Deploy',

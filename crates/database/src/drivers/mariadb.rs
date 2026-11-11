@@ -64,6 +64,10 @@ impl DbConnection for MariaDbConnection {
     }
 
     async fn execute_query(&self, sql: &str) -> Result<QueryResult, DbError> {
+        if !crate::db_session::is_read_only(sql) {
+            let done = sqlx::query(sql).execute(&self.pool).await?;
+            return Ok(QueryResult { columns: Vec::new(), rows: Vec::new(), rows_affected: Some(done.rows_affected()) });
+        }
         let rows = sqlx::query(sql).fetch_all(&self.pool).await?;
 
         let columns = rows
@@ -80,7 +84,7 @@ impl DbConnection for MariaDbConnection {
             })
             .collect();
 
-        Ok(QueryResult { columns, rows: values })
+        Ok(QueryResult { columns, rows: values, rows_affected: None })
     }
 
     async fn execute_transaction(&self, statements: &[TxStatement]) -> Result<Vec<u64>, DbError> {

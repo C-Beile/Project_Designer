@@ -10,39 +10,6 @@ pub fn write_settings(file: &std::path::Path, settings: &ForgeSettings) -> Resul
     platform::fs::atomic_write(file, &bytes).map_err(|e| e.to_string())
 }
 
-/// The app data folder carries the identifier of the app. After the rename, settings, logs and backups of the old folder are copied once.
-pub fn migrate_legacy_data_dir(app: &tauri::AppHandle) {
-    let Ok(dir) = app.path().app_data_dir() else { return };
-    let Some(parent) = dir.parent() else { return };
-    let old = parent.join("de.threehillsit.vendira-designer");
-    if dir.exists() || !old.is_dir() {
-        return;
-    }
-    fn copy_all(from: &std::path::Path, to: &std::path::Path) -> std::io::Result<()> {
-        std::fs::create_dir_all(to)?;
-        for entry in std::fs::read_dir(from)? {
-            let entry = entry?;
-            let target = to.join(entry.file_name());
-            if entry.file_type()?.is_dir() {
-                copy_all(&entry.path(), &target)?;
-            } else {
-                std::fs::copy(entry.path(), target)?;
-            }
-        }
-        Ok(())
-    }
-    let _ = copy_all(&old, &dir);
-    // Copied log files get the new name, too.
-    if let Ok(entries) = std::fs::read_dir(dir.join("logs")) {
-        for entry in entries.flatten() {
-            let name = entry.file_name().to_string_lossy().into_owned();
-            if let Some(rest) = name.strip_prefix("vendira-designer-") {
-                let _ = std::fs::rename(entry.path(), entry.path().with_file_name(format!("dito-designer-{rest}")));
-            }
-        }
-    }
-}
-
 pub fn settings_file(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;

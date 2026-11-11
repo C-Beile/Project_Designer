@@ -9,6 +9,8 @@ export type GitStatusAction = 'commit' | 'pull' | 'push' | 'branches' | 'newBran
 export interface GitStatusData {
   branch: string | null
   gitEnabled: boolean
+  /** A pull is running: the branch button shows a spinner. */
+  pulling?: boolean
   loadBranches?: () => Promise<GitOverview>
   onGit?: (action: GitStatusAction) => void
   /** Opens the Git dialog on the Branches tab with this branch preselected; nothing is switched yet. */
@@ -23,7 +25,7 @@ interface Anchor {
 /** Branch-Knopf der Statusleiste: Klick = Branch-Popup, Rechtsklick = Menü Commit/Pull/Push. */
 export function GitStatusItem({ data, openMenu }: StatusBarSlotProps) {
   const git = (data.git ?? { branch: null, gitEnabled: false }) as GitStatusData
-  const { branch, gitEnabled, loadBranches, onGit, onCheckoutBranch } = git
+  const { branch, gitEnabled, pulling, loadBranches, onGit, onCheckoutBranch } = git
   const [popup, setPopup] = useState<{ at: Anchor; data: GitOverview | null; error: string | null } | null>(null)
 
   function branchContext(e: React.MouseEvent<HTMLElement>) {
@@ -74,7 +76,8 @@ export function GitStatusItem({ data, openMenu }: StatusBarSlotProps) {
           }
         }}
       >
-        {branch ?? ''}
+        {pulling ? <span className="forge-spinner" role="status" aria-label="Pulling" /> : null}
+        {pulling ? 'Pulling...' : (branch ?? '')}
       </button>
       {popup ? (
         <BranchPopup at={popup.at} data={popup.data} error={popup.error} onClose={() => setPopup(null)} onNew={() => onGit?.('newBranch')} onPick={(t) => onCheckoutBranch?.(t)} />

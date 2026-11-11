@@ -3728,6 +3728,7 @@ dependencies = [
  "platform",
  "plugin-api",
  "quick-xml 0.36.2",
+ "regex",
  "serde",
  "serde_json",
  "validators",

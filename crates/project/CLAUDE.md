@@ -30,6 +30,7 @@
 | `src/project_create.rs` | Leeres Projekt anlegen. |
 | `src/watch.rs` | Änderungen von außen erkennen (Fingerabdruck, Datei-Stempel). |
 | `src/settings.rs` | Eigene Einstellungen und Liste offener Projekte. |
+| `src/discover.rs` | `find_projects`: ADITO-Projekte direkt in einem Ordner finden (`.aditoprj` oder `package.json` plus Objektordner). |
 | `src/file_list.rs` | Dateinamen für die Schnellsuche, Theme-Dateien lesen. |
 | `src/import_resolve.rs` | Ziel eines `import ... from` finden. |
 | `src/jdito_types.rs` | JDito-Typdefinitionen fürs Code-Feld. |
@@ -56,7 +57,7 @@ Die Logik hinter den Tauri-Befehlen, ohne `tauri`. Die Hülle `app/src-tauri/src
 - Actor-Modell: `ProjectHandle` hält ein `Rc` und ist nicht `Send`. Darum läuft alles auf einem Thread (`forge-project-actor`). Aufrufe gehen über `call(...)` und `Request`. Neuer Aufruf = neue `Request`-Variante + Zweig in `run`.
 - Ein Panic in einer Anfrage wird abgefangen (`catch_unwind`), der Actor lebt weiter.
 - Die Crate kennt nur `TranspilerRegistry`, nie den offiziellen Transpiler. Ohne `set_transpilers` gibt es nur die eigene Engine (`NATIVE_ID`, `OFFICIAL_ID` = `adito`). `set_transpilers` gilt nur beim ersten Aufruf (`OnceLock`).
-- Die Kommentare an `TranspilerEngine` sagen "Standard Official". Im Code ist `Default` und `from_param` aber `ExperimentalForge` (nur `"official"` wählt `Official`).
+- Standard ist `Official` (ADITO-Transpiler): `Default` und `from_param` liefern `Official`, nur der Param `"experimental"` wählt die eigene Engine `ExperimentalForge` (Dito_Transpiler).
 - `object_names.rs` ist getrennt, damit `new_object` und `tree_ops` sich nicht im Kreis aufrufen.
 
 ## Wenn du X ändern willst

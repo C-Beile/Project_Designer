@@ -83,6 +83,7 @@ export interface MenuContext {
   canUndo: boolean
   canRedo: boolean
   recentProject: string | null
+  workspaceFolders?: string[]
   theme: 'dark' | 'light' | 'lion'
   /** Installed VS Code themes (only while the import plugin is on) and the one in use; empty: a built-in theme. */
   customThemes?: { id: string; name: string }[]
@@ -165,9 +166,15 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
           kind: 'submenu',
           label: 'Open Recent Project',
           enabled: true,
-          children: ctx.recentProject
-            ? [item('file.openRecent', ctx.recentProject, true, { arg: ctx.recentProject, id: 'file.openRecent.0' })]
-            : [item('file.openRecent', '(none)', false, { hint: 'No project opened yet', id: 'file.openRecent.none' })],
+          children: [
+            item('file.openWorkspace', 'Projects from Folder...', true, { hint: 'Choose the folder with all your projects and pick the ones to show in the tree' }),
+            sep(),
+            ...(ctx.workspaceFolders ?? []).map((folder, i) => item('file.openWorkspaceFolder', folder, true, { arg: folder, id: `file.openWorkspaceFolder.${i}`, hint: 'Pick the projects of this folder' })),
+            ...((ctx.workspaceFolders ?? []).length > 0 ? [sep()] : []),
+            ...(ctx.recentProject
+              ? [item('file.openRecent', ctx.recentProject, true, { arg: ctx.recentProject, id: 'file.openRecent.0' })]
+              : [item('file.openRecent', '(none)', false, { hint: 'No project opened yet', id: 'file.openRecent.none' })]),
+          ],
         },
         sep(),
         item('file.closeProject', 'Close Project', ctx.hasProject, {
@@ -396,8 +403,8 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
           label: 'Transpiler',
           enabled: true,
           children: [
+            item('tools.engine', 'ADITO transpiler (default)', true, { id: 'tools.engine.official', arg: 'official', check: 'radio', checked: ctx.engine === 'official' }),
             item('tools.engine', 'Dito_Transpiler (built in)', true, { id: 'tools.engine.experimental', arg: 'experimental', check: 'radio', checked: ctx.engine === 'experimental' }),
-            item('tools.engine', 'Official ADITO transpiler', true, { id: 'tools.engine.official', arg: 'official', check: 'radio', checked: ctx.engine === 'official' }),
           ],
         },
         item('tools.compareReference', 'Transpile Match with Reference...', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),

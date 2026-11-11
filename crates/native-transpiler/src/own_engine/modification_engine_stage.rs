@@ -15,7 +15,7 @@
 //
 // This found TWO REAL conflicts - the finding `transpiler.md` §3 flagged as most valuable if
 // located. Both have the same shape: the Hermes project root AND a dependency module (once
-// `@3hills-IT/vendira`, once `@3hills-IT/pos-order`) each ship a MODIFY on the identical scalar
+// a 3Hills module, once `@3hills-IT/pos-order`) each ship a MODIFY on the identical scalar
 // leaf (`Communication_entity/entityFields/ADDR/valueProcess`,
 // `Order_entity/entityFields/DELIVERYADDRESS/mandatoryProcess`), each pointing at a genuinely
 // different script body. Comparing both against Hermes's own real `dist/` output settles it

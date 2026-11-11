@@ -25,6 +25,8 @@
 | `UpdatesDialog.tsx` | Hilfe > Updates. |
 | `LocalDataDialog.tsx` | Hilfe > Local Data. |
 | `TableCenterDialog.tsx` | System Table Control Center. |
+| `GeneralOptions.tsx` | Tools > Options > General: Abschnitte Start, Interface size, Project folders, Scan Services, Safety, Files. |
+| `WorkspaceDialog.tsx` | Datei > Open Projects from Folder: ein Ordner mit allen Projekten, Häkchen bestimmen, welche im Baum stehen. |
 | `NewProjectDialog.tsx` | Neues Projekt oder Klon. |
 | `NewObjectDialog.tsx` | "Create New Model". |
 | `TypeCombo.tsx` | Typ-Auswahl für "Create New Model". |

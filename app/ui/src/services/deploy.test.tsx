@@ -8,6 +8,7 @@ import { ServicesPanel } from './ServicesPanel'
 import { UsersTab, SystemAliasConfigs } from './UsersTable'
 import { newUuid } from '../core/uuid'
 import { createMockForgeApi } from '../test/mockApi'
+import { diffEditors } from '../test/monacoMock'
 import type { AliasConfigTable, DbStatus, DeployOverview, DeployPlan, TableDump } from '../wire/types'
 
 vi.mock('monaco-editor', () => import('../test/monacoMock'))
@@ -59,8 +60,11 @@ describe('DeployDialog', () => {
     render(<DeployDialog api={mock} projectRoot="C:/p" onClose={vi.fn()} />)
     await user.dblClick(await screen.findByText('Person_entity'))
     expect(await screen.findByRole('dialog', { name: 'Diff Deploy Person_entity' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Changes of the model')).toHaveTextContent('<remote entity/Person_entity/>')
-    expect(screen.getByLabelText('Changes of the model')).toHaveTextContent('<local entity/Person_entity/>')
+    await waitFor(() => expect(diffEditors.length).toBeGreaterThan(0))
+    const shown = diffEditors[diffEditors.length - 1]
+    expect(shown.original).toContain('<remote entity/Person_entity/>')
+    expect(shown.modified).toContain('<local entity/Person_entity/>')
+    expect(shown.language).toBe('xml')
   })
 
   it('writes only the ticked models when OK is pressed', async () => {

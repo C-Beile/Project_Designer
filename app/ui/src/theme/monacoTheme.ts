@@ -29,9 +29,20 @@ let defined = false
 // The data of the built-in themes, kept so the colours the user changed can be put on top of them.
 const builtinData = new Map<string, MonacoThemeData>()
 
+const SQL_FOLLOWS = ['string', 'number', 'comment']
+
+function withSqlTokens(data: MonacoThemeData): MonacoThemeData {
+  const extra = SQL_FOLLOWS.flatMap((token) => {
+    const last = [...data.rules].reverse().find((r) => r.token === token && r.foreground)
+    return last ? [{ token: `${token}.sql`, foreground: last.foreground, fontStyle: last.fontStyle }] : []
+  })
+  return { ...data, rules: [...data.rules, ...extra] }
+}
+
 function defineBuiltin(id: string, data: MonacoThemeData): void {
-  builtinData.set(id, data)
-  monaco.editor.defineTheme(id, data)
+  const full = withSqlTokens(data)
+  builtinData.set(id, full)
+  monaco.editor.defineTheme(id, full)
 }
 
 /** Registers both Monaco themes once per process. Safe to call multiple times. */
@@ -179,7 +190,7 @@ function withUserColours(baseId: string, base: MonacoThemeData | undefined): str
   const stamp = JSON.stringify([baseId, colors, rules])
   if (stamp !== overrideStamp) {
     // A later rule of the same token wins, so the user's rules go to the end.
-    monaco.editor.defineTheme(OVERRIDE_THEME, { ...base, colors: { ...base.colors, ...colors }, rules: [...base.rules, ...rules] })
+    monaco.editor.defineTheme(OVERRIDE_THEME, withSqlTokens({ ...base, colors: { ...base.colors, ...colors }, rules: [...base.rules, ...rules] }))
     overrideStamp = stamp
   }
   return OVERRIDE_THEME
@@ -191,7 +202,7 @@ export function monacoThemeFor(forgeTheme: 'dark' | 'light' | 'lion'): string {
   if (custom) {
     ensureMonacoThemesDefined()
     if (registeredCustom.get(custom.id) !== custom.data) {
-      monaco.editor.defineTheme(custom.id, custom.data)
+      monaco.editor.defineTheme(custom.id, withSqlTokens(custom.data))
       registeredCustom.set(custom.id, custom.data)
     }
     return withUserColours(custom.id, custom.data)
