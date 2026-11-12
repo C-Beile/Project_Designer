@@ -116,6 +116,7 @@ impl FeaturePlugin for DatabasePlugin {
             "system_users" => json(system_db::read_users(db)?),
             "system_user_properties" => json(system_db::read_user_properties(db, &a.string("user")?)?),
             "system_assigned_roles" => json(system_db::assigned_roles(db)?),
+            "rest_users" => json(system_db::webservice_users(db)?),
             "system_user_set_property" => {
                 Self::confirmed(&a, "Changing a user needs your confirmation.")?;
                 json(system_db::update_user_property(db, &a.string("id")?, &a.string("value")?)?)

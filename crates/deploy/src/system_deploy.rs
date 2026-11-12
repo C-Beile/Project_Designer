@@ -167,16 +167,22 @@ pub struct DeployPlan {
 
 /// Pure comparison local vs. remote (`remote`: name to content). `force` updates every model.
 pub fn compute_plan(local: &[LocalModel], remote: &BTreeMap<String, String>, force: bool) -> Vec<PlanItem> {
+    compute_plan_with(local, remote, force, |m, r| r == m.content)
+}
+
+/// The comparison with a custom "is this remote value the same as the local model" (a fingerprint instead of the full text).
+fn compute_plan_with(local: &[LocalModel], remote: &BTreeMap<String, String>, force: bool, same: impl Fn(&LocalModel, &str) -> bool) -> Vec<PlanItem> {
     let mut items = Vec::new();
     for m in local {
         match remote.get(&m.key) {
             None => items.push(PlanItem { op: DeployOp::I, key: m.key.clone(), extra_files: m.extra_files, selected_by_default: true }),
-            Some(r) if force || r != &m.content => items.push(PlanItem { op: DeployOp::U, key: m.key.clone(), extra_files: m.extra_files, selected_by_default: true }),
+            Some(r) if force || !same(m, r) => items.push(PlanItem { op: DeployOp::U, key: m.key.clone(), extra_files: m.extra_files, selected_by_default: true }),
             Some(_) => {}
         }
     }
+    let local_keys: std::collections::HashSet<&str> = local.iter().map(|m| m.key.as_str()).collect();
     for key in remote.keys() {
-        if !local.iter().any(|m| &m.key == key) {
+        if !local_keys.contains(key.as_str()) {
             items.push(PlanItem { op: DeployOp::D, key: key.clone(), extra_files: 0, selected_by_default: false });
         }
     }
@@ -207,6 +213,62 @@ pub fn build_statements(mapping: &DeployMapping, items: &[PlanItem], local: &[Lo
             })
         })
         .collect()
+}
+
+const BATCH_ROWS: usize = 150;
+const BATCH_BYTES: usize = 4_000_000;
+
+/// The same writes as `system_table_statements`, but many rows per statement: every statement costs a round trip
+/// through the tunnel, so thousands of single-row statements take minutes. A row is written with
+/// `INSERT ... ON DUPLICATE KEY UPDATE` on the unique `ID` (the deploy meta row relies on that too).
+pub fn batched_system_statements(items: &[PlanItem], local: &[LocalModel]) -> Result<Vec<TxStatement>, String> {
+    let by_key: std::collections::HashMap<&str, &LocalModel> = local.iter().map(|m| (m.key.as_str(), m)).collect();
+    let mut statements = Vec::new();
+    let mut rows: Vec<&LocalModel> = Vec::new();
+    let mut bytes = 0usize;
+    let flush = |rows: &mut Vec<&LocalModel>, bytes: &mut usize, statements: &mut Vec<TxStatement>| {
+        if rows.is_empty() {
+            return;
+        }
+        let marks = vec!["(?, ?, ?, ?, ?, NOW(), ?, NOW(), ?)"; rows.len()].join(", ");
+        let mut params = Vec::with_capacity(rows.len() * 7);
+        for m in rows.iter() {
+            let name = model_name(&m.key).to_string();
+            params.push(DbValue::Text(name.clone()));
+            params.push(DbValue::Text(name));
+            params.push(DbValue::Int(m.kind));
+            params.push(m.title.clone().map(DbValue::Text).unwrap_or(DbValue::Null));
+            params.push(DbValue::Text(DESIGNER_USER.into()));
+            params.push(DbValue::Text(DESIGNER_USER.into()));
+            params.push(DbValue::Bytes(m.content.clone().into_bytes()));
+        }
+        statements.push(TxStatement {
+            sql: format!("INSERT INTO `ASYS_SYSTEM` (`ID`, `NAME`, `KIND`, `TITLE`, `USER_NEW`, `DATE_NEW`, `USER_EDIT`, `DATE_EDIT`, `XMLDATA`) VALUES {marks} ON DUPLICATE KEY UPDATE `XMLDATA` = VALUES(`XMLDATA`), `TITLE` = VALUES(`TITLE`), `KIND` = VALUES(`KIND`), `USER_EDIT` = VALUES(`USER_EDIT`), `DATE_EDIT` = NOW()"),
+            params,
+        });
+        rows.clear();
+        *bytes = 0;
+    };
+    for item in items.iter().filter(|i| i.op != DeployOp::D) {
+        let m = by_key.get(item.key.as_str()).ok_or_else(|| format!("{} is not part of the local project.", item.key))?;
+        if !rows.is_empty() && (rows.len() >= BATCH_ROWS || bytes + m.content.len() > BATCH_BYTES) {
+            flush(&mut rows, &mut bytes, &mut statements);
+        }
+        bytes += m.content.len();
+        rows.push(m);
+    }
+    flush(&mut rows, &mut bytes, &mut statements);
+    let deletes: Vec<&PlanItem> = items.iter().filter(|i| i.op == DeployOp::D).collect();
+    for chunk in deletes.chunks(BATCH_ROWS) {
+        let cond = vec!["(`ID` = ? AND `KIND` = ?)"; chunk.len()].join(" OR ");
+        let mut params = Vec::with_capacity(chunk.len() * 2);
+        for item in chunk {
+            params.push(DbValue::Text(model_name(&item.key).to_string()));
+            params.push(DbValue::Int(deploy_encode::kind_of(item.key.split('/').next().unwrap_or("")).unwrap_or(-1)));
+        }
+        statements.push(TxStatement { sql: format!("DELETE FROM `ASYS_SYSTEM` WHERE {cond}"), params });
+    }
+    Ok(statements)
 }
 
 const DESIGNER_USER: &str = "_____DESIGNERANONYM";
@@ -325,8 +387,39 @@ pub fn plan(manager: &DbManager, project_root: &Path, force: bool, mapping: Opti
     let target = manager.database_label().ok_or("Not connected. Open the tunnel in the Services tab first.")?;
     mapping.verify_columns(&live_columns(manager, &mapping)?)?;
     let local = collect_local_models(project_root)?;
-    let remote = remote_models(manager, &mapping)?;
-    let items = compute_plan(&local, &remote, force);
+    plan_for(manager, target, mapping, &local, force)
+}
+
+fn md5_hex(text: &str) -> String {
+    use md5::{Digest, Md5};
+    Md5::digest(text.as_bytes()).iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// Per model of the system table a short MD5 of its text, computed by the database: the plan then needs a few bytes per
+/// model instead of the whole table over the tunnel. `None` when the database cannot do it; the caller compares full texts.
+fn remote_fingerprints(manager: &DbManager) -> Option<BTreeMap<String, String>> {
+    let r = manager.query_all("SELECT `ID`, `KIND`, MD5(CONVERT(`XMLDATA` USING utf8mb4)) FROM `ASYS_SYSTEM`").ok()?;
+    if r.truncated {
+        return None;
+    }
+    let mut out = BTreeMap::new();
+    for row in r.rows {
+        let mut cells = row.into_iter();
+        let name = cells.next().flatten()?;
+        let kind: i64 = cells.next().flatten()?.parse().ok()?;
+        let hash = cells.next().flatten().unwrap_or_default();
+        if let Some(folder) = deploy_encode::folder_of(kind) {
+            out.insert(format!("{folder}/{name}"), hash.to_lowercase());
+        }
+    }
+    Some(out)
+}
+
+fn plan_for(manager: &DbManager, target: String, mapping: DeployMapping, local: &[LocalModel], force: bool) -> Result<DeployPlan, String> {
+    let items = match mapping.is_system_table().then(|| remote_fingerprints(manager)).flatten() {
+        Some(hashes) => compute_plan_with(local, &hashes, force, |m, h| md5_hex(&m.content) == h),
+        None => compute_plan(local, &remote_models(manager, &mapping)?, force),
+    };
     let outdated = !items.is_empty();
     Ok(DeployPlan { target, items, outdated, mapping })
 }
@@ -341,6 +434,19 @@ pub struct ChangeView {
 pub fn show_changes(manager: &DbManager, project_root: &Path, key: &str, mapping: Option<DeployMapping>) -> Result<ChangeView, String> {
     let mapping = mapping.unwrap_or_default();
     mapping.validate()?;
+    if mapping.is_system_table() {
+        if let Some((folder, name)) = key.split_once('/') {
+            let plain = !name.is_empty() && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.');
+            if let (true, Some(kind)) = (plain, deploy_encode::kind_of(folder)) {
+                let dist = project_root.join("dist");
+                let main_file = dist.join(folder).join(name).join(format!("{name}.aod"));
+                let local = if main_file.is_file() { Some(deploy_encode::encode_model(&dist, &main_file)?) } else { None };
+                let sql = format!("SELECT CAST(`XMLDATA` AS CHAR) FROM `ASYS_SYSTEM` WHERE `ID` = '{name}' AND `KIND` = {kind}");
+                let remote = manager.query_all(&sql)?.rows.into_iter().next().and_then(|row| row.into_iter().next().flatten());
+                return Ok(ChangeView { local, remote });
+            }
+        }
+    }
     let local = collect_local_models(project_root)?.into_iter().find(|m| m.key == key).map(|m| m.content);
     let remote = remote_models(manager, &mapping)?.remove(key);
     Ok(ChangeView { local, remote })
@@ -358,13 +464,19 @@ pub fn execute(manager: &DbManager, project_root: &Path, keys: &[String], force:
     if !confirmed {
         return Err("Deploy was not confirmed.".into());
     }
-    let current = plan(manager, project_root, force, mapping)?;
-    let chosen: Vec<PlanItem> = current.items.iter().filter(|i| keys.contains(&i.key)).cloned().collect();
+    let mapping = mapping.unwrap_or_default();
+    mapping.validate()?;
+    let target = manager.database_label().ok_or("Not connected. Open the tunnel in the Services tab first.")?;
+    mapping.verify_columns(&live_columns(manager, &mapping)?)?;
+    let local = collect_local_models(project_root)?;
+    let current = plan_for(manager, target, mapping, &local, force)?;
+    let wanted: std::collections::HashSet<&str> = keys.iter().map(|k| k.as_str()).collect();
+    let chosen: Vec<PlanItem> = current.items.iter().filter(|i| wanted.contains(i.key.as_str())).cloned().collect();
     if chosen.is_empty() {
         return Err("Nothing selected, or the selection is no longer part of the plan.".into());
     }
-    let local = collect_local_models(project_root)?;
-    let mut statements = build_statements(&current.mapping, &chosen, &local)?;
+    let mut statements = if current.mapping.is_system_table() { batched_system_statements(&chosen, &local)? } else { build_statements(&current.mapping, &chosen, &local)? };
+    let rows = chosen.len();
     if current.mapping.is_system_table() {
         let author = std::env::var("USERNAME").or_else(|_| std::env::var("USER")).unwrap_or_default();
         let time_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0);
@@ -372,7 +484,7 @@ pub fn execute(manager: &DbManager, project_root: &Path, keys: &[String], force:
         statements.push(deploy_meta_statement(&xml_text(author.trim()), time_ms, &xml_text(version.trim())));
     }
     manager.transaction(&statements)?;
-    Ok(DeployOutcome { executed: statements.len(), target: current.target })
+    Ok(DeployOutcome { executed: rows, target: current.target })
 }
 
 #[cfg(test)]
@@ -395,6 +507,25 @@ mod tests {
         let err = m.verify_columns(&["NAME".into(), "BLOB".into()]).unwrap_err();
         assert!(err.contains("Existing columns: NAME, BLOB"));
         assert!(m.verify_columns(&[]).unwrap_err().contains("not found"));
+    }
+
+    #[test]
+    fn fingerprint_is_the_md5_the_database_returns() {
+        assert_eq!(md5_hex("abc"), "900150983cd24fb0d6963f7d28e17f72");
+    }
+
+    #[test]
+    fn batched_statements_write_many_models_per_statement() {
+        let local: Vec<LocalModel> = (0..400)
+            .map(|i| LocalModel { key: format!("entity/E{i}"), main_file: PathBuf::new(), content: format!("<x>{i}</x>"), kind: 1, title: None, extra_files: 0 })
+            .collect();
+        let mut items: Vec<PlanItem> = local.iter().map(|m| PlanItem { op: DeployOp::U, key: m.key.clone(), extra_files: 0, selected_by_default: true }).collect();
+        items.push(PlanItem { op: DeployOp::D, key: "entity/Gone".into(), extra_files: 0, selected_by_default: false });
+        let s = batched_system_statements(&items, &local).unwrap();
+        assert_eq!(s.len(), 4);
+        assert!(s[0].sql.contains("ON DUPLICATE KEY UPDATE"));
+        assert_eq!(s[0].params.len(), BATCH_ROWS * 7);
+        assert!(s[3].sql.starts_with("DELETE FROM `ASYS_SYSTEM` WHERE (`ID` = ? AND `KIND` = ?)"));
     }
 
     #[test]

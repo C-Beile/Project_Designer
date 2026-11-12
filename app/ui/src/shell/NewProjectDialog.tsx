@@ -113,9 +113,10 @@ export function NewProjectDialog({ api, currentProject, onClose, onCreated }: { 
     setBusy(true)
     setError(null)
     try {
-      if (branch && branch !== branches.current) {
-        if (branches.locals.includes(branch)) await api.gitCheckout(created, branch)
-        else await api.gitCreateBranch(created, branch, `origin/${branch}`)
+      const wanted = branch.trim()
+      if (wanted && wanted !== branches.current) {
+        if (branches.locals.includes(wanted)) await api.gitCheckout(created, wanted)
+        else await api.gitCreateBranch(created, wanted, `origin/${wanted}`)
       }
       onCreated(created)
     } catch (e) {

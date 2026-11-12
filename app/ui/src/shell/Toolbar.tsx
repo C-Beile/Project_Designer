@@ -11,6 +11,7 @@ import {
   IconRefresh,
   IconSaveAll,
   IconSql,
+  IconRest,
   IconTranspile,
   IconUndo,
 } from './icons'
@@ -182,6 +183,9 @@ export function Toolbar(p: ToolbarProps) {
         <>
           <ToolButton label="Deploy Project" hint={p.hasProject ? tip('Deploy Project', 'Mod+F8') : DEPLOY_DISABLED_HINT} enabled={p.hasProject} onClick={() => p.onCommand('project.deploy')}>
             <IconDeploy />
+          </ToolButton>
+          <ToolButton label="REST Client" hint="REST Client" enabled={p.hasProject} onClick={() => p.onCommand('tools.restClient')}>
+            <IconRest />
           </ToolButton>
           <ToolButton label="Execute SQL" hint={sqlOn ? 'Execute SQL' : 'Execute SQL (Execute SQL plugin deactivated)'} enabled={sqlOn} onClick={() => p.onCommand('tools.sqlPrompt')}>
             <IconSql />

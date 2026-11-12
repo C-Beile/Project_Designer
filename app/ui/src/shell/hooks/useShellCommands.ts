@@ -211,6 +211,9 @@ export function useShellCommands({
       if (top) setTreeSelection(top)
       showToolWindow('properties', false)
     },
+    'tools.restClient': () => {
+      requestShell('rest')
+    },
     'tools.sqlPrompt': () => {
       if (sqlActive) openSql('')
     },

@@ -166,6 +166,13 @@ export const IconSql = () => (
   </Svg>
 )
 
+export const IconRest = () => (
+  <Svg>
+    <path d="M2.5 8h11M10 4.5 13.5 8 10 11.5" stroke="var(--success)" />
+    <path d="M6 4.5 2.5 8 6 11.5" stroke="var(--warning)" />
+  </Svg>
+)
+
 export const IconDependencies = () => (
   <Svg>
     <circle cx="4" cy="4" r="1.8" stroke="var(--accent)" />

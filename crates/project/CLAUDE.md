@@ -31,6 +31,7 @@
 | `src/watch.rs` | Änderungen von außen erkennen (Fingerabdruck, Datei-Stempel). |
 | `src/settings.rs` | Eigene Einstellungen und Liste offener Projekte. |
 | `src/discover.rs` | `find_projects`: ADITO-Projekte direkt in einem Ordner finden (`.aditoprj` oder `package.json` plus Objektordner). |
+| `src/webservices.rs` | `list_webservices`: Entity-Webservices von Projekt und Modulen mit erlaubten Methoden und Login-Typen (nur lesen). |
 | `src/file_list.rs` | Dateinamen für die Schnellsuche, Theme-Dateien lesen. |
 | `src/import_resolve.rs` | Ziel eines `import ... from` finden. |
 | `src/jdito_types.rs` | JDito-Typdefinitionen fürs Code-Feld. |

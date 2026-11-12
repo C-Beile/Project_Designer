@@ -369,6 +369,7 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
       mnemonic: 'o',
       items: [
         item('tools.generateUuid', 'Generate UUID', true, { shortcut: 'Mod+Shift+U' }),
+        item('tools.restClient', 'REST Client', ctx.hasProject, { hint: ctx.hasProject ? 'Call the entity web services of the project' : undefined }),
         {
           id: 'tools.toolsMenu',
           kind: 'submenu',

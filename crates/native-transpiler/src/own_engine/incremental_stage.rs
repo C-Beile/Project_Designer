@@ -183,6 +183,47 @@ fn collect_manifest_lines(
     Ok(())
 }
 
+type PendingSnapshot = (PathBuf, std::thread::JoinHandle<()>);
+
+static PENDING_SNAPSHOTS: std::sync::Mutex<Vec<PendingSnapshot>> = std::sync::Mutex::new(Vec::new());
+
+/// Waits until the snapshot of an earlier run of this project is written; a new run must not start before.
+fn wait_for_snapshot(cache_root: &Path) {
+    let mine: Vec<PendingSnapshot> = {
+        let Ok(mut pending) = PENDING_SNAPSHOTS.lock() else { return };
+        let (mine, rest): (Vec<_>, Vec<_>) = std::mem::take(&mut *pending).into_iter().partition(|(root, _)| root == cache_root);
+        *pending = rest;
+        mine
+    };
+    for (_, handle) in mine {
+        let _ = handle.join();
+    }
+}
+
+/// Writes the snapshot and the manifest behind the back of the user: the build result is already complete, the snapshot
+/// only serves the next run. The manifest is removed first and written last, so an interrupted copy is never used.
+fn write_snapshot_later(cache_root: PathBuf, output_dir: PathBuf, snapshot: PathBuf, manifest_file: PathBuf, state_file: PathBuf, manifest: String) {
+    let root = cache_root.clone();
+    let handle = std::thread::spawn(move || {
+        let _ = fs::remove_file(&manifest_file);
+        let _ = fs::remove_file(&state_file);
+        if snapshot.is_dir() {
+            let Ok(entries) = fs::read_dir(&snapshot).map(|rd| rd.flatten().map(|e| e.path()).collect::<Vec<_>>()) else { return };
+            let _ = crate::own_engine::copy_phase_stage::parallel_try_each(&entries, |path| if path.is_dir() { fs::remove_dir_all(path) } else { fs::remove_file(path) });
+            let _ = fs::remove_dir_all(&snapshot);
+        }
+        if copy_tree_verbatim(&output_dir, &snapshot).is_err() {
+            return;
+        }
+        if fs::write(&manifest_file, &manifest).is_ok() {
+            remember_output(&state_file, &output_dir, &manifest);
+        }
+    });
+    if let Ok(mut pending) = PENDING_SNAPSHOTS.lock() {
+        pending.push((root, handle));
+    }
+}
+
 /// Plain recursive verbatim copy (source -> dest), no ignore logic - both the snapshot and
 /// `output_dir` are already-filtered trees produced by the earlier pipeline stages, this just
 /// duplicates one into the other.
@@ -260,6 +301,7 @@ pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<Increme
             eprintln!("[{:>7.1}s] {what}", clock.elapsed().as_secs_f64());
         }
     };
+    wait_for_snapshot(&cache_dir(project_home));
     crate::own_engine::progress::report(1, "Reading the modules");
     let graph = resolve_npm_modules(project_home).map_err(|e| IncrementalError::Resolve(e.to_string()))?;
     lap("modules read");
@@ -328,13 +370,8 @@ pub fn run_incremental(project_home: &Path, output_dir: &Path) -> Result<Increme
     lap("aliases, preferences and languages merged");
     let cache_root = cache_dir(project_home);
     fs::create_dir_all(&cache_root).map_err(|source| IncrementalError::Cache { path: cache_root.clone(), source })?;
-    if snapshot.is_dir() {
-        fs::remove_dir_all(&snapshot).map_err(|source| IncrementalError::Cache { path: snapshot.clone(), source })?;
-    }
-    copy_tree_verbatim(output_dir, &snapshot).map_err(|source| IncrementalError::Cache { path: snapshot.clone(), source })?;
-    fs::write(&manifest_file, &manifest).map_err(|source| IncrementalError::Cache { path: manifest_file.clone(), source })?;
-    remember_output(&state_file, output_dir, &manifest);
-    lap("cache snapshot written");
+    write_snapshot_later(cache_root, output_dir.to_path_buf(), snapshot, manifest_file, state_file, manifest);
+    lap("cache snapshot handed over");
 
     Ok(IncrementalReport { cache_hit: false, manifest_files_scanned: files_scanned })
 }
@@ -423,6 +460,7 @@ mod tests {
         let first_bytes = fs::read(output_dir.join("entity/Foo_entity/Foo_entity.aod")).unwrap();
         assert!(String::from_utf8_lossy(&first_bytes).contains("Original"));
 
+        wait_for_snapshot(&cache_dir(&project));
         // Tamper with output_dir's own content directly - a real second pipeline run would
         // overwrite this back to "Original"; a cache HIT must instead copy the untouched
         // snapshot over it, so this tampered value must disappear.

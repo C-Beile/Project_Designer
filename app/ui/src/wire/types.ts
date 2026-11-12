@@ -54,7 +54,7 @@ export function asArray(value: WireValue | undefined): WireValue[] {
 // Mirrors crates/project/src/tree.rs's `TreeNode`. Optional fields are omitted by the backend when
 // empty/false. `id` is the absolute file path for objects and files (what getPropertyTree/save
 // take) and not unique within a tree: the same entity shows in `entity` and below its context.
-export type TreeNodeKind = 'project' | 'folder' | 'object' | 'file' | 'dir' | 'libraries' | 'module' | 'service' | 'tunnel' | 'aliasconfig'
+export type TreeNodeKind = 'project' | 'folder' | 'object' | 'file' | 'dir' | 'libraries' | 'module' | 'service' | 'tunnel' | 'aliasconfig' | 'rest'
 
 export interface TreeNode {
   id: string
@@ -468,6 +468,44 @@ export interface ForwardStatusDto {
 }
 
 /** An ADITO project found inside the projects folder. */
+export interface WebserviceDto {
+  name: string
+  module: string | null
+  methods: string[]
+  loginTypes: string[]
+  fields: number
+}
+
+export interface RestUserDto {
+  id: string
+  title: string
+}
+
+export interface RestAuthDto {
+  kind: 'none' | 'basic' | 'usertoken'
+  user: string
+  tokenId: string
+}
+
+export interface RestRequestDto {
+  url: string
+  method: string
+  headers: [string, string][]
+  body: string | null
+  auth: RestAuthDto
+  insecure: boolean
+  timeoutSecs?: number
+}
+
+export interface RestResponseDto {
+  status: number
+  reason: string
+  headers: [string, string][]
+  body: string
+  elapsedMs: number
+  size: number
+}
+
 export interface FoundProjectDto {
   path: string
   name: string

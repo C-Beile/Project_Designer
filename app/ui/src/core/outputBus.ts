@@ -20,7 +20,7 @@ export function logOutput(sub: OutputSubTab, text: string, level: OutputLine['le
 }
 
 // Small requests from editors to the shell (e.g. "show the Services window").
-export type ShellRequest = 'services' | 'workspace'
+export type ShellRequest = 'services' | 'workspace' | 'rest'
 
 const requestListeners = new Set<(r: ShellRequest) => void>()
 

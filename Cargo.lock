@@ -1045,6 +1045,7 @@ name = "deploy"
 version = "0.1.0"
 dependencies = [
  "database",
+ "md-5",
  "plugin-api",
  "serde",
  "serde_json",
@@ -1118,6 +1119,7 @@ dependencies = [
  "platform",
  "plugin-api",
  "project",
+ "reqwest",
  "serde",
  "serde_json",
  "ssh-tunnel",

@@ -29,7 +29,11 @@ export function isFileNode(node: TreeNode): boolean {
 
 // Virtual tabs of the Services tab (SQL editors): no file behind them.
 export function isServiceNode(node: TreeNode): boolean {
-  return node.kind === 'service' || node.kind === 'tunnel' || node.kind === 'aliasconfig'
+  return node.kind === 'service' || node.kind === 'tunnel' || node.kind === 'aliasconfig' || node.kind === 'rest'
+}
+
+export function isRestNode(node: TreeNode): boolean {
+  return node.kind === 'rest'
 }
 
 // Tab of one alias config of a system (shot 84); `node.path` holds its reference as JSON.

@@ -56,6 +56,7 @@ Reihenfolge in `run_incremental` (`own_engine/incremental_stage.rs`):
 - Ziel ist ein Byte-genauer Nachbau des offiziellen `dist`. Keine "fast gleiche" Ausgabe: erst `own_vs_dist` oder Harness laufen lassen.
 - Die Reihenfolge der Stages ist wichtig (z. B. Erweiterungspunkte erst nach den Modifikationen, Aliase erst nach den Modifikationen). Neue Stage: in `run_incremental` an die richtige Stelle setzen und in `own_engine/mod.rs` exportieren.
 - Der Cache liegt im Projekt unter `.forge-incremental-cache/` (`manifest.txt`, `snapshot/`, `output-state`). Umgebungsvariable `FORGE_INCREMENTAL_CACHE_DIR` verlegt ihn (z. B. für schreibgeschützte Repositories). Eine geänderte Stage-Logik ändert das Manifest nicht: Cache-Ordner löschen, sonst kommt das alte Ergebnis.
+- Der Snapshot wird nach dem Build in einem Hintergrund-Thread geschrieben (`write_snapshot_later`), damit der Build früher fertig meldet. Das Manifest wird zuletzt geschrieben. Der nächste Lauf wartet darauf (`wait_for_snapshot`).
 - `FORGE_TRANSPILE_TRACE=1` gibt Zeiten und Modifikations-Fehler auf stderr aus.
 - Das Feature `harness` ist Standard, die Engine braucht es nicht. Ohne: `cargo check -p native-transpiler --no-default-features`.
 - Kommentare in `linked_files_stage.rs` ("fifth and final") und `incremental_stage.rs` ("sixth and final") stammen aus der Bauzeit und stimmen nicht mehr mit dem Ablauf überein.

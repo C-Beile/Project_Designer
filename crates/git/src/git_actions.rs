@@ -160,6 +160,7 @@ pub fn checkout(dir: &Path, branch: &str) -> Result<GitOutput, String> {
 pub fn create_branch(dir: &Path, name: &str, start: Option<&str>) -> Result<GitOutput, String> {
     prepare();
     let name = validate_branch_name(name)?;
+    let start = start.map(str::trim).filter(|s| !s.is_empty());
     let root = repo_root(dir)?;
     let git = CommandGitOperations::new();
     let branches = git.list_branches(&root).map_err(|e| plugin_api::at!(e.to_string()))?;
