@@ -17,6 +17,7 @@
 
 pub mod actions;
 pub mod content_search;
+pub mod webservices;
 pub mod discover;
 pub mod file_list;
 pub mod import_resolve;

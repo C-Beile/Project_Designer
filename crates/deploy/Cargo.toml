@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 database = { path = "../database" }
 plugin-api = { path = "../plugin-api" }
+md-5 = "0.10"
 serde = { workspace = true }
 serde_json = { workspace = true }
 

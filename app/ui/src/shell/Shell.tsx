@@ -339,6 +339,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       subscribeShellRequests((r) => {
         if (r === 'services') showToolWindow('services')
         if (r === 'workspace') setWorkspaceOpen(true)
+        if (r === 'rest') void handleOpen({ id: 'rest:1', label: 'REST API', object_type: null, is_leaf: true, children: [], kind: 'rest' })
       }),
     [showToolWindow, handleOpen],
   )

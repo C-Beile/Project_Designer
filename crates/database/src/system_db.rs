@@ -358,6 +358,28 @@ pub fn assigned_roles(manager: &DbManager) -> Result<Vec<String>, String> {
     Ok(roles)
 }
 
+/// A user that may call web services: has the platform role INTERNAL_WEBSERVICE. `title` is the login name.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct WebserviceUser {
+    pub id: String,
+    pub title: String,
+}
+
+pub fn webservice_users(manager: &DbManager) -> Result<Vec<WebserviceUser>, String> {
+    let sql = "SELECT t.NAME, t.PROPVAL FROM ASYS_USERS t WHERE t.PROPKEY = 'title' AND t.NAME IN (SELECT r.NAME FROM ASYS_USERS r WHERE r.PROPKEY = 'roleNames' AND UPPER(r.PROPVAL) LIKE '%INTERNAL_WEBSERVICE%') ORDER BY t.PROPVAL";
+    let result = manager.query(sql, false)?;
+    Ok(result
+        .rows
+        .into_iter()
+        .filter_map(|row| {
+            let mut cells = row.into_iter();
+            let id = cells.next()??;
+            let title = cells.next().flatten().unwrap_or_default();
+            (!title.is_empty()).then_some(WebserviceUser { id, title })
+        })
+        .collect())
+}
+
 pub fn read_users(manager: &DbManager) -> Result<TableDump, String> {
     let mut columns: Vec<String> = Vec::new();
     let mut rows: Vec<Vec<Option<String>>> = Vec::new();

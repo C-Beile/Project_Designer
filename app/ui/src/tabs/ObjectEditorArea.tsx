@@ -8,13 +8,14 @@ import { ErrorBoundary } from '../core/errorHandling'
 import { useDialog } from '../core/plugins/registry'
 import { UsersTab } from '../services/UsersTable'
 import { systemKey, useTunnelState } from '../services/tunnelState'
-import { SUB_TAB_LABELS, isFileNode, isServiceNode, isTunnelNode, isAliasConfigNode, subTabsFor, type EditorTab, type SubTab } from './tabModel'
+import { SUB_TAB_LABELS, isFileNode, isServiceNode, isRestNode, isTunnelNode, isAliasConfigNode, subTabsFor, type EditorTab, type SubTab } from './tabModel'
 
 // Content of the active editor tab: the sub-tab row (Editor | Source | History, plus Users for
 // system and alias; LAYOUT_SPEC §6) and the selected view. Monaco is only loaded once a
 // Source view or a plain file is actually opened.
 
 const SourceEditor = lazy(() => import('./SourceEditor').then((m) => ({ default: m.SourceEditor })))
+const RestEditor = lazy(() => import('../services/RestEditor').then((m) => ({ default: m.RestEditor })))
 const SqlEditor = lazy(() => import('../services/SqlEditor').then((m) => ({ default: m.SqlEditor })))
 const DbBrowserTab = lazy(() => import('./DbBrowserTab').then((m) => ({ default: m.DbBrowserTab })))
 const AliasConfigTab = lazy(() => import('./AliasConfigTab').then((m) => ({ default: m.AliasConfigTab })))
@@ -87,6 +88,12 @@ export function ObjectEditorArea({
     body = (
       <Suspense fallback={Loading}>
         {node.id.startsWith('dbbrowser:') ? <DbBrowserTab api={api} path={node.path} /> : <AliasConfigTab api={api} path={node.path} />}
+      </Suspense>
+    )
+  } else if (isRestNode(node)) {
+    body = (
+      <Suspense fallback={Loading}>
+        <RestEditor api={api} projectRoot={projectRoot} />
       </Suspense>
     )
   } else if (isTunnelNode(node)) {

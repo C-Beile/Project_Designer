@@ -45,6 +45,7 @@
 @import './core/Modal.css';
 @import './styles/options-dialog.css';
 @import './shell/GeneralOptions.css';
+@import './services/RestEditor.css';
 @import './shell/LocalDataDialog.css';
 @import './shell/TableCenterDialog.css';
 @import './styles/toolbar-plugins-dialogs.css';

@@ -41,6 +41,10 @@ export function createMockForgeApi(options: {
   tunnelCalls?: { row: import('../wire/types').TunnelRowDto; keyFile: string | null; hasPassword: boolean }[]
   aliasConfigs?: Record<string, import('../wire/types').AliasConfigDto[]>
   foundProjects?: import('../wire/types').FoundProjectDto[]
+  webservices?: import('../wire/types').WebserviceDto[]
+  restUsers?: import('../wire/types').RestUserDto[]
+  restResponse?: import('../wire/types').RestResponseDto
+  restHasPassword?: boolean
   tunnelRows?: Record<string, import('../wire/types').TunnelRowDto[]>
   dbResults?: Record<string, SqlResult>
   dbTables?: SchemaTable[]
@@ -229,6 +233,24 @@ export function createMockForgeApi(options: {
     },
     async findProjectsInFolder() {
       return options.foundProjects ?? []
+    },
+    async restListWebservices() {
+      return options.webservices ?? []
+    },
+    async restUsers() {
+      return options.restUsers ?? []
+    },
+    async restSend() {
+      return options.restResponse ?? { status: 200, reason: 'OK', headers: [['content-type', 'application/json']], body: '[]', elapsedMs: 5, size: 2 }
+    },
+    async restHasPassword() {
+      return options.restHasPassword ?? false
+    },
+    async restSavePassword() {
+      // no-op
+    },
+    async restForgetPassword() {
+      // no-op
     },
     async pickProjectFolders() {
       return options.pickedFolder ? [options.pickedFolder] : []

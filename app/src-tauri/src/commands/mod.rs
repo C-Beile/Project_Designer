@@ -6,6 +6,7 @@ pub mod files;
 pub mod misc;
 pub mod plugins;
 pub mod project;
+pub mod rest;
 pub mod settings;
 pub mod transpile;
 

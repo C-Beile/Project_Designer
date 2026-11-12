@@ -1,4 +1,4 @@
-import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, WebserviceDto, RestUserDto, RestRequestDto, RestResponseDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The frontend's one seam onto the generic Tauri command surface (architecture.md §6: "Commands
 // sind generisch ... nicht pro Editor-Typ dupliziert"). Every editor component talks to this
@@ -71,6 +71,14 @@ export interface ForgeApi {
   pickProjectFolders(title?: string): Promise<string[]>
   /** The ADITO projects directly inside a folder ("Open Projects from Folder"). */
   findProjectsInFolder(folder: string): Promise<FoundProjectDto[]>
+  /** Entity web services of the project and its modules, with the methods each one allows. */
+  restListWebservices(projectRoot: string): Promise<WebserviceDto[]>
+  /** Users of the active system with the role INTERNAL_WEBSERVICE (login name = title). */
+  restUsers(): Promise<RestUserDto[]>
+  restSend(request: RestRequestDto): Promise<RestResponseDto>
+  restHasPassword(url: string, user: string): Promise<boolean>
+  restSavePassword(url: string, user: string, password: string): Promise<void>
+  restForgetPassword(url: string, user: string): Promise<void>
   setRecentProject(path: string): Promise<void>
   // P8 Tools > Options: Forge's own settings, stored in its app data folder.
   getSettings(): Promise<ForgeSettings>
