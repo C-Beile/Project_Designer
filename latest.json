@@ -1,0 +1,19 @@
+{
+  "version": "1.0.8",
+  "notes": "**Full Changelog**: https://github.com/C-Beile/Project_Designer/compare/v1.0.7...v1.0.8",
+  "pub_date": "2026-11-12T14:25:27Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRZFVHeDVYNVovNDhFc1ArRmU3Sll6c0VKNVZFYUtqWXZxL0F1SDkrNGNETHEzeTI4K0prNEpKaDRzeTB2Mklzak5Id2lrTXBEdG50clRsbTFoRUtEZ2hCcmdQOWRsaWcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NDkzMjY2CWZpbGU6RGl0byBEZXNpZ25lcl8xLjAuOF94NjQtc2V0dXAuZXhlCXZlcnNpb246MS4wLjgKRGZMS2NXUUl2MEFEUTBhVExCOVozWEZlWVRyYk9RWWxqWVp3RGlzcDJSdDdFL2d4T3Nsdkc5UlUwWXFrMUpacWdFV1lPYllES1JOVFNmUjRZQTJuRHc9PQo=",
+      "url": "https://api.github.com/repos/C-Beile/Project_designer/releases/assets/"
+    },
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRZFVHeDVYNVovNHhtTEZ1ZFVSR0dJSEl0NWFsMVJFTkZFZ0dTRXVJdVF6b09NNlh3dE5LQU9yMmIrT01aVjdNRTNzd1k5WVFmV0oyREx5ZGNrNEVBa2hmOGNnWlpRcVFvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NDkzNTAyCWZpbGU6RGl0byBEZXNpZ25lci5hcHAudGFyLmd6CXZlcnNpb246MS4wLjgKR2Y3YTQ1dUJiSXJYZUxXaTFnMW5IRldZZTVuQTdJdmRRTTdSblk5TVhnTDRiaU5XaDZUc1diSkczVjNGRE5Vd3Y4cVBpUm82aWdkb3JORFQzYk5OQ0E9PQo=",
+      "url": "https://api.github.com/repos/C-Beile/Project_designer/releases/assets/739785255"
+    },
+    "darwin-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRZFVHeDVYNVovNHhtTEZ1ZFVSR0dJSEl0NWFsMVJFTkZFZ0dTRXVJdVF6b09NNlh3dE5LQU9yMmIrT01aVjdNRTNzd1k5WVFmV0oyREx5ZGNrNEVBa2hmOGNnWlpRcVFvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NDkzNTAyCWZpbGU6RGl0byBEZXNpZ25lci5hcHAudGFyLmd6CXZlcnNpb246MS4wLjgKR2Y3YTQ1dUJiSXJYZUxXaTFnMW5IRldZZTVuQTdJdmRRTTdSblk5TVhnTDRiaU5XaDZUc1diSkczVjNGRE5Vd3Y4cVBpUm82aWdkb3JORFQzYk5OQ0E9PQo=",
+      "url": "https://api.github.com/repos/C-Beile/Project_designer/releases/assets/739785255"
+    }
+  }
+}
