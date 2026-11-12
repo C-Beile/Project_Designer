@@ -20,7 +20,7 @@ import type { TranspilerEngineId } from '../settings/transpilerEngine'
 import { TOOLBAR_GROUPS, type ToolbarGroup, type ToolbarPrefs } from './toolbarPrefs'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { formatShortcut } from '../core/shortcuts'
-import { useToolbarItems, type ToolbarContext } from '../core/plugins/registry'
+import { toolbarItemState, useToolbarItems, type ToolbarContext } from '../core/plugins/registry'
 
 export const DEPLOY_DISABLED_HINT = 'Deploy (open a project first)'
 export const RUN_DISABLED_HINT = 'Not available yet: Dito Designer cannot start a server or client'
@@ -69,7 +69,7 @@ function PluginToolbarGroup({ group, ctx, onCommand }: { group: string; ctx: Too
   return (
     <>
       {items.map((i) => {
-        const st = i.state?.(ctx) ?? { enabled: true }
+        const st = toolbarItemState(i, ctx)
         return (
           <ToolButton key={i.id} label={i.label} hint={st.hint} enabled={st.enabled} onClick={() => onCommand(i.command)}>
             {i.icon}
@@ -98,6 +98,10 @@ export interface ToolbarProps {
   onToggleGroup: (group: ToolbarGroup) => void
   /** Git plugin and Execute SQL switched on in Tools > Plugins. */
   gitActive?: boolean
+  /** Project folder is inside a Git repository (false dims the Git buttons). */
+  gitRepo?: boolean
+  /** The project has changed files (false dims Commit). */
+  gitChanges?: boolean
   sqlActive?: boolean
 }
 
@@ -206,7 +210,7 @@ export function Toolbar(p: ToolbarProps) {
           <Sep />
         </>
       ) : null}
-      {g.git ? <PluginToolbarGroup group="git" ctx={{ hasProject: p.hasProject, pluginActive: p.gitActive !== false }} onCommand={p.onCommand} /> : null}
+      {g.git ? <PluginToolbarGroup group="git" ctx={{ hasProject: p.hasProject, pluginActive: p.gitActive !== false, gitRepo: p.gitRepo !== false, gitChanges: p.gitChanges !== false }} onCommand={p.onCommand} /> : null}
       {g.analytics ? (
         <>
           <Sep />

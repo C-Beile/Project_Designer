@@ -1,52 +1,42 @@
-const KEY = 'forge.workspaceFolder'
-const LIST_KEY = 'forge.workspaceFolders'
+import { configGet, configSet, onConfigChange, slash, touches } from './appConfig'
+
+// Der Ordner, in dem "Open Projects from Folder" sucht, und die zuletzt benutzten Ordner.
+// Abschnitt [workspace] in designer.conf: `folder` und `recent`. Ordner stehen immer mit / in der Datei.
+
+const FOLDER_PATH = ['workspace', 'folder'] as const
+const RECENT_PATH = ['workspace', 'recent'] as const
 const MAX_FOLDERS = 8
 
 const listeners = new Set<() => void>()
 let pending: string | null = null
 
-function read(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key)
-  } catch {
-    return null
-  }
-}
+// Auch Änderungen aus einem anderen Fenster erreichen die Anzeige.
+onConfigChange((path) => {
+  if (touches(path, ['workspace'])) listeners.forEach((l) => l())
+})
 
-function write(key: string, value: string): void {
-  try {
-    window.localStorage.setItem(key, value)
-  } catch {
-    return
-  }
-}
+const trimSlash = (p: string) => p.replace(/\/+$/, '').toLowerCase()
+const same = (a: string, b: string) => trimSlash(slash(a)) === trimSlash(slash(b))
 
 export function getWorkspaceFolders(): string[] {
-  try {
-    const list = JSON.parse(read(LIST_KEY) ?? '[]') as unknown
-    if (Array.isArray(list)) return list.filter((f): f is string => typeof f === 'string' && f !== '').slice(0, MAX_FOLDERS)
-  } catch {
-    return []
-  }
-  return []
+  const list = configGet<unknown>(...RECENT_PATH)
+  return Array.isArray(list) ? list.filter((f): f is string => typeof f === 'string' && f !== '').slice(0, MAX_FOLDERS) : []
 }
 
 export function getWorkspaceFolder(): string {
-  return read(KEY) ?? getWorkspaceFolders()[0] ?? ''
+  return configGet<string>(...FOLDER_PATH) ?? getWorkspaceFolders()[0] ?? ''
 }
 
 export function setWorkspaceFolder(folder: string): void {
-  write(KEY, folder)
+  configSet(FOLDER_PATH, folder === '' ? undefined : folder)
   if (folder === '') return
-  const same = (a: string, b: string) => a.replace(/[\\/]+$/, '').toLowerCase() === b.replace(/[\\/]+$/, '').toLowerCase()
-  write(LIST_KEY, JSON.stringify([folder, ...getWorkspaceFolders().filter((f) => !same(f, folder))].slice(0, MAX_FOLDERS)))
+  configSet(RECENT_PATH, [folder, ...getWorkspaceFolders().filter((f) => !same(f, folder))].slice(0, MAX_FOLDERS))
   listeners.forEach((l) => l())
 }
 
 export function removeWorkspaceFolder(folder: string): void {
-  const same = (a: string, b: string) => a.replace(/[\/]+$/, '').toLowerCase() === b.replace(/[\/]+$/, '').toLowerCase()
-  write(LIST_KEY, JSON.stringify(getWorkspaceFolders().filter((f) => !same(f, folder))))
-  if (same(read(KEY) ?? '', folder)) write(KEY, '')
+  configSet(RECENT_PATH, getWorkspaceFolders().filter((f) => !same(f, folder)))
+  if (same(configGet<string>(...FOLDER_PATH) ?? '', folder)) configSet(FOLDER_PATH, undefined)
   listeners.forEach((l) => l())
 }
 

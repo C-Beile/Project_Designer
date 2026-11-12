@@ -1,4 +1,4 @@
-import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, WebserviceDto, RestUserDto, RestRequestDto, RestResponseDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, IndexStatus, VerifyOutcome, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, WebserviceDto, RestUserDto, RestRequestDto, RestResponseDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, RepoLink, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The frontend's one seam onto the generic Tauri command surface (architecture.md §6: "Commands
 // sind generisch ... nicht pro Editor-Typ dupliziert"). Every editor component talks to this
@@ -30,8 +30,14 @@ export interface ForgeApi {
   reloadObject(nodeId: string): Promise<void>
   /** Open objects that changed (or vanished) on disk since they were read or saved. */
   externalChanges(nodeIds: string[]): Promise<string[]>
-  /** True when project files were added, removed or edited since the previous call. */
-  projectChanged(projectRoot: string): Promise<boolean>
+  /** State of the project index (null = no index for this project). */
+  indexStatus(projectRoot: string): Promise<IndexStatus | null>
+  /** Compares the project with the disk; changes come as the event `forge://project-changed`. */
+  indexVerify(projectRoot: string): Promise<VerifyOutcome>
+  /** Throws the index away and builds it again. */
+  indexRebuild(projectRoot: string): Promise<void>
+  /** Debug: writes the whole index as JSON into the log folder and returns the file path. */
+  indexDump(projectRoot: string): Promise<string>
   openLogFolder(): Promise<string>
   openBackupFolder(): Promise<string>
   /** Writes a frontend error to the log file; resolves to the log file path. */
@@ -82,6 +88,10 @@ export interface ForgeApi {
   setRecentProject(path: string): Promise<void>
   // P8 Tools > Options: Forge's own settings, stored in its app data folder.
   getSettings(): Promise<ForgeSettings>
+  /** The whole app configuration (`designer.conf`) as a JSON object; loaded once at start (`settings/appConfig.ts`). */
+  configGet(): Promise<Record<string, unknown>>
+  /** Replaces the value at `path` (`['appearance', 'theme']`); `null` removes it. Empty values are never stored. */
+  configSet(path: string[], value: unknown): Promise<void>
   setSettings(settings: ForgeSettings): Promise<void>
   // The Designer installation automatic discovery would use, `null` if none was found.
   detectDesignerInstall(): Promise<string | null>
@@ -227,6 +237,12 @@ export interface ForgeApi {
   /** Pushes the current branch up to this unpushed commit. */
   gitPushTo(projectRoot: string, hash: string): Promise<GitOutput>
   gitCheckout(projectRoot: string, branch: string): Promise<GitOutput>
+  /** Where the project folder is linked to: is it a repository, the address of `origin`, the branch. Works without a repository. */
+  gitRepoLink(projectRoot: string): Promise<RepoLink>
+  /** Signs in at the https remote `origin` with user name and access token (a `git ls-remote`); Git then keeps the credentials. Throws when the server refuses them. */
+  gitLogin(projectRoot: string, user: string, password: string): Promise<void>
+  /** Sets `origin` to `url`. Without a repository it runs `git init`, fetches and takes over the remote branch; files stay as they are. The password is used for this call only. */
+  gitConnect(projectRoot: string, url: string, sshKey: string | null, user: string | null, password: string | null): Promise<string>
   /** New Project: clones a repository into `<location>/<name>` and returns the project folder. The password is used for this call only. */
   projectClone(url: string, location: string, name: string, sshKey: string | null, password: string | null): Promise<string>
   /** New Project: creates an empty project (package.json of type project) and returns its folder. */

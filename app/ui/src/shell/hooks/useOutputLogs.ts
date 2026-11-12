@@ -11,6 +11,7 @@ export function areaOf(kind: string, message: string): string {
   const plugin = message.match(/^plugin_call ([\w-]+)\./)
   if (plugin) return plugin[1]
   if (kind === 'UI-ERROR') return 'ui'
+  if (message.startsWith('index ')) return 'index'
   if (kind === 'PERF') return 'perf'
   return 'app'
 }

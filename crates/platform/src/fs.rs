@@ -13,7 +13,93 @@
 use crate::error::PlatformError;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use serde::Serialize;
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
+use std::time::{Duration, Instant, UNIX_EPOCH};
+
+/// Size and modification time of a file. Two equal stamps mean "probably unchanged".
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct FileStamp {
+    pub len: u64,
+    pub modified_ms: u128,
+}
+
+/// `None` when the file does not exist (anymore).
+#[must_use]
+pub fn file_stamp(path: &Path) -> Option<FileStamp> {
+    let meta = std::fs::metadata(path).ok()?;
+    Some(stamp_of(&meta))
+}
+
+/// Stamp from metadata already in hand (a directory walk gets it for free on Windows).
+#[must_use]
+pub fn stamp_of(meta: &std::fs::Metadata) -> FileStamp {
+    let modified_ms = meta.modified().ok().and_then(|t| t.duration_since(UNIX_EPOCH).ok()).map(|d| d.as_millis()).unwrap_or(0);
+    FileStamp { len: meta.len(), modified_ms }
+}
+
+/// Path as a map key: on Windows case-insensitive and with one separator, elsewhere unchanged.
+#[must_use]
+pub fn path_key(path: &Path) -> String {
+    let text = path.to_string_lossy().replace('\\', "/");
+    let text = text.trim_end_matches('/').to_string();
+    if cfg!(windows) {
+        text.to_lowercase()
+    } else {
+        text
+    }
+}
+
+/// How long a note about an own write stays valid.
+const OWN_WRITE_TTL: Duration = Duration::from_secs(5);
+
+/// Register of writes made by the app itself, so the file watcher can tell them from outside changes.
+#[derive(Default)]
+struct OwnWrites {
+    // key -> (stamp after the write or None for "any", time of the note)
+    map: HashMap<String, (Option<FileStamp>, Instant)>,
+}
+
+impl OwnWrites {
+    fn note(&mut self, path: &Path, stamp: Option<FileStamp>, now: Instant) {
+        self.map.retain(|_, (_, at)| now.saturating_duration_since(*at) < OWN_WRITE_TTL);
+        self.map.insert(path_key(path), (stamp, now));
+    }
+
+    fn take(&mut self, path: &Path, current: Option<FileStamp>, now: Instant) -> bool {
+        let key = path_key(path);
+        let Some((stamp, at)) = self.map.remove(&key) else { return false };
+        if now.saturating_duration_since(at) >= OWN_WRITE_TTL {
+            return false;
+        }
+        match stamp {
+            None => true,
+            Some(s) => Some(s) == current,
+        }
+    }
+}
+
+static OWN_WRITES: Mutex<Option<OwnWrites>> = Mutex::new(None);
+
+fn with_own_writes<R>(f: impl FnOnce(&mut OwnWrites) -> R) -> R {
+    let mut guard = OWN_WRITES.lock().unwrap_or_else(|p| p.into_inner());
+    f(guard.get_or_insert_with(OwnWrites::default))
+}
+
+/// For writers that use `std::fs` directly (rename, new object, zip import): "this change at `path` is mine".
+/// Matches any stamp and is valid for about 5 seconds.
+pub fn note_own_change(path: &Path) {
+    with_own_writes(|w| w.note(path, None, Instant::now()));
+}
+
+/// True once if `path` was written by the app a moment ago (and still has the stamp the write left).
+/// Consumes the note.
+#[must_use]
+pub fn take_own_write(path: &Path, current: Option<FileStamp>) -> bool {
+    with_own_writes(|w| w.take(path, current, Instant::now()))
+}
 
 static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -52,7 +138,10 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), PlatformError> {
         // must also never shadow the original error (this file may already be gone).
         let _ = std::fs::remove_file(&temp_path);
         PlatformError::AtomicWrite { path: path.to_path_buf(), source }
-    })
+    })?;
+    let stamp = file_stamp(path);
+    with_own_writes(|w| w.note(path, stamp, Instant::now()));
+    Ok(())
 }
 
 fn write_temp_then_rename(target: &Path, temp_path: &Path, bytes: &[u8]) -> std::io::Result<()> {
@@ -66,6 +155,60 @@ fn write_temp_then_rename(target: &Path, temp_path: &Path, bytes: &[u8]) -> std:
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stamp_is_none_for_a_missing_file_and_changes_with_content_length() {
+        let f = std::env::temp_dir().join(format!("forge-stamp-{}.aod", std::process::id()));
+        assert_eq!(file_stamp(&f), None);
+        std::fs::write(&f, "a").unwrap();
+        let a = file_stamp(&f).unwrap();
+        std::fs::write(&f, "abc").unwrap();
+        assert_ne!(a, file_stamp(&f).unwrap());
+        std::fs::remove_file(&f).ok();
+    }
+
+    #[test]
+    fn path_key_ignores_separator_and_trailing_slash() {
+        assert_eq!(path_key(Path::new("C:/a/b/")), path_key(Path::new("C:\\a\\b")));
+        if cfg!(windows) {
+            assert_eq!(path_key(Path::new("C:/A/b")), path_key(Path::new("c:/a/B")));
+        }
+    }
+
+    #[test]
+    fn own_write_is_taken_once_and_only_with_the_matching_stamp() {
+        let now = Instant::now();
+        let p = Path::new("C:/proj/x.aod");
+        let s = FileStamp { len: 3, modified_ms: 10 };
+        let mut w = OwnWrites::default();
+        w.note(p, Some(s), now);
+        assert!(w.take(p, Some(s), now));
+        assert!(!w.take(p, Some(s), now), "consumed");
+        w.note(p, Some(s), now);
+        assert!(!w.take(p, Some(FileStamp { len: 4, modified_ms: 10 }), now), "other stamp = outside change");
+        w.note(p, None, now);
+        assert!(w.take(p, None, now), "None matches anything");
+    }
+
+    #[test]
+    fn own_write_expires() {
+        let now = Instant::now();
+        let p = Path::new("C:/proj/y.aod");
+        let mut w = OwnWrites::default();
+        w.note(p, None, now);
+        assert!(!w.take(p, None, now + Duration::from_secs(6)));
+    }
+
+    #[test]
+    fn atomic_write_registers_an_own_write() {
+        let dir = std::env::temp_dir().join(format!("forge-platform-own-write-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let target = dir.join("own.aod");
+        atomic_write(&target, b"<root/>").unwrap();
+        assert!(take_own_write(&target, file_stamp(&target)));
+        assert!(!take_own_write(&target, file_stamp(&target)));
+        std::fs::remove_dir_all(&dir).ok();
+    }
 
     #[test]
     fn writes_bytes_and_leaves_no_temp_file_behind() {

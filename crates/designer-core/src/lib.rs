@@ -15,7 +15,7 @@ pub use plugin_bridge::{
     to_plugin_file_command, to_plugin_property_node, to_plugin_transaction, to_plugin_value,
 };
 pub use plugins::build_plugin_registry;
-pub use project::{open_project, ForgeError, ProjectHandle};
+pub use project::{open_project, open_project_bytes, ForgeError, ProjectHandle};
 
 // Facade re-exports (architecture.md §1: "bündelt obige Crates zu einer öffentlichen API") - a
 // caller depending only on `designer-core` can reach every P3 crate's own public API through here

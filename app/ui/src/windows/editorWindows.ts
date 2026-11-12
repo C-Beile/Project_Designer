@@ -1,3 +1,4 @@
+import { configGet, configSet } from '../settings/appConfig'
 import { pathKey } from '../platform/pathKey'
 import type { SubTab } from '../tabs/tabModel'
 import { isServiceNode } from '../tabs/tabModel'
@@ -6,8 +7,8 @@ import type { Geometry } from './protocol'
 
 // Editors that were moved out of the main window into windows of their own: the window name of a
 // document, which documents can move at all, and the arrangement remembered per project so that a
-// project comes back with the same windows. Only a user-level convenience: damaged or missing
-// storage just means everything starts in the main window.
+// project comes back with the same windows. Only a user-level convenience: a missing entry
+// just means everything starts in the main window.
 
 /** Window name of the document with this id: stable, so the same document always gets the same window. */
 export function editorWindowName(id: string): string {
@@ -30,26 +31,18 @@ export interface SavedEditorWindow {
   geometry: Geometry | null
 }
 
-const KEY = 'forge.editorWindows.v1'
+// Abschnitt [windows.editors] in designer.conf, ein Eintrag je Projekt.
+const PATH = ['windows', 'editors'] as const
 
 type Store = Record<string, SavedEditorWindow[]>
 
 function read(): Store {
-  try {
-    const raw = window.localStorage.getItem(KEY)
-    const parsed = raw ? (JSON.parse(raw) as unknown) : {}
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Store) : {}
-  } catch {
-    return {}
-  }
+  const parsed = configGet<unknown>(...PATH)
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Store) : {}
 }
 
 function write(store: Store): void {
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(store))
-  } catch {
-    // Storage unavailable: the arrangement just does not survive this session.
-  }
+  configSet(PATH, store)
 }
 
 function validGeometry(g: unknown): g is Geometry {
@@ -69,7 +62,8 @@ function validEntry(e: unknown): e is SavedEditorWindow {
 export function loadEditorWindows(root: string): SavedEditorWindow[] {
   const list = read()[pathKey(root)]
   if (!Array.isArray(list)) return []
-  return list.filter(validEntry).map((e) => ({ node: e.node, sub: e.sub, geometry: validGeometry(e.geometry) ? e.geometry : null }))
+  // Leere Werte (null, leere Listen) stehen nicht in der Datei: sie bekommen hier ihre Standardwerte zurück.
+  return list.filter(validEntry).map((e) => ({ node: Object.assign({ object_type: null, children: [] }, e.node) as TreeNode, sub: e.sub, geometry: validGeometry(e.geometry) ? e.geometry : null }))
 }
 
 export function rememberEditorWindow(root: string, entry: SavedEditorWindow): void {

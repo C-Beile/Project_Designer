@@ -1,3 +1,4 @@
+import { configGet, configSet, slash } from '../../settings/appConfig'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ForgeApi } from '../../api/ForgeApi'
 import { confirmDialog } from '../../core/dialogService'
@@ -12,14 +13,9 @@ import { listenBackend } from './backendEvent'
 import type { CommandMap } from './commandTypes'
 import { timestamp } from './timestamp'
 
-const referenceKey = (project: string) => `dito.transpile.reference.${project}`
-const storedReference = (project: string) => {
-  try {
-    return window.localStorage.getItem(referenceKey(project)) ?? ''
-  } catch {
-    return ''
-  }
-}
+// Abschnitt [transpile.reference] in designer.conf: je Projekt der Ordner mit der Referenz (dist des offiziellen Transpilers).
+const referencePath = (project: string) => ['transpile', 'reference', slash(project)]
+const storedReference = (project: string) => configGet<string>(...referencePath(project)) ?? ''
 
 export interface TranspileDeps {
   api: ForgeApi
@@ -44,11 +40,7 @@ export function useTranspile({ api, root, trees, installDir, appendLog, showTool
       const picked = await api.pickProjectFolder('Reference output of the official transpiler (dist)').catch(() => null)
       if (!picked) return null
       reference = picked
-      try {
-        window.localStorage.setItem(referenceKey(project), reference)
-      } catch {
-        // the choice is just not remembered
-      }
+      configSet(referencePath(project), reference)
     }
     const report = await api.transpileCompare(reference, project)
     setMatchView({ report, reference, project })

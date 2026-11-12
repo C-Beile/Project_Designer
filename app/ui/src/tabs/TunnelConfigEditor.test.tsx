@@ -1,3 +1,4 @@
+import { configSet } from '../settings/appConfig'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -22,7 +23,7 @@ function setup(db: DbStatus, onDbChange = vi.fn()) {
 }
 
 describe('TunnelConfigEditor', () => {
-  beforeEach(() => window.localStorage.setItem('forge.tunnelView', 'table'))
+  beforeEach(() => configSet(['tunnels', 'view'], 'table'))
 
   it('shows the six columns and one row per tunnel', async () => {
     setup(down)

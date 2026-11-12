@@ -48,6 +48,8 @@ export interface ShellCommandsDeps {
   usageNode: TreeNode | null
   startRefactoring: ReturnType<typeof useRefactoring>['startRefactoring']
   gitActive: boolean
+  gitRepo: boolean
+  gitChanges: boolean
   sqlActive: boolean
   floatingViews: string[]
   editorWindows: ReturnType<typeof useEditorWindows>
@@ -77,7 +79,7 @@ export interface ShellCommandsDeps {
 // Befehle, Menüs und Tastenkürzel des Hauptfensters. `extraCommands` sind die Befehls-Maps der anderen Hooks (Transpile, Deploy, ...).
 export function useShellCommands({
   api, root, projects, activeTree, tabState, unsaved, editNode, selected, canUndo, canRedo, recent, dialog, layout, theme, toggleTheme, transpile, engine, transpileRunning, usageNode, startRefactoring,
-  gitActive, sqlActive, floatingViews, editorWindows, toolbarPrefs, editorPrefs, layoutBeforeOnlyEditor, extraCommands, openProjectAt, closeProjects, saveIds, applyOutcome, markUnsaved,
+  gitActive, gitRepo, gitChanges, sqlActive, floatingViews, editorWindows, toolbarPrefs, editorPrefs, layoutBeforeOnlyEditor, extraCommands, openProjectAt, closeProjects, saveIds, applyOutcome, markUnsaved,
   showToolWindow, openSql, toggleToolbarGroup, updateToolbar, setStatus, setNewProjectOpen, setRecent, setRecentList, setReloadToken, setDialog, setLayout, setTreeSelection,
 }: ShellCommandsDeps) {
   const holdsProjects = async (dir: string): Promise<boolean> => {
@@ -197,6 +199,17 @@ export function useShellCommands({
     'help.openLogFolder': async () => {
       setStatus(`Log folder: ${await api.openLogFolder()}`)
     },
+    'debug.rebuildIndex': async () => {
+      if (!root.trim()) return
+      await api.indexRebuild(root)
+      setStatus('Index is being rebuilt')
+    },
+    'debug.dumpIndex': async () => {
+      if (!root.trim()) return
+      const file = await api.indexDump(root)
+      setStatus(`Index written to ${file}`)
+      await api.openLogFolder()
+    },
     'help.openBackupFolder': async () => {
       setStatus(`Backup folder: ${await api.openBackupFolder()}`)
     },
@@ -305,13 +318,15 @@ export function useShellCommands({
         toolbar: toolbarPrefs,
         editorPrefs,
         gitActive,
+        gitRepo,
+        gitChanges,
         floating: floatingViews,
         canMoveEditor: osWindowsAvailable() && !!currentTabNode && canMoveToWindow(currentTabNode),
         editorWindows: Object.keys(editorWindows.detached).length,
         onlyEditor: layoutBeforeOnlyEditor.current !== null,
         fullScreen: typeof document !== 'undefined' && !!document.fullscreenElement,
       }),
-    [layout, floatingViews, currentTabNode, editorWindows.detached, root, projects.length, selected, unsaved, canUndo, canRedo, recent, theme, themeStamp, importOn, transpileRunning, engine, codeEditorOpen, toolbarPrefs, editorPrefs, gitActive, usageNode],
+    [layout, floatingViews, currentTabNode, editorWindows.detached, root, projects.length, selected, unsaved, canUndo, canRedo, recent, theme, themeStamp, importOn, transpileRunning, engine, codeEditorOpen, toolbarPrefs, editorPrefs, gitActive, gitRepo, gitChanges, usageNode],
   )
 
   useEffect(() => {

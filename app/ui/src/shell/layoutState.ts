@@ -1,3 +1,4 @@
+import { configGet, configSet } from '../settings/appConfig'
 // Docking layout of the main window (LAYOUT_SPEC §3): which tool windows are open, minimized or
 // closed, and how large they are. Survives restarts like the original Designer's window layout,
 // but a damaged or foreign stored value must never keep the app from opening - it then simply
@@ -24,7 +25,7 @@ export const PANEL_TITLES: Record<PanelId, string> = {
   output: 'Output',
 }
 
-export const LAYOUT_STORAGE_KEY = 'forge.layout.v1'
+export const LAYOUT_PATH = ['layout', 'main'] as const
 
 export const LIMITS = {
   leftWidth: [160, 900],
@@ -73,18 +74,10 @@ export function sanitizeLayout(raw: unknown): LayoutState {
 }
 
 export function loadLayout(): LayoutState {
-  try {
-    const stored = window.localStorage.getItem(LAYOUT_STORAGE_KEY)
-    return stored ? sanitizeLayout(JSON.parse(stored)) : defaultLayout()
-  } catch {
-    return defaultLayout()
-  }
+  const stored = configGet<unknown>(...LAYOUT_PATH)
+  return stored ? sanitizeLayout(stored) : defaultLayout()
 }
 
 export function saveLayout(layout: LayoutState): void {
-  try {
-    window.localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout))
-  } catch {
-    // Storage unavailable: the layout just won't survive this restart.
-  }
+  configSet(LAYOUT_PATH, layout)
 }

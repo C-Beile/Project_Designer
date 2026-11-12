@@ -53,17 +53,7 @@ export function useDialogWindows({ dialog, setDialog, hasProject, root, engine, 
 
   // Options and Open open as windows of their own (modal: the main window is locked meanwhile); in a plain browser the embedded dialogs below are used.
   // Apply in the Options window stores the choices at once; this window reads them without waiting for the window to close.
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (!e.key?.startsWith('forge.')) return
-      reloadCustomThemes()
-      reloadColorOverrides()
-      reloadOptions()
-      reloadEditorPrefs()
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
+  // (Änderungen aus dem Options-Fenster erreichen die Module selbst über `onConfigChange`: Optionen, Themes, Farben, Editor-Schalter.)
 
   useEffect(() => {
     if (dialog !== 'options' || !osWindowsAvailable() || optionsWindowOpen.current) return

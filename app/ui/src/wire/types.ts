@@ -382,6 +382,13 @@ export interface GitOverview {
   user_email?: string | null
 }
 
+/** Link of the project folder to its remote repository (`origin`). */
+export interface RepoLink {
+  is_repo: boolean
+  url: string | null
+  branch: string | null
+}
+
 export interface GitOutput {
   ok: boolean
   text: string
@@ -633,4 +640,59 @@ export interface LocalDataInfo {
   designer_roaming_exists: boolean
   designer_versions: VersionDir[]
   designer_install: string | null
+}
+
+// ---- Projekt-Index (Backend: crates/project-index, Events camelCase) ----
+export type IndexPhase = 'queued' | 'listing' | 'reading' | 'linking' | 'ready' | 'cancelled' | 'failed'
+
+/** Event `forge://index-progress`. */
+export interface IndexProgress {
+  project: string
+  generation: number
+  phase: IndexPhase
+  done: number
+  total: number
+  percent: number | null
+  currentFile: string | null
+  message: string | null
+}
+
+export type ChangeReason = 'watcher' | 'git' | 'flood' | 'rescan' | 'focus' | 'modules'
+
+export interface IndexChangedFile {
+  path: string
+  kind: 'added' | 'modified' | 'removed'
+  own: boolean
+  objectType: string | null
+  name: string | null
+}
+
+/** Event `forge://project-changed`. */
+export interface ProjectChanged {
+  project: string
+  generation: number
+  reason: ChangeReason
+  changed: IndexChangedFile[]
+  truncated: boolean
+  affected: string[]
+  modulesChanged: boolean
+  full: boolean
+  ownOnly: boolean
+}
+
+export interface IndexStatus {
+  project: string
+  generation: number
+  phase: IndexPhase
+  done: number
+  total: number
+  files: number
+  objects: number
+  references: number
+  lastBuildMs: number | null
+}
+
+export interface VerifyOutcome {
+  changed: number
+  durationMs: number
 }

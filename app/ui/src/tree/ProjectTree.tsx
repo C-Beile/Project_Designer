@@ -1,3 +1,4 @@
+import { configGet, configSet } from '../settings/appConfig'
 import { normId } from '../problems/problemStore'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
@@ -50,25 +51,17 @@ function flatten(
   }
 }
 
-const EXPANDED_STORE = 'forge.tree.expanded'
-const ROOTS_STORE = 'forge.tree.knownRoots'
+// Aufgeklappte Knoten und bekannte Wurzeln: Abschnitt [tree] in designer.conf (die Schlüssel sind Pfade mit /).
+const EXPANDED_STORE = 'expanded'
+const ROOTS_STORE = 'known_roots'
 
 function readSet(key: string): Set<string> {
-  try {
-    const raw = window.localStorage.getItem(key)
-    const parsed: unknown = raw ? JSON.parse(raw) : []
-    return new Set(Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [])
-  } catch {
-    return new Set()
-  }
+  const parsed = configGet<unknown>('tree', key)
+  return new Set(Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [])
 }
 
 function writeSet(key: string, value: Set<string>) {
-  try {
-    window.localStorage.setItem(key, JSON.stringify([...value]))
-  } catch {
-    /* storage unavailable: the tree simply starts fresh next time */
-  }
+  configSet(['tree', key], [...value])
 }
 
 function fullText(node: TreeNode): string {

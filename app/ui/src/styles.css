@@ -56,6 +56,7 @@
 @import './features/git/GitDialog.css';
 @import './styles/commit-dialog-v1.css';
 @import './styles/statusbar.css';
+@import './shell/IndexStatusItem.css';
 @import './editors/DashboardEditor.css';
 @import './features/git/ScmPanel.css';
 @import './features/git/DiffView.css';

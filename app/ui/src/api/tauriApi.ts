@@ -36,8 +36,20 @@ export function syncLogTimezone(): void {
 const gitCall = <T,>(command: string, args: Record<string, unknown>) =>
   invoke<T>('plugin_call', { plugin: 'git', command, args })
 
+/** Git-Aufruf mit Netzwerk: bei fehlender Anmeldung fragt das Git-Plugin den Benutzer und wiederholt ihn einmal (`api/gitAuth.ts`). */
+const gitNetCall = <T,>(command: string, projectRoot: string, args: Record<string, unknown> = {}) =>
+  withGitAuth(() => gitCall<T>(command, { projectRoot, ...args }), async () => ({
+    root: projectRoot,
+    url: await gitCall<RepoLink>('git_repo_link', { projectRoot }).then((l) => l.url).catch(() => null),
+    login: async (user, password) => {
+      await gitCall<string>('git_login', { projectRoot, user, password })
+    },
+  }))
+
+import { withGitAuth } from './gitAuth'
+import { withCheckoutChoice } from './gitCheckout'
 import type { ForgeApi } from './ForgeApi'
-import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, WebserviceDto, RestUserDto, RestResponseDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, IndexStatus, VerifyOutcome, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, WebserviceDto, RestUserDto, RestResponseDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, RepoLink, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The real implementation - a pure pass-through to the Tauri commands in
 // app/src-tauri/src/lib.rs, one call each, no business logic (architecture.md §1
@@ -60,7 +72,10 @@ export const tauriForgeApi: ForgeApi = {
   saveOverwrite: (nodeId) => invoke<void>('save_overwrite', { nodeId }),
   reloadObject: (nodeId) => invoke<void>('reload_object', { nodeId }),
   externalChanges: (nodeIds) => invoke<string[]>('external_changes', { nodeIds }),
-  projectChanged: (projectRoot) => invoke<boolean>('project_changed', { projectRoot }),
+  indexStatus: (projectRoot) => invoke<IndexStatus | null>('index_status', { projectRoot }),
+  indexVerify: (projectRoot) => invoke<VerifyOutcome>('index_verify', { projectRoot }),
+  indexRebuild: (projectRoot) => invoke<void>('index_rebuild', { projectRoot }),
+  indexDump: (projectRoot) => invoke<string>('index_dump', { projectRoot }),
   openLogFolder: () => invoke<string>('open_log_folder'),
   openBackupFolder: () => invoke<string>('open_backup_folder'),
   logClientError: (message) => invoke<string | null>('log_client_error', { message }),
@@ -91,6 +106,10 @@ export const tauriForgeApi: ForgeApi = {
   pickProjectFolders: (title) => invoke<string[]>('pick_project_folders', { title: title ?? null }),
   setRecentProject: (path) => invoke<void>('set_recent_project', { path }),
   getSettings: () => invoke<ForgeSettings>('get_settings'),
+  configGet: () => invoke<Record<string, unknown>>('config_get'),
+  configSet: async (path, value) => {
+    await invoke<null>('config_set', { path, value })
+  },
   setSettings: (settings) => invoke<void>('set_settings', { settings }),
   detectDesignerInstall: () => invoke<string | null>('detect_designer_install'),
   pluginList: () => invoke<{ id: string; name: string; available: boolean }[]>('plugin_list'),
@@ -173,23 +192,28 @@ export const tauriForgeApi: ForgeApi = {
   readJditoTypes: (projectRoot) => invoke<JditoTypes | null>('read_jdito_types', { projectRoot }),
   gitOverview: (projectRoot) => gitCall<GitOverview>('git_overview', { projectRoot }),
   gitCommit: (projectRoot, message, paths) => gitCall<GitOutput>('git_commit', { projectRoot, message, paths }),
-  gitPull: (projectRoot) => gitCall<GitOutput>('git_pull', { projectRoot }),
-  gitPush: (projectRoot) => gitCall<GitOutput>('git_push', { projectRoot }),
+  gitPull: (projectRoot) => withCheckoutChoice('', (mode) => gitNetCall<GitOutput>('git_pull', projectRoot, { mode }), 'pull'),
+  gitPush: (projectRoot) => gitNetCall<GitOutput>('git_push', projectRoot),
   gitUnpushed: (projectRoot) => gitCall<GitCommit[]>('git_unpushed', { projectRoot }),
-  gitIncoming: (projectRoot) => gitCall<GitCommit[]>('git_incoming', { projectRoot }),
-  gitPushTo: (projectRoot, hash) => gitCall<GitOutput>('git_push_to', { projectRoot, hash }),
-  gitCheckout: (projectRoot, branch) => gitCall<GitOutput>('git_checkout', { projectRoot, branch }),
+  gitIncoming: (projectRoot) => gitNetCall<GitCommit[]>('git_incoming', projectRoot),
+  gitPushTo: (projectRoot, hash) => gitNetCall<GitOutput>('git_push_to', projectRoot, { hash }),
+  gitCheckout: (projectRoot, branch) => withCheckoutChoice(branch, (mode) => gitCall<GitOutput>('git_checkout', { projectRoot, branch, mode })),
+  gitRepoLink: (projectRoot) => gitCall<RepoLink>('git_repo_link', { projectRoot }),
+  gitLogin: async (projectRoot, user, password) => {
+    await gitCall<string>('git_login', { projectRoot, user, password })
+  },
+  gitConnect: (projectRoot, url, sshKey, user, password) => gitCall<string>('git_connect', { projectRoot, url, sshKey, user, password }),
   projectClone: (url, location, name, sshKey, password) => gitCall<string>('clone_repository', { url, location, name, sshKey, password }),
   projectCreateEmpty: (location, name) => invoke<string>('project_create_empty', { location, name }),
   transpileCompare: (reference, projectRoot) => invoke<CompareReport>('transpile_compare', { reference, projectRoot }),
-  gitCreateBranch: (projectRoot, name, start) => gitCall<GitOutput>('git_create_branch', { projectRoot, name, start }),
+  gitCreateBranch: (projectRoot, name, start) => withCheckoutChoice(name, (mode) => gitCall<GitOutput>('git_create_branch', { projectRoot, name, start, mode })),
   scmStatus: (projectRoot) => gitCall<ScmOverview>('scm_status', { projectRoot }),
   scmStage: (projectRoot, paths) => gitCall<GitOutput>('scm_stage', { projectRoot, paths }),
   scmStageAll: (projectRoot) => gitCall<GitOutput>('scm_stage_all', { projectRoot }),
   scmUnstage: (projectRoot, paths) => gitCall<GitOutput>('scm_unstage', { projectRoot, paths }),
   scmDiscard: (projectRoot, paths) => gitCall<GitOutput>('scm_discard', { projectRoot, paths }),
   scmCommit: (projectRoot, message) => gitCall<GitOutput>('scm_commit', { projectRoot, message }),
-  scmSync: (projectRoot) => gitCall<GitOutput>('scm_sync', { projectRoot }),
+  scmSync: (projectRoot) => withCheckoutChoice('', (mode) => gitNetCall<GitOutput>('scm_sync', projectRoot, { mode }), 'pull'),
   scmHistory: (projectRoot, limit) => gitCall<GitCommit[]>('scm_history', { projectRoot, limit }),
   scmCommitFiles: (projectRoot, hash) => gitCall<CommitFile[]>('scm_commit_files', { projectRoot, hash }),
   scmDiff: (projectRoot, path, side: ScmDiffSide, hash) => gitCall<DiffContent>('scm_diff', { projectRoot, path, side, hash }),

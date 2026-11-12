@@ -12,6 +12,7 @@
 pub mod commands;
 pub mod lsp_bridge;
 pub mod os_windows;
+pub mod window_state;
 
 use project::catalog::CatalogCache;
 use project::project_actor::ProjectActorHandle;
@@ -119,9 +120,16 @@ pub fn run() {
         })
         .manage(LspProcess::default())
         .manage(CatalogCache::default())
-        .manage(commands::project::ProjectFingerprints::default())
         .setup(|app| {
+            // Fenster an die gemerkte Stelle und zeigen (das Hauptfenster startet unsichtbar).
+            window_state::init_main(app.handle());
             app.manage(std::sync::Arc::new(build_feature_registry(app.handle())));
+            // The project index (files, references, problems) keeps itself current through the file watcher.
+            app.manage(std::sync::Arc::new(project_index::IndexRegistry::new(
+                std::sync::Arc::new(TauriEvents(app.handle().clone())),
+                std::sync::Arc::new(project_index::CrashlogIndexLog),
+                std::sync::Arc::new(platform::native::NotifyFileWatcher::new()),
+            )));
             // Logs and backups live in the app data folder; the panic hook and the backup hook are
             // installed before anything else can fail. Panics reach the window as an event.
             #[cfg(feature = "ssh-tunnel")]
@@ -183,7 +191,10 @@ pub fn run() {
             commands::editor::save_overwrite,
             commands::editor::reload_object,
             commands::editor::external_changes,
-            commands::project::project_changed,
+            commands::index::index_status,
+            commands::index::index_verify,
+            commands::index::index_rebuild,
+            commands::index::index_dump,
             commands::misc::open_log_folder,
             commands::misc::open_backup_folder,
             commands::misc::log_client_error,
@@ -208,6 +219,8 @@ pub fn run() {
             commands::project::get_recent_project,
             commands::project::set_recent_project,
             commands::settings::get_settings,
+            commands::settings::config_get,
+            commands::settings::config_set,
             commands::settings::set_settings,
             commands::settings::detect_designer_install,
             commands::editor::get_property_sheet,

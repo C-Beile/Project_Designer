@@ -5,6 +5,7 @@ node_modules/
 **/node_modules/
 app/ui/dist/
 dist/
+target-msvc/
 *.tsbuildinfo
 
 # Never committed: lock files that only come from local npm runs

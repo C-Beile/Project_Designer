@@ -14,6 +14,7 @@ import './editors/registerWebserviceBuiltins'
 import './editors/registerReportBuiltins'
 import { useEffect, useState } from 'react'
 import { registerFeaturePlugins } from './features/registerFeatures'
+import { registerCoreStatusItems } from './shell/coreStatusItems'
 
 // Entry component: registers every editor family with the editor registry and hosts the main
 // window shell (menu bar, toolbar, docking layout, status bar - see shell/Shell.tsx).
@@ -35,6 +36,7 @@ function usePluginsReady(api: ForgeApi): boolean {
 
 export function App({ api = loggedTauriApi, projectRoot }: { api?: ForgeApi; projectRoot: string }) {
   const ready = usePluginsReady(api)
+  useEffect(() => registerCoreStatusItems(), [])
   if (!ready) return null
   return (
     <>

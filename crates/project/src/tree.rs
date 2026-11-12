@@ -20,22 +20,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// Object families the editors/validators dispatch on (`object_type_for_leaf_path`). Kept as is
-/// from the earlier rounds: the folder names were verified against the real corpus there
-/// (aod-format.md §2/§3, p4-editor-*-notes.md).
-pub const OBJECT_FOLDERS: &[(&str, &str)] = &[
-    ("entity", "entity"),
-    ("neonView", "neonView"),
-    ("neonContext", "neonContext"),
-    ("neonDashboard", "neonDashboard"),
-    ("aliasDefinition", "aliasDefinition"),
-    ("language", "language"),
-    ("system", "system"),
-    ("preferences", "preferences"),
-    ("application", "application"),
-    ("entityWebservice", "entityWebservice"),
-    ("report", "report"),
-];
+pub use project_index::layout::OBJECT_FOLDERS;
+use project_index::layout::SCANNED_FOLDERS;
 
 /// The Designer's type folders in its fixed order (Screenshot 41) with the on-disk folders whose
 /// objects they show. `test` has no known disk folder (no corpus project has one) and is always
@@ -58,27 +44,6 @@ pub const TREE_FOLDERS: &[(&str, &[&str])] = &[
     ("role", &["role"]),
     ("alias", &["aliasDefinition"]),
     ("others", &[]),
-];
-
-/// Every disk folder holding model objects; `neonView` has no folder of its own in the tree
-/// (views hang below their contexts) but must be indexed to resolve those references.
-const SCANNED_FOLDERS: &[&str] = &[
-    "system",
-    "preferences",
-    "application",
-    "neonContext",
-    "neonNotificationType",
-    "entity",
-    "neonDashboard",
-    "rendererDefinition",
-    "process",
-    "serviceDefinition",
-    "entityWebservice",
-    "report",
-    "language",
-    "role",
-    "aliasDefinition",
-    "neonView",
 ];
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]

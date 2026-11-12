@@ -1,3 +1,4 @@
+import { configGet, configSet } from '../settings/appConfig'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { DeployChangeView, DeployPlan } from '../wire/types'
@@ -11,14 +12,10 @@ import { errorText } from '../core/errorText'
 // (one transaction). Deleting is never pre-selected because the system may hold models this project
 // does not own.
 
-const HIDE_KEY = 'dito.deploy.hideDialog'
+const HIDE_PATH = ['deploy', 'hide_plan'] as const
 
 function readHide(): boolean {
-  try {
-    return localStorage.getItem(HIDE_KEY) === '1'
-  } catch {
-    return false
-  }
+  return configGet<boolean>(...HIDE_PATH) === true
 }
 
 const nameOf = (key: string) => key.slice(key.lastIndexOf('/') + 1)
@@ -119,11 +116,7 @@ export function DeployDialog({
 
   const changeHide = (on: boolean) => {
     setHide(on)
-    try {
-      localStorage.setItem(HIDE_KEY, on ? '1' : '0')
-    } catch {
-      /* the setting is only a convenience */
-    }
+    configSet(HIDE_PATH, on ? true : undefined)
   }
 
   const title = systemName ?? (plan ? plan.target : 'Deploy')

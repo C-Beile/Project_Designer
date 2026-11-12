@@ -178,8 +178,15 @@ export function createMockForgeApi(options: {
     async externalChanges() {
       return []
     },
-    async projectChanged() {
-      return false
+    async indexStatus() {
+      return null
+    },
+    async indexVerify() {
+      return { changed: 0, durationMs: 0 }
+    },
+    async indexRebuild() {},
+    async indexDump() {
+      return 'C:/logs/index-dump.json'
     },
     async openLogFolder() {
       return 'C:/logs'
@@ -270,6 +277,10 @@ export function createMockForgeApi(options: {
     async setSettings(next) {
       settings = next
     },
+    async configGet() {
+      return {}
+    },
+    async configSet() {},
     async detectDesignerInstall() {
       return options.detectedInstall ?? null
     },
@@ -617,6 +628,16 @@ export function createMockForgeApi(options: {
     async gitPush(): Promise<GitOutput> {
       gitCalls.push('push')
       return { ok: true, text: 'Everything up-to-date' }
+    },
+    async gitRepoLink() {
+      return options.scm ? { is_repo: true, url: 'https://example.org/demo.git', branch: 'main' } : { is_repo: false, url: null, branch: null }
+    },
+    async gitLogin(_root, user) {
+      gitCalls.push(`login:${user}`)
+    },
+    async gitConnect(_root, url) {
+      gitCalls.push(`connect:${url}`)
+      return `Connected to ${url}.`
     },
     async projectClone(_url, location, name) {
       return `${location}/${name}`

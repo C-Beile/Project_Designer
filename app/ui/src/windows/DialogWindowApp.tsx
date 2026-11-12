@@ -134,6 +134,9 @@ export const DIALOG_WINDOWS: Record<string, DialogSpec> = {
   sync: {
     render: (api, p, done) => pluginDialog('git.syncWindow', { api, payload: p, done }),
   },
+  gitlogin: {
+    render: (api, p, done) => pluginDialog('git.loginWindow', { api, payload: p, done }),
+  },
   commitdiff: {
     render: (api, p, done) => pluginDialog('git.commitDiff', { api, root: String(p.root ?? ''), path: String(p.path ?? ''), onClose: () => done(null) }),
   },

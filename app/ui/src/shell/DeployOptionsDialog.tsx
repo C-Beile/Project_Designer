@@ -1,3 +1,4 @@
+import { configGet, configSet, slash } from '../settings/appConfig'
 import { useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { Modal } from '../core/Modal'
@@ -44,7 +45,6 @@ export interface DeployOptionsResult {
   connectedSystem: string | null
 }
 
-const LAST_KEY = 'dito.deploy.last'
 
 // Project: the one worked in last (the active project). System: the one whose tunnel is open right now;
 // with several open tunnels the system last deployed to wins, without any open tunnel the remembered or default one.
@@ -55,12 +55,8 @@ function rememberedChoice(payload: DeployOptionsPayload): { project: string; sys
   const open = new Set([...(payload.openSystems ?? []), ...(payload.connectedSystem ? [payload.connectedSystem] : [])])
   const openNames = systems.filter((s) => open.has(systemKey(project, s.name))).map((s) => s.name)
   let saved: string | undefined
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(LAST_KEY) ?? 'null') as { project?: string; system?: string } | null
-    if (parsed?.project === project) saved = parsed.system
-  } catch {
-    // unreadable storage: the default choice is used
-  }
+  const last = configGet<{ project?: string; system?: string }>('deploy', 'last')
+  if (typeof last?.project === 'string' && slash(last.project) === slash(project)) saved = last.system
   if (openNames.length > 0) return { project, system: saved && openNames.includes(saved) ? saved : openNames[0] }
   return { project, system: saved && systems.some((s) => s.name === saved) ? saved : fallback }
 }
@@ -111,11 +107,7 @@ export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: For
   }
 
   const ok = () => {
-    try {
-      window.localStorage.setItem(LAST_KEY, JSON.stringify({ project, system }))
-    } catch {
-      // the choice is just not remembered
-    }
+    configSet(['deploy', 'last'], { project, system })
     onOk({ project, system, checkScan, force, userhelp: false, build, connectedSystem: tunnelOk ? systemKey(project, system) : connected })
   }
 

@@ -87,7 +87,7 @@ impl Diagnostic {
 
 /// Placeholder for the whole in-memory project (what a `Validator` inspects project-wide, e.g.
 /// reference-integrity checks that span multiple objects). Flattened to a node list here; the
-/// real `aod::tree` equivalent will be a proper tree plus a `aod::refs::RefGraph`.
+/// real `aod::tree` equivalent will be a proper tree plus a the project index (`project-index`).
 #[derive(Debug, Clone, Default)]
 pub struct ProjectModel {
     pub nodes: Vec<PropertyNode>,

@@ -1,9 +1,10 @@
+import { configSet } from '../settings/appConfig'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Shell } from './Shell'
 import { createMockForgeApi } from '../test/mockApi'
-import { LAYOUT_STORAGE_KEY, defaultLayout, loadLayout, sanitizeLayout } from './layoutState'
+import { LAYOUT_PATH, defaultLayout, loadLayout, sanitizeLayout } from './layoutState'
 import { buildMenus, shortcutItems, type MenuContext } from './menuModel'
 import type { TreeNode } from '../wire/types'
 
@@ -111,16 +112,12 @@ describe('menu model', () => {
 
 describe('layout persistence', () => {
   it('falls back to the default layout when the stored value is damaged', () => {
-    window.localStorage.setItem(LAYOUT_STORAGE_KEY, '{broken')
+    configSet(LAYOUT_PATH, 'broken')
     expect(loadLayout()).toEqual(defaultLayout())
   })
 
-  it('falls back to the default layout when storage itself is unavailable', () => {
-    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new Error('denied')
-    })
+  it('falls back to the default layout when nothing is stored', () => {
     expect(loadLayout()).toEqual(defaultLayout())
-    spy.mockRestore()
   })
 
   it('keeps valid fields, clamps sizes and ignores unknown panel modes', () => {

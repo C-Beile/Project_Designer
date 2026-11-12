@@ -90,6 +90,7 @@ pub fn is_package_lock(path: &str) -> bool {
 
 fn git(root: &Path, args: &[&str]) -> Result<std::process::Output, String> {
     std::env::set_var("GIT_TERMINAL_PROMPT", "0");
+    std::env::set_var("GCM_INTERACTIVE", "never");
     platform::console::command("git")
         .args(args)
         .current_dir(root)
@@ -306,8 +307,8 @@ pub fn commit_staged(dir: &Path, message: &str) -> Result<GitOutput, String> {
 }
 
 /// Pull, then push when the pull went through.
-pub fn sync(dir: &Path) -> Result<GitOutput, String> {
-    let pulled = crate::git_actions::pull(dir)?;
+pub fn sync(dir: &Path, mode: Option<&str>) -> Result<GitOutput, String> {
+    let pulled = crate::git_actions::pull_with(dir, mode)?;
     if !pulled.ok {
         return Ok(pulled);
     }
@@ -626,7 +627,7 @@ mod tests {
         commit_staged(&dir, "Add b").unwrap();
         let before = status(&dir).unwrap();
         assert_eq!((before.ahead, before.behind), (1, 0));
-        assert!(sync(&dir).unwrap().ok);
+        assert!(sync(&dir, None).unwrap().ok);
         assert_eq!(status(&dir).unwrap().ahead, 0);
         let _ = fs::remove_dir_all(&dir);
         let _ = fs::remove_dir_all(&remote);

@@ -16,6 +16,7 @@
 | `treeIndex.ts` | Suchen im Projektbaum: `collectByType`, `findObject`, `entityOfView`, `collectIcons`. |
 | `revealApp.ts` | `revealApp()`: blendet die Seite erst nach zwei Frames ein (setzt `data-ready` auf `<html>`), damit kein ungestyltes Zwischenbild aufblitzt. |
 | `uuid.ts` | `newUuid`, `copyNewUuid`. |
+| `indexStatus.ts` | Store für den Stand des Projekt-Index je Projekt (`useIndexStatus`, `applyIndexProgress`, `summarizeIndex`). Ignoriert alte Generationen. Nicht `projectIndex` nennen: `editors/projectIndex.ts` meint etwas anderes. |
 | `scm.ts` | Neutraler Store für den Source-Control-Stand: `useScm`, `refreshScm`, `decorationFor`, `indexOf`, `setScmProvider`. Ohne Plugin leer. |
 | `plugins/` | `registry.ts`: UI-Register für Plugins. `ShellExtensions.tsx` rendert die Shell-Beiträge. |
 | `ui/` | Masken-Baukasten: FormDialog, ListDialog, DataTable, ProgressBar, `CopyButton` (Kopieren-Knopf mit grünem Haken), `uiDialogs`. |
@@ -33,6 +34,7 @@ Gemeinsame Bausteine ohne Fachlogik. Hauptfenster und alle OS-Fenster nutzen sie
 - Raus: fast jeder Ordner.
 
 ## Regeln und Fallen
+- Plugin-Beiträge sind abgesichert: wirft `items(ctx)` eines Menübeitrags oder `state(ctx)` eines Toolbar-Knopfs, fällt nur dieser Beitrag weg bzw. wird abgeblendet (`readMenu`, `toolbarItemState` in `plugins/registry.ts`), einmal im Protokoll. Fehlerschirm und Absturz-Dialog haben "Copy details" (`errorHandling.tsx`).
 - Module halten Zustand auf Modulebene (Listener-Sets, `useSyncExternalStore`). Jedes Fenster hat sein eigenes Modul. Ein Toast im Hauptfenster erscheint nicht in einem Editor-Fenster.
 - Kein `window.confirm`. Nimm `confirmDialog`. Gleicher Text, solange offen, ergibt nur einen Dialog.
 - Tests leeren den Zustand mit `_reset...ForTests()`.
@@ -51,6 +53,7 @@ Alle Register sind Stores. `register*` gibt eine Abmelde-Funktion zurück. Ein B
 - `registerPlugin(info)`: Plugin anmelden. `isPluginAvailable(id)` fragt, `usePlugins()` liest.
 - `registerCommand(id, run, plugin?)`: Befehl. `hasCommand`, `runCommandById`, `runCommandAsync` führen ihn aus.
 - `registerMenuContribution({menu, items, order})`: Einträge im Hauptmenü. Lesen: `useMenuContributions`, `getMenuContributions`.
+- Debug-Menü (nur Dev-Build, `isDevBuild()` in `shell/menuModel.ts`): ein Plugin hängt sich mit `registerMenuContribution({ menu: 'debug', order, items })` ein und meldet den Befehl mit `registerCommand`. Der Kern bringt `debug.rebuildIndex` und `debug.dumpIndex` mit.
 - `registerOptionsPage({id, category, title, component})`: Seite in Tools > Options. Lesen: `useOptionsPages`.
 - `registerToolbarItem({id, group, command, state})`: Knopf der Werkzeugleiste. Lesen: `useToolbarItems(group)`.
 - `registerStatusBarItem({id, align, component})`: Feld der Statusleiste. Lesen: `useStatusBarItems(align)`.

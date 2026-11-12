@@ -1,3 +1,4 @@
+import { configSet } from '../settings/appConfig'
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -55,7 +56,7 @@ describe('editor window names and the remembered arrangement', () => {
     expect(loadEditorWindows('C:/other')).toEqual([])
     forgetEditorWindow('C:/p', entityNode.id)
     expect(loadEditorWindows('C:/p')).toEqual([])
-    window.localStorage.setItem('forge.editorWindows.v1', '{broken')
+    configSet(['windows', 'editors'], 'broken')
     expect(loadEditorWindows('C:/p')).toEqual([])
   })
 })

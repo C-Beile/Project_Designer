@@ -1,6 +1,6 @@
 //! Extension point 3: `Validator` — project-wide checks (architecture.md §2). The reference-
 //! integrity check (architecture.md §7) is the first built-in validator planned for the real
-//! system; this crate only defines the contract, since `aod::refs::RefGraph` is out of scope here
+//! system; this crate only defines the contract, since the project index is out of scope here
 //! (scope guardrail: no dependency on the other P3 crates).
 
 use crate::types::{Diagnostic, ProjectModel};

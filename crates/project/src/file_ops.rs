@@ -81,6 +81,7 @@ pub fn copy_file(project_root: &Path, src: &Path, dest_dir: &Path) -> Result<Pat
     let name = src.file_name().ok_or("The file has no name.")?.to_string_lossy().into_owned();
     let target = free_name(dest_dir, &name);
     std::fs::copy(src, &target).map_err(|e| format!("cannot copy to {}: {e}", target.display()))?;
+    platform::fs::note_own_change(&target);
     Ok(target)
 }
 
@@ -100,6 +101,8 @@ pub fn move_file(project_root: &Path, src: &Path, dest_dir: &Path) -> Result<Pat
         std::fs::copy(src, &target).map_err(|e| format!("cannot move to {}: {e}", target.display()))?;
         std::fs::remove_file(src).map_err(|e| format!("copied, but the original could not be removed: {e}"))?;
     }
+    platform::fs::note_own_change(src);
+    platform::fs::note_own_change(&target);
     Ok(target)
 }
 
@@ -116,6 +119,8 @@ pub fn rename_file(project_root: &Path, path: &Path, new_name: &str) -> Result<P
         return Err(format!("{new_name} already exists."));
     }
     std::fs::rename(path, &target).map_err(|e| format!("cannot rename: {e}"))?;
+    platform::fs::note_own_change(path);
+    platform::fs::note_own_change(&target);
     Ok(target)
 }
 

@@ -192,8 +192,11 @@ pub fn create_object(root: &Path, folder: &str, name: &str, title: Option<&str>,
     let aod = dir.join(format!("{name}.aod"));
     let result = (|| -> Result<(), String> {
         fs::write(&aod, text.as_bytes()).map_err(|e| e.to_string())?;
+        platform::fs::note_own_change(&dir);
+        platform::fs::note_own_change(&aod);
         if folder == "process" {
             fs::write(dir.join("process.js"), b"").map_err(|e| e.to_string())?;
+            platform::fs::note_own_change(&dir.join("process.js"));
         }
         Ok(())
     })();

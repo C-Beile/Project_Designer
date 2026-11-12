@@ -1,3 +1,4 @@
+import { configGet, configSet } from './appConfig'
 import { getOptions, saveOptions } from './options'
 
 // Zoom: Ctrl + plus/minus/0 and Ctrl + mouse wheel change the editor text size (stored in the
@@ -8,7 +9,7 @@ export const EDITOR_FONT_MIN = 9
 export const EDITOR_FONT_MAX = 28
 export const UI_ZOOM_MIN = 0.5
 export const UI_ZOOM_MAX = 2
-export const UI_ZOOM_KEY = 'forge.uiZoom.v1'
+const ZOOM_PATH = ['appearance', 'zoom'] as const
 
 export const clampFont = (n: number) => Math.max(EDITOR_FONT_MIN, Math.min(EDITOR_FONT_MAX, Math.round(n)))
 export const clampZoom = (z: number) => Math.max(UI_ZOOM_MIN, Math.min(UI_ZOOM_MAX, Math.round(z * 10) / 10))
@@ -22,12 +23,13 @@ export function stepEditorFont(delta: number | null): number {
 }
 
 export function loadUiZoom(): number {
-  try {
-    const raw = Number(window.localStorage.getItem(UI_ZOOM_KEY))
-    return raw > 0 ? clampZoom(raw) : 1
-  } catch {
-    return 1
-  }
+  const raw = Number(configGet<number>(...ZOOM_PATH))
+  return raw > 0 ? clampZoom(raw) : 1
+}
+
+/** Der Standard (100 %) steht nicht in der Datei. */
+function storeZoom(zoom: number): void {
+  configSet(ZOOM_PATH, zoom === 1 ? undefined : zoom)
 }
 
 async function applyWebviewZoom(zoom: number): Promise<void> {
@@ -43,22 +45,14 @@ async function applyWebviewZoom(zoom: number): Promise<void> {
 /** Changes the zoom of the whole interface by `delta` steps of 10 %; `null` resets it to 100 %. */
 export function stepUiZoom(delta: number | null): number {
   const next = delta === null ? 1 : clampZoom(loadUiZoom() + delta * 0.1)
-  try {
-    window.localStorage.setItem(UI_ZOOM_KEY, String(next))
-  } catch {
-    // the zoom still applies for this session
-  }
+  storeZoom(next)
   void applyWebviewZoom(next)
   return next
 }
 
 export function setUiZoom(value: number): number {
   const next = clampZoom(value)
-  try {
-    window.localStorage.setItem(UI_ZOOM_KEY, String(next))
-  } catch {
-    // the zoom still applies for this session
-  }
+  storeZoom(next)
   void applyWebviewZoom(next)
   return next
 }

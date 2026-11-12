@@ -8,11 +8,14 @@
 | `hooks/` | Die ausgezogenen Hooks. Siehe `hooks/CLAUDE.md`. |
 | `DockLayout.tsx` | Andock-Rahmen (Projects, Properties, Editor, Navigator, Output). |
 | `layoutState.ts` | Zustand und Speicherung des Layouts. |
-| `menuModel.ts` | Hauptmenü als Daten (`buildMenus`, `TOOL_WINDOWS`, `MenuContext`). |
+| `menuModel.ts` | Hauptmenü als Daten (`buildMenus`, `TOOL_WINDOWS`, `MenuContext`). Menü "Debug" (vor Help) nur wenn `isDevBuild()`; Tests setzen `ctx.devBuild`. |
+| `debugMenu.test.ts` | Test: Debug-Menü nur im Dev-Build, Plugin-Einträge. |
 | `MenuBar.tsx` | Menüleiste mit Tastaturbedienung. |
 | `Toolbar.tsx` | Werkzeugleiste, liest auch `useToolbarItems` aus dem Register. |
 | `toolbarPrefs.ts` | Gruppen der Werkzeugleiste, an/aus, gespeichert. |
 | `StatusBar.tsx` | Statusleiste, Plätze für Plugin-Felder. |
+| `IndexStatusItem.tsx` | Feld der Statusleiste: Fortschritt des Projekt-Index (`Indexing 45%  Datei`), danach kurz `Index ready`. Klick öffnet den IDE-Log. |
+| `coreStatusItems.ts` | `registerCoreStatusItems()`: Statusleisten-Beiträge des Kerns (ohne Plugin). Aufruf in `App.tsx` und `test/setup.ts`. |
 | `ProjectsPanel.tsx` | Kopf und Inhalt des Projects-Panels. |
 | `PropertiesBody.tsx` | Inhalt des Properties-Panels je Auswahl. |
 | `OutputPanel.tsx` | Output-Fenster (Unter-Reiter `database`, `build`, `default`, `nodejs`). |
@@ -36,6 +39,7 @@
 | `DeployOptionsDialog.tsx` | Deploy, erster Dialog (Projekt, System, Optionen). |
 | `DeployDialog.tsx` | Deploy-Plan mit Bestätigung. |
 | `DeployDiffDialog.tsx` | Diff eines Modells beim Deploy. |
+| `DeployDiffEditor.tsx` | Der Diff-Editor (Monaco) im Deploy-Diff-Dialog. |
 | `SelectDatabaseConnectionDialog.tsx` | Datenbankverbindung für Liquibase wählen. |
 | `TranspileProgress.tsx` | Fortschritt eines Builds. |
 | `TranspileMatchDialog.tsx` | Übereinstimmung eigener Transpiler mit offiziellem. |
@@ -59,7 +63,7 @@ Hauptfenster: Layout, Menü, Toolbar, Dialoge und die Hooks, die den Zustand hal
 - Raus: `App.tsx` (Aufruf von `Shell`), `windows/DialogWindowApp.tsx` (nutzt Dialoge).
 
 ## Regeln und Fallen
-- Reihenfolge der Hook-Aufrufe in `Shell.tsx` zählt: spätere Hooks bekommen Werte früherer. Ungefähr: `useOutputLogs`, `useProjects`, `useSelection`, `useDbStatus`, `useProblemScan`, `useTabs`, `useSave`, `useNavElements`, `useFloatingWindows`, `useTranspile`, `useDeploy`, `useRefactoring`, `useLiquibase`, `useTreeActions`, `useEditorWindows`, `useExternalChanges`, `useShellCommands`, `useDialogWindows`, `useShellPanels`.
+- Reihenfolge der Hook-Aufrufe in `Shell.tsx` zählt: spätere Hooks bekommen Werte früherer. Ungefähr: `useOutputLogs`, `useProjects`, `useIndexStatus`, `useSelection`, `useDbStatus`, `useProblemScan`, `useTabs`, `useSave`, `useNavElements`, `useFloatingWindows`, `useTranspile`, `useDeploy`, `useRefactoring`, `useLiquibase`, `useTreeActions`, `useEditorWindows`, `useExternalChanges`, `useShellCommands`, `useDialogWindows`, `useShellPanels`.
 - `closeProjects`, `handleTreeSelect`, `openSql`, `openProblem` bleiben in `Shell.tsx` (sie brauchen Zustand aus mehreren Hooks).
 - Refs verbinden Hooks, die sich sonst im Kreis brauchen: `saveIdsRef` (Shell legt an, `useSave` setzt), `activateNodeRef` (`useTabs`), `removeElementRef` (Shell legt an, `useNavElements` setzt), `resetNavRef`/`activateNavRef` (`useNavElements`), `editorWindowsRef` (Shell setzt nach `useEditorWindows`).
 - `runCommand` nutzt die Befehls-Map der letzten Render-Runde, in der sich die Abhängigkeitsliste geändert hat. Neue Zustände in die Liste eintragen, sonst ruft ein Befehl alte Werte.
@@ -77,4 +81,5 @@ Hauptfenster: Layout, Menü, Toolbar, Dialoge und die Hooks, die den Zustand hal
 
 ## Tests
 - `npm test` in `app/ui`. Einzeln: `npx vitest run src/shell/Shell.test.tsx`.
+- `test/setup.ts` stellt `import.meta.env.DEV` auf false: Tests sehen das Menü ohne Debug.
 - `menuSpec.test.ts` und `toolbarSpec.test.tsx` brauchen Spec-Dateien unter `E:\60_design` (laut Root-`CLAUDE.md` fehlen sie).

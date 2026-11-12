@@ -1,3 +1,4 @@
+import { configGet } from '../settings/appConfig'
 import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -58,8 +59,8 @@ describe('AliasConfigPanel sheet', () => {
     render(<AliasConfigPanel config={config} system="dev1" splitKey="a" />)
     screen.getByRole('separator').focus()
     await user.keyboard('{ArrowLeft}')
-    expect(localStorage.getItem('forge.sheetSplit.a')).toBe('48')
-    expect(localStorage.getItem('forge.sheetSplit.b')).toBeNull()
+    expect(configGet('layout', 'sheet_split', 'a')).toBe(48)
+    expect(configGet('layout', 'sheet_split', 'b')).toBeUndefined()
   })
 })
 

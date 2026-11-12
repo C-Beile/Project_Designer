@@ -1,3 +1,4 @@
+import { configSet } from '../settings/appConfig'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -22,7 +23,7 @@ function setup(extra: { tunnelError?: string } = {}) {
 }
 
 describe('tunnel row menu', () => {
-  beforeEach(() => window.localStorage.setItem('forge.tunnelView', 'table'))
+  beforeEach(() => configSet(['tunnels', 'view'], 'table'))
 
   it('right click opens an own menu with the original entries first and prevents the browser menu', async () => {
     setup()

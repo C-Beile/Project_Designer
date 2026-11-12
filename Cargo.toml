@@ -9,6 +9,12 @@ resolver = "2"
 # app crate; see R16 for why an empty-glob wildcard is dangerous here) once the crate already
 # existed, per the same "create crate first, then extend workspace root" guardrail cli-forge used.
 members = ["crates/*", "cli/*", "app/src-tauri"]
+exclude = ["vendor"]
+
+# notify 6.1.1 with one patch: a Windows buffer overflow (0 bytes) becomes a `Flag::Rescan` event.
+# See vendor/notify/src/windows.rs ("PATCH") and docs/index-watcher-plan.md (D2).
+[patch.crates-io]
+notify = { path = "vendor/notify" }
 
 [workspace.package]
 edition = "2021"
@@ -22,6 +28,7 @@ serde_json = "1"
 quick-xml = "0.36"
 thiserror = "1"
 tokio = "1"
+toml = { version = "0.8", features = ["preserve_order"] }
 
 # Shared lint policy for the whole workspace — kept intentionally light for P3, tightened later.
 [workspace.lints.rust]

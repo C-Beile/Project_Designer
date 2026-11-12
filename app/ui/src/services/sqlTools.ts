@@ -1,3 +1,4 @@
+import { configGet, configSet } from '../settings/appConfig'
 // Pure helpers of the Execute SQL window (manual chapter 8): statement splitting for "run sql",
 // the statement under the cursor for "run statement", CSV export of a result and the statements
 // behind the editable result grid. Nothing here talks to the database.
@@ -120,34 +121,21 @@ export function buildInsert(table: string, columns: string[], values: (string | 
   return `INSERT INTO ${table} (${columns.map(ident).join(', ')}) VALUES (${values.map(sqlLiteral).join(', ')})`
 }
 
-export const HISTORY_KEY = 'forge.sqlHistory.v1'
+const HISTORY_PATH = ['sql', 'history'] as const
 const HISTORY_MAX = 100
 
 export function loadSqlHistory(): string[] {
-  try {
-    const raw = window.localStorage.getItem(HISTORY_KEY)
-    const parsed: unknown = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string').slice(0, HISTORY_MAX) : []
-  } catch {
-    return []
-  }
+  const parsed = configGet<unknown>(...HISTORY_PATH)
+  return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string').slice(0, HISTORY_MAX) : []
 }
 
 // Newest first, duplicates collapse to their latest use.
 export function pushSqlHistory(sql: string): string[] {
   const list = [sql, ...loadSqlHistory().filter((s) => s !== sql)].slice(0, HISTORY_MAX)
-  try {
-    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(list))
-  } catch {
-    // history is a convenience only
-  }
+  configSet(HISTORY_PATH, list)
   return list
 }
 
 export function clearSqlHistory(): void {
-  try {
-    window.localStorage.removeItem(HISTORY_KEY)
-  } catch {
-    // nothing to clear
-  }
+  configSet(HISTORY_PATH, undefined)
 }

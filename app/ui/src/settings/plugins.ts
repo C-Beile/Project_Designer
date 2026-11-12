@@ -1,3 +1,4 @@
+import { configGet, configSet, onConfigChange, touches } from './appConfig'
 // Plugin list of Tools > Plugins (manual chapter 14). The original Designer loads NetBeans
 // modules (nbm); Dito Designer has no such plugin loader. Its plugins are built-in components,
 // so the dialog shows them with their real state: active, deactivated by the user, or not
@@ -186,7 +187,7 @@ export function mergePluginList(registered: { id: string; name: string; category
   return merged
 }
 
-export const PLUGINS_KEY = 'forge.plugins.v1'
+const PLUGINS_PATH = ['plugins'] as const
 
 export interface PluginPrefs {
   deactivated: string[]
@@ -197,17 +198,12 @@ export interface PluginPrefs {
 }
 
 function load(): PluginPrefs {
-  try {
-    const raw = window.localStorage.getItem(PLUGINS_KEY)
-    const parsed = raw ? (JSON.parse(raw) as Partial<PluginPrefs>) : {}
-    const freq = parsed.checkFrequency
-    return {
-      deactivated: Array.isArray(parsed.deactivated) ? parsed.deactivated.filter((x): x is string => typeof x === 'string') : [],
-      activated: Array.isArray(parsed.activated) ? parsed.activated.filter((x): x is string => typeof x === 'string') : [],
-      checkFrequency: freq === 'weekly' || freq === 'monthly' || freq === 'never' ? freq : 'startup',
-    }
-  } catch {
-    return { deactivated: [], activated: [], checkFrequency: 'startup' }
+  const parsed = configGet<Partial<PluginPrefs>>(...PLUGINS_PATH) ?? {}
+  const freq = parsed.checkFrequency
+  return {
+    deactivated: Array.isArray(parsed.deactivated) ? parsed.deactivated.filter((x): x is string => typeof x === 'string') : [],
+    activated: Array.isArray(parsed.activated) ? parsed.activated.filter((x): x is string => typeof x === 'string') : [],
+    checkFrequency: freq === 'weekly' || freq === 'monthly' || freq === 'never' ? freq : 'startup',
   }
 }
 
@@ -220,11 +216,8 @@ export function getPluginPrefs(): PluginPrefs {
 
 export function setPluginPrefs(next: PluginPrefs): void {
   current = next
-  try {
-    window.localStorage.setItem(PLUGINS_KEY, JSON.stringify(next))
-  } catch {
-    // the choice still applies for this session
-  }
+  // Der Standard (Start-Prüfung) steht nicht in der Datei.
+  configSet(PLUGINS_PATH, { ...next, checkFrequency: next.checkFrequency === 'startup' ? undefined : next.checkFrequency })
   listeners.forEach((l) => l())
 }
 
@@ -234,11 +227,10 @@ export function reloadPluginPrefs(): void {
   listeners.forEach((l) => l())
 }
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
-    if (e.key === PLUGINS_KEY) reloadPluginPrefs()
-  })
-}
+// Beim Laden der Konfiguration und bei Änderungen aus einem anderen Fenster (Plugins-Fenster) neu lesen.
+onConfigChange((path) => {
+  if (touches(path, PLUGINS_PATH)) reloadPluginPrefs()
+})
 
 export function subscribePluginPrefs(listener: () => void): () => void {
   listeners.add(listener)
@@ -270,9 +262,5 @@ export function isPluginActive(id: string, prefs: PluginPrefs = current): boolea
 
 export function resetPluginsForTests(): void {
   current = { deactivated: [], activated: [], checkFrequency: 'startup' }
-  try {
-    window.localStorage.removeItem(PLUGINS_KEY)
-  } catch {
-    // nothing stored
-  }
+  configSet(PLUGINS_PATH, undefined)
 }

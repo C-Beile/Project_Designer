@@ -1,7 +1,7 @@
 //! Git als Feature-Plugin: bildet die Befehle (Namen wie die Tauri-Befehle) auf `git_actions`/`git_scm` ab.
 //! Argumente sind ein JSON-Objekt mit camelCase-Feldern (`projectRoot`, `sshKey` ...).
 
-use crate::{clone, git_actions, git_scm};
+use crate::{clone, connect, git_actions, git_scm};
 use plugin_api::feature::{to_json as json, unknown_command};
 use plugin_api::{Args, FeaturePlugin};
 use serde_json::Value;
@@ -28,17 +28,17 @@ impl FeaturePlugin for GitPlugin {
             "git_unpushed" => json(git_actions::unpushed(&a.root()?)?),
             "git_incoming" => json(git_actions::incoming(&a.root()?)?),
             "git_push_to" => json(git_actions::push_up_to(&a.root()?, &a.string("hash")?)?),
-            "git_pull" => json(git_actions::pull(&a.root()?)?),
+            "git_pull" => json(git_actions::pull_with(&a.root()?, a.opt_string("mode")?.as_deref())?),
             "git_push" => json(git_actions::push(&a.root()?)?),
-            "git_checkout" => json(git_actions::checkout(&a.root()?, &a.string("branch")?)?),
-            "git_create_branch" => json(git_actions::create_branch(&a.root()?, &a.string("name")?, a.opt_string("start")?.as_deref())?),
+            "git_checkout" => json(git_actions::checkout_with(&a.root()?, &a.string("branch")?, a.opt_string("mode")?.as_deref())?),
+            "git_create_branch" => json(git_actions::create_branch_with(&a.root()?, &a.string("name")?, a.opt_string("start")?.as_deref(), a.opt_string("mode")?.as_deref())?),
             "scm_status" => json(git_scm::status(&a.root()?)?),
             "scm_stage" => json(git_scm::stage(&a.root()?, &a.get::<Vec<String>>("paths")?)?),
             "scm_stage_all" => json(git_scm::stage_all(&a.root()?)?),
             "scm_unstage" => json(git_scm::unstage(&a.root()?, &a.get::<Vec<String>>("paths")?)?),
             "scm_discard" => json(git_scm::discard(&a.root()?, &a.get::<Vec<String>>("paths")?)?),
             "scm_commit" => json(git_scm::commit_staged(&a.root()?, &a.string("message")?)?),
-            "scm_sync" => json(git_scm::sync(&a.root()?)?),
+            "scm_sync" => json(git_scm::sync(&a.root()?, a.opt_string("mode")?.as_deref())?),
             "scm_history" => json(git_scm::history(&a.root()?, a.get::<usize>("limit")?.clamp(1, 500))?),
             "scm_commit_files" => json(git_scm::commit_files(&a.root()?, &a.string("hash")?)?),
             "scm_diff" => {
@@ -50,6 +50,9 @@ impl FeaturePlugin for GitPlugin {
                 let dir = clone::clone_repository(&a.string("url")?, &a.string("location")?, &a.string("name")?, a.opt_string("sshKey")?.as_deref(), a.opt_string("password")?.as_deref())?;
                 json(dir.to_string_lossy().into_owned())
             }
+            "git_repo_link" => json(connect::link_info(&a.root()?)),
+            "git_login" => json(connect::login(&a.root()?, &a.string("user")?, &a.string("password")?)?),
+            "git_connect" => json(connect::connect(&a.root()?, &a.string("url")?, a.opt_string("sshKey")?.as_deref(), a.opt_string("user")?.as_deref(), a.opt_string("password")?.as_deref())?),
             _ => Err(unknown_command(self.id(), command)),
         }
     }

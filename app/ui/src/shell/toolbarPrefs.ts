@@ -1,5 +1,6 @@
+import { configGet, configSet } from '../settings/appConfig'
 // Which toolbar groups are shown (View > Toolbars, right click on the toolbar) and whether the
-// icons are small. Kept per user in localStorage; storage problems only mean the defaults apply.
+// icons are small. Kept per user in designer.conf ([toolbar]); a missing value means the defaults apply.
 
 export type ToolbarGroup = 'analytics' | 'convert' | 'open' | 'undoredo' | 'git' | 'deploy' | 'run' | 'performance' | 'build'
 
@@ -20,7 +21,7 @@ export interface ToolbarPrefs {
   smallIcons: boolean
 }
 
-export const TOOLBAR_KEY = 'forge.toolbar.v1'
+const TOOLBAR_PATH = ['toolbar'] as const
 
 export function defaultToolbarPrefs(): ToolbarPrefs {
   return { groups: { analytics: true, convert: true, open: true, undoredo: true, git: true, deploy: true, run: true, performance: false, build: true }, smallIcons: true }
@@ -28,21 +29,12 @@ export function defaultToolbarPrefs(): ToolbarPrefs {
 
 export function loadToolbarPrefs(): ToolbarPrefs {
   const out = defaultToolbarPrefs()
-  try {
-    const raw = window.localStorage.getItem(TOOLBAR_KEY)
-    const parsed = raw ? (JSON.parse(raw) as Partial<ToolbarPrefs>) : {}
-    for (const g of TOOLBAR_GROUPS) if (typeof parsed.groups?.[g.id] === 'boolean') out.groups[g.id] = parsed.groups[g.id]
-    if (typeof parsed.smallIcons === 'boolean') out.smallIcons = parsed.smallIcons
-  } catch {
-    // defaults
-  }
+  const parsed = configGet<Partial<ToolbarPrefs>>(...TOOLBAR_PATH) ?? {}
+  for (const g of TOOLBAR_GROUPS) if (typeof parsed.groups?.[g.id] === 'boolean') out.groups[g.id] = parsed.groups[g.id]
+  if (typeof parsed.smallIcons === 'boolean') out.smallIcons = parsed.smallIcons
   return out
 }
 
 export function saveToolbarPrefs(prefs: ToolbarPrefs): void {
-  try {
-    window.localStorage.setItem(TOOLBAR_KEY, JSON.stringify(prefs))
-  } catch {
-    // the choice still applies for this session
-  }
+  configSet(TOOLBAR_PATH, prefs)
 }

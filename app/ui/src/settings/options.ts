@@ -1,4 +1,5 @@
-// User options of Tools > Options (manual 4.8.3). Stored per user in localStorage; a missing or
+import { configGet, configSet, onConfigChange, touches } from './appConfig'
+// User options of Tools > Options (manual 4.8.3). Stored per user in designer.conf ([options]); a missing or
 // damaged value falls back to the defaults. API keys and other secrets are deliberately never
 // part of this store.
 
@@ -80,7 +81,7 @@ export const DEFAULT_OPTIONS: DesignerOptions = {
   misc: { csvSeparator: ';', outputMaxLines: 5000, janitorOnStartup: true, janitorDays: 30 },
 }
 
-export const OPTIONS_KEY = 'forge.options.v1'
+const OPTIONS_PATH = ['options'] as const
 
 type Plain = Record<string, unknown>
 
@@ -99,12 +100,7 @@ function merge<T>(base: T, incoming: unknown): T {
 }
 
 export function loadOptions(): DesignerOptions {
-  try {
-    const raw = window.localStorage.getItem(OPTIONS_KEY)
-    return merge(DEFAULT_OPTIONS, raw ? JSON.parse(raw) : {})
-  } catch {
-    return DEFAULT_OPTIONS
-  }
+  return merge(DEFAULT_OPTIONS, configGet<object>(...OPTIONS_PATH) ?? {})
 }
 
 let current = loadOptions()
@@ -116,11 +112,7 @@ export function getOptions(): DesignerOptions {
 
 export function saveOptions(next: DesignerOptions): void {
   current = merge(DEFAULT_OPTIONS, next)
-  try {
-    window.localStorage.setItem(OPTIONS_KEY, JSON.stringify(current))
-  } catch {
-    // the options still apply for this session
-  }
+  configSet(OPTIONS_PATH, current)
   listeners.forEach((l) => l())
 }
 
@@ -139,9 +131,10 @@ export function subscribeOptions(listener: () => void): () => void {
 
 export function resetOptionsForTests(): void {
   current = DEFAULT_OPTIONS
-  try {
-    window.localStorage.removeItem(OPTIONS_KEY)
-  } catch {
-    // nothing stored
-  }
+  configSet(OPTIONS_PATH, undefined)
 }
+
+// Beim Laden der Konfiguration und bei Änderungen aus einem anderen Fenster (Options-Fenster) neu lesen.
+onConfigChange((path) => {
+  if (touches(path, OPTIONS_PATH)) reloadOptions()
+})

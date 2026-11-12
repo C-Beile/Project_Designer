@@ -31,7 +31,7 @@ describe('Git plugin in the UI registry', () => {
     const off = registerGitPlugin()
     const ids = team(ctx).map((i) => i.id)
     expect(ids).toEqual(['team.shelve', 'team.sep.git', 'team.git', 'team.sep.history', 'team.historyMenu'])
-    expect(team(ctx).find((i) => i.id === 'team.git')!.children!.map((c) => c.label)).toEqual(['Commit...', 'Pull...', 'Push...', 'Switch Branch...'])
+    expect(team(ctx).find((i) => i.id === 'team.git')!.children!.map((c) => c.label)).toEqual(['Repository...', 'Sign In...', '', 'Commit...', 'Pull...', 'Push...', 'Switch Branch...'])
     off()
     expect(team(ctx).map((i) => i.id)).toEqual(['team.shelve'])
   })
@@ -47,10 +47,10 @@ describe('Git plugin in the UI registry', () => {
   it('shows the Team options category only with the plugin', async () => {
     const props = { api: createMockForgeApi({ projectTree: [], documents: {} }), onClose: () => {}, onSaved: () => {}, engine: 'adito' as MenuContext['engine'], onEngineChange: () => {}, theme: 'dark' as const, onThemeChange: () => {}, keymap: [] }
     const { unmount } = render(<OptionsDialog {...props} />)
-    expect(screen.queryByRole('tab', { name: 'Team' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Git' })).toBeNull()
     unmount()
     registerGitPlugin()
     render(<OptionsDialog {...props} />)
-    expect(screen.getByRole('tab', { name: 'Team' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Git' })).toBeInTheDocument()
   })
 })

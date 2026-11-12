@@ -66,7 +66,7 @@ React-19-Oberfläche des Designers. Läuft in Tauri. Spricht nur über `ForgeApi
 | Neue Toolbar-Taste | Plugin: `registerToolbarItem`; Kern: `src/shell/Toolbar.tsx`, `src/shell/toolbarPrefs.ts` |
 | Neue Option-Seite | Plugin: `registerOptionsPage`; Kern: `src/shell/OptionsDialog.tsx` |
 | Neue Maske (Dialog) | `src/core/ui/` (`defineFormDialog`, `defineListDialog`, `registerUiDialog`) |
-| Neues Statusleisten-Feld | `registerStatusBarItem`, Anzeige in `src/shell/StatusBar.tsx` |
+| Neues Statusleisten-Feld | Plugin: `registerStatusBarItem`; Kern: `src/shell/coreStatusItems.ts` (Beispiel `IndexStatusItem`), Anzeige in `src/shell/StatusBar.tsx` |
 | Farbe oder Theme | `src/theme/tokens.css`, `src/theme/uiTheme.ts` |
 
 ## Tests

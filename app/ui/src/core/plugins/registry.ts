@@ -5,6 +5,7 @@ import type { MenuEntry } from '../../tree/contextMenu'
 import type { MenuContext, MenuItemDef } from '../../shell/menuModel'
 import type { ShellDialog } from '../../shell/hooks/dialogTypes'
 import type { TreeNode } from '../../wire/types'
+import { logError } from '../errorLog'
 
 // UI-Plugin-Register: Features (Git, SQL, Transpile ...) erweitern die Oberfläche selbst,
 // der Kern kennt sie nicht. Ein Plugin ruft beim Start registerPlugin(...) und die
@@ -56,6 +57,10 @@ export interface ToolbarContext {
   hasProject: boolean
   /** Plugin in Tools > Plugins eingeschaltet (false = vom Nutzer abgeschaltet). */
   pluginActive: boolean
+  /** Git: der Projektordner liegt in einem Repository (false = Knöpfe abgeblendet). Ohne Angabe: ja. */
+  gitRepo?: boolean
+  /** Git: es gibt geänderte Dateien (false = Commit abgeblendet). Ohne Angabe: ja. */
+  gitChanges?: boolean
 }
 
 export interface ToolbarItem extends Contribution {
@@ -297,10 +302,39 @@ export function setPluginData(plugin: string, data: unknown): () => void {
 
 // ---------- Lesen (nicht-reaktiv) ----------
 
+// Ein Fehler in einem Plugin-Beitrag darf nie das ganze Fenster mitreißen: der Beitrag fällt weg oder
+// wird abgeblendet, der Rest bleibt bedienbar. Jeder Fehler kommt einmal ins Protokoll.
+const reported = new Set<string>()
+function reportOnce(what: string, error: unknown): void {
+  const NL = String.fromCharCode(10)
+  const text = error instanceof Error ? `${error.name}: ${error.message}${NL}${error.stack ?? ''}` : String(error)
+  const key = `${what}|${text.split(NL)[0]}`
+  if (reported.has(key)) return
+  reported.add(key)
+  logError(`plugin contribution failed (${what}): ${text}`)
+}
+
 function readMenu(s: State, menu: string, ctx?: MenuContext): MenuItemDef[] {
-  return byOrder(s.menus.filter((m) => m.menu === menu && visible(s, m))).flatMap((m) =>
-    typeof m.items === 'function' ? (ctx ? m.items(ctx) : []) : m.items,
-  )
+  return byOrder(s.menus.filter((m) => m.menu === menu && visible(s, m))).flatMap((m) => {
+    if (typeof m.items !== 'function') return m.items
+    if (!ctx) return []
+    try {
+      return m.items(ctx)
+    } catch (e) {
+      reportOnce(`menu ${menu}${m.plugin ? ` of ${m.plugin}` : ''}`, e)
+      return []
+    }
+  })
+}
+
+/** Aktiv-Zustand eines Toolbar-Beitrags; wirft der Beitrag, ist der Knopf abgeblendet statt das Fenster zu zerstören. */
+export function toolbarItemState(item: ToolbarItem, ctx: ToolbarContext): { enabled: boolean; hint?: string } {
+  try {
+    return item.state?.(ctx) ?? { enabled: true }
+  } catch (e) {
+    reportOnce(`toolbar ${item.id}`, e)
+    return { enabled: false, hint: `${item.label} (unavailable: error in the plugin, see the log)` }
+  }
 }
 function readOptions(s: State): OptionsPage[] {
   return byOrder(s.options.filter((p) => visible(s, p)))

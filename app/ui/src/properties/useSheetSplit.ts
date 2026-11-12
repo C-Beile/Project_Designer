@@ -1,29 +1,22 @@
+import { configGet, configSet } from '../settings/appConfig'
 import { useCallback, useState } from 'react'
 import type { KeyboardEvent, PointerEvent as ReactPointerEvent, RefObject } from 'react'
 
 // Position of the divider between the Name and the Value column of a property sheet, as a share of
 // the sheet width. Each place that shows a sheet (the Properties panel, the editor tab) keeps its
-// own position, remembered in the browser storage; without it the sheet starts in the middle.
+// own position, remembered in designer.conf ([layout.sheet_split]); without it the sheet starts in the middle.
 
 const MIN = 15
 const MAX = 85
 const clamp = (v: number) => Math.min(MAX, Math.max(MIN, v))
 
 function load(key: string, fallback: number): number {
-  try {
-    const raw = Number(window.localStorage.getItem(`forge.sheetSplit.${key}`))
-    return Number.isFinite(raw) && raw >= MIN && raw <= MAX ? raw : fallback
-  } catch {
-    return fallback
-  }
+  const raw = Number(configGet<number>('layout', 'sheet_split', key))
+  return Number.isFinite(raw) && raw >= MIN && raw <= MAX ? raw : fallback
 }
 
 function save(key: string, value: number) {
-  try {
-    window.localStorage.setItem(`forge.sheetSplit.${key}`, String(Math.round(value * 10) / 10))
-  } catch {
-    // the divider still keeps its place for this session
-  }
+  configSet(['layout', 'sheet_split', key], Math.round(value * 10) / 10)
 }
 
 export function useSheetSplit(key: string, area: RefObject<HTMLElement | null>, fallback = 50) {

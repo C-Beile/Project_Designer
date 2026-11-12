@@ -16,8 +16,9 @@
 | `src/new_object.rs` | "Neu": Vorlagen und `create_object`. |
 | `src/object_names.rs` | Namensprüfung für neue Objekte. |
 | `src/rename.rs` | Umbenennen mit Verweisen: `plan` und `apply`. |
-| `src/problems.rs` | Problem-Scan und Fundstellen (`scan_project`, `find_usages`). |
-| `src/parallel.rs` | `parallel_map`: viele Dateien auf mehreren Threads lesen (Baum- und Problem-Scan). |
+| `src/problems.rs` | Voll-Scan (LEGACY): Fallback, solange der Index nicht fertig ist, und Vergleich in `tests/index_parity.rs`. `scan_project`, `find_usages`, `scan_usages_in`. Die Analyse einer Datei kommt aus `project-index`. |
+| `src/parallel.rs` | Re-Export von `app_base::parallel` (`parallel_map`, `io_threads`). Genutzt von Baum-, Problem-Scan und Textsuche. |
+| `src/content_search.rs` | Suchen und Ersetzen im Inhalt mehrerer Projekte. |
 | `src/catalog/` | Eigenschafts-Katalog (`mod.rs`), Sheet je Objekt (`sheet.rs`), XSD und Klassendateien lesen. |
 | `src/wire.rs` | Wire-Format zur UI (`WireValue`, Pfad-Text). |
 | `src/history.rs` | Undo/Redo-Verlauf je Objekt. |
@@ -28,7 +29,7 @@
 | `src/actions.rs` | `dispatch_action` (Action-Id zu `Action`). |
 | `src/project_zip.rs` | Export/Import ausgewählter Modelle als Zip. |
 | `src/project_create.rs` | Leeres Projekt anlegen. |
-| `src/watch.rs` | Änderungen von außen erkennen (Fingerabdruck, Datei-Stempel). |
+| `src/watch.rs` | Re-Export von `FileStamp`/`file_stamp` (Stempel je geöffneter Datei). Die Erkennung im ganzen Projekt macht `project-index`. |
 | `src/settings.rs` | Eigene Einstellungen und Liste offener Projekte. |
 | `src/discover.rs` | `find_projects`: ADITO-Projekte direkt in einem Ordner finden (`.aditoprj` oder `package.json` plus Objektordner). |
 | `src/webservices.rs` | `list_webservices`: Entity-Webservices von Projekt und Modulen mit erlaubten Methoden und Login-Typen (nur lesen). |
@@ -51,7 +52,7 @@ Die Logik hinter den Tauri-Befehlen, ohne `tauri`. Die Hülle `app/src-tauri/src
 - `actions::dispatch_action("transpile", ...)`, `transpile_action::run_transpile`.
 
 ## Abhängigkeiten
-- Rein: `designer-core`, `app-base`, `aod`, `validators`, `plugin-api`, `native-transpiler`, `npm-modules`, `platform`.
+- Rein: `designer-core`, `app-base`, `aod`, `validators`, `plugin-api`, `native-transpiler`, `npm-modules`, `platform`, `project-index`.
 - Raus: `app/src-tauri` (Befehle in `commands/project.rs`, `files.rs`, `editor.rs`, `transpile.rs`).
 
 ## Regeln und Fallen
@@ -68,12 +69,13 @@ Die Logik hinter den Tauri-Befehlen, ohne `tauri`. Die Hülle `app/src-tauri/src
 | Neuer Knoten oder Ordner im Baum | `src/tree.rs` |
 | Neuer Objekttyp bei "Neu" | `src/new_object.rs` |
 | Eigenschaftsliste im Properties-Panel | `src/catalog/sheet.rs`, `src/catalog/mod.rs` |
-| Umbenennen: welche Verweise | `src/rename.rs` |
-| Neue Prüfung im Problems-Tab | `src/problems.rs` (Prüfer selbst: `crates/validators`) |
+| Umbenennen: welche Verweise | `src/rename.rs` (`plan_with`/`apply_with` mit `IndexHints` vom Index; Kandidaten werden frisch geparst) |
+| Neue Prüfung im Problems-Tab | `crates/project-index/src/analyze.rs` / `query.rs` (Prüfer selbst: `crates/validators`) |
 | Transpile-Ablauf oder Engine-Wahl | `src/transpile_action.rs` |
 | Neuer Tauri-Befehl dazu | `app/src-tauri/src/commands/*.rs` und `generate_handler!` in `app/src-tauri/src/lib.rs` |
 
 ## Tests
 - `cargo test -p project`. Unit-Tests stehen in `src/*_tests.rs` und `src/catalog/tests.rs`.
+- `tests/index_parity.rs`: Index gegen Voll-Scan (Probleme, Usages, Rename-Plan) auf allen Fixtures.
 - `tests/robustness.rs`, `tests/modification_real.rs`: nutzen ein Korpus, wenn vorhanden (sonst übersprungen).
 - `tests/transpile_action_real.rs`: braucht eine ADITO-Installation für den offiziellen Lauf.

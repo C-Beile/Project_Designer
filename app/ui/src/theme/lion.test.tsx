@@ -1,3 +1,4 @@
+import { configSet } from '../settings/appConfig'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { THEME_LABELS, useTheme } from './useTheme'
@@ -43,7 +44,7 @@ describe('theme "Lion in der City"', () => {
   })
 
   it('still flips between dark and light without an argument and falls back to dark for unknown values', () => {
-    window.localStorage.setItem('forge.theme', 'nonsense')
+    configSet(['appearance', 'theme'], 'nonsense')
     const hook = renderHook(() => useTheme())
     expect(hook.result.current[0]).toBe('dark')
     act(() => hook.result.current[1]())
