@@ -1,4 +1,4 @@
-import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, IndexStatus, VerifyOutcome, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, WebserviceDto, RestUserDto, RestRequestDto, RestResponseDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, RepoLink, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, IndexStatus, VerifyOutcome, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, RestServerDto, WebserviceDto, RestUserDto, RestRequestDto, RestResponseDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, RepoLink, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The frontend's one seam onto the generic Tauri command surface (architecture.md §6: "Commands
 // sind generisch ... nicht pro Editor-Typ dupliziert"). Every editor component talks to this
@@ -79,6 +79,8 @@ export interface ForgeApi {
   findProjectsInFolder(folder: string): Promise<FoundProjectDto[]>
   /** Entity web services of the project and its modules, with the methods each one allows. */
   restListWebservices(projectRoot: string): Promise<WebserviceDto[]>
+  /** The servers of the project's systems, named after their server config files. */
+  restListServers(projectRoot: string): Promise<RestServerDto[]>
   /** Users of the active system with the role INTERNAL_WEBSERVICE (login name = title). */
   restUsers(): Promise<RestUserDto[]>
   restSend(request: RestRequestDto): Promise<RestResponseDto>
@@ -190,6 +192,7 @@ export interface ForgeApi {
   systemUserSetProperty(id: string, value: string, confirmed: boolean): Promise<void>
   /** Sets one property of a user; a property the user does not have yet is added. */
   systemUserSet(user: string, key: string, value: string, confirmed: boolean): Promise<void>
+  systemUserSetPassword(user: string, password: string, confirmed: boolean): Promise<void>
   /** Replaces all values of a list property of a user (roleNames). */
   systemUserSetList(user: string, key: string, values: string[], confirmed: boolean): Promise<void>
   /** Adds a user and returns its id. */

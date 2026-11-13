@@ -49,7 +49,7 @@ const gitNetCall = <T,>(command: string, projectRoot: string, args: Record<strin
 import { withGitAuth } from './gitAuth'
 import { withCheckoutChoice } from './gitCheckout'
 import type { ForgeApi } from './ForgeApi'
-import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, IndexStatus, VerifyOutcome, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, WebserviceDto, RestUserDto, RestResponseDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, RepoLink, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, IndexStatus, VerifyOutcome, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, RestServerDto, WebserviceDto, RestUserDto, RestResponseDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, RepoLink, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The real implementation - a pure pass-through to the Tauri commands in
 // app/src-tauri/src/lib.rs, one call each, no business logic (architecture.md §1
@@ -97,6 +97,7 @@ export const tauriForgeApi: ForgeApi = {
   getRecentProject: () => invoke<string | null>('get_recent_project'),
   getRecentProjects: () => invoke<string[]>('get_recent_projects'),
   findProjectsInFolder: (folder) => invoke<FoundProjectDto[]>('find_projects_in_folder', { folder }),
+  restListServers: (projectRoot) => invoke<RestServerDto[]>('rest_list_servers', { projectRoot }),
   restListWebservices: (projectRoot) => invoke<WebserviceDto[]>('rest_list_webservices', { projectRoot }),
   restUsers: () => invoke<RestUserDto[]>('plugin_call', { plugin: 'database', command: 'rest_users', args: {} }),
   restSend: (request) => invoke<RestResponseDto>('rest_send', { request }),
@@ -166,6 +167,7 @@ export const tauriForgeApi: ForgeApi = {
   systemUserProperties: (user) => invoke<UserPropertyDto[]>('plugin_call', { plugin: 'database', command: 'system_user_properties', args: { user } }),
   systemAssignedRoles: () => invoke<string[]>('plugin_call', { plugin: 'database', command: 'system_assigned_roles', args: {} }),
   systemUserSetProperty: (id, value, confirmed) => invoke<void>('plugin_call', { plugin: 'database', command: 'system_user_set_property', args: { id, value, confirmed } }),
+  systemUserSetPassword: (user, password, confirmed) => invoke<void>('plugin_call', { plugin: 'database', command: 'system_user_set_password', args: { user, password, confirmed } }),
   systemUserSet: (user, key, value, confirmed) => invoke<void>('plugin_call', { plugin: 'database', command: 'system_user_set', args: { user, key, value, confirmed } }),
   systemUserSetList: (user, key, values, confirmed) => invoke<void>('plugin_call', { plugin: 'database', command: 'system_user_set_list', args: { user, key, values, confirmed } }),
   systemUserCreate: (title, confirmed) => invoke<string>('plugin_call', { plugin: 'database', command: 'system_user_create', args: { title, confirmed } }),

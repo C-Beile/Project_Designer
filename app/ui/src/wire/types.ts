@@ -483,6 +483,11 @@ export interface WebserviceDto {
   fields: number
 }
 
+export interface RestServerDto {
+  host: string
+  systems: string[]
+}
+
 export interface RestUserDto {
   id: string
   title: string
@@ -511,6 +516,7 @@ export interface RestResponseDto {
   body: string
   elapsedMs: number
   size: number
+  sent: string
 }
 
 export interface FoundProjectDto {

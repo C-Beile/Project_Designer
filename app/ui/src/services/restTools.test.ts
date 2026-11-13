@@ -64,3 +64,10 @@ describe('json', () => {
     expect(bodyTemplate({ id: '', method: 'GET', path: '', label: '', record: false })).toBe('')
   })
 })
+
+describe('joinUrl with a server that already ends with the REST root', () => {
+  it('does not repeat /services/rest', () => {
+    expect(joinUrl('https://h.cloud/services/rest', '/services/rest/Product_ws')).toBe('https://h.cloud/services/rest/Product_ws')
+    expect(joinUrl('https://h.cloud', '/services/rest/Product_ws')).toBe('https://h.cloud/services/rest/Product_ws')
+  })
+})

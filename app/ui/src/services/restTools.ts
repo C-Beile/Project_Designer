@@ -47,7 +47,8 @@ export function bodyTemplate(call: RestCall | null): string {
 
 export function joinUrl(base: string, path: string): string {
   const b = base.trim().replace(/\/+$/, '')
-  const p = path.startsWith('/') ? path : `/${path}`
+  let p = path.startsWith('/') ? path : `/${path}`
+  if (b.endsWith(REST_ROOT) && p.startsWith(`${REST_ROOT}/`)) p = p.slice(REST_ROOT.length)
   return b === '' ? p : `${b}${p}`
 }
 

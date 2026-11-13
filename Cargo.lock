@@ -987,11 +987,13 @@ version = "0.1.0"
 dependencies = [
  "app-base",
  "async-trait",
+ "getrandom 0.2.17",
  "platform",
  "plugin-api",
  "quick-xml 0.36.2",
  "serde",
  "serde_json",
+ "sha2",
  "sqlx",
  "ssh-tunnel",
  "thiserror 2.0.20",
@@ -1122,7 +1124,8 @@ dependencies = [
  "plugin-api",
  "project",
  "project-index",
- "reqwest",
+ "rustls 0.23.45",
+ "rustls-platform-verifier",
  "serde",
  "serde_json",
  "ssh-tunnel",
@@ -1130,6 +1133,8 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-log",
  "tauri-plugin-updater",
+ "tokio",
+ "tokio-rustls 0.26.6",
 ]
 
 [[package]]

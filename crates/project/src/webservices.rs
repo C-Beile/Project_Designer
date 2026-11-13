@@ -1,6 +1,7 @@
 //! The entity web services of a project and its modules: name, allowed methods, login types (read-only).
 
 use serde::Serialize;
+use std::collections::BTreeMap;
 use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -69,6 +70,74 @@ pub fn list_webservices(project_root: &Path) -> Vec<WebserviceDto> {
     out
 }
 
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct ServerDto {
+    pub host: String,
+    pub systems: Vec<String>,
+}
+
+/// The host a server config file is named after: `hermes-mig.test.htc1.adito.cloud_serverconfig_system_bg.xml` gives
+/// `hermes-mig.test.htc1.adito.cloud`.
+pub fn host_of_server_config(reference: &str) -> Option<String> {
+    let file = reference.rsplit(['/', '\\']).next()?;
+    let lower = file.to_ascii_lowercase();
+    let at = lower.find("_serverconfig")?;
+    let host = file[..at].trim();
+    (!host.is_empty() && host.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-'))).then(|| host.to_string())
+}
+
+/// The hosts of the systems of a project, named after their server config files, with the systems that use each.
+pub fn list_servers(project_root: &Path) -> Vec<ServerDto> {
+    let mut by_host: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let Ok(entries) = std::fs::read_dir(project_root.join("system")) else { return Vec::new() };
+    for entry in entries.flatten() {
+        if !entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+            continue;
+        }
+        let name = entry.file_name().to_string_lossy().into_owned();
+        let Ok(bytes) = std::fs::read(entry.path().join(format!("{name}.aod"))) else { continue };
+        let text = String::from_utf8_lossy(&bytes);
+        let Some(start) = text.find("<serverConfigPath>") else { continue };
+        let rest = &text[start + "<serverConfigPath>".len()..];
+        let Some(end) = rest.find("</serverConfigPath>") else { continue };
+        if let Some(host) = host_of_server_config(rest[..end].trim()) {
+            by_host.entry(host).or_default().push(name);
+        }
+    }
+    by_host.into_iter().map(|(host, mut systems)| {
+        systems.sort();
+        ServerDto { host, systems }
+    }).collect()
+}
+
+#[cfg(test)]
+mod server_tests {
+    use super::*;
+
+    #[test]
+    fn the_host_is_the_part_before_the_server_config_suffix() {
+        assert_eq!(host_of_server_config("$PROJECTHOME/others/cloud/hermes-mig.test.htc1.adito.cloud_serverconfig_system.xml").as_deref(), Some("hermes-mig.test.htc1.adito.cloud"));
+        assert_eq!(host_of_server_config("hermes1-bg.dev.htc1.adito.cloud_serverconfig_system_bg.xml").as_deref(), Some("hermes1-bg.dev.htc1.adito.cloud"));
+        assert_eq!(host_of_server_config("$PROJECTHOME/others/other.xml"), None);
+        assert_eq!(host_of_server_config(""), None);
+    }
+
+    #[test]
+    fn lists_each_host_once_with_its_systems() {
+        let root = std::env::temp_dir().join(format!("forge-servers-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        for (system, file) in [("dev2", "h2.example.cloud_serverconfig_system.xml"), ("dev2_bg", "h2.example.cloud_serverconfig_system_bg.xml"), ("test", "t.example.cloud_serverconfig_system.xml")] {
+            let dir = root.join("system").join(system);
+            std::fs::create_dir_all(&dir).unwrap();
+            std::fs::write(dir.join(format!("{system}.aod")), format!("<system><serverConfigPath>$PROJECTHOME/others/cloud/{file}</serverConfigPath></system>")).unwrap();
+        }
+        let list = list_servers(&root);
+        assert_eq!(list.iter().map(|s| s.host.as_str()).collect::<Vec<_>>(), vec!["h2.example.cloud", "t.example.cloud"]);
+        assert_eq!(list[0].systems, vec!["dev2", "dev2_bg"]);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+}
 
 #[cfg(test)]
 mod tests {

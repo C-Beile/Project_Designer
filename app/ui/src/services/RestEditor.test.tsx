@@ -33,12 +33,47 @@ describe('RestEditor', () => {
 
   it('shows status, time and the coloured body of the answer', async () => {
     const user = userEvent.setup()
-    const api = createMockForgeApi({ projectTree: [], documents: {}, webservices, restResponse: { status: 200, reason: 'OK', headers: [['content-type', 'application/json']], body: '{"NAME":"A"}', elapsedMs: 12, size: 12 } })
+    const api = createMockForgeApi({ projectTree: [], documents: {}, webservices, restResponse: { status: 200, reason: 'OK', headers: [['content-type', 'application/json']], body: '{"NAME":"A"}', elapsedMs: 12, size: 12, sent: '' } })
     render(<RestEditor api={api} projectRoot="C:/p" />)
     await user.click(await screen.findByTitle('GET /services/rest/Person_ws'))
     await user.type(screen.getByLabelText('Server URL'), 'http://localhost:8080')
     await user.click(screen.getByRole('button', { name: 'Send' }))
     expect(await screen.findByText('200 OK')).toBeInTheDocument()
     expect(screen.getByLabelText('Response body').querySelector('.j-key')?.textContent).toBe('"NAME"')
+  })
+
+  it('changes a saved password through the three dots and offers it after a 401', async () => {
+    const user = userEvent.setup()
+    const api = createMockForgeApi({
+      projectTree: [],
+      documents: {},
+      webservices,
+      restUsers: [{ id: '1', title: 'wsUser' }],
+      restHasPassword: true,
+      restResponse: { status: 401, reason: 'Unauthorized', headers: [['www-authenticate', 'Basic realm="ADITO"']], body: '', elapsedMs: 3, size: 0, sent: '' },
+    })
+    const save = vi.spyOn(api, 'restSavePassword')
+    render(<RestEditor api={api} projectRoot="C:/p" />)
+    await user.click(await screen.findByTitle('GET /services/rest/Person_ws'))
+    await user.type(screen.getByLabelText('Server URL'), 'http://localhost:8080')
+    await user.click(screen.getByRole('button', { name: 'Send' }))
+    expect(await screen.findByText(/rejected the login of wsUser/)).toHaveTextContent('Basic realm="ADITO"')
+    await user.click(screen.getByRole('button', { name: 'Change password' }))
+    await user.type(screen.getByLabelText('New password'), 'secret')
+    await user.click(screen.getByRole('button', { name: 'Save new password' }))
+    expect(save).toHaveBeenCalledWith('http://localhost:8080', 'wsUser', 'secret')
+    await user.click(await screen.findByRole('button', { name: 'Password options' }))
+    expect(screen.getByRole('menuitem', { name: 'Change password' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Forget password' })).toBeInTheDocument()
+  })
+
+  it('offers the servers named after the server config files and fills the first one in', async () => {
+    const user = userEvent.setup()
+    const api = createMockForgeApi({ projectTree: [], documents: {}, webservices, restServers: [{ host: 'hermes-mig.test.htc1.adito.cloud', systems: ['test_mig', 'test_mig_bg'] }] })
+    render(<RestEditor api={api} projectRoot="C:/p" />)
+    await waitFor(() => expect(screen.getByLabelText('Server URL')).toHaveValue('https://hermes-mig.test.htc1.adito.cloud/services/rest'))
+    await user.click(await screen.findByTitle('GET /services/rest/Person_ws'))
+    expect(screen.getByLabelText('Request URL')).toHaveValue('https://hermes-mig.test.htc1.adito.cloud/services/rest/Person_ws')
+    expect(screen.getByRole('button', { name: 'test_mig, test_mig_bg' })).toBeInTheDocument()
   })
 })

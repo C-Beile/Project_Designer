@@ -210,6 +210,7 @@ pub fn run() {
             commands::project::get_recent_projects,
             commands::project::find_projects_in_folder,
             commands::rest::rest_list_webservices,
+            commands::rest::rest_list_servers,
             commands::rest::rest_send,
             commands::rest::rest_has_password,
             commands::rest::rest_save_password,

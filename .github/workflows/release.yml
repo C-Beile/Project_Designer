@@ -130,7 +130,7 @@ jobs:
           if gh release view "$GITHUB_REF_NAME" --repo "$REPO" > /dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" dist/*/* --repo "$REPO" --clobber
           else
-            gh release create "$GITHUB_REF_NAME" dist/*/* --repo "$REPO" --title "$GITHUB_REF_NAME" --generate-notes
+            gh release create "$GITHUB_REF_NAME" dist/*/* --repo "$REPO" --title "$GITHUB_REF_NAME" --generate-notes $([[ "$GITHUB_REF_NAME" == *-* ]] && echo --prerelease)
           fi
           assets=$(gh api "repos/$REPO/releases/tags/$GITHUB_REF_NAME")
           asset_url() { echo "https://api.github.com/repos/$REPO/releases/assets/$(echo "$assets" | jq -r --arg n "$1" '.assets[] | select(.name == $n) | .id')"; }
@@ -144,6 +144,7 @@ jobs:
           fi
 
       - name: Publish latest.json on the updates branch
+        if: ${{ !contains(github.ref_name, '-') }}
         run: |
           git config user.name "release-bot"
           git config user.email "release-bot@users.noreply.github.com"

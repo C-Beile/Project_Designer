@@ -1,3 +1,13 @@
 .user-props section { margin-top: 6px; }
 
 .up-row input[type='checkbox'] { margin: 0 8px; accent-color: var(--accent); }
+
+.up-pw-button { margin-left: 10px; padding: 1px 10px; background: none; border: 1px solid var(--border-strong); border-radius: 4px; color: var(--accent); font-size: 11.5px; cursor: pointer; }
+
+.up-pw-button:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+.up-pw-form { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; margin: 4px 0 8px; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-inset); }
+
+.up-pw-form input { padding: 4px 8px; background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; }
+
+.up-pw-actions { display: flex; gap: 8px; }

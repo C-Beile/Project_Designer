@@ -28,7 +28,10 @@ adito-transpiler = ["dep:adito-transpiler"]
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-log = "2"
-reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+rustls-platform-verifier = "0.7"
+tokio = { version = "1", features = ["net", "io-util", "time"] }
 tauri-plugin-updater = "2"
 log = "0.4"
 serde = { workspace = true }

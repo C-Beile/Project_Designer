@@ -84,4 +84,30 @@ describe('User properties panel', () => {
     expect(screen.getByText('CALENDAR')).toBeInTheDocument()
     expect(screen.getByRole('textbox', { name: 'nonWorkdays' })).toHaveValue('5,6')
   })
+
+  it('sets a new password only when both entries match and the change was confirmed', async () => {
+    _resetDialogsForTests()
+    const user = userEvent.setup()
+    const api = createMockForgeApi({ projectTree: [], documents: {} })
+    vi.spyOn(api, 'systemUserProperties').mockResolvedValue([{ id: '44444444-4444-4444-4444-444444444444', group: 'SECURITY', key: 'password', value: null, editable: false }])
+    const write = vi.spyOn(api, 'systemUserSetPassword')
+    render(
+      <>
+        <UserPropertiesPanel api={api} selection={{ systemKey: 'p|dev1', systemName: 'dev1', user: 'u-admin', title: 'Admin' }} />
+        <DialogHost />
+      </>,
+    )
+    await user.click(await screen.findByRole('button', { name: 'Change password...' }))
+    await user.type(screen.getByLabelText('New password'), 'secret')
+    await user.type(screen.getByLabelText('Repeat new password'), 'other')
+    await user.click(screen.getByRole('button', { name: 'Save password' }))
+    expect(await screen.findByText('The two passwords are not the same.')).toBeInTheDocument()
+    expect(write).not.toHaveBeenCalled()
+    await user.clear(screen.getByLabelText('Repeat new password'))
+    await user.type(screen.getByLabelText('Repeat new password'), 'secret')
+    await user.click(screen.getByRole('button', { name: 'Save password' }))
+    expect(write).not.toHaveBeenCalled()
+    await user.click(await screen.findByRole('button', { name: 'Change password' }))
+    await waitFor(() => expect(write).toHaveBeenCalledWith('u-admin', 'secret', true))
+  })
 })

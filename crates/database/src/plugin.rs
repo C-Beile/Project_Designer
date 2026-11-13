@@ -125,6 +125,10 @@ impl FeaturePlugin for DatabasePlugin {
                 Self::confirmed(&a, "Changing a user needs your confirmation.")?;
                 json(system_db::set_user_property(db, &a.string("user")?, &a.string("key")?, &a.string("value")?)?)
             }
+            "system_user_set_password" => {
+                Self::confirmed(&a, "Changing a password needs your confirmation.")?;
+                json(system_db::set_user_password(db, &a.string("user")?, &a.string("password")?)?)
+            }
             "system_user_set_list" => {
                 Self::confirmed(&a, "Changing a user needs your confirmation.")?;
                 json(system_db::set_user_list_property(db, &a.string("user")?, &a.string("key")?, &a.get::<Vec<String>>("values")?)?)

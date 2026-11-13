@@ -52,6 +52,9 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [tick, setTick] = useState(0)
+  const [pwOpen, setPwOpen] = useState(false)
+  const [pw1, setPw1] = useState('')
+  const [pw2, setPw2] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -116,6 +119,30 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
     }
   }
 
+  async function changePassword() {
+    if (pw1 === '' || pw1 !== pw2) {
+      setError(pw1 === '' ? 'Enter a new password.' : 'The two passwords are not the same.')
+      return
+    }
+    const yes = await confirmDialog(`Set a new password for ${selection.title || user} in the system database of ${systemName}?`, { title: 'Change password', okLabel: 'Change password' })
+    if (!yes) return
+    setSaving(true)
+    setError(null)
+    try {
+      await api.dbActivate(systemKey).catch(() => false)
+      await api.systemUserSetPassword(user, pw1, true)
+      setPwOpen(false)
+      setPw1('')
+      setPw2('')
+      notifyUsersChanged()
+      setTick((n) => n + 1)
+    } catch (e) {
+      setError(errorText(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const row = (key: string) => {
     const lower = key.toLowerCase()
     const field = byKey.get(lower)
@@ -124,9 +151,28 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
       return (
         <div className="up-row" key={key}>
           <span className={`up-name${isSet ? '' : ' is-unset'}`}>{key}</span>
-          <span className="up-value" title="Passwords are set in the client of the system, not here">
+          <span className="up-value">
             {isSet ? '***' : ''}
+            {lower === 'password' ? (
+              <button type="button" className="up-pw-button" disabled={saving} onClick={() => setPwOpen((o) => !o)}>
+                Change password...
+              </button>
+            ) : null}
           </span>
+          {lower === 'password' && pwOpen ? (
+            <div className="up-pw-form">
+              <input type="password" autoComplete="off" aria-label="New password" placeholder="New password" value={pw1} onChange={(e) => setPw1(e.target.value)} />
+              <input type="password" autoComplete="off" aria-label="Repeat new password" placeholder="Repeat new password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+              <div className="up-pw-actions">
+                <button type="button" disabled={saving || pw1 === ''} onClick={() => void changePassword()}>
+                  Save password
+                </button>
+                <button type="button" onClick={() => { setPwOpen(false); setPw1(''); setPw2('') }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
       )
     }

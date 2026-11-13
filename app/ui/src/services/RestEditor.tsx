@@ -1,12 +1,12 @@
-import { configGet, configSet } from '../settings/appConfig'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
-import type { RestResponseDto, RestUserDto, WebserviceDto } from '../wire/types'
+import type { RestResponseDto, RestServerDto, RestUserDto, WebserviceDto } from '../wire/types'
 import { errorText } from '../core/errorText'
 import { logOutput } from '../core/outputBus'
 import {
   METHODS,
+  REST_ROOT,
   PARAM_CHIPS,
   bodyTemplate,
   callsOf,
@@ -25,27 +25,36 @@ import {
   type RestCall,
 } from './restTools'
 
-// Zuletzt benutzte Werte des REST-Clients, Abschnitt [rest] in designer.conf (nie das Passwort: das liegt im Schlüsselbund).
-const BASE_KEY = 'base'
-const BASES_KEY = 'bases'
-const USER_KEY = 'user'
-const INSECURE_KEY = 'insecure'
+const BASE_KEY = 'forge.rest.base'
+const BASES_KEY = 'forge.rest.bases'
+const USER_KEY = 'forge.rest.user'
+const INSECURE_KEY = 'forge.rest.insecure'
 const BODY_METHODS = ['POST', 'PUT', 'PATCH']
 const MAX_HIGHLIGHT = 200_000
 
 function read(key: string, fallback = ''): string {
-  const value = configGet<unknown>('rest', key)
-  return typeof value === 'string' ? value : fallback
+  try {
+    return window.localStorage.getItem(key) ?? fallback
+  } catch {
+    return fallback
+  }
 }
 
-/** Leerer Text = nicht gesetzt: der Eintrag fehlt dann in der Datei. */
 function write(key: string, value: string): void {
-  configSet(['rest', key], value === '' ? undefined : value)
+  try {
+    window.localStorage.setItem(key, value)
+  } catch {
+    return
+  }
 }
 
 function readList(key: string): string[] {
-  const list = configGet<unknown>('rest', key)
-  return Array.isArray(list) ? list.filter((v): v is string => typeof v === 'string').slice(0, 10) : []
+  try {
+    const list = JSON.parse(read(key, '[]')) as unknown
+    return Array.isArray(list) ? list.filter((v): v is string => typeof v === 'string').slice(0, 10) : []
+  } catch {
+    return []
+  }
 }
 
 function HighlightedUrl({ value, onChange, onEnter, label }: { value: string; onChange: (v: string) => void; onEnter: () => void; label: string }) {
@@ -157,6 +166,7 @@ type ReqTab = 'params' | 'auth' | 'headers' | 'body'
 export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: string }) {
   const [services, setServices] = useState<WebserviceDto[]>([])
   const [users, setUsers] = useState<RestUserDto[]>([])
+  const [servers, setServers] = useState<RestServerDto[]>([])
   const [filter, setFilter] = useState('')
   const [open, setOpen] = useState<Set<string>>(() => new Set())
   const [selected, setSelected] = useState<WebserviceDto | null>(null)
@@ -170,14 +180,16 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
   const [headers, setHeaders] = useState<KeyValue[]>([{ key: 'Accept', value: 'application/json', on: true }])
   const [body, setBody] = useState('')
   const [reqTab, setReqTab] = useState<ReqTab>('params')
-  const [resTab, setResTab] = useState<'body' | 'headers'>('body')
-  const [insecure, setInsecure] = useState(() => configGet<boolean>('rest', INSECURE_KEY) === true)
+  const [resTab, setResTab] = useState<'body' | 'headers' | 'sent'>('body')
+  const [insecure, setInsecure] = useState(() => read(INSECURE_KEY) === '1')
 
   const [loginKind, setLoginKind] = useState<LoginKind>('basic')
   const [user, setUser] = useState(() => read(USER_KEY))
   const [tokenId, setTokenId] = useState('')
   const [hasPassword, setHasPassword] = useState(false)
   const [password, setPassword] = useState('')
+  const [changing, setChanging] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   const [busy, setBusy] = useState(false)
   const [response, setResponse] = useState<RestResponseDto | null>(null)
@@ -194,6 +206,26 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
         setOpen(new Set(list.filter((w) => w.module === null).map((w) => w.name)))
       })
       .catch(() => setServices([]))
+    return () => {
+      cancelled = true
+    }
+  }, [api, projectRoot])
+
+  useEffect(() => {
+    let cancelled = false
+    api
+      .restListServers(projectRoot)
+      .then(async (list) => {
+        if (cancelled) return
+        setServers(list)
+        if (read(BASE_KEY) !== '' || list.length === 0) return
+        const active = (await api.dbSystems().catch(() => [])).find((e) => e.active)?.system ?? ''
+        const name = active.slice(active.lastIndexOf('|') + 1)
+        const pick = list.find((s) => s.systems.includes(name)) ?? list[0]
+        const url = `https://${pick.host}${REST_ROOT}`
+        setBase((cur) => (cur === '' ? url : cur))
+      })
+      .catch(() => setServers([]))
     return () => {
       cancelled = true
     }
@@ -230,6 +262,21 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
       cancelled = true
     }
   }, [api, base, user, loginKind])
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const close = (e: MouseEvent) => {
+      if (!(e.target instanceof Element) || !e.target.closest('.rest-more')) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [menuOpen])
+
+  useEffect(() => {
+    setChanging(false)
+    setMenuOpen(false)
+    setPassword('')
+  }, [base, user])
 
   const groups = useMemo(() => {
     const q = filter.trim().toLowerCase()
@@ -295,6 +342,7 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
     try {
       await api.restSavePassword(base, user, password)
       setPassword('')
+      setChanging(false)
       setHasPassword(true)
       setError(null)
     } catch (e) {
@@ -304,6 +352,8 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
 
   async function forgetPassword() {
     await api.restForgetPassword(base, user).catch(() => undefined)
+    setMenuOpen(false)
+    setChanging(false)
     setHasPassword(false)
   }
 
@@ -334,8 +384,8 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
       setResTab('body')
       const list = [base, ...bases.filter((b) => b !== base)].filter((b) => b.trim() !== '').slice(0, 10)
       setBases(list)
-      configSet(['rest', BASES_KEY], list)
-      configSet(['rest', INSECURE_KEY], insecure ? true : undefined)
+      write(BASES_KEY, JSON.stringify(list))
+      write(INSECURE_KEY, insecure ? '1' : '0')
       logOutput('default', `REST ${method} ${fullUrl} → ${res.status} ${res.reason} (${res.elapsedMs} ms)`, res.status >= 400 ? 'error' : undefined)
     } catch (e) {
       const text = errorText(e)
@@ -417,7 +467,7 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
             <span>Server</span>
             <input value={base} list="rest-bases" aria-label="Server URL" spellCheck={false} placeholder="https://server:8443" onChange={(e) => changeBase(e.target.value)} />
             <datalist id="rest-bases">
-              {bases.map((b) => (
+              {[...servers.map((s) => `https://${s.host}${REST_ROOT}`), ...bases.filter((b) => !servers.some((s) => b === `https://${s.host}${REST_ROOT}`))].map((b) => (
                 <option key={b} value={b} />
               ))}
             </datalist>
@@ -427,6 +477,19 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
             <span>Accept untrusted certificate</span>
           </label>
         </div>
+
+        {servers.length > 0 ? (
+          <div className="rest-servers" aria-label="Servers of the systems">
+            {servers.map((s) => {
+              const url = `https://${s.host}${REST_ROOT}`
+              return (
+                <button key={s.host} type="button" className={`rest-chip${base.replace(/\/+$/, '') === url ? ' is-on' : ''}`} title={url} onClick={() => changeBase(url)}>
+                  {s.systems.join(', ')}
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
 
         <div className="rest-bar">
           <select value={method} onChange={(e) => changeMethod(e.target.value)} aria-label="Method" className={`rest-methodpick m-${method}`}>
@@ -493,23 +556,42 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
                       <input value={user} aria-label="User" placeholder="Web service user" onChange={(e) => changeUser(e.target.value)} />
                     )}
                   </label>
-                  {hasPassword ? (
-                    <p className="rest-saved">
-                      Password saved in the system keychain.{' '}
-                      <button type="button" className="rest-link" onClick={() => void forgetPassword()}>
-                        Forget it
-                      </button>
-                    </p>
+                  {hasPassword && !changing ? (
+                    <div className="rest-saved-row">
+                      <span className="rest-saved">Password saved in the system keychain.</span>
+                      <div className="rest-more">
+                        <button type="button" className="rest-dots" aria-label="Password options" aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((o) => !o)}>
+                          ⋯
+                        </button>
+                        {menuOpen ? (
+                          <div className="rest-menu" role="menu">
+                            <button type="button" role="menuitem" onClick={() => { setChanging(true); setMenuOpen(false) }}>
+                              Change password
+                            </button>
+                            <button type="button" role="menuitem" onClick={() => void forgetPassword()}>
+                              Forget password
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
                   ) : (
                     <div className="rest-pw">
                       <label>
-                        <span>Password</span>
-                        <input type="password" value={password} autoComplete="off" aria-label="Password" onChange={(e) => setPassword(e.target.value)} />
+                        <span>{changing ? 'New password' : 'Password'}</span>
+                        <input type="password" value={password} autoComplete="off" aria-label={changing ? 'New password' : 'Password'} onChange={(e) => setPassword(e.target.value)} />
                       </label>
-                      <button type="button" disabled={password === '' || user.trim() === ''} onClick={() => void savePassword()}>
-                        Save once
-                      </button>
-                      <p className="rest-hint">Needed once per server and user. After that every call signs in by itself.</p>
+                      <div className="rest-pw-actions">
+                        <button type="button" disabled={password === '' || user.trim() === ''} onClick={() => void savePassword()}>
+                          {changing ? 'Save new password' : 'Save once'}
+                        </button>
+                        {changing ? (
+                          <button type="button" onClick={() => { setChanging(false); setPassword('') }}>
+                            Cancel
+                          </button>
+                        ) : null}
+                      </div>
+                      <p className="rest-hint">{changing ? 'The old password is replaced.' : 'Needed once per server and user. After that every call signs in by itself.'}</p>
                     </div>
                   )}
                 </>
@@ -528,6 +610,15 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
 
         <div className="rest-res">
           {error ? <p className="rest-error" role="alert">{error}</p> : null}
+          {response && response.status === 401 && loginKind === 'basic' ? (
+            <p className="rest-error" role="alert">
+              The server rejected the login of {user === '' ? 'this call' : user}
+              {response.headers.find(([k]) => k.toLowerCase() === 'www-authenticate') ? ` (it asks for: ${response.headers.find(([k]) => k.toLowerCase() === 'www-authenticate')?.[1]})` : ''}. If the password is wrong, change it.{' '}
+              <button type="button" className="rest-link" onClick={() => { setReqTab('auth'); setChanging(true) }}>
+                Change password
+              </button>
+            </p>
+          ) : null}
           {response ? (
             <>
               <div className="rest-res-bar">
@@ -543,13 +634,20 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
                 <button type="button" className={`rest-tab${resTab === 'headers' ? ' is-active' : ''}`} onClick={() => setResTab('headers')}>
                   Headers <span className="rest-badge">{response.headers.length}</span>
                 </button>
-                <button type="button" onClick={() => void copyBody(resTab === 'body' ? pretty : response.headers.map(([k, v]) => `${k}: ${v}`).join('\n'))}>
+                <button type="button" className={`rest-tab${resTab === 'sent' ? ' is-active' : ''}`} onClick={() => setResTab('sent')}>
+                  Sent request
+                </button>
+                <button type="button" onClick={() => void copyBody(resTab === 'body' ? pretty : resTab === 'sent' ? response.sent : response.headers.map(([k, v]) => `${k}: ${v}`).join('\n'))}>
                   {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
               {resTab === 'body' ? (
                 <pre className="rest-code" aria-label="Response body">
                   <JsonText text={pretty} />
+                </pre>
+              ) : resTab === 'sent' ? (
+                <pre className="rest-code" aria-label="Sent request">
+                  {response.sent}
                 </pre>
               ) : (
                 <table className="rest-headers" aria-label="Response headers">

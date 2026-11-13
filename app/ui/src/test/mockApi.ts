@@ -42,6 +42,7 @@ export function createMockForgeApi(options: {
   aliasConfigs?: Record<string, import('../wire/types').AliasConfigDto[]>
   foundProjects?: import('../wire/types').FoundProjectDto[]
   webservices?: import('../wire/types').WebserviceDto[]
+  restServers?: import('../wire/types').RestServerDto[]
   restUsers?: import('../wire/types').RestUserDto[]
   restResponse?: import('../wire/types').RestResponseDto
   restHasPassword?: boolean
@@ -241,6 +242,9 @@ export function createMockForgeApi(options: {
     async findProjectsInFolder() {
       return options.foundProjects ?? []
     },
+    async restListServers() {
+      return options.restServers ?? []
+    },
     async restListWebservices() {
       return options.webservices ?? []
     },
@@ -248,7 +252,7 @@ export function createMockForgeApi(options: {
       return options.restUsers ?? []
     },
     async restSend() {
-      return options.restResponse ?? { status: 200, reason: 'OK', headers: [['content-type', 'application/json']], body: '[]', elapsedMs: 5, size: 2 }
+      return options.restResponse ?? { status: 200, reason: 'OK', headers: [['content-type', 'application/json']], body: '[]', elapsedMs: 5, size: 2, sent: 'GET / HTTP/1.1\r\n' }
     },
     async restHasPassword() {
       return options.restHasPassword ?? false
@@ -511,6 +515,7 @@ export function createMockForgeApi(options: {
     },
     async systemUserSetProperty() {},
     async systemUserSet() {},
+    async systemUserSetPassword() {},
     async systemUserSetList() {},
     async systemUserCreate() {
       return '_____USER_new'
