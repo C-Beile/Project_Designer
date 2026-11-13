@@ -1,12 +1,14 @@
+import { configGet, configSet } from '../settings/appConfig'
 import { pathKey } from '../platform/pathKey'
 import type { FloatView, Geometry } from './protocol'
 import { FLOAT_VIEWS } from './protocol'
 
 // Which panels float as windows of their own and where, remembered per project so that a project
-// comes back with the same arrangement. Only user-level convenience: damaged or missing storage
+// comes back with the same arrangement. Only user-level convenience: a missing entry
 // just means everything starts docked.
 
-const KEY = 'forge.float.v1'
+// Abschnitt [windows.floating] in designer.conf, ein Eintrag je Projekt.
+const PATH = ['windows', 'floating'] as const
 
 type Entry = Partial<Record<FloatView, Geometry | null>>
 type Store = Record<string, Entry>
@@ -15,22 +17,21 @@ function norm(root: string): string {
   return pathKey(root)
 }
 
+// Ein schwebendes Panel ohne bekannte Lage steht als `true` in der Datei (leere Werte werden nie gespeichert).
 function read(): Store {
-  try {
-    const raw = window.localStorage.getItem(KEY)
-    const parsed = raw ? (JSON.parse(raw) as unknown) : {}
-    return parsed && typeof parsed === 'object' ? (parsed as Store) : {}
-  } catch {
-    return {}
+  const parsed = configGet<unknown>(...PATH)
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
+  const out: Store = {}
+  for (const [project, entry] of Object.entries(parsed as Record<string, unknown>)) {
+    if (!entry || typeof entry !== 'object') continue
+    out[project] = Object.fromEntries(Object.entries(entry as Record<string, unknown>).map(([view, g]) => [view, g === true ? null : g])) as Entry
   }
+  return out
 }
 
 function write(store: Store): void {
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(store))
-  } catch {
-    // Storage unavailable: the arrangement just does not survive this session.
-  }
+  const plain = Object.fromEntries(Object.entries(store).map(([project, entry]) => [project, Object.fromEntries(Object.entries(entry).map(([view, g]) => [view, g ?? true]))]))
+  configSet(PATH, plain)
 }
 
 function validGeometry(g: unknown): g is Geometry {

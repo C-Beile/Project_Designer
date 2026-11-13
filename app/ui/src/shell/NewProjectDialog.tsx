@@ -1,3 +1,4 @@
+import { configGet, configSet } from '../settings/appConfig'
 import { useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { Modal } from '../core/Modal'
@@ -17,7 +18,6 @@ const SOURCES: { id: Source; label: string; available: boolean; hint?: string }[
   { id: 'cloud', label: 'Load a cloud system', available: false, hint: 'Not available yet.' },
 ]
 
-const LOCATION_KEY = 'dito.newProject.location'
 
 /** `https://host/group/name.git` and `git@host:group/name.git` give `name`. */
 export function projectNameFromUrl(url: string): string {
@@ -33,11 +33,7 @@ function parentOf(path: string): string {
 }
 
 function storedLocation(fallback: string): string {
-  try {
-    return window.localStorage.getItem(LOCATION_KEY) || fallback
-  } catch {
-    return fallback
-  }
+  return configGet<string>('projects', 'new_location') || fallback
 }
 
 export function NewProjectDialog({ api, currentProject, onClose, onCreated }: { api: ForgeApi; currentProject: string; onClose: () => void; onCreated: (projectRoot: string) => void }) {
@@ -61,11 +57,7 @@ export function NewProjectDialog({ api, currentProject, onClose, onCreated }: { 
   }, [branches])
 
   const rememberLocation = () => {
-    try {
-      window.localStorage.setItem(LOCATION_KEY, location.trim())
-    } catch {
-      // the location is just not remembered
-    }
+    configSet(['projects', 'new_location'], location.trim() || undefined)
   }
 
   const browseLocation = async () => {

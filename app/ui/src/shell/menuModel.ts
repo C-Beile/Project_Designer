@@ -73,7 +73,14 @@ const FLOAT_ENTRIES: [string, string][] = [
   ['properties', 'Properties'],
 ]
 
+/** Nur im Dev-Build (`tauri dev`, `vite`) wahr; im Release-Build und in der installierten App falsch. */
+export function isDevBuild(): boolean {
+  return import.meta.env.DEV
+}
+
 export interface MenuContext {
+  /** Überschreibt `isDevBuild()` (für Tests). */
+  devBuild?: boolean
   hasProject: boolean
   projectName: string | null
   /** Number of projects open in the Projects tree (LAYOUT_SPEC §4.2: several at once). */
@@ -98,6 +105,10 @@ export interface MenuContext {
   usageTarget?: boolean
   /** Git plugin switched on in Tools > Plugins (Team menu). */
   gitActive?: boolean
+  /** Project folder is inside a Git repository (false dims the Team > Git entries). */
+  gitRepo?: boolean
+  /** The project has changed files (false dims Commit). */
+  gitChanges?: boolean
   /** Panels that float as windows of their own right now. */
   floating?: string[]
   /** The active editor tab can move into a window of its own. */
@@ -511,6 +522,27 @@ export function buildMenus(ctx: MenuContext): MenuDef[] {
       ],
     },
   ]
+  // Debug-Menü: nur im Dev-Build, vor Help. Plugins hängen sich mit registerMenuContribution({ menu: 'debug' }) ein.
+  if (ctx.devBuild ?? isDevBuild()) {
+    const debugMenu: MenuDef = {
+      id: 'debug',
+      label: 'Debug',
+      mnemonic: 'd',
+      items: [
+        {
+          id: 'debug.index',
+          kind: 'submenu',
+          label: 'Index',
+          enabled: true,
+          children: [
+            item('debug.rebuildIndex', 'Rebuild Index', ctx.hasProject, { hint: ctx.hasProject ? 'Delete the project index and build it again, like on opening the project' : noProjectHint }),
+            item('debug.dumpIndex', 'Dump Index as JSON', ctx.hasProject, { hint: ctx.hasProject ? 'Write everything the index holds into the log folder and open the folder' : noProjectHint }),
+          ],
+        },
+      ],
+    }
+    menus.splice(menus.length - 1, 0, debugMenu)
+  }
   // Beiträge aus dem Plugin-Register (z. B. Git im Menü Team) hinter die festen Einträge.
   return menus.map((m) => {
     const extra = getMenuContributions(m.id, ctx)

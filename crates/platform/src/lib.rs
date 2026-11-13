@@ -55,4 +55,4 @@ pub use git::{CommandGitOperations, GitBranch, GitCommandOutcome, GitCommit, Git
 pub use node::{NodeInstallation, NodeResolver};
 pub use process::{LineSink, OutputLine, OutputStream, ProcessSpawner, SpawnOutcome, SpawnRequest};
 pub use shell::ShellIntegration;
-pub use watcher::{FileWatcher, WatchEvent, WatchEventKind, WatchHandle};
+pub use watcher::{FileWatcher, WatchControl, WatchEvent, WatchEventKind, WatchHandle, WatchTarget};

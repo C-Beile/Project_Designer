@@ -65,56 +65,7 @@ impl WireValue {
     }
 }
 
-/// Parses the dotted/indexed path notation `NodePath`'s own `Display` impl produces
-/// (`"entityFields.entityField[2].valueProcess"`, root is `"$"` or `""`) back into a real
-/// `NodePath`. This is the exact inverse of `path.rs`'s `Display` impl, kept in the app crate
-/// (not `aod::tree`) since it is purely an IPC-string-format concern.
-pub fn parse_node_path(raw: &str) -> Result<NodePath, String> {
-    if raw.is_empty() || raw == "$" {
-        return Ok(NodePath::root());
-    }
-
-    let chars: Vec<char> = raw.chars().collect();
-    let mut i = 0usize;
-    let mut path = NodePath::root();
-
-    while i < chars.len() {
-        if chars[i] == '.' {
-            i += 1;
-            continue;
-        }
-        if chars[i] == '[' {
-            let start = i + 1;
-            let mut j = start;
-            while j < chars.len() && chars[j] != ']' {
-                j += 1;
-            }
-            if j >= chars.len() {
-                return Err(format!("unterminated '[' in node path '{raw}'"));
-            }
-            let digits: String = chars[start..j].iter().collect();
-            let idx: usize = digits
-                .parse()
-                .map_err(|_| format!("non-numeric index '[{digits}]' in node path '{raw}'"))?;
-            path = path.index(idx);
-            i = j + 1;
-            continue;
-        }
-        let start = i;
-        let mut j = i;
-        while j < chars.len() && chars[j] != '.' && chars[j] != '[' {
-            j += 1;
-        }
-        let field: String = chars[start..j].iter().collect();
-        if field.is_empty() {
-            return Err(format!("empty field segment in node path '{raw}'"));
-        }
-        path = path.field(field);
-        i = j;
-    }
-
-    Ok(path)
-}
+pub use project_index::parse_node_path;
 
 /// The inverse direction (`NodePath` -> wire string), reusing `NodePath`'s own `Display` -
 /// kept here too so callers only ever import one module for both directions.

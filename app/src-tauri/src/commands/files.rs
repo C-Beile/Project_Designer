@@ -2,7 +2,10 @@
 
 use super::blocking;
 use project::{linked_file, tree_ops};
+use project_index::IndexRegistry;
 use std::path::PathBuf;
+use std::sync::Arc;
+use tauri::State;
 
 /// Reads a colour theme file (.json) chosen in the Options window.
 #[tauri::command]
@@ -126,18 +129,28 @@ pub fn create_object(project_root: String, folder: String, name: String, title: 
 
 /// Rename preview: every reference that would change and every mention that would not (read-only).
 #[tauri::command]
-pub async fn rename_plan(project_root: String, source: String, new_name: String) -> Result<project::rename::RenamePlan, String> {
+pub async fn rename_plan(project_root: String, source: String, new_name: String, registry: State<'_, Arc<IndexRegistry>>) -> Result<project::rename::RenamePlan, String> {
+    let registry = registry.inner().clone();
     crate::commands::guard_async("rename_plan", async {
-    blocking(move || project::rename::plan(&PathBuf::from(project_root), &PathBuf::from(source), &new_name))
+    blocking(move || {
+        let (root, source) = (PathBuf::from(project_root), PathBuf::from(source));
+        let hints = super::index::rename_hints(&registry, &root, &source);
+        project::rename::plan_with(&root, &source, &new_name, hints.as_ref())
+    })
         .await?
 }).await
 }
 
 /// Rename: runs only after the user confirmed the preview ("Do Refactoring"); returns the new model file.
 #[tauri::command]
-pub async fn rename_object(project_root: String, source: String, new_name: String) -> Result<String, String> {
+pub async fn rename_object(project_root: String, source: String, new_name: String, registry: State<'_, Arc<IndexRegistry>>) -> Result<String, String> {
+    let registry = registry.inner().clone();
     crate::commands::guard_async("rename_object", async {
-    blocking(move || project::rename::apply(&PathBuf::from(project_root), &PathBuf::from(source), &new_name).map(|p| p.to_string_lossy().into_owned()))
+    blocking(move || {
+        let (root, source) = (PathBuf::from(project_root), PathBuf::from(source));
+        let hints = super::index::rename_hints(&registry, &root, &source);
+        project::rename::apply_with(&root, &source, &new_name, hints.as_ref()).map(|p| p.to_string_lossy().into_owned())
+    })
         .await?
 }).await
 }

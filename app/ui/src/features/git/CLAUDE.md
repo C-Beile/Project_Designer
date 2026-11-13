@@ -14,6 +14,8 @@
 | `GitDialog.tsx` | Commit-, Verlauf- und Branch-Dialog. |
 | `SyncDialog.tsx` | Pull- und Push-Dialog. |
 | `PullResultDialog.tsx` | Was ein Pull gebracht hat: neue Commits mit Autor und Zeit, Dateien je Commit. Öffnet über "Show changes" in der Meldung. |
+| `RepoLinkDialog.tsx` | Team > Git > Repository...: zeigt `origin`, setzt die URL oder verbindet einen Ordner ohne Repo (init, fetch, Branch übernehmen). Befehl `team.repository`, Dialog-Id `git.repoLink`. |
+| `GitLoginDialog.tsx` | Anmelde-Dialog (Benutzer + Token) für https-Remotes; ersetzt das Fenster des Git Credential Managers. Dialog-Id `git.login`, Handler in `gitPlugin.ts` (`setGitAuthHandler`). |
 | `CommitDiffDialog.tsx` | Diff einer Datei eines Commits. |
 | `DiffView.tsx` | Diff-Ansicht (Monaco). |
 | `ScmPanel.tsx` | Source-Control-Panel (auch als eigenes Fenster). |

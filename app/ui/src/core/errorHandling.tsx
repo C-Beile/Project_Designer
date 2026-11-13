@@ -4,6 +4,7 @@ import type { ForgeApi } from '../api/ForgeApi'
 import { isTauriRuntime } from '../chrome/tauriWindow'
 import { Modal } from './Modal'
 import { logError } from './errorLog'
+import { copyText } from './clipboard'
 import { errorText } from './errorText'
 
 // No silent failures: a render crash of one editor shows an error panel inside that editor area
@@ -28,6 +29,24 @@ export function isBenignRejection(reason: unknown): boolean {
   return /Missing requestHandler or method: (resetSchema|\$?[A-Za-z]*[Ss]chema\w*)/.test(text)
 }
 
+/** Beschrifteter Knopf: kopiert die Fehlermeldung, damit der Nutzer sie in eine Nachricht einfügen kann. */
+function CopyDetails({ text }: { text: string }) {
+  const [state, setState] = useState<'idle' | 'done' | 'failed'>('idle')
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        void copyText(text).then((ok) => {
+          setState(ok ? 'done' : 'failed')
+          window.setTimeout(() => setState('idle'), 1800)
+        })
+      }
+    >
+      {state === 'done' ? 'Copied' : state === 'failed' ? 'Copy failed' : 'Copy details'}
+    </button>
+  )
+}
+
 function ErrorPanel({ api, title, detail, onRetry }: { api?: ForgeApi; title: string; detail: string; onRetry?: () => void }) {
   return (
     <div className="forge-error-panel" role="alert">
@@ -43,6 +62,7 @@ function ErrorPanel({ api, title, detail, onRetry }: { api?: ForgeApi; title: st
         <button type="button" onClick={() => void api?.openLogFolder().catch(() => {})}>
           Open Log Folder
         </button>
+        <CopyDetails text={`${title}${String.fromCharCode(10)}${detail}`} />
       </div>
     </div>
   )
@@ -131,6 +151,7 @@ export function CrashListener({ api }: { api: ForgeApi }) {
           <button type="button" onClick={() => void api.openLogFolder().catch(() => {})}>
             Open Log Folder
           </button>
+          <CopyDetails text={`${crash.message}${crash.log ? `${String.fromCharCode(10)}${crash.log}` : ''}`} />
           <button type="button" onClick={() => setCrash(null)}>
             Close
           </button>

@@ -1,0 +1,19 @@
+.forge-index-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 420px;
+}
+
+.forge-index-status-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.forge-index-status .forge-progress-bar,
+.forge-index-status .forge-progress-stripe {
+  width: 80px;
+  flex: none;
+}

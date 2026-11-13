@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { SqlEditor } from './SqlEditor'
 import { createMockForgeApi } from '../test/mockApi'
 import { lastEditor, resetEditors } from '../test/monacoMock'
-import { HISTORY_KEY } from './sqlTools'
+import { loadSqlHistory, } from './sqlTools'
 import type { DbStatus } from '../wire/types'
 
 vi.mock('monaco-editor', () => import('../test/monacoMock'))
@@ -60,7 +60,7 @@ describe('Execute SQL window (manual chapter 8)', () => {
     const api = await setup('select * from t;\nselect 2;')
     await user.click(screen.getByRole('button', { name: 'Run selected statement' }))
     await waitFor(() => expect(api.dbCalls).toEqual([{ sql: 'select * from t', allowWrite: true }]))
-    expect(JSON.parse(window.localStorage.getItem(HISTORY_KEY)!)).toEqual(['select * from t'])
+    expect(loadSqlHistory()).toEqual(['select * from t'])
     await user.click(screen.getByRole('button', { name: 'SQL history' }))
     expect(within(screen.getByRole('dialog', { name: 'SQL history' })).getByText('select * from t')).toBeInTheDocument()
   })

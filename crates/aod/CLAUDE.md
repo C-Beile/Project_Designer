@@ -10,31 +10,32 @@
 | `src/lib.rs` | Modulliste und Kurz-Re-Exports (`aod::AodDocument`, `aod::PropertyTree` ...). |
 | `src/document/` | Schicht 1: `.aod` als Event-Liste. `document.rs` (`parse`, `serialize`, `round_trip_check`), `index.rs` (Pfad zu Event-Bereich), `patch.rs` (`replace_text_at`, `insert_at`, `delete_range`), `canonical.rs` (reguläre Form), `error.rs`. |
 | `src/tree/` | Schicht 2: `PropertyTree` (`tree.rs`), Werte (`value.rs`), Pfade (`path.rs`), Bytes erzeugen (`codec.rs`), Undo (`command.rs`, `transaction.rs`), Beobachter (`observer.rs`), Brücke zu `document` (`aod_io_adapter.rs`, Trait in `event_source.rs`), Test-Double (`testing.rs`). |
-| `src/refs/` | Verweise zwischen Objekten: `RefGraph` (`graph.rs`), Kanten lesen (`extract.rs`), Typen (`edge.rs`, `object_id.rs`). |
+| `src/references/` | Verweise zwischen Objekten: lesen (`read.rs`: `read_references`, `target_alias_name`), Typen (`reference.rs`: `Reference`, `ReferenceKind`; `object_id.rs`: `ObjectId`, `ObjectKind`), Umbenennen (`rename.rs`: `rename_cascade`). Speichern und Abfragen macht `project-index`. |
 <!-- AUTO:END -->
 
 ## Zweck
-Liest und schreibt `.aod`-Dateien byte-genau. Ungeänderte Teile werden nie neu erzeugt, nur wiederholt. Darauf sitzen der Eigenschaftsbaum mit Undo (`tree`) und der Verweis-Graph mit Umbenennen (`refs`). Kein Dateizugriff hier: `serialize` gibt `Vec<u8>` zurück, geschrieben wird in `platform`/`designer-core`.
+Liest und schreibt `.aod`-Dateien byte-genau. Ungeänderte Teile werden nie neu erzeugt, nur wiederholt. Darauf sitzen der Eigenschaftsbaum mit Undo (`tree`) und das Lesen von Verweisen mit Umbenennen (`references`). Kein Dateizugriff hier: `serialize` gibt `Vec<u8>` zurück, geschrieben wird in `platform`/`designer-core`.
 
 ## Einstiegspunkte
 - `document::parse(bytes)` / `document::serialize(&doc)`: Bytes zu `AodDocument` und zurück.
 - `document::round_trip_check(bytes)`: Beweis, dass parse + serialize die Datei nicht ändert.
 - `tree::AodDocumentSource::new(...)` + `tree::PropertyTree`: Werte lesen und ändern. Jede Änderung gibt ein `FileCommand` zurück (Byte-Bereich, alt, neu).
 - `tree::Transaction` / `tree::UndoStack`: mehrere `FileCommand`s als ein Undo-Schritt.
-- `refs::RefGraph`: Kanten aufbauen, `rename_cascade` (liefert eine `Transaction`), Löschen prüfen (`Diagnostic`).
+- `references::read_references(from, root_value, resolve_alias)`: die Verweise eines Objekts lesen. `references::rename_cascade(incoming, target, new_name, trees)`: liefert eine `Transaction`.
 - `document::canonicalize(bytes)`: reguläre Form (2 Leerzeichen, ein Element je Zeile, CRLF). Nur der Transpiler nutzt es (`native-transpiler/.../copy_phase_stage.rs`).
 
 ## Abhängigkeiten
 - Rein: nichts aus dem Workspace.
-- Raus: `designer-core`, `project`, `validators`, `native-transpiler`, `cli/forge` (benutzen `document` und `tree`; `refs` niemand).
+- Raus: `designer-core`, `project`, `validators`, `native-transpiler`, `cli/forge` (benutzen `document` und `tree`); `project-index` und `project` nutzen `references` (`read_references`, `ObjectId`, `ObjectKind`).
 
 ## Regeln und Fallen
 - Byte-Treue ist Pflicht: Datei laden und ohne Änderung speichern muss denselben Inhalt ergeben. Darum gibt es kein DOM, das Format wird nie aus der Tiefe neu berechnet.
 - Neue Elemente: 2 Leerzeichen je Ebene, CRLF, kein BOM. Ausnahme `customProperties` in `entityFieldDb` (steht flacher). Die Ausnahme steht in `KNOWN_INDENT_QUIRKS` in `document/patch.rs`. Einen neuen Fall dort eintragen, nicht im Code verteilen.
 - `tree::testing` ist absichtlich nicht `cfg(test)`. Andere Crates nutzen `InMemoryEventSource` in ihren Tests. Nicht für Produktivcode.
 - Pfade: `tree::NodePath` (Feldnamen plus Index) und `document::EventPath` (Tag plus Vorkommen) beschreiben dieselbe Stelle. Die Übersetzung steht nur in `tree/aod_io_adapter.rs`.
-- Verweise zeigen auf Objekte (Typ + Name) oder auf verknüpfte Dateien (`%aditoprj%/...`). `rename_cascade` überspringt Kanten zu verknüpften Dateien. Löschen meldet nur hängende Verweise, es löscht nichts mit.
-- `refs` wird heute von keiner anderen Crate benutzt (nur von den eigenen Tests). Das Umbenennen der App läuft über `crates/project/src/rename.rs`.
+- Verweise zeigen auf Objekte (Typ + Name) oder auf verknüpfte Dateien (`%aditoprj%/...`). `rename_cascade` überspringt Verweise auf verknüpfte Dateien. Hängende Verweise beim Löschen meldet der Index (`project-index`), nicht `aod`.
+- `rename_cascade` nutzt die App nicht: das Umbenennen läuft über `crates/project/src/rename.rs`. `ObjectKind` kennt jede Objektfamilie (`from_object_type`), `Other` für unbekannte.
+- Alias-Verweise: gibt `resolve_alias` `None` zurück, entfällt der Verweis (so arbeitete der alte Scan). Der Index übergibt `ObjectId::alias(kurzname)` und löst bei der Abfrage auf.
 - Die Modul-Kommentare nennen noch Namen aus der Bauzeit (`aod-io`, `core-model`). Heute sind das `aod::document` und `aod::tree`.
 
 ## Wenn du X ändern willst
@@ -43,8 +44,8 @@ Liest und schreibt `.aod`-Dateien byte-genau. Ungeänderte Teile werden nie neu 
 | Neue Bearbeitungsart auf Event-Ebene | `src/document/patch.rs` |
 | Neue Einrückungs-Ausnahme | `KNOWN_INDENT_QUIRKS` in `src/document/patch.rs` und `src/tree/codec.rs` |
 | Wie ein Wert als Bytes aussieht | `src/tree/codec.rs` |
-| Neue Art von Verweis | `src/refs/edge.rs` (`RefKind`), `src/refs/extract.rs` |
-| Umbenennen: wie die Änderung berechnet wird | `src/refs/graph.rs` (`rename_cascade`) |
+| Neue Art von Verweis | `src/references/reference.rs` (`ReferenceKind`), `src/references/read.rs` |
+| Umbenennen: wie die Änderung berechnet wird | `src/references/rename.rs` (`rename_cascade`) |
 | Reguläre Form des Transpilers | `src/document/canonical.rs` |
 
 ## Tests

@@ -1,5 +1,6 @@
 //! Tauri-Befehle, nach Feature gruppiert. Die Handler-Liste steht weiterhin in `lib.rs`.
 
+pub mod index;
 pub mod dialogs;
 pub mod editor;
 pub mod files;

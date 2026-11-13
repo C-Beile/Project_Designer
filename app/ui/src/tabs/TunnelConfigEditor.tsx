@@ -1,3 +1,4 @@
+import { configGet, configSet } from '../settings/appConfig'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { isMacPlatform } from '../core/shortcuts'
 import { useSshKeyPath } from '../settings/sshKey'
@@ -11,14 +12,8 @@ import type { DbStatus, ForwardStatusDto, TunnelRowDto } from '../wire/types'
 import { TunnelPorts } from './TunnelPorts'
 import { errorText } from '../core/errorText'
 
-const VIEW_KEY = 'forge.tunnelView'
-
 function savedView(): 'ports' | 'table' {
-  try {
-    return window.localStorage.getItem(VIEW_KEY) === 'table' ? 'table' : 'ports'
-  } catch {
-    return 'ports'
-  }
+  return configGet<string>('tunnels', 'view') === 'table' ? 'table' : 'ports'
 }
 
 // Tunnel config editor (original Designer, shot 56): the tunnels of a system's tunnel config as a
@@ -95,11 +90,8 @@ export function TunnelConfigEditor({
   const [view, setViewState] = useState<'ports' | 'table'>(savedView)
   const setView = (v: 'ports' | 'table') => {
     setViewState(v)
-    try {
-      window.localStorage.setItem(VIEW_KEY, v)
-    } catch {
-      // the choice only lasts for this session
-    }
+    // Die Standardansicht (ports) steht nicht in der Datei.
+    configSet(['tunnels', 'view'], v === 'table' ? v : undefined)
   }
 
   const refreshForwards = useCallback(async () => {

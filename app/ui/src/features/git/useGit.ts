@@ -4,6 +4,8 @@ import { promptDialog } from '../../core/dialogService'
 import { errorText } from '../../core/errorText'
 import { dismissToast, notify } from '../../core/notifications'
 import { refreshScm } from '../../core/scm'
+import { openUiDialog } from '../../core/ui/uiDialogs'
+import { askGitLogin } from './GitLoginDialog'
 import { diffTitle } from './diffTitle'
 import type { SyncResult } from './SyncDialog'
 import type { DiffTarget, GitCommit, GitOutput, TreeNode } from '../../wire/types'
@@ -197,6 +199,14 @@ export function useGit({ api, root, branch, dialog, setDialog, setReloadToken, h
     },
     'team.switchBranch': () => {
       openGit('branches')
+    },
+    'team.signIn': () => {
+      void api.gitRepoLink(root).then(async (link) => {
+        if (await askGitLogin(root, link.url, (user, password) => api.gitLogin(root, user, password))) notify('Signed in.', { kind: 'success' })
+      })
+    },
+    'team.repository': () => {
+      openUiDialog('git.repoLink', { api, projectRoot: root, onDone: () => setReloadToken((t) => t + 1) })
     },
     'team.history': () => {
       openGit('history')

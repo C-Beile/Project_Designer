@@ -27,6 +27,20 @@ describe('error handling instead of a silent crash', () => {
     expect(opened).toHaveBeenCalled()
   })
 
+  it('Copy details puts the whole error message on the clipboard', async () => {
+    const user = userEvent.setup()
+    const quiet = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(
+      <ErrorBoundary label="Editor of Foo">
+        <Bomb />
+      </ErrorBoundary>,
+    )
+    quiet.mockRestore()
+    await user.click(screen.getByRole('button', { name: 'Copy details' }))
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument()
+    expect(await navigator.clipboard.readText()).toContain('render exploded')
+  })
+
   it('an unhandled promise rejection opens the error dialog and is logged', async () => {
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     const logged = vi.spyOn(api, 'logClientError')

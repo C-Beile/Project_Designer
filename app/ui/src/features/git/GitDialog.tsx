@@ -1,3 +1,4 @@
+import { configGet, configSet } from '../../settings/appConfig'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ForgeApi } from '../../api/ForgeApi'
 import type { GitFileStatus, GitOutput, GitOverview } from '../../wire/types'
@@ -25,23 +26,14 @@ const TABS: { id: GitTab; label: string }[] = [
 const UNCHECKED_BY_DEFAULT = /(^|\/)package-lock\.json$/
 
 // Files the user took out of the commit stay out the next time the dialog opens, per project.
-const excludedKey = (root: string) => `forge.commit.excluded:${root}`
+// Abschnitt [git.excluded] in designer.conf, ein Eintrag je Projektordner (der Ordner steht mit / im Schlüssel).
+const excludedPath = (root: string) => ['git', 'excluded', root.split(String.fromCharCode(92)).join('/')]
 function readExcluded(root: string): Set<string> {
-  try {
-    const raw = localStorage.getItem(excludedKey(root))
-    const list: unknown = raw ? JSON.parse(raw) : []
-    return new Set(Array.isArray(list) ? list.filter((x): x is string => typeof x === 'string') : [])
-  } catch {
-    return new Set()
-  }
+  const list = configGet<unknown>(...excludedPath(root))
+  return new Set(Array.isArray(list) ? list.filter((x): x is string => typeof x === 'string') : [])
 }
 function writeExcluded(root: string, paths: string[]) {
-  try {
-    if (paths.length) localStorage.setItem(excludedKey(root), JSON.stringify(paths))
-    else localStorage.removeItem(excludedKey(root))
-  } catch {
-    // storage unavailable: the choice simply is not remembered
-  }
+  configSet(excludedPath(root), paths.length ? paths : undefined)
 }
 
 interface TreeFolder {

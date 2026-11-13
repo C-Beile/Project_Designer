@@ -8,6 +8,8 @@ publish.workspace = true
 
 [dependencies]
 platform = { path = "../platform" }
+serde_json = { workspace = true }
+toml = { workspace = true }
 
 [lints]
 workspace = true

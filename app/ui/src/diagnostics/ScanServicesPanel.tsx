@@ -1,3 +1,4 @@
+import { configGet, configSet } from '../settings/appConfig'
 import { useMemo, useState } from 'react'
 import type { Problem } from '../problems/problemStore'
 import { normId } from '../problems/problemStore'
@@ -8,24 +9,15 @@ import { Chevron, SeverityIcon } from './SeverityIcon'
 // show ignored, expand all, collapse all. "Ignore selected tasks" hides warnings (never errors)
 // until "Include selected tasks" or the switch for ignored tasks brings them back.
 
-export const SCAN_IGNORED_KEY = 'forge.scanIgnored.v1'
+const IGNORED_PATH = ['scan', 'ignored'] as const
 
 function loadIgnored(): Set<string> {
-  try {
-    const raw = window.localStorage.getItem(SCAN_IGNORED_KEY)
-    const parsed: unknown = raw ? JSON.parse(raw) : []
-    return new Set(Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [])
-  } catch {
-    return new Set()
-  }
+  const parsed = configGet<unknown>(...IGNORED_PATH)
+  return new Set(Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [])
 }
 
 function saveIgnored(set: Set<string>) {
-  try {
-    window.localStorage.setItem(SCAN_IGNORED_KEY, JSON.stringify([...set]))
-  } catch {
-    // the choice still applies for this session
-  }
+  configSet(IGNORED_PATH, [...set])
 }
 
 export const taskKey = (p: Problem) => `${normId(p.nodeId ?? p.file ?? '')}|${p.message}`

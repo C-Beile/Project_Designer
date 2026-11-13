@@ -1,3 +1,4 @@
+import { configSet } from '../settings/appConfig'
 import { act, render, renderHook, screen, waitFor, within } from '@testing-library/react'
 import { Shell } from '../shell/Shell'
 import userEvent from '@testing-library/user-event'
@@ -45,7 +46,7 @@ describe('floating panel arrangement is remembered per project', () => {
     expect(loadFloating('C:/work/proj').navigator).toBeNull()
     forgetFloating('C:/work/proj', 'scm')
     expect('scm' in loadFloating('C:/work/proj')).toBe(false)
-    window.localStorage.setItem('forge.float.v1', '{broken')
+    configSet(['windows', 'floating'], 'broken')
     expect(loadFloating('C:/work/proj')).toEqual({})
   })
 })

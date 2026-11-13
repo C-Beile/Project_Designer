@@ -23,6 +23,7 @@ Die dünne Tauri-Hülle. Sie nimmt `invoke(...)` aus der UI an und ruft `crates/
 |---|---|
 | `main.rs` | Startet `designer_app_lib::run()`. |
 | `lib.rs` | `run()`: Tauri-Builder, State (`.manage`), `generate_handler!` (Handler-Liste), `build_feature_registry`, `build_transpiler_registry`, `TauriEvents` (`EventSink`), macOS-Menü, Panic-/Backup-Hooks. |
+| `window_state.rs` | Merkt Lage, Größe und Bildschirm des Hauptfensters (`[window]`) und der Dialog-Fenster (`[popups.<name>]`) in `designer.conf`; stellt sie beim Öffnen wieder her. Das Hauptfenster startet unsichtbar (`visible: false`) und wird in `init_main` gezeigt. |
 | `os_windows.rs` | Eigene Fenster (`float-*`, `dialog-*`, `editor-*`): öffnen, Payload, Ergebnis, Schließ-Sperre, `app_exit`. |
 | `lsp_bridge.rs` | Sprachserver-Prozess für das Code-Feld (`start_lsp`, `send_lsp_message`). |
 | `commands/mod.rs` | Modulliste und `blocking(...)`. |
@@ -31,15 +32,16 @@ Die dünne Tauri-Hülle. Sie nimmt `invoke(...)` aus der UI an und ruft `crates/
 | Datei | Befehle |
 |---|---|
 | `plugins.rs` | `plugin_call`, `plugin_list` |
-| `project.rs` | `open_project`, `list_tree_children`, `restore_open_projects`, `list_icons`, `add_open_project`, `remove_open_project`, `find_usages`, `scan_problems`, `project_changed`, `list_project_files`, `resolve_import`, `get_recent_project`, `set_recent_project`, `list_project_models`, `export_project_zip`, `inspect_project_zip`, `import_project_zip`, `project_create_empty` |
+| `project.rs` | `open_project` (startet danach den Index), `list_tree_children`, `restore_open_projects`, `list_icons`, `add_open_project`, `remove_open_project` (stoppt den Index), `find_usages`, `scan_problems` (warten auf bzw. nutzen den Index, sonst alter Scan), `list_project_files`, `resolve_import`, `get_recent_project`, `get_recent_projects`, `set_recent_project`, `search_in_projects`, `replace_in_projects`, `find_projects_in_folder`, `list_project_models`, `export_project_zip`, `inspect_project_zip`, `import_project_zip`, `project_create_empty` |
+| `index.rs` | `index_status`, `index_verify`, `index_rebuild`, `index_dump` (Debug: Index als JSON in den Log-Ordner) und `rename_hints` (Kandidaten für Rename aus dem Index) |
 | `editor.rs` | `get_property_tree`, `set_property`, `get_property_sheet`, `get_navigator`, `set_sheet_property`, `remove_sheet_property`, `reset_sheet_property`, `reset_sheet_element`, `activate_mapping`, `enable_modification`, `set_modification_property`, `set_modification_script`, `discard_modification`, `list_diagnostics`, `undo`, `redo`, `save`, `save_overwrite`, `reload_object`, `external_changes`, `get_object_source`, `set_object_source`, `read_jdito_types` |
 | `files.rs` | `read_linked_file`, `write_linked_file`, `read_theme_file`, `read_theme_pack`, `copy_object`, `delete_object`, `file_info`, `file_paste`, `file_rename`, `file_delete`, `open_in_system`, `new_object_kinds`, `validate_new_name`, `create_object`, `rename_plan`, `rename_object` |
 | `rest.rs` | `rest_list_webservices`, `rest_send` (HTTP über `reqwest`, Basic mit Passwort aus dem System-Schlüsselbund), `rest_has_password`, `rest_save_password`, `rest_forget_password` |
 | `transpile.rs` | `execute_action`, `npm_run`, `cancel_build`, `transpile_compare` |
-| `settings.rs` | `get_settings`, `set_settings`, `detect_designer_install` (und Hilfen `settings_file`, `write_settings`) |
-| `dialogs.rs` | `pick_project_folder`, `pick_file`, `pick_save_file` (über `platform::FileDialog`) |
-| `misc.rs` | `check_for_update`, `install_update`, `local_data_info`, `open_local_url`, `open_log_folder`, `open_backup_folder`, `log_client_error` |
-| `os_windows.rs` (in `src/`) | `window_open`, `window_payload`, `window_result`, `window_close`, `window_close_guard`, `app_exit`, `main_window_contains` |
+| `settings.rs` | `get_settings`, `set_settings`, `config_get` (ganze `designer.conf` als JSON), `config_set` (ein Wert nach Pfad, sendet `forge://config-changed`), `detect_designer_install` (und Hilfen `settings_file`, `write_settings`) |
+| `dialogs.rs` | `pick_project_folder`, `pick_project_folders`, `pick_file`, `pick_save_file` (über `platform::FileDialog`) |
+| `misc.rs` | `check_for_update`, `install_update`, `local_data_info`, `open_local_url`, `open_log_folder`, `open_backup_folder`, `log_client_error`, `set_log_timezone` |
+| `os_windows.rs` (in `src/`) | `window_open`, `window_payload`, `window_result`, `window_close`, `window_close_guard`, `app_exit`, `main_window_contains`, `window_show` |
 | `lsp_bridge.rs` (in `src/`) | `start_lsp`, `send_lsp_message` |
 
 ## Einstiegspunkte
@@ -49,19 +51,20 @@ Die dünne Tauri-Hülle. Sie nimmt `invoke(...)` aus der UI an und ruft `crates/
 - `plugin_call(plugin, command, args)`: der eine Befehl für alle Plugin-Aufrufe. `plugin_list` sagt der UI, welche Plugins es gibt und ob `available`.
 
 ## Abhängigkeiten
-- Rein: `project`, `designer-core`, `app-base`, `platform`, `plugin-api`; optional `git`, `ssh-tunnel`, `database`, `deploy`, `liquibase`, `adito-transpiler`.
+- Rein: `project`, `project-index`, `designer-core`, `app-base`, `platform`, `plugin-api`; optional `git`, `ssh-tunnel`, `database`, `deploy`, `liquibase`, `adito-transpiler`.
 - Raus: nichts. Die UI (`app/ui`) ruft die Befehle auf (`app/ui/src/api/tauriApi.ts`).
 
 ## Regeln und Fallen
 - **Jeder Tauri-Befehl packt seinen Rumpf in `crate::commands::guard("name", || { ... })` (sync) oder `guard_async("name", async { ... }).await` (async).** Ein Panic wird so zum Fehlertext (bei `Result`) oder zum leeren Wert (`Option`, `Vec`, `bool`, `()`) und kommt ins Protokoll, statt die App zu beenden oder das Versprechen im Frontend offen zu lassen. Neue Rückgabetypen: `PanicFallback` in `commands/mod.rs` ergänzen.
 - Cargo-Features: `git`, `ssh-tunnel`, `database` (zieht `ssh-tunnel`), `deploy` und `liquibase` (ziehen `database`), `adito-transpiler`. Alle in `default`. Prüfung mit weniger: `cargo check -p designer-app --no-default-features --features git`.
+- Der Projekt-Index ist Kern (kein Plugin): State `Arc<IndexRegistry>` (in `setup` angelegt, `lib.rs`), Befehle in `commands/index.rs`. Er sendet `forge://index-progress` und `forge://project-changed` über `TauriEvents`. Async-Befehle mit `State` müssen ein `Result` liefern, sonst `app.state::<...>()` nehmen (siehe `list_project_files`).
 - Neuer Befehl: Funktion mit `#[tauri::command]` in `commands/<datei>.rs` UND Eintrag in `generate_handler!` in `lib.rs`. Ohne Eintrag meldet die UI "command not found" erst zur Laufzeit.
 - `blocking(|| ...)` (`commands/mod.rs`) führt langsame Arbeit außerhalb des UI-Threads aus (`spawn_blocking`) und macht aus einem abgestürzten Task einen Fehlertext. Langsame Befehle: `async fn` + `blocking`. Ohne das friert das Fenster ein. `plugin_call` nutzt es auch.
 - Plugin-Zustand gehört den Plugins (z. B. `TunnelManager`, `DbManager`), nicht Tauri. Sie werden in `build_feature_registry` gebaut und als `Arc` weitergereicht.
 - Events an die UI: `app.emit("forge://...")`. Aus Plugins heraus über `EventSink` (`TauriEvents`).
 - Fenster: neue Fenstertypen brauchen das Label-Muster auch in `capabilities/default.json`, sonst fehlen die Rechte.
 - Kommentare in `lib.rs` und `Cargo.toml` sprechen noch von einer GNU-Toolchain ("webview2-com", "R13"). Heute gilt MSVC (Root-`CLAUDE.md`).
-- `commands/project.rs` hat Hilfsfunktionen ohne Befehl (`update_open_projects`, `recent_project_file`); `commands/editor.rs` hat `current_catalog`.
+- `commands/project.rs` hat Hilfsfunktionen ohne Befehl (`update_open_projects`, `read_recent_paths`); `commands/editor.rs` hat `current_catalog`.
 - Offener Fehler laut Root-`CLAUDE.md`: Nach der Projektauswahl (`dialogs.rs`, `rfd`) stoppt die App unter dem Debugger.
 
 ## Wenn du X ändern willst
@@ -76,5 +79,5 @@ Die dünne Tauri-Hülle. Sie nimmt `invoke(...)` aus der UI an und ruft `crates/
 | Datei-Dialog | `src/commands/dialogs.rs` |
 
 ## Tests
-- Keine eigenen Tests (Logik liegt in `crates/project`). Prüfen: `cargo check -p designer-app`.
+- Wenige eigene Tests (`guard_tests` in `commands/mod.rs`); die Logik liegt in `crates/project` und `crates/project-index`. Prüfen: `cargo check -p designer-app`.
 - Starten: `cd app && npx --prefix ui tauri dev`.

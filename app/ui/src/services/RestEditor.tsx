@@ -1,3 +1,4 @@
+import { configGet, configSet } from '../settings/appConfig'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
@@ -24,36 +25,27 @@ import {
   type RestCall,
 } from './restTools'
 
-const BASE_KEY = 'forge.rest.base'
-const BASES_KEY = 'forge.rest.bases'
-const USER_KEY = 'forge.rest.user'
-const INSECURE_KEY = 'forge.rest.insecure'
+// Zuletzt benutzte Werte des REST-Clients, Abschnitt [rest] in designer.conf (nie das Passwort: das liegt im Schlüsselbund).
+const BASE_KEY = 'base'
+const BASES_KEY = 'bases'
+const USER_KEY = 'user'
+const INSECURE_KEY = 'insecure'
 const BODY_METHODS = ['POST', 'PUT', 'PATCH']
 const MAX_HIGHLIGHT = 200_000
 
 function read(key: string, fallback = ''): string {
-  try {
-    return window.localStorage.getItem(key) ?? fallback
-  } catch {
-    return fallback
-  }
+  const value = configGet<unknown>('rest', key)
+  return typeof value === 'string' ? value : fallback
 }
 
+/** Leerer Text = nicht gesetzt: der Eintrag fehlt dann in der Datei. */
 function write(key: string, value: string): void {
-  try {
-    window.localStorage.setItem(key, value)
-  } catch {
-    return
-  }
+  configSet(['rest', key], value === '' ? undefined : value)
 }
 
 function readList(key: string): string[] {
-  try {
-    const list = JSON.parse(read(key, '[]')) as unknown
-    return Array.isArray(list) ? list.filter((v): v is string => typeof v === 'string').slice(0, 10) : []
-  } catch {
-    return []
-  }
+  const list = configGet<unknown>('rest', key)
+  return Array.isArray(list) ? list.filter((v): v is string => typeof v === 'string').slice(0, 10) : []
 }
 
 function HighlightedUrl({ value, onChange, onEnter, label }: { value: string; onChange: (v: string) => void; onEnter: () => void; label: string }) {
@@ -179,7 +171,7 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
   const [body, setBody] = useState('')
   const [reqTab, setReqTab] = useState<ReqTab>('params')
   const [resTab, setResTab] = useState<'body' | 'headers'>('body')
-  const [insecure, setInsecure] = useState(() => read(INSECURE_KEY) === '1')
+  const [insecure, setInsecure] = useState(() => configGet<boolean>('rest', INSECURE_KEY) === true)
 
   const [loginKind, setLoginKind] = useState<LoginKind>('basic')
   const [user, setUser] = useState(() => read(USER_KEY))
@@ -342,8 +334,8 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
       setResTab('body')
       const list = [base, ...bases.filter((b) => b !== base)].filter((b) => b.trim() !== '').slice(0, 10)
       setBases(list)
-      write(BASES_KEY, JSON.stringify(list))
-      write(INSECURE_KEY, insecure ? '1' : '0')
+      configSet(['rest', BASES_KEY], list)
+      configSet(['rest', INSECURE_KEY], insecure ? true : undefined)
       logOutput('default', `REST ${method} ${fullUrl} → ${res.status} ${res.reason} (${res.elapsedMs} ms)`, res.status >= 400 ? 'error' : undefined)
     } catch (e) {
       const text = errorText(e)

@@ -20,6 +20,7 @@ import {
   registerToolbarItem,
   registerTreeContextItem,
   runCommandById,
+  toolbarItemState,
   useMenuContributions,
   useOptionsPages,
   usePlugins,
@@ -101,6 +102,19 @@ describe('menu contributions', () => {
     registerMenuContribution({ menu: 'other', order: 1, items: [item('o')] })
     const { result } = renderHook(() => useMenuContributions('team'))
     expect(result.current.map((i) => i.id)).toEqual(['a', 'b'])
+  })
+
+  it('a menu contribution that throws is skipped and the others stay', () => {
+    registerMenuContribution({ menu: 'team', order: 1, items: () => { throw new Error('boom') } })
+    registerMenuContribution({ menu: 'team', order: 2, items: [item('ok')] })
+    const { result } = renderHook(() => useMenuContributions('team'))
+    expect(result.current.map((i) => i.id)).toEqual(['ok'])
+  })
+
+  it('a toolbar state that throws dims only that button', () => {
+    const throwing = { id: 't', group: 'g', order: 1, label: 'Bad', command: 'x', state: () => { throw new Error('boom') } }
+    expect(toolbarItemState(throwing, { hasProject: true, pluginActive: true })).toMatchObject({ enabled: false })
+    expect(toolbarItemState({ ...throwing, state: undefined }, { hasProject: true, pluginActive: true })).toEqual({ enabled: true })
   })
 
   it('hook updates on new registration and on unregister', () => {

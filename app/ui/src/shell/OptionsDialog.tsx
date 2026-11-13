@@ -14,6 +14,7 @@ import { COLOR_GROUPS, applyColorOverrides, getColorOverrides, saveColorOverride
 import { LivePreview, ThemePicker } from './ThemePicker'
 import { ColorSample } from './ColorSample'
 import { GeneralOptions } from './GeneralOptions'
+import { configSet } from '../settings/appConfig'
 import { isPluginActive } from '../settings/plugins'
 import { errorText } from '../core/errorText'
 import { useOptionsPages } from '../core/plugins/registry'
@@ -208,11 +209,7 @@ export function OptionsDialog({
       for (const key of Object.keys(prefs) as (keyof EditorPrefs)[]) if (prefs[key] !== getEditorPrefs()[key]) setEditorPref(key, prefs[key])
       if (engineChoice !== engine) onEngineChange(engineChoice)
       if (themeChoice !== theme) onThemeChange(themeChoice)
-      try {
-        window.localStorage.setItem('forge.theme', themeChoice)
-      } catch {
-        // the choice still applies through the callbacks
-      }
+      configSet(['appearance', 'theme'], themeChoice === 'dark' ? undefined : themeChoice)
       onSaved(value)
       setError(null)
       return true

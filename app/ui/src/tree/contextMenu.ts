@@ -20,6 +20,10 @@ export interface TreeMenuContext {
   clipboard: { path: string; folder: string; name: string } | null
   /** A project folder is open and under Git. */
   hasProject: boolean
+  /** Der Projektordner liegt in einem Git-Repository (false = Git-Einträge abgeblendet). */
+  gitRepo?: boolean
+  /** Es gibt geänderte Dateien (false = Commit abgeblendet). */
+  gitChanges?: boolean
   /** File copied or cut in the tree ("Copy" / "Cut" of a file). */
   fileClipboard?: { path: string; cut: boolean } | null
 }
@@ -71,13 +75,13 @@ const historyMenu = (enabled: boolean): MenuEntry => ({
   children: [entry('history.show', 'Show History', enabled)],
 })
 
-const gitMenu = (enabled: boolean): MenuEntry => ({
+const gitMenu = (enabled: boolean, hint = 'Open a project first', changes = true): MenuEntry => ({
   id: 'git',
   label: 'Git',
   enabled,
-  hint: enabled ? undefined : 'Open a project first',
+  hint: enabled ? undefined : hint,
   children: [
-    entry('git.commit', 'Commit...', enabled),
+    entry('git.commit', 'Commit...', enabled && changes, 'No changes to commit'),
     entry('git.pull', 'Pull...', enabled),
     entry('git.push', 'Push...', enabled),
     entry('git.branches', 'Switch Branch...', enabled),
@@ -129,6 +133,9 @@ export function treeNodeKind(n: TreeNode): string {
 export function buildTreeMenu(node: TreeNode, ctx: TreeMenuContext): MenuEntry[] {
   const kind = treeNodeKind(node)
   const git = ctx.hasProject
+  // Git-Einträge brauchen zusätzlich ein Repository im Projektordner.
+  const gitOn = git && ctx.gitRepo !== false
+  const gitHint = git ? 'This project folder is not a Git repository' : 'Open a project first'
   let s = 0
 
   if (kind === 'project' || kind === 'module') {
@@ -147,7 +154,7 @@ export function buildTreeMenu(node: TreeNode, ctx: TreeMenuContext): MenuEntry[]
       isProject ? entry('closeProject', 'Close', true) : later('closeModule', 'Close'),
       later('rename', 'Rename...'),
       historyMenu(false),
-      gitMenu(git),
+      gitMenu(gitOn, gitHint, ctx.gitChanges !== false),
       entry('refresh', 'Refresh Folder', true),
       sep(s++),
       entry('properties', 'Properties', true),
@@ -192,7 +199,7 @@ export function buildTreeMenu(node: TreeNode, ctx: TreeMenuContext): MenuEntry[]
       entry('rename', 'Rename...', !!layout && !missing && !readOnly && RENAME_TYPES.includes(type), readOnly ? READ_ONLY : 'Rename updates the references of entities, views and entity webservices only'),
       sep(s++),
       historyMenu(!missing),
-      gitMenu(git),
+      gitMenu(gitOn, gitHint, ctx.gitChanges !== false),
       ...(type === 'aliasDefinition' ? [liquibaseMenu(git && !!layout && !missing)] : []),
       entry('refresh', 'Refresh Folder', true),
       sep(s++),
@@ -220,7 +227,7 @@ export function buildTreeMenu(node: TreeNode, ctx: TreeMenuContext): MenuEntry[]
       entry('file.rename', 'Rename...', !readOnly, READ_ONLY_FILE),
       sep(s++),
       historyMenu(true),
-      gitMenu(git),
+      gitMenu(gitOn, gitHint, ctx.gitChanges !== false),
     ]
     if (isPackageJson) items.push(nodeJsMenu(ctx.hasProject))
     items.push(
@@ -239,7 +246,7 @@ export function buildTreeMenu(node: TreeNode, ctx: TreeMenuContext): MenuEntry[]
       entry('refresh', 'Refresh Folder', true),
       sep(s++),
       historyMenu(false),
-      gitMenu(git),
+      gitMenu(gitOn, gitHint, ctx.gitChanges !== false),
       entry('properties', 'Properties', true),
     ]
   }
@@ -253,7 +260,7 @@ export function buildTreeMenu(node: TreeNode, ctx: TreeMenuContext): MenuEntry[]
     later('find', 'Find...'),
     sep(s++),
     historyMenu(false),
-    gitMenu(git),
+    gitMenu(gitOn, gitHint, ctx.gitChanges !== false),
     entry('refresh', 'Refresh Folder', true),
     sep(s++),
     toolsMenu(),

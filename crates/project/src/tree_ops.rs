@@ -76,7 +76,10 @@ pub fn copy_object(aod: &Path, dest_root: &Path, new_name: &str) -> Result<PathB
     let new_aod = dest_dir.join(format!("{new_name}.aod"));
     let finish = || -> Result<(), String> {
         fs::write(&old_aod, new_text.as_bytes()).map_err(|e| e.to_string())?;
-        fs::rename(&old_aod, &new_aod).map_err(|e| e.to_string())
+        fs::rename(&old_aod, &new_aod).map_err(|e| e.to_string())?;
+        platform::fs::note_own_change(&dest_dir);
+        platform::fs::note_own_change(&new_aod);
+        Ok(())
     };
     if let Err(e) = finish() {
         let _ = fs::remove_dir_all(&dest_dir);

@@ -39,10 +39,12 @@ fn flatten(path: &Path) -> PathBuf {
     out
 }
 
+/// Folders a transpile writes into the project folder (result and caches). The file watcher ignores them too.
+pub const BUILD_FOLDERS: [&str; 6] = ["dist", "_own_engine_dist", "_forge_experimental_dist", "transpile-cache", "transpile-snapshot", ".forge-incremental-cache"];
+
 /// Files the build writes (the `dist` result of a transpile and the folders of its cache) are made again by every run;
 /// a copy of each of them would only slow the transpile down (thousands of files) and fill the backup folder.
 fn is_build_output(path: &Path) -> bool {
-    const BUILD_FOLDERS: [&str; 6] = ["dist", "_own_engine_dist", "_forge_experimental_dist", "transpile-cache", "transpile-snapshot", ".forge-incremental-cache"];
     path.components().any(|c| BUILD_FOLDERS.iter().any(|f| c.as_os_str().eq_ignore_ascii_case(f)))
 }
 

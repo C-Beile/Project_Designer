@@ -13,6 +13,10 @@ export default defineConfig({
     strictPort: true,
     // Kein Vollbild-Fehlerfenster bei Syntaxfehlern im Dev-Modus: das Fenster bleibt bedienbar, der Fehler steht im Terminal von `tauri dev`.
     hmr: { overlay: false },
+    // Windows meldet bei vielen Dateiänderungen auf einmal (Git-Wechsel, Skripte, Umbauten) nichts: der 16-KB-Puffer der
+    // Datei-Ereignisse läuft über und Vite liefert danach alte Fassungen aus ("... is not defined"). Abfragen statt Ereignisse
+    // hört nichts auf, kostet bei dieser Projektgröße kaum CPU (`node_modules` und `.git` sind ausgenommen).
+    watch: { usePolling: true, interval: 250, binaryInterval: 1000, ignored: ['**/dist/**', '**/coverage/**'] },
   },
   build: {
     outDir: 'dist',

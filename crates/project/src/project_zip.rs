@@ -229,7 +229,9 @@ pub fn import_zip(root: &Path, zip_path: &Path, selected: &[(String, String)], o
             if let Some(parent) = target.parent() {
                 fs::create_dir_all(parent).map_err(|e| e.to_string())?;
             }
-            fs::write(&target, &data).map_err(|e| e.to_string())
+            fs::write(&target, &data).map_err(|e| e.to_string())?;
+            platform::fs::note_own_change(&target);
+            Ok(())
         })();
         if let Err(e) = result {
             return Err(format!("Import stopped at {}: {e}. Files written so far: {}.", target.display(), written.len()));

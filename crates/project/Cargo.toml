@@ -19,12 +19,15 @@ npm-modules = { path = "../../crates/npm-modules" }
 # Problems window: dangling references of the project objects (refs::extract).
 serde = { workspace = true }
 serde_json = { workspace = true }
+toml = { workspace = true }
 # P8 step 3: reads the property catalog (XSD + annotation metadata) out of the locally installed
 # Designer's jars at runtime - nothing ADITO-owned is shipped with Forge.
 zip = { version = "2", default-features = false, features = ["deflate"] }
 quick-xml = { workspace = true }
 regex = "1"
 platform = { path = "../../crates/platform" }
+# Index ueber das Projekt (Dateien, Verweise, Probleme); `problems.rs` nutzt seine Analyse, `layout` stammt von dort.
+project-index = { path = "../../crates/project-index" }
 
 # Nur Beispiele (examples/db_live, deploy_*) nutzen die Plugin-Crates; der Kern selbst haengt nicht von ihnen ab.
 [dev-dependencies]

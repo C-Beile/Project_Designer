@@ -1,5 +1,8 @@
 import { createElement } from 'react'
 import { registerDialog, registerMenuContribution, registerOptionsPage, registerPlugin, registerShellExtension, registerToolbarItem, type ToolbarContext } from '../../core/plugins/registry'
+import { setGitAuthHandler } from '../../api/gitAuth'
+import { setCheckoutConflictHandler, type ConflictKind } from '../../api/gitCheckout'
+import { choiceDialog } from '../../core/dialogService'
 import { setScmProvider } from '../../core/scm'
 import { IconCommit, IconHistory, IconPull, IconPush } from '../../shell/icons'
 import { item, NO_PROJECT_HINT, type MenuContext, type MenuItemDef } from '../../shell/menuModel'
@@ -8,24 +11,35 @@ import { GitOptionsPage } from './GitOptionsPage'
 import { GitShellBridge } from './GitShellBridge'
 import { GitWindow, SyncWindow } from './GitWindows'
 import { LazyDiffView } from './LazyDiffView'
+import { askGitLogin, GitLoginDialog, GitLoginWindow } from './GitLoginDialog'
+import { RepoLinkDialog } from './RepoLinkDialog'
 import { ScmPanel } from './ScmPanel'
 import { registerGitStatusItem } from './GitStatusItem'
+
+const NOT_A_REPO_HINT = 'This project folder is not a Git repository'
+const NO_CHANGES_HINT = 'No changes to commit'
 
 /** Menü Team: Git und History. Aktiv-Zustand und Hinweise wie vorher aus `hasProject`/`gitActive`. */
 function teamItems(ctx: MenuContext): MenuItemDef[] {
   const gitActive = ctx.gitActive !== false
-  const teamOn = ctx.hasProject && gitActive
-  const teamHint = !gitActive ? 'The Git plugin is deactivated (Tools > Plugins)' : ctx.hasProject ? undefined : NO_PROJECT_HINT
+  const gitRepo = ctx.gitRepo !== false
+  const gitChanges = ctx.gitChanges !== false
+  const teamOn = ctx.hasProject && gitActive && gitRepo
+  const teamHint = !gitActive ? 'The Git plugin is deactivated (Tools > Plugins)' : !ctx.hasProject ? NO_PROJECT_HINT : gitRepo ? undefined : NOT_A_REPO_HINT
   return [
     { id: 'team.sep.git', kind: 'separator', label: '', enabled: false },
     {
       id: 'team.git',
       kind: 'submenu',
       label: 'Git',
-      enabled: teamOn,
-      hint: teamHint,
+      // Das Untermenü bleibt offen, solange Projekt und Plugin da sind: "Repository..." stellt die Verknüpfung wieder her.
+      enabled: ctx.hasProject && gitActive,
+      hint: !gitActive ? teamHint : ctx.hasProject ? undefined : NO_PROJECT_HINT,
       children: [
-        item('team.commit', 'Commit...', teamOn, { hint: teamHint }),
+        item('team.repository', 'Repository...', ctx.hasProject && gitActive, { hint: !gitActive ? teamHint : NO_PROJECT_HINT }),
+        item('team.signIn', 'Sign In...', teamOn, { hint: teamHint }),
+        { id: 'team.sep.repo', kind: 'separator', label: '', enabled: false },
+        item('team.commit', 'Commit...', teamOn && gitChanges, { hint: teamHint ?? NO_CHANGES_HINT }),
         item('team.pull', 'Pull...', teamOn, { hint: teamHint }),
         item('team.push', 'Push...', teamOn, { hint: teamHint }),
         item('team.switchBranch', 'Switch Branch...', teamOn, { hint: teamHint }),
@@ -44,11 +58,36 @@ function teamItems(ctx: MenuContext): MenuItemDef[] {
 }
 
 /** Toolbar-Knopf der Gruppe 'git': aktiv mit Projekt und eingeschaltetem Plugin, sonst mit Grund im Tooltip. */
-function gitButton(what: string) {
-  return (ctx: ToolbarContext) => ({
-    enabled: ctx.hasProject && ctx.pluginActive,
-    hint: !ctx.pluginActive ? `${what} (Git plugin deactivated)` : ctx.hasProject ? what : `${what} (open a project first)`,
-  })
+function gitButton(what: string, needsChanges = false) {
+  return (ctx: ToolbarContext) => {
+    const noChanges = needsChanges && ctx.gitChanges === false
+    return {
+      enabled: ctx.hasProject && ctx.pluginActive && ctx.gitRepo !== false && !noChanges,
+      hint: !ctx.pluginActive ? `${what} (Git plugin deactivated)` : !ctx.hasProject ? `${what} (open a project first)` : ctx.gitRepo === false ? `${what} (${NOT_A_REPO_HINT})` : noChanges ? `${what} (${NO_CHANGES_HINT})` : what,
+    }
+  }
+}
+
+/** Lokale Änderungen im Weg (Branch-Wechsel oder Pull): Stash und mitnehmen, verwerfen (nur beim Wechsel) oder abbrechen. */
+async function askCheckoutChoice({ kind, branch, message }: { kind: ConflictKind; branch: string; message: string }): Promise<'stash' | 'discard' | null> {
+  const NL = String.fromCharCode(10)
+  const files = message
+    .split(NL)
+    .filter((line) => /^\s/.test(line))
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const shown = files.slice(0, 6).join(NL) + (files.length > 6 ? `${NL}... and ${files.length - 6} more` : '')
+  const pull = kind === 'pull'
+  const pick = await choiceDialog(
+    `Your local changes are in the way of ${pull ? 'the pull' : `switching to ${branch}`}.${shown ? NL + NL + shown : ''}`,
+    [
+      { id: 'stash', label: 'Stash and bring along' },
+      ...(pull ? [] : [{ id: 'discard', label: 'Discard' }]),
+      { id: '', label: 'Cancel' },
+    ],
+    pull ? 'Pull' : 'Switch Branch',
+  )
+  return pick === 'stash' || pick === 'discard' ? pick : null
 }
 
 /** Meldet das Git-Plugin und seine UI-Beiträge im Register an (einmal beim Start). */
@@ -64,18 +103,25 @@ export function registerGitPlugin(): () => void {
     }),
     registerMenuContribution({ plugin: 'git', menu: 'team', order: 10, items: teamItems }),
     // Zwischen Keymap (40) und Appearance (50) wie die feste Kategorie vorher.
-    registerOptionsPage({ plugin: 'git', id: 'git', category: 'team', title: 'Team', order: 45, component: GitOptionsPage }),
+    registerOptionsPage({ plugin: 'git', id: 'git', category: 'team', title: 'Git', order: 45, component: GitOptionsPage }),
     registerToolbarItem({ plugin: 'git', id: 'git.pull', group: 'git', order: 10, label: 'Pull', icon: createElement(IconPull), command: 'team.pull', state: gitButton('Pull: fetch and merge new commits of the remote, the result shows as a notification') }),
-    registerToolbarItem({ plugin: 'git', id: 'git.commit', group: 'git', order: 20, label: 'Commit Changed Files', icon: createElement(IconCommit), command: 'team.commit', state: gitButton('Commit Changed Files') }),
+    registerToolbarItem({ plugin: 'git', id: 'git.commit', group: 'git', order: 20, label: 'Commit Changed Files', icon: createElement(IconCommit), command: 'team.commit', state: gitButton('Commit Changed Files', true) }),
     registerToolbarItem({ plugin: 'git', id: 'git.push', group: 'git', order: 30, label: 'Push', icon: createElement(IconPush), command: 'team.pushView', state: gitButton('Push: choose the local commits to push') }),
     registerToolbarItem({ plugin: 'git', id: 'git.history', group: 'git', order: 40, label: 'Show Project History', icon: createElement(IconHistory), command: 'team.history', state: gitButton('Show Project History') }),
     registerGitStatusItem(),
+    // Branch-Wechsel mit lokalen Änderungen im Weg: Stash und mitnehmen, verwerfen oder abbrechen.
+    setCheckoutConflictHandler(askCheckoutChoice),
+    // Anmeldung bei Pull/Push/Fetch im Designer statt im Fenster des Credential Managers.
+    setGitAuthHandler(({ root, url, login }) => askGitLogin(root, url, login)),
     // Quelle des Source-Control-Standes im Kern (`core/scm`).
     setScmProvider((api, root) => api.scmStatus(root)),
     // Dialoge und Panels, die der Kern über `getDialog(id)` holt.
     registerDialog({ plugin: 'git', id: 'git.window', component: GitWindow }),
     registerDialog({ plugin: 'git', id: 'git.syncWindow', component: SyncWindow }),
     registerDialog({ plugin: 'git', id: 'git.commitDiff', component: CommitDiffDialog }),
+    registerDialog({ plugin: 'git', id: 'git.login', component: GitLoginDialog as never }),
+    registerDialog({ plugin: 'git', id: 'git.loginWindow', component: GitLoginWindow as never }),
+    registerDialog({ plugin: 'git', id: 'git.repoLink', component: RepoLinkDialog as never }),
     registerDialog({ plugin: 'git', id: 'git.scmPanel', component: ScmPanel }),
     registerDialog({ plugin: 'git', id: 'git.diffView', component: LazyDiffView }),
     registerShellExtension({ plugin: 'git', id: 'git.shell', order: 10, component: GitShellBridge }),

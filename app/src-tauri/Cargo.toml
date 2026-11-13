@@ -44,6 +44,7 @@ app-base = { path = "../../crates/app-base" }
 # already-built `platform::FileDialog` trait (Windows impl via `rfd`) rather than pulling in
 # Tauri's own dialog plugin - one native-dialog seam for the whole app, not two.
 platform = { path = "../../crates/platform" }
+project-index = { path = "../../crates/project-index" }
 
 plugin-api = { path = "../../crates/plugin-api" }
 git = { path = "../../crates/git", optional = true }

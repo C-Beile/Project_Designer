@@ -1,13 +1,14 @@
+import { configGet, configSet, onConfigChange, touches } from '../settings/appConfig'
 // Colours and the interface font the user changed by hand (Options > Appearance). They lie on top of whatever theme is
 // active (built-in or imported), so a theme can be taken as the base and adjusted colour by colour. Kept per user in
-// localStorage; a storage problem only means the changes are gone after a restart.
+// designer.conf ([appearance.colors]).
 //
 // Keys of `colors`:
 //   `--name`          an interface colour token of tokens.css
 //   `editor:<id>`     a colour of the code editor (Monaco colour id, for example `editor.background`)
 //   `syntax:<token>`  the colour of a kind of code (Monaco token name, for example `comment`)
 
-export const COLOR_OVERRIDES_KEY = 'forge.colorOverrides.v1'
+const COLORS_PATH = ['appearance', 'colors'] as const
 
 export interface ColorOverrides {
   colors: Record<string, string>
@@ -159,15 +160,10 @@ export const COLOR_GROUPS: ColorGroup[] = [
 const HEX = /^#[0-9a-f]{6}$/i
 
 function load(): ColorOverrides {
-  try {
-    const raw = window.localStorage.getItem(COLOR_OVERRIDES_KEY)
-    const parsed = raw ? (JSON.parse(raw) as Partial<ColorOverrides>) : {}
-    const colors: Record<string, string> = {}
-    for (const [key, value] of Object.entries(parsed.colors ?? {})) if (typeof value === 'string' && HEX.test(value)) colors[key] = value.toLowerCase()
-    return { colors, uiFont: typeof parsed.uiFont === 'string' ? parsed.uiFont : '' }
-  } catch {
-    return { colors: {}, uiFont: '' }
-  }
+  const parsed = configGet<Partial<ColorOverrides>>(...COLORS_PATH) ?? {}
+  const colors: Record<string, string> = {}
+  for (const [key, value] of Object.entries(parsed.colors ?? {})) if (typeof value === 'string' && HEX.test(value)) colors[key] = value.toLowerCase()
+  return { colors, uiFont: typeof parsed.uiFont === 'string' ? parsed.uiFont : '' }
 }
 
 let current: ColorOverrides = load()
@@ -179,12 +175,8 @@ export function getColorOverrides(): ColorOverrides {
 
 export function saveColorOverrides(next: ColorOverrides): void {
   current = next
-  try {
-    if (Object.keys(next.colors).length === 0 && !next.uiFont) window.localStorage.removeItem(COLOR_OVERRIDES_KEY)
-    else window.localStorage.setItem(COLOR_OVERRIDES_KEY, JSON.stringify(next))
-  } catch {
-    // the changes stay for this session
-  }
+  // Ohne Änderungen steht nichts in der Datei.
+  configSet(COLORS_PATH, Object.keys(next.colors).length === 0 && !next.uiFont ? undefined : { colors: next.colors, uiFont: next.uiFont || undefined })
   listeners.forEach((l) => l())
 }
 
@@ -193,6 +185,11 @@ export function reloadColorOverrides(): void {
   current = load()
   listeners.forEach((l) => l())
 }
+
+// Beim Laden der Konfiguration und bei Änderungen aus einem anderen Fenster neu lesen.
+onConfigChange((path) => {
+  if (touches(path, COLORS_PATH)) reloadColorOverrides()
+})
 
 export function subscribeColorOverrides(listener: () => void): () => void {
   listeners.add(listener)

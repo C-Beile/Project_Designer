@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::problems::{scan_usages, UsageDto};
+use crate::problems::{scan_usages, scan_usages_in, UsageDto, UsageJob};
 use crate::tree_ops::{locate_object, rewrite_for_copy};
 
 const RENAMABLE: &[&str] = &["entity", "neonView", "entityWebservice"];
@@ -91,10 +91,35 @@ fn check(root: &Path, aod: &Path, new_name: &str) -> Result<crate::tree_ops::Obj
     Ok(loc)
 }
 
+/// What the project index knows: the object files that may point to the renamed object and all project files.
+/// The candidates are parsed fresh for the byte ranges, so a stale index cannot corrupt a file.
+pub struct IndexHints {
+    pub candidates: Vec<UsageJob>,
+    pub files: Vec<PathBuf>,
+}
+
+fn usages_for(root: &Path, loc: &crate::tree_ops::ObjectLocation, hints: Option<&IndexHints>) -> Vec<(UsageDto, Option<crate::problems::UsageSpan>)> {
+    match hints {
+        Some(h) => scan_usages_in(&h.candidates, &loc.type_folder, &loc.name),
+        None => scan_usages(root, &loc.type_folder, &loc.name),
+    }
+}
+
+/// `.js` and `.aod` files the text search looks into, from the index file list (same filter as the folder walk).
+fn files_from_index(root: &Path, files: &[PathBuf]) -> Vec<PathBuf> {
+    let skip = |p: &Path| p.strip_prefix(root).unwrap_or(p).components().any(|c| c.as_os_str().to_str().is_some_and(skip_dir));
+    files.iter().filter(|p| matches!(p.extension().and_then(|x| x.to_str()), Some("js" | "aod")) && !skip(p)).cloned().collect()
+}
+
 /// Everything a rename of `aod` to `new_name` would change; writes nothing.
 pub fn plan(root: &Path, aod: &Path, new_name: &str) -> Result<RenamePlan, String> {
+    plan_with(root, aod, new_name, None)
+}
+
+/// Like `plan`, with the candidates and the file list from the index.
+pub fn plan_with(root: &Path, aod: &Path, new_name: &str, hints: Option<&IndexHints>) -> Result<RenamePlan, String> {
     let loc = check(root, aod, new_name)?;
-    let usages = scan_usages(root, &loc.type_folder, &loc.name);
+    let usages = usages_for(root, &loc, hints);
     let changes: Vec<UsageDto> = usages.iter().map(|(u, _)| u.clone()).collect();
 
     let mut covered: BTreeMap<PathBuf, Vec<(usize, usize)>> = BTreeMap::new();
@@ -105,7 +130,10 @@ pub fn plan(root: &Path, aod: &Path, new_name: &str) -> Result<RenamePlan, Strin
     }
     let own = aod.to_path_buf();
     let mut files = Vec::new();
-    collect_files(root, &mut files);
+    match hints {
+        Some(h) => files = files_from_index(root, &h.files),
+        None => collect_files(root, &mut files),
+    }
     files.sort();
     let mut hits = Vec::new();
     for f in files {
@@ -147,8 +175,13 @@ fn replace_in_span(bytes: &[u8], start: usize, end: usize, old: &str, new: &str)
 
 /// Performs the rename; returns the new model file. All-or-nothing for the reference files.
 pub fn apply(root: &Path, aod: &Path, new_name: &str) -> Result<PathBuf, String> {
+    apply_with(root, aod, new_name, None)
+}
+
+/// Like `apply`, with the candidates from the index.
+pub fn apply_with(root: &Path, aod: &Path, new_name: &str, hints: Option<&IndexHints>) -> Result<PathBuf, String> {
     let loc = check(root, aod, new_name)?;
-    let usages = scan_usages(root, &loc.type_folder, &loc.name);
+    let usages = usages_for(root, &loc, hints);
 
     let mut by_file: BTreeMap<PathBuf, Vec<(usize, usize)>> = BTreeMap::new();
     for (_, span) in &usages {
@@ -189,6 +222,7 @@ pub fn apply(root: &Path, aod: &Path, new_name: &str) -> Result<PathBuf, String>
             restore(&originals);
             return Err(format!("Rename failed, files restored: {e}"));
         }
+        platform::fs::note_own_change(file);
     }
     let new_dir = loc.dir.with_file_name(new_name);
     if let Err(e) = fs::rename(&loc.dir, &new_dir) {
@@ -202,6 +236,9 @@ pub fn apply(root: &Path, aod: &Path, new_name: &str) -> Result<PathBuf, String>
         restore(&originals);
         return Err(format!("The model file could not be renamed, files restored: {e}"));
     }
+    platform::fs::note_own_change(&loc.dir);
+    platform::fs::note_own_change(&new_dir);
+    platform::fs::note_own_change(&target);
     Ok(target)
 }
 

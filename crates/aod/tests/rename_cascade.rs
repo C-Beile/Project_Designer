@@ -1,12 +1,12 @@
 //! End-to-end proof of the rename cascade (architecture.md §7) across several simulated files:
-//! `RefGraph::rename_cascade` must bundle one `FileCommand` per referencing file into a single
+//! `references::rename_cascade` must bundle one `FileCommand` per referencing file into a single
 //! `Transaction`, and applying it must land the new name at the right byte offset in every file.
 
 use std::collections::HashMap;
 
 use aod::tree::testing::InMemoryEventSource;
 use aod::tree::{ByteRange, NodePath, PropertyTree, PropertyValue, ScalarValue};
-use aod::refs::{ObjectId, RefGraph};
+use aod::references::{read_references, rename_cascade, ObjectId, Reference};
 
 fn text(s: &str) -> PropertyValue {
     PropertyValue::Scalar(ScalarValue::Text(s.to_string()))
@@ -65,17 +65,17 @@ fn rename_cascade_bundles_patches_from_multiple_simulated_files_into_one_transac
     let view1 = ObjectId::view("THHIT_TourFilter_view");
     let view2 = ObjectId::view("THHIT_TourDetail_view");
 
-    let mut graph = RefGraph::new();
-    graph.index(view1.clone(), &root1);
-    graph.index(view2.clone(), &root2);
-    assert_eq!(graph.incoming(&target).len(), 2, "both files must be indexed as referencing the entity");
+    let mut incoming: Vec<Reference> = Vec::new();
+    incoming.extend(read_references(&view1, &root1, &|_| None));
+    incoming.extend(read_references(&view2, &root2, &|_| None));
+    incoming.retain(|r| r.to == target);
+    assert_eq!(incoming.len(), 2, "both files must be read as referencing the entity");
 
     let mut trees = HashMap::new();
     trees.insert(view1.clone(), PropertyTree::from_value(src1, root1));
     trees.insert(view2.clone(), PropertyTree::from_value(src2, root2));
 
-    let tx = graph
-        .rename_cascade(&target, "THHIT_Fahrt_entity", &mut trees)
+    let tx = rename_cascade(&incoming, &target, "THHIT_Fahrt_entity", &mut trees)
         .expect("both incoming edges have a tree supplied, cascade must succeed");
 
     assert_eq!(tx.commands.len(), 2, "one FileCommand per referencing file, bundled atomically");
@@ -137,13 +137,11 @@ fn rename_cascade_currently_skips_value_process_linked_file_edges() {
         )]),
     )]);
 
-    let mut graph = RefGraph::new();
-    graph.index(entity, &root);
-    assert_eq!(graph.incoming(&linked_file).len(), 1, "the valueProcess field must be indexed as an edge to the linked file");
+    let incoming: Vec<Reference> = read_references(&entity, &root, &|_| None).into_iter().filter(|r| r.to == linked_file).collect();
+    assert_eq!(incoming.len(), 1, "the valueProcess field must be read as a reference to the linked file");
 
     let mut trees: HashMap<ObjectId, PropertyTree<InMemoryEventSource>> = HashMap::new();
-    let tx = graph
-        .rename_cascade(&linked_file, "countryValueProcess2.js", &mut trees)
+    let tx = rename_cascade(&incoming, &linked_file, "countryValueProcess2.js", &mut trees)
         .expect("no tree lookup happens because the only incoming edge is skipped");
 
     assert!(tx.commands.is_empty(), "ValueProcessLinkedFile edges are not yet rewritten by this cascade");

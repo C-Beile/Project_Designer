@@ -86,6 +86,23 @@ describe('dialog windows draw their content and send the result back', () => {
     expect(calls.results[0]).toEqual({ kind: 'dialog', name: 'rename', result: JSON.stringify({ name: 'Human' }) })
   })
 
+  it('Git Sign In window signs in through the api and reports success; cancel reports null', async () => {
+    const user = userEvent.setup()
+    const api = createMockForgeApi({ projectTree: [], documents: {} })
+    const { calls } = await open('gitlogin', { project: 'C:/p', url: 'https://gitlab.example/x.git' })
+    const { unmount } = render(<DialogWindowApp name="gitlogin" api={api} />)
+    await user.type(await screen.findByRole('textbox', { name: 'User Name' }), 'lion')
+    await user.type(screen.getByLabelText('Password or Access Token'), 'tok')
+    await user.click(screen.getByRole('button', { name: 'Sign in' }))
+    await waitFor(() => expect(calls.results).toEqual([{ kind: 'dialog', name: 'gitlogin', result: JSON.stringify({ signedIn: true }) }]))
+    expect(api.gitCalls).toEqual(['login:lion'])
+    unmount()
+    calls.results.length = 0
+    render(<DialogWindowApp name="gitlogin" api={api} />)
+    await user.click(await screen.findByRole('button', { name: 'Cancel' }))
+    await waitFor(() => expect(calls.results).toEqual([{ kind: 'dialog', name: 'gitlogin', result: null }]))
+  })
+
   it('About and Local Data close with a cancel result', async () => {
     const user = userEvent.setup()
     const { calls } = await open('about', {})

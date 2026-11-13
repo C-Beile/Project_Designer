@@ -1,4 +1,4 @@
-//! Edge extraction (architecture.md §7 "Aufbau"): walks one object's `PropertyValue` tree and
+//! Reference extraction (architecture.md §7 "Aufbau"): walks one object's `PropertyValue` tree and
 //! pulls out outgoing references per the verified catalogue in aod-format.md §4.
 //!
 //! Extraction works against the flattened `PropertyValue` shape directly (not against
@@ -9,23 +9,25 @@
 
 use crate::tree::{NodePath, PropertyValue};
 
-use crate::refs::edge::{Edge, RefKind};
-use crate::refs::object_id::ObjectId;
+use crate::references::reference::{Reference, ReferenceKind};
+use crate::references::object_id::ObjectId;
 
 /// Reads the `aliasDefDb.targetAliasName` value off an Alias object's own root value - the short
 /// form entities actually reference (aod-format.md §4 row 4). Callers register this with
-/// `RefGraph::register_alias_target_name` before indexing entities that use it, so
+/// the caller (the project index keeps it per alias object) before indexing entities that use it, so
 /// `dbRecordContainer.alias` edges resolve to the right `ObjectId` instead of the literal string.
 pub fn target_alias_name(alias_root: &PropertyValue) -> Option<String> {
-    alias_root.field("aliasDefDb")?.field("targetAliasName")?.as_text().map(str::to_string)
+    // In echten Dateien steht `aliasDefDb` unter `aliasDefinitionSub`; die kürzere Form bleibt für alte Tests.
+    let db = alias_root.field("aliasDefinitionSub").and_then(|sub| sub.field("aliasDefDb")).or_else(|| alias_root.field("aliasDefDb"))?;
+    db.field("targetAliasName")?.as_text().map(str::to_string)
 }
 
-/// Extracts every outgoing edge from `from`'s root value. `resolve_alias` maps an
-/// `aliasDefDb.targetAliasName` short value to the `ObjectId` of the Alias object that declares
-/// it - see `target_alias_name` above and aod-format.md §4's documented special case; an
-/// unresolvable alias short name (not indexed yet) is dropped rather than guessed at, matching
-/// "kein Full-Rescan" incremental semantics (the edge reappears once the alias itself is indexed).
-pub fn extract_edges(from: &ObjectId, root: &PropertyValue, resolve_alias: &dyn Fn(&str) -> Option<ObjectId>) -> Vec<Edge> {
+/// Reads every outgoing reference of `from`'s root value. `resolve_alias` maps an
+/// `aliasDefDb.targetAliasName` short value to the `ObjectId` that stands for it; returning `None`
+/// DROPS that reference (the old project scan did this). The project index passes a resolver that
+/// keeps the short name (`ObjectId::alias(short)`) and resolves it when it answers a query, so the
+/// order in which objects are indexed does not matter.
+pub fn read_references(from: &ObjectId, root: &PropertyValue, resolve_alias: &dyn Fn(&str) -> Option<ObjectId>) -> Vec<Reference> {
     let mut edges = Vec::new();
     walk(from, None, &NodePath::root(), root, resolve_alias, &mut edges);
     edges
@@ -37,7 +39,7 @@ fn walk(
     path: &NodePath,
     value: &PropertyValue,
     resolve_alias: &dyn Fn(&str) -> Option<ObjectId>,
-    edges: &mut Vec<Edge>,
+    edges: &mut Vec<Reference>,
 ) {
     match value {
         PropertyValue::Object(fields) => {
@@ -77,22 +79,22 @@ fn match_scalar_ref(
     value: &PropertyValue,
     site: &NodePath,
     resolve_alias: &dyn Fn(&str) -> Option<ObjectId>,
-) -> Option<Edge> {
+) -> Option<Reference> {
     let text = value.as_text().filter(|t| !t.is_empty())?;
 
     let (to, kind) = match (container, field_name) {
-        (Some("neonContext"), "entity") => (ObjectId::entity(text), RefKind::NeonContextEntity),
-        (Some("neonContext"), "mainView" | "filterView" | "editView" | "previewView" | "lookupView") => (ObjectId::view(text), RefKind::ViewReference),
-        (Some("neonViewReference"), "view") => (ObjectId::view(text), RefKind::ViewReference),
-        (Some("neonDashlet"), "viewName") => (ObjectId::view(text), RefKind::ViewReference),
-        (Some("dependency"), "entityName") => (ObjectId::entity(text), RefKind::EntityConsumerDependency),
-        (Some("webserviceReference"), "webservice") => (ObjectId::webservice(text), RefKind::EntityConsumerDependency),
-        (Some("dbRecordContainer"), "alias") => (resolve_alias(text)?, RefKind::DbRecordContainerAlias),
-        (Some("entityField"), "valueProcess" | "displayValueProcess") => (ObjectId::linked_file(text), RefKind::ValueProcessLinkedFile),
+        (Some("neonContext"), "entity") => (ObjectId::entity(text), ReferenceKind::NeonContextEntity),
+        (Some("neonContext"), "mainView" | "filterView" | "editView" | "previewView" | "lookupView") => (ObjectId::view(text), ReferenceKind::ViewReference),
+        (Some("neonViewReference"), "view") => (ObjectId::view(text), ReferenceKind::ViewReference),
+        (Some("neonDashlet"), "viewName") => (ObjectId::view(text), ReferenceKind::ViewReference),
+        (Some("dependency"), "entityName") => (ObjectId::entity(text), ReferenceKind::EntityConsumerDependency),
+        (Some("webserviceReference"), "webservice") => (ObjectId::webservice(text), ReferenceKind::EntityConsumerDependency),
+        (Some("dbRecordContainer"), "alias") => (resolve_alias(text)?, ReferenceKind::DbRecordContainerAlias),
+        (Some("entityField"), "valueProcess" | "displayValueProcess") => (ObjectId::linked_file(text), ReferenceKind::ValueProcessLinkedFile),
         _ => return None,
     };
 
-    Some(Edge { from: from.clone(), to, kind, site: site.clone() })
+    Some(Reference { from: from.clone(), to, kind, site: site.clone() })
 }
 
 #[cfg(test)]
@@ -117,10 +119,10 @@ mod tests {
         let from = ObjectId::view("THHIT_TourFilter_view");
         let root = obj(vec![("neonContext", obj(vec![("entity", text("THHIT_Tour_entity"))]))]);
 
-        let edges = extract_edges(&from, &root, &no_alias);
+        let edges = read_references(&from, &root, &no_alias);
 
         assert_eq!(edges.len(), 1);
-        assert_eq!(edges[0].kind, RefKind::NeonContextEntity);
+        assert_eq!(edges[0].kind, ReferenceKind::NeonContextEntity);
         assert_eq!(edges[0].to, ObjectId::entity("THHIT_Tour_entity"));
         assert_eq!(edges[0].site, NodePath::root().field("neonContext").field("entity"));
     }
@@ -136,10 +138,10 @@ mod tests {
             obj(vec![("neonViewReference", PropertyValue::Array(vec![obj(vec![("view", text("THHIT_TourDetail_view"))])]))]),
         )]);
 
-        let edges = extract_edges(&from, &root, &no_alias);
+        let edges = read_references(&from, &root, &no_alias);
 
         assert_eq!(edges.len(), 1);
-        assert_eq!(edges[0].kind, RefKind::ViewReference);
+        assert_eq!(edges[0].kind, ReferenceKind::ViewReference);
         assert_eq!(edges[0].to, ObjectId::view("THHIT_TourDetail_view"));
         assert_eq!(
             edges[0].site,
@@ -155,10 +157,10 @@ mod tests {
             obj(vec![("dependency", obj(vec![("entityName", text("THHIT_Tour_entity")), ("fieldName", text("Documents"))]))]),
         )]);
 
-        let edges = extract_edges(&from, &root, &no_alias);
+        let edges = read_references(&from, &root, &no_alias);
 
         assert_eq!(edges.len(), 1);
-        assert_eq!(edges[0].kind, RefKind::EntityConsumerDependency);
+        assert_eq!(edges[0].kind, ReferenceKind::EntityConsumerDependency);
         assert_eq!(edges[0].to, ObjectId::entity("THHIT_Tour_entity"));
     }
 
@@ -176,10 +178,10 @@ mod tests {
             )]),
         )]);
 
-        let edges = extract_edges(&from, &root, &no_alias);
+        let edges = read_references(&from, &root, &no_alias);
 
         assert_eq!(edges.len(), 1);
-        assert_eq!(edges[0].kind, RefKind::ValueProcessLinkedFile);
+        assert_eq!(edges[0].kind, ReferenceKind::ValueProcessLinkedFile);
         assert_eq!(edges[0].to, ObjectId::linked_file("%aditoprj%/entity/THHIT_Tour_entity/process/countryValueProcess.js"));
     }
 
@@ -197,10 +199,10 @@ mod tests {
             Some(ObjectId::alias("THHIT_Data_alias"))
         };
 
-        let edges = extract_edges(&from, &root, &resolve);
+        let edges = read_references(&from, &root, &resolve);
 
         assert_eq!(edges.len(), 1);
-        assert_eq!(edges[0].kind, RefKind::DbRecordContainerAlias);
+        assert_eq!(edges[0].kind, ReferenceKind::DbRecordContainerAlias);
         assert_eq!(
             edges[0].to,
             ObjectId::alias("THHIT_Data_alias"),
@@ -214,7 +216,7 @@ mod tests {
         let from = ObjectId::entity("THHIT_Tour_entity");
         let root = obj(vec![("dbRecordContainer", obj(vec![("alias", text("Unknown_alias"))]))]);
 
-        let edges = extract_edges(&from, &root, &no_alias);
+        let edges = read_references(&from, &root, &no_alias);
 
         assert!(edges.is_empty(), "an unresolvable alias short name must not produce a wrong edge");
     }
@@ -222,6 +224,13 @@ mod tests {
     #[test]
     fn target_alias_name_reads_the_short_form_off_an_alias_object() {
         let alias_root = obj(vec![("aliasDefDb", obj(vec![("targetAliasName", text("Data_alias"))]))]);
+        assert_eq!(target_alias_name(&alias_root).as_deref(), Some("Data_alias"));
+    }
+
+    #[test]
+    fn target_alias_name_reads_the_real_file_shape_with_alias_definition_sub() {
+        let sub = obj(vec![("aliasDefDb", obj(vec![("targetAliasName", text("Data_alias"))]))]);
+        let alias_root = obj(vec![("name", text("THHIT_Data_alias")), ("aliasDefinitionSub", sub)]);
         assert_eq!(target_alias_name(&alias_root).as_deref(), Some("Data_alias"));
     }
 }

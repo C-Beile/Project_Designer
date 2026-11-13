@@ -1,14 +1,14 @@
 //! Observability (architecture.md §3): per-node callbacks plus a project-wide change bus.
 //!
 //! Deliberately Bordmittel only (ADR-0005 point 3) - a `Vec` of callbacks per node, and
-//! `std::sync::mpsc` for the bus that `refs::RefGraph` and `index` subscribe to. No reactive
+//! `std::sync::mpsc` for the bus that the project index and `index` subscribe to. No reactive
 //! framework, no dependency graph.
 
 use crate::tree::path::NodePath;
 use crate::tree::tree::NodeId;
 use std::sync::mpsc::{self, Receiver, Sender};
 
-/// What changed, in terms other subscribers (RefGraph, index) can act on incrementally without
+/// What changed, in terms other subscribers (the project index) can act on incrementally without
 /// re-scanning the whole tree - see architecture.md §5 "nur Dateien ... neu geparst".
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ChangeEvent {

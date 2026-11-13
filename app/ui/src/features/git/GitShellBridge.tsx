@@ -67,13 +67,13 @@ export function GitShellBridge({ api, root, hasProject, reloadToken, setReloadTo
   const statusData = useMemo<GitStatusData>(
     () => ({
       branch: scm.root === root && scm.overview ? scm.overview.branch : branch,
-      gitEnabled: gitActive && hasProject,
+      gitEnabled: gitActive && hasProject && !(scm.root === root && scm.error),
       pulling,
       loadBranches: () => api.gitOverview(root),
       onCheckoutBranch: (t) => void quickBranch(t),
       onGit: (a: GitStatusAction) => (a === 'newBranch' ? void quickBranch({}) : openGit('branches')),
     }),
-    [scm.root, scm.overview, root, branch, gitActive, hasProject, pulling, api, quickBranch, openGit],
+    [scm.root, scm.overview, scm.error, root, branch, gitActive, hasProject, pulling, api, quickBranch, openGit],
   )
   useEffect(() => {
     setPluginData('git', statusData)

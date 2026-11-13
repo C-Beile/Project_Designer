@@ -145,6 +145,8 @@ name = "app-base"
 version = "0.1.0"
 dependencies = [
  "platform",
+ "serde_json",
+ "toml 0.8.2",
 ]
 
 [[package]]
@@ -1119,6 +1121,7 @@ dependencies = [
  "platform",
  "plugin-api",
  "project",
+ "project-index",
  "reqwest",
  "serde",
  "serde_json",
@@ -1505,6 +1508,14 @@ checksum = "38e2275cc4e4fc009b0669731a1e5ab7ebf11f469eaede2bab9309a5b4d6057f"
 dependencies = [
  "memoffset",
  "rustc_version",
+]
+
+[[package]]
+name = "file-watcher"
+version = "0.1.0"
+dependencies = [
+ "app-base",
+ "platform",
 ]
 
 [[package]]
@@ -2950,8 +2961,6 @@ dependencies = [
 [[package]]
 name = "notify"
 version = "6.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6205bd8bb1e454ad2e27422015fb5e4f2bcc7e08fa8f27058670d208324a4d2d"
 dependencies = [
  "bitflags 2.13.2",
  "crossbeam-channel",
@@ -3729,12 +3738,30 @@ dependencies = [
  "npm-modules",
  "platform",
  "plugin-api",
+ "project-index",
  "quick-xml 0.36.2",
  "regex",
  "serde",
  "serde_json",
+ "toml 0.8.2",
  "validators",
  "zip 2.4.2",
+]
+
+[[package]]
+name = "project-index"
+version = "0.1.0"
+dependencies = [
+ "aod",
+ "app-base",
+ "designer-core",
+ "file-watcher",
+ "platform",
+ "plugin-api",
+ "quick-xml 0.36.2",
+ "serde",
+ "serde_json",
+ "validators",
 ]
 
 [[package]]
@@ -5543,6 +5570,7 @@ version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "185d8ab0dfbb35cf1399a6344d8484209c088f75f8f68230da55d48d95d43e3d"
 dependencies = [
+ "indexmap 2.14.2",
  "serde",
  "serde_spanned 0.6.9",
  "toml_datetime 0.6.3",

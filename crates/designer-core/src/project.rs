@@ -99,8 +99,13 @@ pub struct ProjectHandle {
 pub fn open_project(path: impl Into<PathBuf>) -> Result<ProjectHandle, ForgeError> {
     let file = path.into();
     let raw = std::fs::read(&file).map_err(|source| ForgeError::Read { path: file.clone(), source })?;
+    open_project_bytes(file, &raw)
+}
+
+/// Like `open_project`, for bytes the caller already read (so a file is read once, not twice).
+pub fn open_project_bytes(file: PathBuf, raw: &[u8]) -> Result<ProjectHandle, ForgeError> {
     let bom = raw.starts_with(&[0xEF, 0xBB, 0xBF]);
-    let bytes: &[u8] = if bom { &raw[3..] } else { &raw };
+    let bytes: &[u8] = if bom { &raw[3..] } else { raw };
     let doc = aod::document::parse(bytes).map_err(|source| ForgeError::Xml { path: file.clone(), source })?;
 
     let adapter = AodDocumentSource::new(file.clone(), doc);

@@ -58,6 +58,8 @@ import { baseName, findNodeByPath, nodeKind, samePath } from './shellHelpers'
 import { listenBackend } from './hooks/backendEvent'
 import { ConflictDialog } from './ConflictDialog'
 import { useExternalChanges } from './hooks/useExternalChanges'
+import { useIndexStatus } from './hooks/useIndexStatus'
+import { setIndexOpenLog } from '../core/indexStatus'
 import { keymapEntries, useDialogWindows } from './hooks/useDialogWindows'
 import { useOutputLogs } from './hooks/useOutputLogs'
 import { useProblemScan } from './hooks/useProblemScan'
@@ -146,10 +148,15 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
 
   useEffect(() => saveLayout(layout), [layout])
   const { projects, setActiveProject, reloadToken, setReloadToken, trees, loadingProjects, iconSvgs, root, tree, treeRef, objectsByType, openableModels, activeTree, systems, activeSystem, setRunConfig, projectOf, openProjectAt, removeProjects } = useProjects({ api, projectRoot, setStatus })
+  useIndexStatus(api, projects)
   const { treeSelection, setTreeSelection, selected, setSelected, selectedProject, setSelectedProject, navSel, setNavSel, inspected, inspectedObject, editNode, elementSel, focusLabel, inspectedKind } = useSelection(tree)
   const { db, changeDb, clearDb, tunnelState, nowTick } = useDbStatus(api, projects, trees, appendLog)
   const editorWindowsRef = useRef<ReturnType<typeof useEditorWindows> | null>(null)
   const scm = useScm()
+  // Kein Repository im Projektordner (oder Git fehlt): Git-Knöpfe und -Menüs bleiben abgeblendet.
+  const gitRepo = !(scm.root === root && scm.error)
+  // Ohne geänderte Dateien gibt es nichts zu committen (unbekannt = ja, bis der Stand da ist).
+  const gitChanges = !(scm.root === root && scm.overview && scm.overview.files.length === 0)
 
   const gitIndex = useMemo(() => (scm.root === root ? indexOf(scm.overview) : null), [scm.overview, scm.root, root])
   const gitFor = useCallback(
@@ -287,6 +294,11 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       setTimeout(() => document.querySelector<HTMLElement>(selector)?.focus(), 0)
     }
   }, [])
+
+  useEffect(() => {
+    setIndexOpenLog(() => showToolWindow('idelog'))
+    return () => setIndexOpenLog(null)
+  }, [showToolWindow])
 
   const { engine, setEngine, transpileRunning, matchView, setMatchView, buildResult, setBuildResult, buildProgress, compareWithReference, transpile, cancelBuild, commands: transpileCommands } = useTranspile({ api, root, trees, installDir, appendLog, showToolWindow, setOutputSub, setStatus })
 
@@ -448,7 +460,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
 
   const { menus, runCommand, onMenuCommand } = useShellCommands({
     api, root, projects, activeTree, tabState, unsaved, editNode, selected, canUndo, canRedo, recent, dialog, layout, theme, toggleTheme, transpile, engine, transpileRunning, usageNode, startRefactoring,
-    gitActive, sqlActive, floatingViews, editorWindows, toolbarPrefs, editorPrefs, layoutBeforeOnlyEditor,
+    gitActive, gitRepo, gitChanges, sqlActive, floatingViews, editorWindows, toolbarPrefs, editorPrefs, layoutBeforeOnlyEditor,
     extraCommands: [transpileCommands, deployCommands, refactoringCommands, treeCommands, floatingCommands],
     openProjectAt, closeProjects, saveIds, applyOutcome, markUnsaved, showToolWindow, openSql, toggleToolbarGroup, updateToolbar,
     setStatus, setNewProjectOpen, setRecent, setRecentList, setReloadToken, setDialog, setLayout, setTreeSelection,
@@ -490,6 +502,8 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
           prefs={toolbarPrefs}
           onToggleGroup={toggleToolbarGroup}
           gitActive={gitActive}
+          gitRepo={gitRepo}
+          gitChanges={gitChanges}
           sqlActive={sqlActive}
         />
       </ErrorBoundary>
@@ -550,7 +564,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       {ctxMenu ? (
         <TreeContextMenu
           entries={[
-            ...buildTreeMenu(ctxMenu.node, { clipboard, hasProject, fileClipboard }),
+            ...buildTreeMenu(ctxMenu.node, { clipboard, hasProject, gitRepo, gitChanges, fileClipboard }),
             ...(pluginTreeItems.length > 0
               ? [{ id: 'sep-plugins', label: '', enabled: false, separator: true }, ...pluginTreeItems.map((i) => ({ id: `plugin:${i.command}`, label: i.label, enabled: hasProject }))]
               : []),

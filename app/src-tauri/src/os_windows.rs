@@ -1,6 +1,5 @@
 //! Real operating-system windows for floating panels and dialogs: one central place that opens a
-//! window with its own title bar, remembers nothing itself (the main window stores geometry per
-//! project), hands a payload to the new window, brings the result back as an event and keeps the
+//! window with its own title bar, hands a payload to the new window, brings the result back as an event and keeps the
 //! main window locked while a modal dialog is open.
 //!
 //! Naming: a floating panel is the window `float-<view>`, a dialog is `dialog-<name>`, an editor
@@ -10,6 +9,8 @@
 //! geometry; `window_result` reports a real result and closes the window without a cancel event.
 //! On Windows the new window is owned by the main window (stays above it, leaves the taskbar
 //! clutter, minimises with it); other platforms open it as an independent window for now.
+//! Dialog windows remember their position and size in `designer.conf` (`[popups.<name>]`, see `window_state.rs`);
+//! the geometry of floating panels and editor windows per project is kept by the frontend (`[windows]`).
 
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -123,6 +124,10 @@ pub async fn window_open(app: AppHandle, payloads: State<'_, WindowPayloads>, mo
         builder = builder.parent(&main).map_err(|e| e.to_string())?;
     }
     let window = builder.build().map_err(|e| e.to_string())?;
+    // Gemerkte Stelle (und Größe, wenn das Fenster veränderbar ist), solange es noch unsichtbar ist.
+    if req.kind == "dialog" {
+        crate::window_state::restore(&window, &format!("popups.{}", req.name), req.resizable.unwrap_or(true));
+    }
     // Notausgang: zeigt sich die Seite nicht von selbst (Fehler im Frontend), erscheint das Fenster nach 3 s trotzdem.
     {
         let late = window.clone();
@@ -246,6 +251,11 @@ pub fn on_window_event(window: &Window, event: &WindowEvent) {
     let label = window.label();
     let guarded = app.try_state::<CloseGuards>().and_then(|g| g.0.lock().ok().map(|set| set.contains(label))).unwrap_or(false);
     if label == "main" {
+        match event {
+            WindowEvent::Moved(_) | WindowEvent::Resized(_) => crate::window_state::track(window, "window", false),
+            WindowEvent::CloseRequested { .. } => crate::window_state::track(window, "window", true),
+            _ => {}
+        }
         if let WindowEvent::CloseRequested { api, .. } = event {
             if guarded {
                 api.prevent_close();
@@ -259,6 +269,14 @@ pub fn on_window_event(window: &Window, event: &WindowEvent) {
         return;
     }
     let Some((kind, name)) = parse_label(label) else { return };
+    // Dialog-Fenster merken ihre Stelle und Größe, damit sie beim nächsten Mal dort erscheinen, wohin sie geschoben wurden.
+    if kind == "dialog" {
+        match event {
+            WindowEvent::Moved(_) | WindowEvent::Resized(_) => crate::window_state::track(window, &format!("popups.{name}"), false),
+            WindowEvent::CloseRequested { .. } => crate::window_state::track(window, &format!("popups.{name}"), true),
+            _ => {}
+        }
+    }
     match event {
         WindowEvent::CloseRequested { api, .. } => {
             if guarded {

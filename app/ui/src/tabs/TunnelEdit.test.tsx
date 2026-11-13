@@ -1,3 +1,4 @@
+import { configSet } from '../settings/appConfig'
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -23,7 +24,7 @@ function setup(rows: TunnelRowDto[]) {
 const base: TunnelRowDto = { tunnel_host: 'ssh.example', tunnel_port: 22, target_host: 'db.svc', target_port: 3306, user: 'dev-user' }
 
 describe('Add and Delete Tunnel', () => {
-  beforeEach(() => window.localStorage.setItem('forge.tunnelView', 'table'))
+  beforeEach(() => configSet(['tunnels', 'view'], 'table'))
 
   afterEach(() => _resetDialogsForTests())
 

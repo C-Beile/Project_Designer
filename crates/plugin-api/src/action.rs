@@ -30,7 +30,7 @@ mod tests {
 
     /// Dummy rename action: reads `old_name`/`new_name` params off the context and produces a
     /// single `FileCommand` replacing the target's name bytes. Stands in for a real rename
-    /// action, which would additionally consult `aod::refs::RefGraph` for cascading edits
+    /// action, which would additionally consult the project index (`project-index`) for cascading edits
     /// (architecture.md §7) — out of scope for this crate.
     struct DummyRenameAction;
 

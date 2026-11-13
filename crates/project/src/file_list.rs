@@ -32,9 +32,23 @@ pub fn list_project_files(root: &Path) -> Vec<String> {
     out
 }
 
+/// The same list from the file list of the project index (relative paths, '/' separated): the folders the
+/// quick search hides are dropped, the rest is sorted like `list_project_files`.
+pub fn list_from_index<'a>(rels: impl Iterator<Item = &'a str>) -> Vec<String> {
+    let mut out: Vec<String> = rels.filter(|r| !r.split('/').any(|part| SKIPPED_DIRS.contains(&part))).take(LIMIT).map(str::to_string).collect();
+    out.sort_by_key(|p| p.to_ascii_lowercase());
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_index_list_hides_the_same_folders() {
+        let list = list_from_index(["b.txt", "A/x.aod", ".idea/w.xml", "node_modules/m/x.js", "sub/.vscode/s.json"].into_iter());
+        assert_eq!(list, vec!["A/x.aod".to_string(), "b.txt".to_string()]);
+    }
 
     #[test]
     fn lists_project_files_and_skips_dependencies_and_output() {

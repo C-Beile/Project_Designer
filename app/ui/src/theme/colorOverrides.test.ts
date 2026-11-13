@@ -1,3 +1,4 @@
+import { configSet } from '../settings/appConfig'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { COLOR_GROUPS, applyColorOverrides, editorOverrides, reloadColorOverrides, saveColorOverrides } from './colorOverrides'
 
@@ -27,7 +28,7 @@ describe('colour overrides', () => {
 
   it('survives a reload from storage and ignores damaged values', () => {
     saveColorOverrides({ colors: { '--accent': '#112233' }, uiFont: '' })
-    window.localStorage.setItem('forge.colorOverrides.v1', JSON.stringify({ colors: { '--accent': '#112233', '--bg': 'red' }, uiFont: 5 }))
+    configSet(['appearance', 'colors'], { colors: { '--accent': '#112233', '--bg': 'red' }, uiFont: 5 })
     reloadColorOverrides()
     expect(editorOverrides().colors).toEqual({})
     expect(COLOR_GROUPS.map((g) => g.id)).toContain('primary')
