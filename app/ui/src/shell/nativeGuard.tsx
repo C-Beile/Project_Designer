@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
+import { readText } from '../core/clipboard'
 
 // The WebView2 browser menu (Back, Reload, Save as, Print, More tools) must never appear in the
 // app. Every right click is swallowed here; text inputs get an own Cut/Copy/Paste/Select All menu,
@@ -50,7 +51,7 @@ async function runTextAction(field: TextField, id: string): Promise<void> {
   else if (id === 'cut') document.execCommand('cut')
   else if (id === 'copy') document.execCommand('copy')
   else if (id === 'paste') {
-    const text = await navigator.clipboard?.readText?.().catch(() => '')
+    const text = await readText()
     if (text) document.execCommand('insertText', false, text)
   }
 }

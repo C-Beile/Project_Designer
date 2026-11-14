@@ -4,6 +4,7 @@ import type { AliasConfigDto } from '../wire/types'
 import { CONFIG_DESCRIPTIONS } from './configDescriptions.generated'
 import { useSheetSplit } from './useSheetSplit'
 import { isConfigurationAlias, sectionLabel, sectionSheet, useConfigSection, type SheetGroup } from './configSections'
+import { Button, Input } from '../core/ui/controls'
 
 // Property sheet of an alias config (original Designer, shots 83, 84, 98, 102544): type aliasConfig,
 // one collapsible group per kind of property, Name | Value, unset values grey and italic, check
@@ -37,9 +38,9 @@ export function AliasConfigPanel({ config, system, editable = false, splitKey = 
     changes > 0 ? (
       <p className="forge-field-hint" role="status">
         Draft: {changes} change{changes === 1 ? '' : 's'}, not written. Writing to the system database needs the confirmed write path with the deploy diff (not built).{' '}
-        <button type="button" onClick={() => setDraft({})}>
+        <Button variant="bare" onClick={() => setDraft({})}>
           Discard
-        </button>
+        </Button>
       </p>
     ) : (
       <p className="forge-field-hint">{editable ? 'Changes stay a draft; nothing is written yet.' : 'Read-only: the values are not written back yet.'}</p>
@@ -77,7 +78,7 @@ export function AliasConfigPanel({ config, system, editable = false, splitKey = 
                 {r.secret ? (
                   <span className="forge-props-value">{r.set ? '•'.repeat(12) : ''}</span>
                 ) : r.kind === 'checkbox' ? (
-                  <input
+                  <Input
                     type="checkbox"
                     aria-label={r.name}
                     checked={value === 'true'}
@@ -85,7 +86,7 @@ export function AliasConfigPanel({ config, system, editable = false, splitKey = 
                     onChange={(e) => setDraft((d) => (String(e.target.checked) === r.value ? Object.fromEntries(Object.entries(d).filter(([k]) => k !== id)) : { ...d, [id]: String(e.target.checked) }))}
                   />
                 ) : editable ? (
-                  <input
+                  <Input
                     className="forge-props-input"
                     aria-label={r.name}
                     value={value}

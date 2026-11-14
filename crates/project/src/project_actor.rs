@@ -30,14 +30,14 @@ use std::thread;
 
 use validators::validator_table::{root_tag, VALIDATORS_BY_OBJECT_TYPE};
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct DiagnosticDto {
     pub severity: String,
     pub message: String,
     pub path: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct UndoRedoOutcome {
     pub tree: WireValue,
     pub can_undo: bool,
@@ -45,7 +45,7 @@ pub struct UndoRedoOutcome {
 }
 
 /// Raw `.aod` text of an open object as the Source tab shows it. `text` includes unsaved edits.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct SourceDto {
     pub text: String,
     pub read_only: bool,
@@ -81,7 +81,7 @@ enum Request {
 
 /// Result of activating a grey Navigator entry: the path of the new element and the changed tree; a
 /// module object additionally reports the modification file.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct ActivateOutcome {
     pub path: String,
     pub tree: UndoRedoOutcome,
@@ -91,7 +91,7 @@ pub struct ActivateOutcome {
 
 /// Result of Set to Default: the new tree for a change in the object's own file, and what happened to
 /// the project's modification files for a module object.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct ResetOutcome {
     pub tree: UndoRedoOutcome,
     #[serde(skip_serializing_if = "Option::is_none")]

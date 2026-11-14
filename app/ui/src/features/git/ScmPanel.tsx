@@ -5,6 +5,8 @@ import { confirmDialog, promptDialog } from '../../core/dialogService'
 import { notify } from '../../core/notifications'
 import { codeOf, GIT_CODE_LABEL, refreshScm, useScm } from '../../core/scm'
 import { errorText } from '../../core/errorText'
+import { Button, Input } from '../../core/ui/controls'
+import { useAbortableEffect } from '../../core/hooks/useAbortableEffect'
 
 // Source Control, docked like the Source Control view of VS Code: branch and Pull / Push / Sync on
 // top, the commit message with Commit, the staged and the other changes with stage / unstage /
@@ -53,16 +55,12 @@ export function ScmPanel({
     if (root) void refreshScm(api, root)
   }, [api, root])
 
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (!open.history || !overview) return
-    let cancelled = false
     api
       .scmHistory(root, 50)
-      .then((h) => !cancelled && setHistory(h))
-      .catch(() => !cancelled && setHistory([]))
-    return () => {
-      cancelled = true
-    }
+      .then((h) => !signal.aborted && setHistory(h))
+      .catch(() => !signal.aborted && setHistory([]))
   }, [api, root, open.history, scm.version, overview])
 
   const staged = useMemo(() => (overview?.files ?? []).filter((f) => f.index !== ' ' && f.index !== '?'), [overview])
@@ -167,17 +165,17 @@ export function ScmPanel({
         <span className="scm-actions" onClick={(e) => e.stopPropagation()}>
           {side === 'unstaged' ? (
             <>
-              <button type="button" aria-label={`Discard ${file.path}`} title="Discard Changes" disabled={busy} onClick={() => void discard(file)}>
+              <Button variant="bare" aria-label={`Discard ${file.path}`} title="Discard Changes" isDisabled={busy} onClick={() => void discard(file)}>
                 ↶
-              </button>
-              <button type="button" aria-label={`Stage ${file.path}`} title="Stage Changes" disabled={busy} onClick={() => void run(() => api.scmStage(root, [file.path]))}>
+              </Button>
+              <Button variant="bare" aria-label={`Stage ${file.path}`} title="Stage Changes" isDisabled={busy} onClick={() => void run(() => api.scmStage(root, [file.path]))}>
                 +
-              </button>
+              </Button>
             </>
           ) : (
-            <button type="button" aria-label={`Unstage ${file.path}`} title="Unstage Changes" disabled={busy} onClick={() => void run(() => api.scmUnstage(root, [file.path]))}>
+            <Button variant="bare" aria-label={`Unstage ${file.path}`} title="Unstage Changes" isDisabled={busy} onClick={() => void run(() => api.scmUnstage(root, [file.path]))}>
               −
-            </button>
+            </Button>
           )}
         </span>
         <span className="scm-code" aria-hidden="true">
@@ -190,48 +188,48 @@ export function ScmPanel({
   return (
     <div className="scm-panel">
       <div className="scm-head">
-        <button type="button" className="scm-branch" title="Switch or create a branch" aria-expanded={branchPicker} onClick={() => setBranchPicker((v) => !v)}>
+        <Button variant="bare" className="scm-branch" title="Switch or create a branch" aria-expanded={branchPicker} onClick={() => setBranchPicker((v) => !v)}>
           ⎇ {overview.branch ?? '(detached)'}
           {overview.upstream ? <span className="scm-sync-state"> ↑{overview.ahead} ↓{overview.behind}</span> : null}
-        </button>
+        </Button>
         <span className="scm-head-actions">
-          <button type="button" aria-label="Pull" title="Pull" disabled={busy} onClick={() => void run(() => api.gitPull(root), { reloadTree: true, success: 'Pulled.' })}>
+          <Button variant="bare" aria-label="Pull" title="Pull" isDisabled={busy} onClick={() => void run(() => api.gitPull(root), { reloadTree: true, success: 'Pulled.' })}>
             ⇣
-          </button>
-          <button type="button" aria-label="Push" title="Push" disabled={busy} onClick={() => void run(() => api.gitPush(root), { success: 'Pushed.' })}>
+          </Button>
+          <Button variant="bare" aria-label="Push" title="Push" isDisabled={busy} onClick={() => void run(() => api.gitPush(root), { success: 'Pushed.' })}>
             ⇡
-          </button>
-          <button type="button" aria-label="Sync" title="Sync: pull, then push" disabled={busy} onClick={() => void run(() => api.scmSync(root), { reloadTree: true, success: 'Synchronised.' })}>
+          </Button>
+          <Button variant="bare" aria-label="Sync" title="Sync: pull, then push" isDisabled={busy} onClick={() => void run(() => api.scmSync(root), { reloadTree: true, success: 'Synchronised.' })}>
             ⟳
-          </button>
-          <button type="button" aria-label="Refresh" title="Refresh" disabled={busy} onClick={() => void refreshScm(api, root)}>
+          </Button>
+          <Button variant="bare" aria-label="Refresh" title="Refresh" isDisabled={busy} onClick={() => void refreshScm(api, root)}>
             ↻
-          </button>
+          </Button>
         </span>
       </div>
 
       {branchPicker ? (
         <div className="scm-branches" role="listbox" aria-label="Branches">
-          <input type="text" value={branchFilter} placeholder="Filter branches" aria-label="Filter branches" autoFocus onChange={(e) => setBranchFilter(e.target.value)} />
-          <button type="button" className="scm-branch-item" onClick={() => void createBranch(null)}>
+          <Input type="text" value={branchFilter} placeholder="Filter branches" aria-label="Filter branches" autoFocus onChange={(e) => setBranchFilter(e.target.value)} />
+          <Button variant="bare" className="scm-branch-item" onClick={() => void createBranch(null)}>
             + New Branch…
-          </button>
+          </Button>
           {localBranches.map((b) => (
-            <button key={b.name} type="button" role="option" aria-selected={b.is_current} className={`scm-branch-item${b.is_current ? ' is-current' : ''}`} onClick={() => (b.is_current ? setBranchPicker(false) : void checkout(b.name))}>
+            <Button variant="bare" key={b.name} role="option" aria-selected={b.is_current} className={`scm-branch-item${b.is_current ? ' is-current' : ''}`} onClick={() => (b.is_current ? setBranchPicker(false) : void checkout(b.name))}>
               {b.is_current ? '✔ ' : ''}
               {b.name}
-            </button>
+            </Button>
           ))}
           {remoteBranches.map((r) => (
-            <button key={r} type="button" role="option" aria-selected={false} className="scm-branch-item is-remote" title="Create a local branch from it" onClick={() => void createBranch(r)}>
+            <Button variant="bare" key={r} role="option" aria-selected={false} className="scm-branch-item is-remote" title="Create a local branch from it" onClick={() => void createBranch(r)}>
               {r}
-            </button>
+            </Button>
           ))}
         </div>
       ) : null}
 
       <div className="scm-commit">
-        <input
+        <Input
           type="text"
           value={message}
           aria-label="Commit message"
@@ -242,26 +240,26 @@ export function ScmPanel({
           }}
         />
         <div className="scm-commit-buttons">
-          <button type="button" disabled={!canCommit} onClick={() => void commit(false)}>
+          <Button variant="bare" isDisabled={!canCommit} onClick={() => void commit(false)}>
             Commit
-          </button>
-          <button type="button" disabled={!canCommit} title="Commit, then push the branch" onClick={() => void commit(true)}>
+          </Button>
+          <Button variant="bare" isDisabled={!canCommit} title="Commit, then push the branch" onClick={() => void commit(true)}>
             Commit &amp; Push
-          </button>
+          </Button>
         </div>
         {staged.length === 0 && changes.length > 0 ? <p className="forge-field-hint">Stage the files to commit with +.</p> : null}
       </div>
 
       <section className="scm-section">
         <header>
-          <button type="button" className="scm-twisty" aria-expanded={open.staged} onClick={() => setOpen((o) => ({ ...o, staged: !o.staged }))}>
+          <Button variant="bare" className="scm-twisty" aria-expanded={open.staged} onClick={() => setOpen((o) => ({ ...o, staged: !o.staged }))}>
             {open.staged ? '▾' : '▸'} Staged Changes
-          </button>
+          </Button>
           <span className="scm-count">{staged.length}</span>
           {staged.length > 0 ? (
-            <button type="button" className="scm-section-action" aria-label="Unstage All Changes" title="Unstage All Changes" disabled={busy} onClick={() => void run(() => api.scmUnstage(root, staged.map((f) => f.path)))}>
+            <Button variant="bare" className="scm-section-action" aria-label="Unstage All Changes" title="Unstage All Changes" isDisabled={busy} onClick={() => void run(() => api.scmUnstage(root, staged.map((f) => f.path)))}>
               −
-            </button>
+            </Button>
           ) : null}
         </header>
         {open.staged ? <ul aria-label="Staged changes">{staged.map((f) => <FileRow key={`s:${f.path}`} file={f} side="staged" />)}</ul> : null}
@@ -269,14 +267,14 @@ export function ScmPanel({
 
       <section className="scm-section">
         <header>
-          <button type="button" className="scm-twisty" aria-expanded={open.changes} onClick={() => setOpen((o) => ({ ...o, changes: !o.changes }))}>
+          <Button variant="bare" className="scm-twisty" aria-expanded={open.changes} onClick={() => setOpen((o) => ({ ...o, changes: !o.changes }))}>
             {open.changes ? '▾' : '▸'} Changes
-          </button>
+          </Button>
           <span className="scm-count">{changes.length}</span>
           {changes.length > 0 ? (
-            <button type="button" className="scm-section-action" aria-label="Stage All Changes" title="Stage All Changes (package-lock.json stays out)" disabled={busy} onClick={() => void run(() => api.scmStageAll(root))}>
+            <Button variant="bare" className="scm-section-action" aria-label="Stage All Changes" title="Stage All Changes (package-lock.json stays out)" isDisabled={busy} onClick={() => void run(() => api.scmStageAll(root))}>
               +
-            </button>
+            </Button>
           ) : null}
         </header>
         {open.changes ? <ul aria-label="Changes">{changes.map((f) => <FileRow key={`c:${f.path}`} file={f} side="unstaged" />)}</ul> : null}
@@ -287,9 +285,9 @@ export function ScmPanel({
 
       <section className="scm-section">
         <header>
-          <button type="button" className="scm-twisty" aria-expanded={open.history} onClick={() => setOpen((o) => ({ ...o, history: !o.history }))}>
+          <Button variant="bare" className="scm-twisty" aria-expanded={open.history} onClick={() => setOpen((o) => ({ ...o, history: !o.history }))}>
             {open.history ? '▾' : '▸'} History
-          </button>
+          </Button>
         </header>
         {open.history ? (
           history === null ? (
@@ -300,12 +298,12 @@ export function ScmPanel({
             <ul aria-label="Commit history">
               {history.map((c) => (
                 <li key={c.hash} className="scm-commit-row">
-                  <button type="button" className="scm-commit-line" aria-expanded={!!commitFiles[c.hash]} title={`${c.hash}\n${c.author}`} onClick={() => void toggleCommit(c.hash)}>
+                  <Button variant="bare" className="scm-commit-line" aria-expanded={!!commitFiles[c.hash]} title={`${c.hash}\n${c.author}`} onClick={() => void toggleCommit(c.hash)}>
                     <span className="scm-subject">{c.subject}</span>
                     <span className="scm-meta">
                       {c.hash.slice(0, 7)} · {c.author} · {shortDate(c.date)}
                     </span>
-                  </button>
+                  </Button>
                   {commitFiles[c.hash] ? (
                     <ul className="scm-commit-files" aria-label={`Files of ${c.hash.slice(0, 7)}`}>
                       {commitFiles[c.hash].map((f) => (

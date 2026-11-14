@@ -1,0 +1,34 @@
+.ui-Studio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  color: var(--fg);
+}
+
+.ui-Studio--window { height: 100vh; box-sizing: border-box; }
+
+.ui-Studio-header { display: flex; align-items: flex-end; gap: var(--space-3); }
+.ui-Studio-header h3 { margin: 0 auto 0 0; font-size: var(--text-2xl); }
+.ui-Studio-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.ui-Studio-dirty { color: var(--warning); font-size: var(--text-sm); }
+.ui-Studio-note { color: var(--fg-muted); font-size: var(--text-sm); }
+
+.ui-Studio-body { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: minmax(18rem, 24rem) 1fr; gap: var(--space-4); }
+.ui-Studio-editor, .ui-Studio-preview { min-height: 0; overflow: auto; padding-right: var(--space-2); }
+.ui-Studio-switch { display: flex; gap: var(--space-1); margin-bottom: var(--space-2); }
+
+.ui-ColorEditor-group { margin: 0 0 var(--space-3); padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-md); }
+.ui-ColorEditor-group legend { padding: 0 var(--space-1); color: var(--fg-muted); font-size: var(--text-sm); }
+.ui-ColorEditor-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-2); padding: var(--space-0-5) 0; }
+.ui-ColorEditor-row input[type='color'] { width: var(--space-8); height: var(--control-h); padding: 0; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: none; cursor: pointer; }
+.ui-ColorEditor-name { display: flex; flex-direction: column; min-width: 0; }
+.ui-ColorEditor-name small, .ui-ColorEditor-value { color: var(--fg-muted); font-size: var(--text-sm); }
+
+.ui-Studio-warnings { margin: 0 0 var(--space-2); padding-left: var(--space-5); color: var(--warning); font-size: var(--text-sm); }
+
+.ui-CodePreview { display: flex; flex-direction: column; gap: var(--space-4); }
+.ui-CodePreview-sample h4 { margin: 0 0 var(--space-1); color: var(--fg-muted); font-size: var(--text-xl); }
+.ui-CodePreview-editor { height: 14rem; border: 1px solid var(--border-strong); border-radius: var(--radius-md); overflow: hidden; }
+.ui-CodePreview-editor .forge-monaco-host { height: 100%; }

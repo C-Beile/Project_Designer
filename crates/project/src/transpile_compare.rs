@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 const SKIP_DIRS: &[&str] = &[".forge-incremental-cache"];
 const SKIP_FILES: &[&str] = &["cache.txt", "cacheMods.txt"];
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, specta::Type)]
 pub struct DifferenceGroup {
     /// First folder of the files (`entity`, `process`, ...).
     pub folder: String,
@@ -19,20 +19,27 @@ pub struct DifferenceGroup {
     pub kind: String,
     /// `missing`: the built-in output lacks the file. `different`: the file exists with other content.
     pub reason: String,
+    #[specta(type = u32)]
     pub count: usize,
     /// One affected file, relative to the project output.
     pub example: String,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct CompareReport {
     /// Files of the reference.
+    #[specta(type = u32)]
     pub total: usize,
+    #[specta(type = u32)]
     pub identical: usize,
+    #[specta(type = u32)]
     pub missing: usize,
+    #[specta(type = u32)]
     pub different: usize,
     /// Files only the built-in output has.
+    #[specta(type = u32)]
     pub own_only: usize,
+    #[specta(type = i32)]
     pub percent: f64,
     /// The largest groups of differences, biggest first.
     pub groups: Vec<DifferenceGroup>,

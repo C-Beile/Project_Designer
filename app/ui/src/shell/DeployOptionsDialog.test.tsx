@@ -4,6 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { DeployOptionsDialog, systemWarning, type DeployOptionsPayload } from './DeployOptionsDialog'
 import { createMockForgeApi } from '../test/mockApi'
+import { choose, dropdown, selected } from '../test/dropdown'
 
 const payload: DeployOptionsPayload = {
   projects: ['C:/p/FZ'],
@@ -31,8 +32,8 @@ describe('DeployOptionsDialog', () => {
 
   it('shows the fields of the original dialog and blocks OK until the tunnel to the system stands', async () => {
     setup()
-    expect(screen.getByLabelText('Project')).toBeInTheDocument()
-    expect(screen.getByLabelText('System')).toHaveValue('dev1')
+    expect(dropdown('Project')).toBeInTheDocument()
+    expect(selected('System')).toBe('dev1')
     expect(screen.getByText('Check Scan Services (Errors, Warnings)')).toBeInTheDocument()
     expect(screen.getByText('Force deploy')).toBeInTheDocument()
     expect(screen.getByText('Deploy Userhelp')).toBeInTheDocument()
@@ -70,7 +71,7 @@ describe('DeployOptionsDialog', () => {
   it('warns for productive and cloud systems and can be cancelled', async () => {
     const user = userEvent.setup()
     const { onCancel } = setup({ connectedSystem: systemKey('C:/p/FZ', 'prod') })
-    await user.selectOptions(screen.getByLabelText('System'), 'prod')
+    await choose(user, 'System', 'prod')
     expect(screen.getByRole('alert')).toHaveTextContent(/productive system/)
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(onCancel).toHaveBeenCalled()
@@ -93,8 +94,8 @@ describe('systems follow the chosen project', () => {
         'C:/p/FFG': { systems: [{ name: 'dev3', tunnelRef: '', serverRef: '', productive: false, cloud: false }], defaultSystem: 'dev3' },
       },
     })
-    await user.selectOptions(screen.getByLabelText('Project'), 'C:/p/FFG')
-    expect((screen.getByLabelText('System') as HTMLSelectElement).value).toBe('dev3')
+    await choose(user, 'Project', 'C:/p/FFG')
+    expect(selected('System')).toBe('dev3')
     expect(screen.queryByRole('option', { name: 'dev1' })).toBeNull()
   })
 })

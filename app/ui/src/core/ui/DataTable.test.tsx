@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { DataTable, type DataColumn } from './DataTable'
@@ -18,12 +18,12 @@ const COLUMNS: DataColumn<Row>[] = [
   { id: 'name', header: 'Name', value: (r) => r.name, sortable: true },
   { id: 'size', header: 'Size', value: (r) => r.size, sortable: true, render: (r) => `${r.size} KB` },
 ]
-const names = () => within(screen.getByRole('table')).getAllByRole('row').slice(1).map((r) => r.textContent)
+const names = () => within(screen.getByRole('grid')).getAllByRole('row').slice(1).map((r) => r.textContent)
 
 describe('DataTable', () => {
   it('renders the rows and the custom cell content', () => {
     render(<DataTable columns={COLUMNS} rows={ROWS} rowKey={(r) => r.name} ariaLabel="Files" />)
-    expect(screen.getByRole('table', { name: 'Files' })).toBeInTheDocument()
+    expect(screen.getByRole('grid', { name: 'Files' })).toBeInTheDocument()
     expect(screen.getByText('30 KB')).toBeInTheDocument()
   })
 
@@ -65,6 +65,8 @@ describe('DataTable', () => {
     expect(screen.getByRole('status')).toHaveTextContent('a,b')
     await user.click(screen.getByRole('checkbox', { name: 'Select all' }))
     expect(screen.getByRole('status')).toHaveTextContent('b,a,c')
+    // React Aria baut den Kopf erst im nächsten Schritt neu auf
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Select all' })).toBeChecked())
     await user.click(screen.getByRole('checkbox', { name: 'Select all' }))
     expect(screen.getByRole('status')).toBeEmptyDOMElement()
   })

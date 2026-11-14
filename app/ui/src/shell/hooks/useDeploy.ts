@@ -7,7 +7,7 @@ import type { TranspileMode } from '../../settings/transpilerEngine'
 import type { TreeNode } from '../../wire/types'
 import { boolField, textField } from '../../wire/types'
 import { useOsDialog } from '../../windows/useOsDialog'
-import { openDialogWindow, osWindowsAvailable } from '../../windows/windowService'
+import { openDialogWindow, osPopupsAvailable } from '../../windows/windowService'
 import { systemWarning, type DeployOptionsPayload, type DeployOptionsResult, type DeploySystem } from '../DeployOptionsDialog'
 import type { CommandMap } from './commandTypes'
 
@@ -62,7 +62,7 @@ export function useDeploy({ api, root, tree, projects, projectOf, transpile, set
         buildFirst,
         checkScan: getOptions().general.checkScanOnDeploy,
       }
-      const result = osWindowsAvailable()
+      const result = osPopupsAvailable()
         ? await openDialogWindow<DeployOptionsResult>('deploy', buildFirst ? 'Build and Deploy' : 'Deploy', { width: 460, height: 420 }, payload, { modal: true }).catch(() => null)
         : await new Promise<DeployOptionsResult | null>((resolve) => setDeployOptions({ payload, resolve }))
       setDeployOptions(null)

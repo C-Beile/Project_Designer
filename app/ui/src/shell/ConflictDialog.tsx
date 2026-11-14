@@ -1,4 +1,5 @@
 import { Modal } from '../core/Modal'
+import { Button } from '../core/ui/controls'
 
 // Datei auf der Platte wurde geändert, während der Editor ungespeicherte Änderungen hat.
 export function ConflictDialog({ label, onResolve, onClose }: { label: string; onResolve: (choice: 'overwrite' | 'reload') => void; onClose: () => void }) {
@@ -8,15 +9,15 @@ export function ConflictDialog({ label, onResolve, onClose }: { label: string; o
       onClose={onClose}
       footer={
         <>
-          <button type="button" onClick={() => onResolve('overwrite')}>
+          <Button variant="bare" onClick={() => onResolve('overwrite')}>
             Overwrite file on disk
-          </button>
-          <button type="button" onClick={() => onResolve('reload')}>
+          </Button>
+          <Button variant="bare" onClick={() => onResolve('reload')}>
             Reload from disk
-          </button>
-          <button type="button" onClick={onClose}>
+          </Button>
+          <Button variant="bare" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >

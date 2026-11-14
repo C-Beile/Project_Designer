@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import type { EditorProps } from './registry'
 import { field, textField, textValue } from '../wire/types'
@@ -8,6 +8,9 @@ import { PREFERENCES_DESCRIPTIONS } from './preferencesDescriptions.generated'
 import { setCustomProperty, setTopLevelValue, shapeOfTag, type CustomBank, type PropertyShape } from './preferencesOps'
 import { useSheetSplit } from '../properties/useSheetSplit'
 import { errorText } from '../core/errorText'
+import { useResource } from '../core/hooks/useResource'
+import { Dropdown, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Project preferences drawn like the original Designer: groups with Name | Value rows. A click
 // selects a row and shows its description below. A value that exists as text is written with the
@@ -51,33 +54,19 @@ interface Selected {
 
 export function PreferencesEditor({ nodeId, tree, api, projectRoot, onTreeChange }: EditorProps) {
   // The properties that name an alias (clusterMessagingAlias, defaultDataAlias ...) are chosen from the aliases of the project.
-  const [aliasNames, setAliasNames] = useState<string[]>([])
-  useEffect(() => {
-    if (!projectRoot) return
-    let cancelled = false
-    void api
-      .listProjectModels(projectRoot)
-      .then((models) => !cancelled && setAliasNames(models.filter((m) => m.folder === 'aliasDefinition').map((m) => m.name).sort((a, b) => a.localeCompare(b))))
-      .catch(() => undefined)
-    return () => {
-      cancelled = true
-    }
-  }, [api, projectRoot])
+  const aliasModels = useResource(async () => (projectRoot ? api.listProjectModels(projectRoot) : []), [api, projectRoot], ['project'])
+  const aliasNames = (aliasModels.data ?? []).filter((m) => m.folder === 'aliasDefinition').map((m) => m.name).sort((a, b) => a.localeCompare(b))
   const [source, setSource] = useState<{ text: string; read_only: boolean } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<Selected | null>(null)
   const rowsRef = useRef<HTMLDivElement>(null)
   const { split, onPointerDown, onKeyDown, reset } = useSheetSplit('prefs', rowsRef)
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     Promise.resolve()
       .then(() => api.getObjectSource(nodeId))
-      .then((s) => !cancelled && setSource(s))
-      .catch(() => !cancelled && setSource(null))
-    return () => {
-      cancelled = true
-    }
+      .then((s) => !signal.aborted && setSource(s))
+      .catch(() => !signal.aborted && setSource(null))
   }, [api, nodeId, tree])
   const canEditSource = !!source && !source.read_only
 
@@ -202,19 +191,12 @@ function TopRow({
   } else if (shape === 'text' && /Alias$/.test(prop.name) && aliasNames.length > 0) {
     const options = text && !aliasNames.includes(text) ? [text, ...aliasNames] : aliasNames
     control = (
-      <select aria-label={label} value={text} disabled={!canEditSource} onChange={(e) => onCommitText(e.target.value)} style={{ width: '100%' }}>
-        <option value="" />
-        {options.map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </select>
+      <Dropdown value={text} aria-label={label} style={{ width: '100%' }} isDisabled={!canEditSource} options={[{ id: "", label: '' }, ...options.map((name) => ({ id: name, label: name }))]} onChange={(v) => onCommitText(v)} />
     )
   } else if (shape === 'text') {
     control = <EditableText value={text} ariaLabel={label} onCommit={onCommitText} />
   } else if (shape === 'bool') {
-    control = <input type="checkbox" aria-label={label} checked={text === 'true'} disabled={!canEditSource} onChange={(e) => onCommitTyped('bool', String(e.target.checked))} />
+    control = <Input type="checkbox" aria-label={label} checked={text === 'true'} disabled={!canEditSource} onChange={(e) => onCommitTyped('bool', String(e.target.checked))} />
   } else {
     control = canEditSource ? (
       <EditableText value={text} ariaLabel={label} onCommit={(next) => onCommitTyped('int', next)} />
@@ -276,20 +258,16 @@ function PropertyBank({
   return (
     <section className="preferences-editor-bank sheet-group">
       <h3 className="sheet-group-head">{title}</h3>
-      <table aria-label={title} className="sheet-table">
-        <colgroup>
-          <col className="col-name" />
-          <col className="col-desc" />
-          <col className="col-value" />
-        </colgroup>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Value</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table aria-label={title} className="sheet-table">
+
+        <TableHeader>
+
+            <TableColumn isRowHeader className="col-name">Name</TableColumn>
+            <TableColumn className="col-desc">Description</TableColumn>
+            <TableColumn className="col-value">Value</TableColumn>
+
+        </TableHeader>
+        <TableBody>
           {entries.map((entry, i) => {
             const key = `${bank}:${entry.path}`
             const shape = shapeOfTag(entry.tag)
@@ -298,11 +276,11 @@ function PropertyBank({
             const masked = entry.tag === 'customPasswordProperty'
             let control
             if (shape === 'bool' && canEditSource) {
-              control = <input type="checkbox" aria-label={aria} checked={entry.valueText === 'true'} onChange={(e) => sourceEdit(String(e.target.checked))} />
+              control = <Input type="checkbox" aria-label={aria} checked={entry.valueText === 'true'} onChange={(e) => sourceEdit(String(e.target.checked))} />
             } else if (shape === 'bool') {
               control = (
                 <span className="sheet-bool" aria-label={`${aria} (read-only)`}>
-                  <input type="checkbox" checked={entry.valueText === 'true'} disabled tabIndex={-1} aria-hidden="true" />
+                  <Input type="checkbox" checked={entry.valueText === 'true'} disabled tabIndex={-1} aria-hidden="true" />
                   <span className="forge-sr-only">{entry.valueText}</span>
                 </span>
               )
@@ -314,15 +292,15 @@ function PropertyBank({
               control = <span aria-label={`${aria} (read-only)`}>{entry.valueText}</span>
             }
             return (
-              <tr key={entry.path} className={selectedKey === key ? 'is-selected' : ''} onClick={() => onSelect(key, entry.name, entry.description)}>
-                <td className={`sheet-name${entry.hasProperty ? '' : ' is-unset'}`}>{entry.name}</td>
-                <td className="sheet-desc-cell">{entry.description}</td>
-                <td className="sheet-value">{control}</td>
-              </tr>
+              <TableRow key={entry.path} className={selectedKey === key ? 'is-selected' : ''} onClick={() => onSelect(key, entry.name, entry.description)}>
+                <TableCell className={`sheet-name${entry.hasProperty ? '' : ' is-unset'}`}>{entry.name}</TableCell>
+                <TableCell className="sheet-desc-cell">{entry.description}</TableCell>
+                <TableCell className="sheet-value">{control}</TableCell>
+              </TableRow>
             )
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </section>
   )
 }

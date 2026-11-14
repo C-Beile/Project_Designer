@@ -5,14 +5,13 @@ import { notify } from '../../core/notifications'
 import { reloadPluginPrefs } from '../../settings/plugins'
 import { reloadOptions } from '../../settings/options'
 import { reloadCustomThemes } from '../../theme/customThemes'
-import { reloadColorOverrides } from '../../theme/colorOverrides'
 import { reloadEditorPrefs } from '../../theme/editorPrefs'
 import type { ThemeName } from '../../theme/useTheme'
 import type { TranspilerEngineId } from '../../settings/transpilerEngine'
 import type { TreeNode } from '../../wire/types'
 import type { OptionsWindowResult } from '../../windows/DialogWindowApp'
 import { useOsDialog } from '../../windows/useOsDialog'
-import { openDialogWindow, osWindowsAvailable } from '../../windows/windowService'
+import { openDialogWindow, osPopupsAvailable } from '../../windows/windowService'
 import type { MenuDef, MenuItemDef } from '../menuModel'
 import type { KeymapEntry } from '../OptionsDialog'
 import type { ShellDialog } from './dialogTypes'
@@ -56,13 +55,12 @@ export function useDialogWindows({ dialog, setDialog, hasProject, root, engine, 
   // (Änderungen aus dem Options-Fenster erreichen die Module selbst über `onConfigChange`: Optionen, Themes, Farben, Editor-Schalter.)
 
   useEffect(() => {
-    if (dialog !== 'options' || !osWindowsAvailable() || optionsWindowOpen.current) return
+    if (dialog !== 'options' || !osPopupsAvailable() || optionsWindowOpen.current) return
     optionsWindowOpen.current = true
     void openDialogWindow<OptionsWindowResult>('options', 'Options', { width: 860, height: 640 }, { engine, theme, keymap: keymapEntries(menus) }, { modal: true })
       .then((r) => {
         if (!r) return
         reloadCustomThemes()
-        reloadColorOverrides()
         reloadOptions()
         reloadEditorPrefs()
         setInstallDir(r.installDir)
@@ -78,7 +76,7 @@ export function useDialogWindows({ dialog, setDialog, hasProject, root, engine, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dialog])
   useEffect(() => {
-    if (dialog !== 'openModel' || !hasProject || !osWindowsAvailable() || openWindowOpen.current) return
+    if (dialog !== 'openModel' || !hasProject || !osPopupsAvailable() || openWindowOpen.current) return
     openWindowOpen.current = true
     void openDialogWindow<{ type: string; name: string }>('open', 'Open', { width: 680, height: 540 }, { models: openableModels }, { modal: true })
       .then((m) => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { ComponentProps } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { ServicesPanel } from '../services/ServicesPanel'
@@ -13,6 +13,8 @@ import { baseName, samePath } from './shellHelpers'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { chooseWorkspaceFolder, getWorkspaceFolders } from '../settings/workspaceFolder'
 import { requestShell } from '../core/outputBus'
+import { Button } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 export type ProjectsTab = 'projects' | 'services'
 
@@ -21,16 +23,16 @@ export function ProjectsPanelHeader({ tab, floating, onTab, servicesVisible = tr
   return (
     <div className="forge-panel-tabs" role="tablist" aria-label="Project windows">
       {(['projects', 'services'] as const).filter((t) => !floating.includes(t as FloatView) && (t === 'projects' || servicesVisible || tab === 'services')).map((t) => (
-        <button
+        <Button variant="bare"
           key={t}
-          type="button"
+
           role="tab"
           aria-selected={tab === t}
           className={`forge-panel-tab${tab === t ? ' is-active' : ''}`}
           onClick={() => onTab(t)}
         >
           {t === 'projects' ? 'Projects' : 'Services'}
-        </button>
+        </Button>
       ))}
     </div>
   )
@@ -66,19 +68,15 @@ export interface ProjectsPanelBodyProps {
 export function ProjectsPanelBody({ api, tab, tree, root, loading, problemCounts, badgeFor, gitFor, iconSvg, db, onDbChange, onSelect, onOpen, onContextMenu, onFileKey, onCloseProject, onOpenSql, setStatus, recentProjects, openProjects, onOpenProjects, onOpenRecent }: ProjectsPanelBodyProps) {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const [inside, setInside] = useState<Record<string, FoundProjectDto[]>>({})
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (!menu) return
-    let cancelled = false
     for (const folder of [...recentProjects, ...getWorkspaceFolders()]) {
       api
         .findProjectsInFolder(folder)
         .then((list) => {
-          if (!cancelled && list.length > 0) setInside((prev) => ({ ...prev, [folder]: list }))
+          if (!signal.aborted && list.length > 0) setInside((prev) => ({ ...prev, [folder]: list }))
         })
         .catch(() => undefined)
-    }
-    return () => {
-      cancelled = true
     }
   }, [api, menu, recentProjects])
   if (tab !== 'projects') return <ServicesPanel api={api} db={db} onDbChange={onDbChange} onOpenSql={onOpenSql} projects={openProjects} />
@@ -148,9 +146,9 @@ export function ProjectsPanelBody({ api, tab, tree, root, loading, problemCounts
           <span className="projects-active-name" title={root}>
             {baseName(root)}
           </span>
-          <button type="button" aria-label={`Close project ${baseName(root)}`} title="Close Project" onClick={onCloseProject}>
+          <Button variant="bare" aria-label={`Close project ${baseName(root)}`} title="Close Project" onClick={onCloseProject}>
             ×
-          </button>
+          </Button>
         </div>
       ) : null}
       {menu ? (

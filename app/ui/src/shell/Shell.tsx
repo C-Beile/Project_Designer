@@ -8,7 +8,8 @@ import { TitleBar } from '../chrome/TitleBar'
 import { useTheme } from '../theme/useTheme'
 import { ExperimentalEngineWarning } from '../settings/TranspilerEngineSelector'
 import type { DiagnosticDto, TreeNode, WireValue } from '../wire/types'
-import { DockLayout } from './DockLayout'
+import { DockHost } from './dock/DockHost'
+import { DEFAULT_FONT_SIZE, readAppearance } from '../theme/appearance'
 import { loadLayout, saveLayout, type LayoutState } from './layoutState'
 import { MenuBar } from './MenuBar'
 import { TOOL_WINDOWS, type ToolWindowId } from './menuModel'
@@ -268,7 +269,6 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     [handleOpen],
   )
 
-
   const selectedId = selected?.id ?? null
   const { applyOutcome, saveIds, registerFlush } = useSave({
     api, root, gitActive, tabState, selectedId, drafts, flushers, historyFlags, editorWindowsRef, saveIdsRef, markUnsaved, refreshDiagnostics, setValue, setSheetVersion, setCanUndo, setCanRedo, setConflict, setScanTick, setStatus,
@@ -355,7 +355,6 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       }),
     [showToolWindow, handleOpen],
   )
-
 
   // "Open File" in the changes list of the Commit window: opens the file, as an object when it is one of the project.
   useEffect(
@@ -508,7 +507,8 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         />
       </ErrorBoundary>
       <ExperimentalEngineWarning engine={engine} />
-      <DockLayout
+      <DockHost
+        uiFactor={readAppearance().fontSize / DEFAULT_FONT_SIZE}
         layout={effectiveLayout}
         onLayoutChange={setLayout}
         panels={panels}

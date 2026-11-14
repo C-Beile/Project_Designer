@@ -15,6 +15,8 @@
 | `objectRoot.ts` | `%aditoprj%` einer Objektdatei, Pfad einer verknüpften Datei. |
 | `pathVariables.ts` | `$PROJECTHOME` und Co. in `aditoHomePath`/`aditoDataPath` auflösen. |
 | `useSheetSplit.ts` | Position des Teilers zwischen Name und Wert, pro Ort gemerkt. |
+| `fieldEditors.tsx` | Die eingebauten Wertdarstellungen (Text, Ja/Nein, Auswahl, Verweis, verknüpfter Code, Liste, Icon) und Knöpfe (Bild, Icon, Config-Datei). `registerBuiltinFieldEditors()` meldet sie im Register an. |
+| `rowValues.ts` | Kleine Helfer für Zeilen: `textOf`, `listItems`, `isIconRow`, `isImageRow`, `isDefaultRow`. |
 <!-- AUTO:END -->
 
 ## Zweck
@@ -44,6 +46,7 @@ Properties-Panel und was dazugehört. Zeilen und Werte kommen vom Backend. Das S
 | Config-Abschnitt | `configSections.ts` |
 | Pfadvariable | `pathVariables.ts` |
 | Neue Wertauswahl | neue Komponente nach Vorbild `IconCombo.tsx` oder `WildcardPicker.tsx` |
+| Eigenschaft anders darstellen (auch aus einem Plugin) | `registerFieldEditor({ id, matches, component })` oder `registerFieldAction` (`core/contrib/fieldEditors.ts`), Vorlage `fieldEditors.tsx` |
 
 ## Tests
 - `PropertySheetPanel.test.tsx`, `sheetLayout.test.tsx` (kann `60_design` brauchen, laut Root-`CLAUDE.md` fehlt es), `configSections.test.tsx`, `codeSave.test.ts` u. a. `npx vitest run src/properties`.

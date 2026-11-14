@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { LiquibaseConnection } from '../api/ForgeApi'
 import { Modal } from '../core/Modal'
+import { Button, Dropdown, Input } from '../core/ui/controls'
 
 // "Select Database Connection", as in the original Designer: the connection the update goes to, the
 // contexts, the choice to run from the transpiled directory (dist) and a button for a partial
@@ -55,12 +56,12 @@ export function SelectDatabaseConnectionDialog({
       onClose={onCancel}
       footer={
         <>
-          <button type="button" disabled={!selected} onClick={() => selected && onOk({ connection: selected, useDist: useDist || transpiled })}>
+          <Button variant="bare" isDisabled={!selected} onClick={() => selected && onOk({ connection: selected, useDist: useDist || transpiled })}>
             OK
-          </button>
-          <button type="button" onClick={onCancel}>
+          </Button>
+          <Button variant="bare" onClick={onCancel}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >
@@ -71,20 +72,9 @@ export function SelectDatabaseConnectionDialog({
         </p>
       ) : (
         <>
-          <select
-            aria-label="Database connection"
-            value={selected ? `${selected.alias}|${selected.host}|${selected.database}` : ''}
-            onChange={(e) => setPicked(e.target.value)}
-            style={{ width: '100%' }}
-          >
-            {visible.map((c) => (
-              <option key={`${c.alias}|${c.host}|${c.database}`} value={`${c.alias}|${c.host}|${c.database}`}>
-                {optionLabel(c)}
-              </option>
-            ))}
-          </select>
+          <Dropdown value={selected ? `${selected.alias}|${selected.host}|${selected.database}` : ''} aria-label="Database connection" style={{ width: '100%' }} options={visible.map((c) => ({ id: `${c.alias}|${c.host}|${c.database}`, label: optionLabel(c) }))} onChange={(v) => setPicked(v)} />
           <label className="forge-field">
-            <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} /> <span>Show all connections</span>
+            <Input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} /> <span>Show all connections</span>
           </label>
           {selected ? (
             <p className="forge-field-hint" aria-label="Connection URL" style={{ wordBreak: 'break-all', userSelect: 'text' }}>
@@ -93,16 +83,16 @@ export function SelectDatabaseConnectionDialog({
           ) : null}
           <p>Available Contexts:</p>
           <label className="forge-field">
-            <input type="checkbox" checked disabled readOnly /> <span>default</span>
+            <Input type="checkbox" checked disabled readOnly /> <span>default</span>
           </label>
           <label className="forge-field">
-            <input type="checkbox" checked={useDist} onChange={(e) => setUseDist(e.target.checked)} />{' '}
+            <Input type="checkbox" checked={useDist} onChange={(e) => setUseDist(e.target.checked)} />{' '}
             <span>Execute in transpiled directory (dist). The project is not transpiled first, so changes made since the last transpile are not part of the update.</span>
           </label>
           {onTranspile ? (
-            <button
-              type="button"
-              disabled={transpiling}
+            <Button variant="bare"
+
+              isDisabled={transpiling}
               onClick={() => {
                 setTranspiling(true)
                 void onTranspile()
@@ -111,7 +101,7 @@ export function SelectDatabaseConnectionDialog({
               }}
             >
               {transpiling ? 'Transpiling…' : transpiled ? 'Partial Transpile (done)' : 'Partial Transpile'}
-            </button>
+            </Button>
           ) : null}
         </>
       )}

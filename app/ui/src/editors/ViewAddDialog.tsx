@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../core/Modal'
 import { acceptsEntityFields } from './viewFields'
+import { Button, Dropdown, Input } from '../core/ui/controls'
 
 // "Add..." of the view preview: puts something into the open view. Two things are offered because
 // the real view files show exactly how they look: an entity field in a template (as a field or a
@@ -56,48 +57,31 @@ export function ViewAddDialog({
       onEnter={submit}
       footer={
         <>
-          <button type="button" disabled={!ready} onClick={submit}>
+          <Button variant="bare" isDisabled={!ready} onClick={submit}>
             OK
-          </button>
-          <button type="button" onClick={onClose}>
+          </Button>
+          <Button variant="bare" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >
       <label className="forge-field">
         <span>What to add</span>
-        <select aria-label="What to add" value={what} onChange={(e) => setWhat(e.target.value as 'field' | 'view')}>
-          <option value="field" disabled={fieldTemplates.length === 0}>
-            Entity field
-          </option>
-          <option value="view">View</option>
-        </select>
+        <Dropdown value={what} aria-label="What to add" options={[{ id: "field", label: "Entity field" }, { id: "view", label: "View" }]} onChange={(v) => setWhat(v as 'field' | 'view')} />
       </label>
       {what === 'field' ? (
         <>
           <label className="forge-field">
             <span>Into the ViewTemplate</span>
-            <select aria-label="ViewTemplate" value={templateKey} onChange={(e) => setTemplateKey(e.target.value)}>
-              {fieldTemplates.map((t) => (
-                <option key={`${t.kind}|${t.name}`} value={`${t.kind}|${t.name}`}>
-                  {`${t.name} (${t.kind.replace(/ViewTemplate$/, '')})`}
-                </option>
-              ))}
-            </select>
+            <Dropdown value={templateKey} aria-label="ViewTemplate" options={fieldTemplates.map((t) => ({ id: `${t.kind}|${t.name}`, label: `${t.name} (${t.kind.replace(/ViewTemplate$/, '')})` }))} onChange={(v) => setTemplateKey(v)} />
           </label>
           <label className="forge-field">
             <span>Entity field</span>
             {entityFields.length > 0 ? (
-              <select aria-label="Entity field" value={field} onChange={(e) => setField(e.target.value)}>
-                {entityFields.map((f) => (
-                  <option key={f} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </select>
+              <Dropdown value={field} aria-label="Entity field" options={entityFields.map((f) => ({ id: f, label: f }))} onChange={(v) => setField(v)} />
             ) : (
-              <input type="text" aria-label="Entity field" value={field} onChange={(e) => setField(e.target.value)} />
+              <Input type="text" aria-label="Entity field" value={field} onChange={(e) => setField(e.target.value)} />
             )}
           </label>
         </>
@@ -105,24 +89,11 @@ export function ViewAddDialog({
         <>
           <label className="forge-field">
             <span>View</span>
-            <select aria-label="View" value={view} onChange={(e) => setView(e.target.value)}>
-              {views.map((v) => (
-                <option key={v} value={v}>
-                  {v}
-                </option>
-              ))}
-            </select>
+            <Dropdown value={view} aria-label="View" options={views.map((v) => ({ id: v, label: v }))} onChange={(v) => setView(v)} />
           </label>
           <label className="forge-field">
             <span>Assigned to entity field</span>
-            <select aria-label="Assigned to" value={consumer} onChange={(e) => setConsumer(e.target.value)}>
-              <option value="#ENTITY">#ENTITY (main data)</option>
-              {entityFields.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
+            <Dropdown value={consumer} aria-label="Assigned to" options={[{ id: "#ENTITY", label: "#ENTITY (main data)" }, ...entityFields.map((f) => ({ id: f, label: f }))]} onChange={(v) => setConsumer(v)} />
           </label>
         </>
       )}

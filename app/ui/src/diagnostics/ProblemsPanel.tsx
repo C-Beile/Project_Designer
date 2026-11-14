@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Problem } from '../problems/problemStore'
 import { SeverityIcon } from './SeverityIcon'
+import { Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 
 // Problems tab: every error and warning of the open projects with file, line and message. A double
 // click (or Enter) jumps to the place: the object opens on its Source tab at the line.
@@ -52,70 +53,63 @@ export function ProblemsPanel({ problems, scanning, onOpen }: { problems: Proble
     <div className="forge-problems" aria-label="Problems">
       <div className="forge-problems-bar" role="toolbar" aria-label="Problem filters">
         <label className="forge-check forge-chip is-error">
-          <input type="checkbox" checked={showErrors} onChange={(e) => setShowErrors(e.target.checked)} />
+          <Input type="checkbox" checked={showErrors} onChange={(e) => setShowErrors(e.target.checked)} />
           <SeverityIcon severity="Error" />
           <span>Errors ({errors})</span>
         </label>
         <label className="forge-check forge-chip is-warning">
-          <input type="checkbox" checked={showWarnings} onChange={(e) => setShowWarnings(e.target.checked)} />
+          <Input type="checkbox" checked={showWarnings} onChange={(e) => setShowWarnings(e.target.checked)} />
           <SeverityIcon severity="Warning" />
           <span>Warnings ({warnings})</span>
         </label>
-        <input type="text" aria-label="Filter problems" placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+        <Input type="text" aria-label="Filter problems" placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
         {scanning ? <span className="forge-field-hint">Scanning the project…</span> : null}
       </div>
       {shown.length === 0 ? (
         <p className="forge-field-hint forge-problems-empty">{scanning ? 'Scanning…' : problems.length === 0 ? 'No problems found.' : 'No problems match the filter.'}</p>
       ) : (
-        <table className="forge-problems-table is-problems" aria-label="Problem list">
-          <colgroup>
-            <col className="col-icon" />
-            <col className="col-desc" />
-            <col className="col-object" />
-            <col className="col-file" />
-            <col className="col-line" />
-            <col className="col-source" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th />
-              <th>Description</th>
-              <th>Object</th>
-              <th>File</th>
-              <th>Line</th>
-              <th>Source</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="forge-problems-table is-problems" aria-label="Problem list">
+
+          <TableHeader>
+
+              <TableColumn isRowHeader className="col-icon" />
+              <TableColumn className="col-desc">Description</TableColumn>
+              <TableColumn className="col-object">Object</TableColumn>
+              <TableColumn className="col-file">File</TableColumn>
+              <TableColumn className="col-line">Line</TableColumn>
+              <TableColumn className="col-source">Source</TableColumn>
+
+          </TableHeader>
+          <TableBody>
             {shown.map((p) => (
-              <tr
+              <TableRow
                 key={p.id}
                 className={`forge-problem-row is-${p.severity.toLowerCase()}${selected === p.id ? ' is-selected' : ''}`}
-                tabIndex={0}
+
                 onClick={() => setSelected(p.id)}
                 onDoubleClick={() => onOpen(p)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') onOpen(p)
                 }}
               >
-                <td className="forge-problem-icon" aria-label={p.severity}>
+                <TableCell className="forge-problem-icon" aria-label={p.severity}>
                   <SeverityIcon severity={p.severity} />
-                </td>
-                <td className="forge-problem-text" title={p.message}>
+                </TableCell>
+                <TableCell className="forge-problem-text" title={p.message}>
                   {p.message}
-                </td>
-                <td title={p.object}>{p.object ?? ''}</td>
-                <td>
+                </TableCell>
+                <TableCell title={p.object}>{p.object ?? ''}</TableCell>
+                <TableCell>
                   <FileCell file={p.file} />
-                </td>
-                <td className="forge-cell-num">{p.line ?? ''}</td>
-                <td>
+                </TableCell>
+                <TableCell className="forge-cell-num">{p.line ?? ''}</TableCell>
+                <TableCell>
                   <span className="forge-source-badge">{SOURCE_LABEL[p.source]}</span>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       )}
     </div>
   )

@@ -6,7 +6,6 @@
 | `Shell.tsx` | Hauptfenster: ruft alle Hooks auf und verdrahtet sie. |
 | `ShellPanels.tsx` | `useShellPanels`: baut Editorbereich und die vier Panels. |
 | `hooks/` | Die ausgezogenen Hooks. Siehe `hooks/CLAUDE.md`. |
-| `DockLayout.tsx` | Andock-Rahmen (Projects, Properties, Editor, Navigator, Output). |
 | `layoutState.ts` | Zustand und Speicherung des Layouts. |
 | `menuModel.ts` | Hauptmenü als Daten (`buildMenus`, `TOOL_WINDOWS`, `MenuContext`). Menü "Debug" (vor Help) nur wenn `isDevBuild()`; Tests setzen `ctx.devBuild`. |
 | `debugMenu.test.ts` | Test: Debug-Menü nur im Dev-Build, Plugin-Einträge. |
@@ -24,6 +23,8 @@
 | `QuickFileSearch.tsx` | Doppel-Ctrl: Dateisuche. |
 | `Dialogs.tsx` | About-Dialog. |
 | `OptionsDialog.tsx` | Tools > Options. |
+| `LoopbackSetup.tsx` | Options > ADITO > General (nur macOS): Knopf für die Zusatzadressen 127.0.200.x der Tunnel (einmal Admin-Passwort). |
+| `SshKeyPassphrase.tsx` | Options > ADITO > General, unter dem Schlüsselpfad: prüft die Datei, zeigt das Passphrase-Feld nur bei geschütztem Schlüssel, prüft und merkt sie im Schlüsselbund. |
 | `PluginsDialog.tsx` | Tools > Plugins. |
 | `UpdatesDialog.tsx` | Hilfe > Updates. |
 | `LocalDataDialog.tsx` | Hilfe > Local Data. |
@@ -46,9 +47,15 @@
 | `nativeGuard.tsx` | Sperrt Browser-Tasten und -Menüs im Release. |
 | `icons.tsx` | Eigene Toolbar- und Panel-Icons. |
 | `optionIcons.tsx` | Icons der Options-Kategorien. |
-| `ThemePicker.tsx` | Options > Appearance > Theme: Galerie der Themes mit Vorschaubild, `LivePreview` der Farben. |
-| `ColorSample.tsx` | Options > Appearance > Colours: Beispiel neben jeder Farbe. |
+| `ThemePicker.tsx` | Options > Appearance > Theme: Galerie der Themes mit Vorschaubild. |
+| `CodeFormattingPage.tsx` | Options > Appearance > Code formatting: Schrift, Größe, Zeilenabstand, Ligaturen der Code-Editoren mit Vorschau. |
 | `shellHelpers.ts` | Kleine reine Helfer (`findNodeByPath`, `baseName`, `samePath`). |
+| `__golden__/` | Gespeicherte Menü-Ausgaben für `menuGolden.test.ts` (Ids, Labels, Kürzel, enabled, hint je Kontext). Ändert sich das Menü mit Absicht: `npx vitest run src/shell/menuGolden.test.ts -u` und den Diff prüfen. |
+| `TextAndDensity.tsx` | Options > General > Text and density: Schriftgröße, Schriftart und Dichte. Wirkt sofort über `theme/appearance.ts`. |
+| `TextAndSizePage.tsx` | Options > Appearance > Text & size: Interface size (Zoom) und `TextAndDensity`. |
+| `UserThemeSection.tsx` | Options > Appearance > Theme: eigene Themes wählen, Knopf für das Theme Studio. |
+| `dock/` | `DockHost.tsx` (dockview: Panels andocken, stapeln, verschieben; Anordnung in `layout.dock`), `dockPlan.ts` (reine Funktion: Standard-Anordnung aus `app/config/layout.toml`), `DockHost.css` (dockview auf unsere Tokens). |
+| `layouts.ts` | Voreinstellungen (`LAYOUT_PRESETS`: Default, Compact, Editor Focus) und gespeicherte Layouts des Nutzers (`[layouts.<name>]` in `designer.conf`: `saveNamedLayout`, `loadNamedLayout`, `deleteNamedLayout`). Menü: Window > Layouts. |
 <!-- AUTO:END -->
 
 ## Zweck
@@ -74,7 +81,8 @@ Hauptfenster: Layout, Menü, Toolbar, Dialoge und die Hooks, die den Zustand hal
 |---|---|
 | Menüpunkt | `menuModel.ts`, Befehl in `hooks/useShellCommands.ts` (oder `commands` des passenden Hooks) |
 | Toolbar-Taste | `Toolbar.tsx`, `toolbarPrefs.ts` |
-| Neues Panel oder Layout | `layoutState.ts`, `DockLayout.tsx`, `ShellPanels.tsx` |
+| Neues Panel | `[panel.<id>]` in `app/config/layout.toml`, `PanelId` und Inhalt in `layoutState.ts` und `ShellPanels.tsx` |
+| Standard-Anordnung der Panels | `app/config/layout.toml`; die Regeln stehen in `dock/dockPlan.ts` |
 | Neuer Dialog des Hauptfensters | neue Datei hier, `ShellDialog` in `hooks/dialogTypes.ts`, `hooks/useDialogWindows.ts` |
 | Neue Option-Kategorie | `OptionsDialog.tsx` |
 | Neuer Zustand mit Logik | neuer Hook in `hooks/`, Aufruf in `Shell.tsx` |
@@ -82,4 +90,4 @@ Hauptfenster: Layout, Menü, Toolbar, Dialoge und die Hooks, die den Zustand hal
 ## Tests
 - `npm test` in `app/ui`. Einzeln: `npx vitest run src/shell/Shell.test.tsx`.
 - `test/setup.ts` stellt `import.meta.env.DEV` auf false: Tests sehen das Menü ohne Debug.
-- `menuSpec.test.ts` und `toolbarSpec.test.tsx` brauchen Spec-Dateien unter `E:\60_design` (laut Root-`CLAUDE.md` fehlen sie).
+- `menuSpec.test.ts` und `toolbarSpec.test.tsx` brauchen Spec-Dateien unter `E:\60_design` und überspringen sich ohne sie. `menuGolden.test.ts` hält das Hauptmenü in 7 Kontexten fest.

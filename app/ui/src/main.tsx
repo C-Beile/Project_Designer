@@ -4,8 +4,12 @@ import { syncLogTimezone, tauriForgeApi } from './api/tauriApi'
 import { withSqlLog } from './api/sqlLog'
 import { installZoomControls } from './settings/zoom'
 import { loadAppConfig } from './settings/appConfig'
+import { installAppearance } from './theme/appearance'
+import { registerAppearanceSettings } from './theme/appearanceSettings'
+import { installThemeReload, loadUserThemes } from './theme/themeStore'
 import { listenBackend } from './shell/hooks/backendEvent'
 import { setErrorLogSink } from './core/errorLog'
+import { markPerf } from './core/perf/marks'
 import { revealApp } from './core/revealApp'
 import './styles.css'
 
@@ -31,8 +35,13 @@ const root = createRoot(document.getElementById('root')!)
 // Zuerst die App-Konfiguration (`designer.conf`) laden: alles, was Einstellungen liest (Theme, Zoom, Layout ...), liest
 // aus ihr. Schlägt das Laden fehl, startet die App mit den Standardwerten.
 async function start() {
+  markPerf('start')
   await loadAppConfig(tauriForgeApi, listenBackend).catch(() => {})
   installZoomControls()
+  registerAppearanceSettings()
+  installAppearance()
+  await loadUserThemes(tauriForgeApi).catch(() => {})
+  installThemeReload(tauriForgeApi)
   if (windowKind) {
     void import('./windows/WindowRoot').then(({ WindowRoot }) => {
       root.render(

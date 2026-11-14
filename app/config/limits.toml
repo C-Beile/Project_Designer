@@ -1,0 +1,5 @@
+# Grenzen der Oberfläche.
+
+[windows]
+max-popups         = 3         # Ganzzahl 1 bis 10, Float- und Dialog-Fenster zusammen; darüber öffnet der Dialog im Hauptfenster
+max-editor-windows = 3         # Ganzzahl 1 bis 10, Editor-Fenster; darüber fehlt "Move to New Window"

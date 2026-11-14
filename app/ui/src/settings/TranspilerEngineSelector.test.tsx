@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ExperimentalEngineWarning, TranspilerEngineSelector } from './TranspilerEngineSelector'
 import { DEFAULT_ENGINE, transpileParams, type TranspilerEngineId } from './transpilerEngine'
+import { choose, selected } from '../test/dropdown'
 
 function Harness() {
   const [engine, setEngine] = useState<TranspilerEngineId>(DEFAULT_ENGINE)
@@ -18,15 +19,15 @@ function Harness() {
 describe('TranspilerEngineSelector', () => {
   it('defaults to the ADITO transpiler, with no warning shown', () => {
     render(<Harness />)
-    expect(screen.getByLabelText(/transpiler engine/i)).toHaveValue('official')
+    expect(selected(/transpiler engine/i)).toBe('official')
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
   it('offers the Dito_Transpiler as a choice and shows no warning for either', async () => {
     const user = userEvent.setup()
     render(<Harness />)
-    await user.selectOptions(screen.getByLabelText(/transpiler engine/i), 'experimental')
-    expect(screen.getByLabelText(/transpiler engine/i)).toHaveValue('experimental')
+    await choose(user, /transpiler engine/i, 'experimental')
+    expect(selected(/transpiler engine/i)).toBe('experimental')
     expect(screen.queryByRole('alert')).toBeNull()
   })
 
@@ -34,7 +35,7 @@ describe('TranspilerEngineSelector', () => {
     const onChange = vi.fn()
     const user = userEvent.setup()
     render(<TranspilerEngineSelector engine="experimental" onChange={onChange} />)
-    await user.selectOptions(screen.getByLabelText(/transpiler engine/i), 'official')
+    await choose(user, /transpiler engine/i, 'official')
     expect(onChange).toHaveBeenCalledWith('official')
   })
 })

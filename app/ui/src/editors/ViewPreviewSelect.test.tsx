@@ -6,6 +6,7 @@ import { ProjectIndexContext, type ProjectIndex } from './projectIndex'
 import type { TreeNode, WireValue } from '../wire/types'
 import { createMockForgeApi } from '../test/mockApi'
 import { DialogHost } from '../core/dialogService'
+import { choose, dropdown } from '../test/dropdown'
 
 const text = (value: string): WireValue => ({ kind: 'text', value })
 const obj = (...fields: [string, WireValue][]): WireValue => ({ kind: 'object', fields: fields.map(([key, value]) => ({ key, value })) })
@@ -166,7 +167,6 @@ describe('templates after the ADITO reference', () => {
   })
 })
 
-
 describe('inserting into the view', () => {
   const ENTITY_ID = 'C:/p/entity/Person_entity/Person_entity.aod'
   const entityNode: TreeNode = { id: ENTITY_ID, label: 'Person_entity', object_type: 'entity', is_leaf: true, children: [] }
@@ -256,7 +256,8 @@ describe('inserting into the view', () => {
     const legend = await screen.findByText('Detail_view', { selector: 'legend' })
     await user.pointer({ keys: '[MouseRight]', target: legend })
     await user.click(screen.getByRole('menuitem', { name: 'Add...' }))
-    await user.selectOptions(await screen.findByRole('combobox', { name: 'Entity field' }), 'PHONE')
+    await waitFor(() => dropdown('Entity field'))
+    await choose(user, 'Entity field', 'PHONE')
     await user.click(screen.getByRole('button', { name: 'OK' }))
     await waitFor(async () => expect((await api.getObjectSource(id)).text).toContain('<entityField>PHONE</entityField>'))
   })
@@ -267,8 +268,9 @@ describe('inserting into the view', () => {
     const legend = await screen.findByText('Detail_view', { selector: 'legend' })
     await user.pointer({ keys: '[MouseRight]', target: legend })
     await user.click(screen.getByRole('menuitem', { name: 'Add...' }))
-    await user.selectOptions(await screen.findByRole('combobox', { name: 'What to add' }), 'view')
-    await user.selectOptions(screen.getByRole('combobox', { name: 'View' }), 'Other_view')
+    await waitFor(() => dropdown('What to add'))
+    await choose(user, 'What to add', 'view')
+    await choose(user, 'View', 'Other_view')
     await user.click(screen.getByRole('button', { name: 'OK' }))
     await waitFor(async () => expect((await api.getObjectSource(id)).text).toContain('<view>Other_view</view>'))
     const text = (await api.getObjectSource(id)).text

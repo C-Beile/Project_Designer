@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { GitDialog } from './GitDialog'
 import { createMockForgeApi } from '../../test/mockApi'
 import type { GitOverview } from '../../wire/types'
+import { choose } from '../../test/dropdown'
 
 describe('GitDialog', () => {
   const git: GitOverview = {
@@ -85,7 +86,7 @@ describe('GitDialog', () => {
     const api = createMockForgeApi({ projectTree: [], documents: {}, git })
     render(<GitDialog api={api} projectRoot="C:/p" initialTab="branches" onClose={() => {}} onChanged={() => {}} />)
     await user.type(await screen.findByRole('textbox', { name: 'New branch name' }), 'feature/z')
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Start from' }), 'origin/feature/y')
+    await choose(user, 'Start from', 'origin/feature/y')
     await user.click(screen.getByRole('button', { name: 'Create and switch' }))
     await waitFor(() => expect(api.gitCalls).toEqual(['newbranch:feature/z:origin/feature/y']))
   })

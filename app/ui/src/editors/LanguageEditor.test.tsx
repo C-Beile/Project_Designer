@@ -6,6 +6,7 @@ import { DialogHost, _resetDialogsForTests } from '../core/dialogService'
 import type { TreeNode, WireValue } from '../wire/types'
 import { ProjectIndexContext, type ProjectIndex } from './projectIndex'
 import { createMockForgeApi } from '../test/mockApi'
+import { choose } from '../test/dropdown'
 
 const ID = 'C:/p/language/_____LANGUAGE_de/_____LANGUAGE_de.aod'
 const MODULE_ID = 'C:/p/node_modules/@aditosoftware/activity/language/_____LANGUAGE_de_activity/_____LANGUAGE_de_activity.aod'
@@ -170,7 +171,7 @@ describe('LanguageEditor grid', () => {
     expect(keys()).toEqual(['Vacation', 'Added', 'Added'])
     await user.type(screen.getByLabelText('Search entries'), 'urlaub')
     expect(keys()).toEqual(['Vacation'])
-    await user.selectOptions(screen.getByLabelText('Search in'), 'name')
+    await choose(user, 'Search in', 'name')
     expect(keys()).toEqual([])
   })
 

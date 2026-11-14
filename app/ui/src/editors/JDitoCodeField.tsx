@@ -9,6 +9,7 @@ import { attachAditoStyle, registerAditoModel } from '../theme/monacoAdito'
 import { setProblems } from '../problems/problemStore'
 import { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForgeThemeForMonaco } from '../theme/monacoTheme'
 import { errorText } from '../core/errorText'
+import { Button } from '../core/ui/controls'
 
 // Ziel B.3: JDito code field for a `valueProcess`/`displayValueProcess` linked `.js` file.
 // Monaco embed ported from the already-verified `spike-editor.md` pattern (plain `monaco-editor`,
@@ -149,12 +150,12 @@ export function JDitoCodeField({
     <div className="jdito-code-field" onKeyDown={onKeyDown}>
       <div className="jdito-code-field-toolbar">
         <span>{reference}</span>
-        <button type="button" onClick={() => void save()} disabled={status !== 'ready'}>
+        <Button variant="bare" onClick={() => void save()} isDisabled={status !== 'ready'}>
           Save{dirty ? ' *' : ''}
-        </button>
-        <button type="button" onClick={onClose}>
+        </Button>
+        <Button variant="bare" onClick={onClose}>
           Close
-        </button>
+        </Button>
       </div>
       {status === 'error' && <p role="alert">Failed to load linked file.</p>}
       {saveError ? <p role="alert">{saveError}</p> : null}

@@ -7,14 +7,14 @@ use serde::Serialize;
 use std::fs;
 use std::path::Path;
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct TypeFile {
     /// Path inside the package, with forward slashes (`index.d.ts`, `dist/definition_vars.ts`).
     pub path: String,
     pub content: String,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct JditoTypes {
     pub version: String,
     pub files: Vec<TypeFile>,

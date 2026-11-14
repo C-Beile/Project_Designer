@@ -9,6 +9,8 @@ import {
   toggleMaximizeWindow,
   watchWindowFocus,
 } from './tauriWindow'
+import { Button } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // The fix for the one hard MUST from ui-reference-car-training.md's photo review: the real ADITO
 // Designer leaves its native titlebar/menubar light while the rest of the app is dark - an
@@ -36,17 +38,15 @@ export function TitleBar({ title = 'Dito Designer' }: { title?: string }) {
   // Dims the titlebar to the theme's `*-titlebar-inactive` tokens when the OS reports the window
   // has lost focus - the same "active vs. inactive window" cue every native title bar gives, now
   // themed instead of falling back to unstyled OS chrome (see tauriWindow.ts::watchWindowFocus).
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     let unlisten: (() => void) | undefined
-    let cancelled = false
     watchWindowFocus((f) => {
-      if (!cancelled) setFocused(f)
+      if (!signal.aborted) setFocused(f)
     }).then((fn) => {
-      if (cancelled) fn()
+      if (signal.aborted) fn()
       else unlisten = fn
     })
     return () => {
-      cancelled = true
       unlisten?.()
     }
   }, [])
@@ -77,13 +77,13 @@ export function TitleBar({ title = 'Dito Designer' }: { title?: string }) {
       <div className="forge-titlebar-spacer" data-tauri-drag-region />
       {isTauriRuntime() && (
         <div className="forge-titlebar-controls">
-          <button type="button" className="forge-titlebar-btn" aria-label="Minimize window" onClick={handleMinimize}>
+          <Button variant="bare" className="forge-titlebar-btn" aria-label="Minimize window" onClick={handleMinimize}>
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
               <line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" strokeWidth="1" />
             </svg>
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button variant="bare"
+
             className="forge-titlebar-btn"
             aria-label={maximized ? 'Restore window' : 'Maximize window'}
             onClick={handleToggleMaximize}
@@ -98,9 +98,9 @@ export function TitleBar({ title = 'Dito Designer' }: { title?: string }) {
                 <rect x="0" y="0" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1" />
               </svg>
             )}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button variant="bare"
+
             className="forge-titlebar-btn forge-titlebar-close"
             aria-label="Close window"
             onClick={handleClose}
@@ -109,7 +109,7 @@ export function TitleBar({ title = 'Dito Designer' }: { title?: string }) {
               <line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" strokeWidth="1" />
               <line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" strokeWidth="1" />
             </svg>
-          </button>
+          </Button>
         </div>
       )}
     </header>

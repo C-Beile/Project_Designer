@@ -5,6 +5,7 @@ import type { DeployChangeView, DeployPlan } from '../wire/types'
 import { Modal } from '../core/Modal'
 import { DeployDiffDialog } from './DeployDiffDialog'
 import { errorText } from '../core/errorText'
+import { Button, Input } from '../core/ui/controls'
 
 // Deploy review as in the original Designer: "Are you sure to deploy into this system?" with one
 // checkbox per model that differs (I added, U changed, D deleted from the system). Double-click (or
@@ -128,20 +129,20 @@ export function DeployDialog({
         onClose={onClose}
         footer={
           <>
-            <button type="button" className={`is-primary${deploying ? ' is-busy' : ''}`} onClick={() => void deploy()} disabled={busy || chosen.length === 0} aria-busy={deploying} title={chosen.length === 0 ? 'Tick at least one model' : undefined}>
+            <Button variant="bare" className={`is-primary${deploying ? ' is-busy' : ''}`} onClick={() => void deploy()} isDisabled={busy || chosen.length === 0} aria-busy={deploying} title={chosen.length === 0 ? 'Tick at least one model' : undefined}>
               {deploying ? <span className="forge-btn-spinner" aria-hidden="true" /> : null}
               {deploying ? 'Deploying...' : 'OK'}
-            </button>
-            <button type="button" onClick={onClose} disabled={deploying}>
+            </Button>
+            <Button variant="bare" onClick={onClose} isDisabled={deploying}>
               Cancel
-            </button>
+            </Button>
           </>
         }
       >
         <div className="forge-deploy" onClick={() => setMenu(null)}>
           <p className="forge-deploy-question">Are you sure to deploy into this system?</p>
           <label className="forge-deploy-hide">
-            <input type="checkbox" checked={hide} onChange={(e) => changeHide(e.target.checked)} /> <span>Hide dialog</span>
+            <Input type="checkbox" checked={hide} onChange={(e) => changeHide(e.target.checked)} /> <span>Hide dialog</span>
           </label>
           {warning ? (
             <p className="forge-field-error" role="alert">
@@ -186,7 +187,7 @@ export function DeployDialog({
                 title={item.key}
               >
                 <label>
-                  <input type="checkbox" aria-label={item.key} checked={selected.has(item.key)} onChange={() => toggle(item.key)} />
+                  <Input type="checkbox" aria-label={item.key} checked={selected.has(item.key)} onChange={() => toggle(item.key)} />
                   <span className={`forge-deploy-op forge-deploy-op-${item.op}`}>{item.op}</span>
                   <span>{nameOf(item.key)}</span>
                 </label>
@@ -198,9 +199,9 @@ export function DeployDialog({
       </Modal>
       {menu ? (
         <div className="forge-deploy-menu" style={{ left: menu.x, top: menu.y }} role="menu">
-          <button type="button" role="menuitem" onClick={() => void showChanges(menu.key)}>
+          <Button variant="bare" role="menuitem" onClick={() => void showChanges(menu.key)}>
             Show changes
-          </button>
+          </Button>
         </div>
       ) : null}
       {diff ? <DeployDiffDialog name={nameOf(diff.key)} view={diff.view} onClose={() => setDiff(null)} /> : null}

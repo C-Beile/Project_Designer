@@ -34,6 +34,9 @@
 | `src/tree/` | Projektbaum und sein Kontextmenü. |
 | `src/windows/` | Eigene OS-Fenster (Editor, Panel, Dialog) und ihre Brücke. |
 | `src/wire/` | Typen der Daten vom Backend (`types.ts`) und Pfad-Helfer. |
+| `eslint.config.js` | ESLint-Regeln (zuerst als Warnung): Hooks, Datei- und Funktionslänge, `cancelled`-Flag, `navigator.clipboard`. |
+| `.stylelintrc.json` | Stylelint: keine festen Farben, keine `font-size` in px (außer `theme/tokens.css`). |
+| `lint-baseline.json` | Anzahl Lint-Warnungen je Regel. `npm run lint` bricht ab, wenn es mehr werden; `node ../../scripts/lint-baseline.mjs --update` schreibt neu. |
 <!-- AUTO:END -->
 
 ## Zweck
@@ -58,7 +61,7 @@ React-19-Oberfläche des Designers. Läuft in Tauri. Spricht nur über `ForgeApi
 ## Wenn du X ändern willst
 | Aufgabe | Datei |
 |---|---|
-| Neuer Tauri-Befehl | Rust: `app/src-tauri/src/commands/*.rs` + `generate_handler!` in `app/src-tauri/src/lib.rs`; UI: `src/api/ForgeApi.ts`, `src/api/tauriApi.ts`, `src/test/mockApi.ts` |
+| Neuer Tauri-Befehl | Rust: `app/src-tauri/src/commands/*.rs` + `collect_commands!` in `app/src-tauri/src/bindings.rs`; UI: `src/api/ForgeApi.ts`, `src/api/tauriApi.ts`, `src/test/mockApi.ts` |
 | Neuer Toolbar-Knopf eines Plugins | `registerToolbarItem` in `src/features/<plugin>/<plugin>Plugin.ts` (Vorlage: `features/git/gitPlugin.ts`). Der Befehl (`command`) wird als `registerCommand(id, run, plugin)` angemeldet (`core/plugins/registry.ts`); für Git in `features/git/GitShellBridge.tsx` aus den Handlern von `features/git/useGit.ts`. `shell/Toolbar.tsx` und `toolbarPrefs.ts` sind nur für Kern-Knöpfe. |
 | Neuer Plugin-Befehl | Rust: `crates/<plugin>/src/plugin.rs` (Arm in `call`) + Logik im Crate; UI: Aufruf über `plugin_call` in `src/api/tauriApi.ts` (Git: `gitCall`), Signatur in `src/api/ForgeApi.ts`, Mock in `src/test/mockApi.ts` |
 | Neuer Editor-Typ | `src/editors/<Name>Editor.tsx`, `registerEditor(typ, Komponente)` in einer `src/editors/register*Builtins.ts` (in `src/App.tsx` importiert) |
@@ -71,4 +74,5 @@ React-19-Oberfläche des Designers. Läuft in Tauri. Spricht nur über `ForgeApi
 
 ## Tests
 - `npm test` (vitest run). Tests liegen als `*.test.tsx` neben den Dateien. Backend-Ersatz: `src/test/mockApi.ts`.
-- Basislinie laut Root-`CLAUDE.md`: 3 rot, 4 Testdateien laden nicht (Spec-Dateien unter `E:\60_design` fehlen). `E:\60_design` und `round4.test.tsx` gibt es hier nicht (Stand der Karte). Selbst messen mit `npm test`.
+- Basislinie (2026-11-14): alles grün, 10 Tests übersprungen. Die vier Spec-Tests (`sheetLayout`, `menuSpec`, `toolbarSpec`, `popupSpec`) überspringen sich, wenn `E:\60_design` fehlt.
+- Prüfungen: `node ../../scripts/check-encoding.mjs` (gültiges UTF-8, keine kaputten Umlaute), `npm run lint`. Quelldateien nie mit PowerShell 5.1 `Set-Content`/`Out-File` schreiben (ANSI statt UTF-8).

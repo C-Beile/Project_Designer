@@ -64,6 +64,7 @@ fn read_one_frame<R: Read>(reader: &mut BufReader<R>) -> std::io::Result<Option<
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn start_lsp(app: AppHandle, workspace_root: String, node_path: String, server_entry: String) -> Result<(), String> {
     crate::commands::guard("start_lsp", || {
     let state: State<LspProcess> = app.state();
@@ -127,6 +128,7 @@ pub fn start_lsp(app: AppHandle, workspace_root: String, node_path: String, serv
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn send_lsp_message(state: State<LspProcess>, message: String) -> Result<(), String> {
     crate::commands::guard("send_lsp_message", || {
     let _: Value = serde_json::from_str(&message).map_err(|e| format!("invalid JSON-RPC payload: {e}"))?;

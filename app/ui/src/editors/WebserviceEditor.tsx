@@ -2,8 +2,9 @@ import type { EditorProps } from './registry'
 import { field, textField, textValue } from '../wire/types'
 import type { WireValue } from '../wire/types'
 import { EditableText } from './EditableText'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useProjectIndex } from './projectIndex'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // `WebserviceEditor`: the MUST subset of feature-matrix.md's WebserviceEditor
 // entry. Own mini format analysis this agent ran (no P1 `webservice.schema.json` existed) - object folder is `entityWebservice` (NOT `webservice`,
@@ -26,8 +27,7 @@ export function WebserviceEditor({ nodeId, projectRoot, tree, api, onTreeChange 
   const index = useProjectIndex()
   const [entityFields, setEntityFields] = useState<{ entity: string; names: string[] } | null>(null)
   const serviceName = textField(tree, 'name') ?? ''
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     async function load() {
       if (!index || !serviceName) return
       const usages = await api.findUsages(projectRoot, 'entityWebservice', serviceName).catch(() => [])
@@ -38,14 +38,11 @@ export function WebserviceEditor({ nodeId, projectRoot, tree, api, onTreeChange 
         const entity = entityName ? index.findObject('entity', entityName) : null
         if (!entity || !entityName) continue
         const names = entityFieldNames(await api.getPropertyTree(entity.id))
-        if (!cancelled) setEntityFields({ entity: entityName, names })
+        if (!signal.aborted) setEntityFields({ entity: entityName, names })
         return
       }
     }
     void load().catch(() => undefined)
-    return () => {
-      cancelled = true
-    }
   }, [api, index, projectRoot, serviceName])
 
   async function commitScalar(path: string, next: string) {

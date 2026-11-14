@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { ForgeApi } from '../../api/ForgeApi'
 import { errorText } from '../../core/errorText'
 import { Modal } from '../../core/Modal'
 import { notify } from '../../core/notifications'
 import type { RepoLink } from '../../wire/types'
+import { Button, Input } from '../../core/ui/controls'
+import { useAbortableEffect } from '../../core/hooks/useAbortableEffect'
 
 interface Props {
   api: ForgeApi
@@ -23,19 +25,15 @@ export function RepoLinkDialog({ api, projectRoot, onClose, onDone }: Props) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     api
       .gitRepoLink(projectRoot)
       .then((l) => {
-        if (cancelled) return
+        if (signal.aborted) return
         setLink(l)
         setUrl(l.url ?? '')
       })
-      .catch((e) => !cancelled && setError(errorText(e)))
-    return () => {
-      cancelled = true
-    }
+      .catch((e) => !signal.aborted && setError(errorText(e)))
   }, [api, projectRoot])
 
   const isRepo = link?.is_repo === true
@@ -65,12 +63,12 @@ export function RepoLinkDialog({ api, projectRoot, onClose, onDone }: Props) {
       onEnter={() => void submit()}
       footer={
         <>
-          <button type="button" disabled={busy || !url.trim() || link === null} onClick={() => void submit()}>
+          <Button variant="bare" isDisabled={busy || !url.trim() || link === null} onClick={() => void submit()}>
             {isRepo ? 'Save' : 'Connect'}
-          </button>
-          <button type="button" onClick={onClose}>
+          </Button>
+          <Button variant="bare" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >
@@ -82,26 +80,26 @@ export function RepoLinkDialog({ api, projectRoot, onClose, onDone }: Props) {
       ) : null}
       <label className="forge-field">
         <span>Repository URL:</span>
-        <input type="text" aria-label="Repository URL" placeholder="https://host/group/project.git" value={url} onChange={(e) => setUrl(e.target.value)} />
+        <Input type="text" aria-label="Repository URL" placeholder="https://host/group/project.git" value={url} onChange={(e) => setUrl(e.target.value)} />
       </label>
       {!isRepo && link ? (
         <>
           <label className="forge-field">
             <span>SSH Key Location (optional):</span>
             <span className="forge-field-row">
-              <input type="text" aria-label="SSH Key Location" value={sshKey} onChange={(e) => setSshKey(e.target.value)} />
-              <button type="button" aria-label="Browse SSH key" onClick={() => void browseKey()}>
+              <Input type="text" aria-label="SSH Key Location" value={sshKey} onChange={(e) => setSshKey(e.target.value)} />
+              <Button variant="bare" aria-label="Browse SSH key" onClick={() => void browseKey()}>
                 {'…'}
-              </button>
+              </Button>
             </span>
           </label>
           <label className="forge-field">
             <span>User Name (optional):</span>
-            <input type="text" aria-label="User Name" autoComplete="off" value={user} onChange={(e) => setUser(e.target.value)} />
+            <Input type="text" aria-label="User Name" autoComplete="off" value={user} onChange={(e) => setUser(e.target.value)} />
           </label>
           <label className="forge-field">
             <span>Password or Access Token (optional):</span>
-            <input type="password" aria-label="Password or Access Token" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input type="password" aria-label="Password or Access Token" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} />
           </label>
           <p className="forge-field-hint">For https:// addresses enter your user name and a personal access token. For ssh:// the password unlocks the key. Nothing is stored.</p>
         </>

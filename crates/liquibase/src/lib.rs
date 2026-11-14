@@ -124,8 +124,8 @@ pub fn defaults_file_text(changelog: &Path, target: &JdbcTarget) -> String {
     )
 }
 
-pub fn jdbc_url(local_port: u16, database: &str) -> String {
-    format!("jdbc:mariadb://127.0.0.1:{local_port}/{database}")
+pub fn jdbc_url(local_host: &str, local_port: u16, database: &str) -> String {
+    format!("jdbc:mariadb://{local_host}:{local_port}/{database}")
 }
 
 /// The alias an alias definition belongs to (`<targetAliasName>`): a project alias such as
@@ -319,7 +319,7 @@ pub fn update(
     let changelog_root = if use_dist { project_root.join("dist") } else { project_root.to_path_buf() };
     let dir = changelog_dir(&changelog_root, alias)?;
     let conn = database::system_db::read_alias_db(db, connection_alias.unwrap_or(alias), &[])?;
-    let port = db.forward_port_for(&conn.host, conn.port).ok_or_else(|| format!("Open the tunnel to {}:{} first (Services).", conn.host, conn.port))?;
+    let (local_host, port) = db.forward_addr_for(&conn.host, conn.port).ok_or_else(|| format!("Open the tunnel to {}:{} first (Services).", conn.host, conn.port))?;
     let install = configured_install
         .filter(|d| !d.trim().is_empty())
         .or_else(app_base::designer_paths::detect_designer_install)
@@ -327,7 +327,7 @@ pub fn update(
     let appdata = std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or_default();
     let install = PathBuf::from(install);
     let toolchain = discover_toolchain(&install, &designer_userdirs(&install, &appdata))?;
-    let jdbc = JdbcTarget { url: jdbc_url(port, &conn.database), user: conn.user.clone(), password: conn.password.clone() };
+    let jdbc = JdbcTarget { url: jdbc_url(&local_host, port, &conn.database), user: conn.user.clone(), password: conn.password.clone() };
     emit(false, &format!("Liquibase update of {alias} on system {system} (database {})", conn.database));
     run_update(&toolchain, &dir, &jdbc, emit)?;
     emit(false, "Liquibase update finished.");
@@ -348,7 +348,7 @@ mod tests {
 
     #[test]
     fn defaults_file_has_url_user_password_and_changelog_but_no_extra_secret_copy() {
-        let target = JdbcTarget { url: jdbc_url(3307, "cloud_data"), user: "u".into(), password: "p@ss=1".into() };
+        let target = JdbcTarget { url: jdbc_url("127.0.0.1", 3307, "cloud_data"), user: "u".into(), password: "p@ss=1".into() };
         let text = defaults_file_text(Path::new("C:/p/.liquibase/Data_alias/changelog.xml"), &target);
         assert!(text.contains("url=jdbc\\:mariadb\\://127.0.0.1\\:3307/cloud_data\n"));
         assert!(text.contains("password=p@ss\\=1\n"));
@@ -399,7 +399,7 @@ mod tests {
         let dir = tmp.join(".liquibase").join("Data_alias");
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("changelog.xml"), "<?xml version=\"1.1\" encoding=\"UTF-8\"?><databaseChangeLog xmlns=\"http://www.liquibase.org/xml/ns/dbchangelog\"/>").unwrap();
-        let target = JdbcTarget { url: jdbc_url(9, "nothing"), user: "lbuser".into(), password: "S3cr3t-Pw".into() };
+        let target = JdbcTarget { url: jdbc_url("127.0.0.1", 9, "nothing"), user: "lbuser".into(), password: "S3cr3t-Pw".into() };
         let lines = std::sync::Mutex::new(Vec::<String>::new());
         let result = run_update(&toolchain, &changelog_dir(&tmp, "Data_alias").unwrap(), &target, &|_, l| lines.lock().unwrap().push(l.to_string()));
         let _ = std::fs::remove_dir_all(&tmp);

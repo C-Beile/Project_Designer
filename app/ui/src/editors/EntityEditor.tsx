@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { EditorProps } from './registry'
 import { field, textField, type WireValue } from '../wire/types'
 import { useProjectIndex } from './projectIndex'
 import { EditableText } from './EditableText'
+import { Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Entity editor (reference screenshots 06/07/42): the entity as a box with its providers (arrow
 // to the right) and consumers (arrow to the left) as rows; "Direct dependencies" adds the
@@ -111,9 +113,8 @@ export function EntityEditor({ nodeId, tree, api, onTreeChange }: EditorProps) {
   const fields = useMemo(() => fieldRows(tree), [tree])
   const targets = useMemo(() => [...new Set(rows.map((r) => r.targetEntity).filter((t): t is string => !!t && t !== name))], [rows, name])
 
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (!deps || !index) return
-    let cancelled = false
     for (const t of targets) {
       if (t in related) continue
       const node = index.findObject('entity', t)
@@ -124,14 +125,11 @@ export function EntityEditor({ nodeId, tree, api, onTreeChange }: EditorProps) {
       api
         .getPropertyTree(node.id)
         .then((tr) => {
-          if (!cancelled) setRelated((r) => ({ ...r, [t]: diagramRows(tr) }))
+          if (!signal.aborted) setRelated((r) => ({ ...r, [t]: diagramRows(tr) }))
         })
         .catch(() => {
-          if (!cancelled) setRelated((r) => ({ ...r, [t]: null }))
+          if (!signal.aborted) setRelated((r) => ({ ...r, [t]: null }))
         })
-    }
-    return () => {
-      cancelled = true
     }
   }, [deps, targets, index, api, related])
 
@@ -177,37 +175,37 @@ export function EntityEditor({ nodeId, tree, api, onTreeChange }: EditorProps) {
       <div className="entity-toolbar" role="toolbar" aria-label="Entity editor toolbar">
         <div className="forge-opt-pages" role="tablist" aria-label="Entity views">
           {(['diagram', 'fields'] as const).map((m) => (
-            <button key={m} type="button" role="tab" aria-selected={mode === m} className={`forge-opt-page${mode === m ? ' is-active' : ''}`} onClick={() => setMode(m)}>
+            <Button variant="bare" key={m} role="tab" aria-selected={mode === m} className={`forge-opt-page${mode === m ? ' is-active' : ''}`} onClick={() => setMode(m)}>
               {m === 'diagram' ? 'Diagram' : 'Fields'}
-            </button>
+            </Button>
           ))}
         </div>
         {mode === 'diagram' ? (
           <>
-            <button type="button" aria-label="Zoom out" title="Zoom out" onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(1)))}>
+            <Button variant="bare" aria-label="Zoom out" title="Zoom out" onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(1)))}>
               −
-            </button>
-            <button type="button" aria-label="Zoom in" title="Zoom in" onClick={() => setZoom((z) => Math.min(2, +(z + 0.1).toFixed(1)))}>
+            </Button>
+            <Button variant="bare" aria-label="Zoom in" title="Zoom in" onClick={() => setZoom((z) => Math.min(2, +(z + 0.1).toFixed(1)))}>
               ＋
-            </button>
-            <button type="button" aria-pressed={deps} title="Show the entities this entity depends on" onClick={() => setDeps((d) => !d)}>
+            </Button>
+            <Button variant="bare" aria-pressed={deps} title="Show the entities this entity depends on" onClick={() => setDeps((d) => !d)}>
               Direct dependencies
-            </button>
-            <button type="button" disabled title="Arrange - not available yet" aria-label="Arrange">
+            </Button>
+            <Button variant="bare" isDisabled title="Arrange - not available yet" aria-label="Arrange">
               ⛶
-            </button>
-            <button type="button" disabled title="Export as image - not available yet" aria-label="Export">
+            </Button>
+            <Button variant="bare" isDisabled title="Export as image - not available yet" aria-label="Export">
               ⇪
-            </button>
-            <button type="button" disabled title="Print - not available yet" aria-label="Print">
+            </Button>
+            <Button variant="bare" isDisabled title="Print - not available yet" aria-label="Print">
               🖶
-            </button>
+            </Button>
           </>
         ) : null}
         <span className="entity-new">
-          <button type="button" aria-haspopup="menu" aria-expanded={newOpen} onClick={() => setNewOpen((o) => !o)}>
+          <Button variant="bare" aria-haspopup="menu" aria-expanded={newOpen} onClick={() => setNewOpen((o) => !o)}>
             ＋ New …
-          </button>
+          </Button>
           {newOpen ? (
             <ul role="menu" aria-label="New">
               {NEW_ITEMS.map((n) => (
@@ -266,35 +264,35 @@ export function EntityEditor({ nodeId, tree, api, onTreeChange }: EditorProps) {
         </div>
       ) : (
         <div className="entity-fields">
-          <table aria-label="Entity fields">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Title</th>
-                <th>Reference</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table aria-label="Entity fields">
+            <TableHeader>
+
+                <TableColumn isRowHeader>Name</TableColumn>
+                <TableColumn>Type</TableColumn>
+                <TableColumn>Title</TableColumn>
+                <TableColumn>Reference</TableColumn>
+
+            </TableHeader>
+            <TableBody>
               {fields.map((f) => (
-                <tr key={f.path} className={f.path === selectedPath ? 'is-selected' : undefined} onClick={() => select(f.path, f.name)}>
-                  <td>{f.name}</td>
-                  <td>{f.type}</td>
-                  <td>
+                <TableRow key={f.path} className={f.path === selectedPath ? 'is-selected' : undefined} onClick={() => select(f.path, f.name)}>
+                  <TableCell>{f.name}</TableCell>
+                  <TableCell>{f.type}</TableCell>
+                  <TableCell>
                     <EditableText value={f.title} ariaLabel={`Title of ${f.name}`} onCommit={(v) => void commitTitle(f.path, v)} />
-                  </td>
-                  <td>{f.reference}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell>{f.reference}</TableCell>
+                </TableRow>
               ))}
               {fields.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="forge-field-hint">
+                <TableRow>
+                  <TableCell colSpan={4} className="forge-field-hint">
                     This entity has no fields.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : null}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

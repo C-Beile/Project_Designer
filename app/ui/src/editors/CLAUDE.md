@@ -39,6 +39,7 @@
 | `viewFields.ts` | Text-Einfügen von Feldern und View-Verweisen. |
 | `projectIndex.ts` | `ProjectIndexContext`: Namen im offenen Projekt auflösen. |
 | `useIconSvgs.ts` | Lädt die Icons einer `iconId` einmal je Fenster. |
+| `registerAllBuiltins.ts` | Meldet alle Editoren an. `App.tsx` und (erst bei Bedarf) Editor-Fenster laden sie. |
 <!-- AUTO:END -->
 
 ## Zweck

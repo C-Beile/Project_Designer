@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Modal } from '../Modal'
+import { Button, Input } from './controls'
 
 // Maske "Liste": suchbare Liste mit Einzel- oder Mehrfachauswahl. Einzelauswahl: Pfeiltasten,
 // Enter und Doppelklick wählen aus. Mehrfachauswahl: Häkchen pro Zeile, OK gibt alle zurück.
@@ -85,17 +86,17 @@ export function ListDialog<T = unknown>({
       onClose={onCancel}
       footer={
         <>
-          <button type="button" disabled={!canPick} onClick={ok}>
+          <Button variant="bare" isDisabled={!canPick} onClick={ok}>
             {okLabel}
-          </button>
+          </Button>
           {actions?.map((a) => (
-            <button key={a.id} type="button" onClick={() => a.onClick(picked())}>
+            <Button variant="bare" key={a.id} onClick={() => a.onClick(picked())}>
               {a.label}
-            </button>
+            </Button>
           ))}
-          <button type="button" onClick={onCancel}>
+          <Button variant="bare" onClick={onCancel}>
             {cancelLabel}
-          </button>
+          </Button>
         </>
       }
     >
@@ -118,7 +119,7 @@ export function ListDialog<T = unknown>({
         {searchable ? (
           <label className="forge-field">
             <span>{searchLabel}</span>
-            <input
+            <Input
               type="text"
               aria-label={searchAriaLabel ?? searchLabel}
               value={query}
@@ -135,7 +136,7 @@ export function ListDialog<T = unknown>({
             <li key={m.id} className={!multiple && i === active ? 'is-selected' : undefined} onClick={() => setIndex(i)} onDoubleClick={() => !multiple && onPick([m])}>
               {multiple ? (
                 <label className="forge-check">
-                  <input type="checkbox" checked={checked.has(m.id)} aria-label={m.label} onChange={() => toggle(m.id)} />
+                  <Input type="checkbox" checked={checked.has(m.id)} aria-label={m.label} onChange={() => toggle(m.id)} />
                   <span>{m.label}</span>
                 </label>
               ) : (

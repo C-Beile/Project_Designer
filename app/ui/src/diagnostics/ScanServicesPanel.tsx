@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import type { Problem } from '../problems/problemStore'
 import { normId } from '../problems/problemStore'
 import { Chevron, SeverityIcon } from './SeverityIcon'
+import { Button, Input } from '../core/ui/controls'
 
 // Scan Services window (manual 10.5, screenshot 170): errors and warnings of the whole project as
 // a tree - type, object, file, message - with a button bar on the left: refresh, structure,
@@ -140,49 +141,49 @@ export function ScanServicesPanel({ problems, scanning, onRefresh, onOpen }: { p
   return (
     <div className="forge-scan">
       <div className="forge-scan-bar" role="toolbar" aria-label="Scan Services actions" aria-orientation="vertical">
-        <button type="button" aria-label="Refresh" title="Refresh all Scan Services for the complete project" onClick={onRefresh} disabled={scanning}>
+        <Button variant="bare" aria-label="Refresh" title="Refresh all Scan Services for the complete project" onClick={onRefresh} isDisabled={scanning}>
           <ToolIcon kind="refresh" />
-        </button>
-        <button type="button" aria-label="Structure" title="Choose what is shown and how the tree is structured" aria-pressed={structureOpen} onClick={() => setStructureOpen((v) => !v)}>
+        </Button>
+        <Button variant="bare" aria-label="Structure" title="Choose what is shown and how the tree is structured" aria-pressed={structureOpen} onClick={() => setStructureOpen((v) => !v)}>
           <ToolIcon kind="structure" />
-        </button>
-        <button type="button" aria-label="Show ignored tasks" title="Show the tasks marked as ignored" aria-pressed={showIgnored} onClick={() => setShowIgnored((v) => !v)}>
+        </Button>
+        <Button variant="bare" aria-label="Show ignored tasks" title="Show the tasks marked as ignored" aria-pressed={showIgnored} onClick={() => setShowIgnored((v) => !v)}>
           <ToolIcon kind="ignored" />
-        </button>
-        <button type="button" aria-label="Expand all" title="Expand all nodes" onClick={() => setOpen(new Set(allKeys()))}>
+        </Button>
+        <Button variant="bare" aria-label="Expand all" title="Expand all nodes" onClick={() => setOpen(new Set(allKeys()))}>
           <ToolIcon kind="expand" />
-        </button>
-        <button type="button" aria-label="Collapse all" title="Collapse all nodes" onClick={() => setOpen(new Set())}>
+        </Button>
+        <Button variant="bare" aria-label="Collapse all" title="Collapse all nodes" onClick={() => setOpen(new Set())}>
           <ToolIcon kind="collapse" />
-        </button>
+        </Button>
       </div>
       <div className="forge-scan-main">
         {structureOpen ? (
           <div className="forge-scan-structure" role="group" aria-label="Structure">
             <label className="forge-check">
-              <input type="radio" name="scan-by" checked={by === 'type'} onChange={() => setBy('type')} />
+              <Input type="radio" name="scan-by" checked={by === 'type'} onChange={() => setBy('type')} />
               <span>By model type</span>
             </label>
             <label className="forge-check">
-              <input type="radio" name="scan-by" checked={by === 'severity'} onChange={() => setBy('severity')} />
+              <Input type="radio" name="scan-by" checked={by === 'severity'} onChange={() => setBy('severity')} />
               <span>By severity</span>
             </label>
             <label className="forge-check">
-              <input type="checkbox" checked={includeWarnings} onChange={(e) => setIncludeWarnings(e.target.checked)} />
+              <Input type="checkbox" checked={includeWarnings} onChange={(e) => setIncludeWarnings(e.target.checked)} />
               <span>Include warnings</span>
             </label>
           </div>
         ) : null}
         <div className="forge-scan-actions">
-          <button type="button" disabled={selectedTasks.length === 0 || selectedTasks.every((t) => t.severity === 'Error')} onClick={() => setIgnore(true)}>
+          <Button variant="bare" isDisabled={selectedTasks.length === 0 || selectedTasks.every((t) => t.severity === 'Error')} onClick={() => setIgnore(true)}>
             Ignore selected tasks
-          </button>
-          <button type="button" disabled={selectedTasks.length === 0 || !selectedTasks.some((t) => ignored.has(taskKey(t)))} onClick={() => setIgnore(false)}>
+          </Button>
+          <Button variant="bare" isDisabled={selectedTasks.length === 0 || !selectedTasks.some((t) => ignored.has(taskKey(t)))} onClick={() => setIgnore(false)}>
             Include selected tasks
-          </button>
-          <button type="button" disabled={selectedTasks.length !== 1} onClick={() => selectedTasks[0] && onOpen(selectedTasks[0])}>
+          </Button>
+          <Button variant="bare" isDisabled={selectedTasks.length !== 1} onClick={() => selectedTasks[0] && onOpen(selectedTasks[0])}>
             Open in editor
-          </button>
+          </Button>
           <span className="forge-field-hint forge-scan-summary">
             {scanning ? 'Scanning the project…' : visible.length === 0 ? 'No tasks found.' : `${errors} error(s), ${visible.length - errors} warning(s)`}
           </span>
@@ -192,11 +193,11 @@ export function ScanServicesPanel({ problems, scanning, onRefresh, onOpen }: { p
             const gk = `g:${g.key}`
             return (
               <li key={g.key} role="treeitem" aria-expanded={open.has(gk)}>
-                <button type="button" className="forge-scan-node" onClick={() => toggle(gk)}>
+                <Button variant="bare" className="forge-scan-node" onClick={() => toggle(gk)}>
                   <Chevron open={open.has(gk)} />
                   <span className="forge-scan-label">{g.label}</span>
                   <span className="forge-count">{g.count}</span>
-                </button>
+                </Button>
                 {open.has(gk) ? (
                   <ul role="group">
                     {g.objects.map((o) => {
@@ -204,18 +205,18 @@ export function ScanServicesPanel({ problems, scanning, onRefresh, onOpen }: { p
                       const fk = `f:${g.key}:${o.key}`
                       return (
                         <li key={o.key} role="treeitem" aria-expanded={open.has(ok)}>
-                          <button type="button" className="forge-scan-node" onClick={() => toggle(ok)}>
+                          <Button variant="bare" className="forge-scan-node" onClick={() => toggle(ok)}>
                             <Chevron open={open.has(ok)} />
                             <span className="forge-scan-label">{o.label}</span>
                             <span className="forge-count">{o.tasks.length}</span>
-                          </button>
+                          </Button>
                           {open.has(ok) ? (
                             <ul role="group">
                               <li role="treeitem" aria-expanded={open.has(fk)}>
-                                <button type="button" className="forge-scan-node" onClick={() => toggle(fk)}>
+                                <Button variant="bare" className="forge-scan-node" onClick={() => toggle(fk)}>
                                   <Chevron open={open.has(fk)} />
                                   <span className="forge-scan-label is-file">{o.file}</span>
-                                </button>
+                                </Button>
                                 {open.has(fk) ? (
                                   <ul role="group">
                                     {o.tasks.map((t) => (

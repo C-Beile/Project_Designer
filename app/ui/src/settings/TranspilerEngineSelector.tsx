@@ -1,3 +1,4 @@
+import { Dropdown } from '../core/ui/controls'
 import { ENGINE_LABELS, EXPERIMENTAL_WARNING, type TranspilerEngineId } from './transpilerEngine'
 
 export type { TranspilerEngineId } from './transpilerEngine'
@@ -14,18 +15,19 @@ export function TranspilerEngineSelector({
   disabled?: boolean
 }) {
   return (
-    <select
+    <Dropdown
       className="forge-engine-select"
       aria-label="Transpiler engine"
       title={ENGINE_LABELS[engine]}
       value={engine}
-      disabled={disabled}
+      isDisabled={disabled}
       data-engine={engine}
-      onChange={(e) => onChange(e.target.value as TranspilerEngineId)}
-    >
-      <option value="official">ADITO Transpiler</option>
-      <option value="experimental">Dito_Transpiler</option>
-    </select>
+      onChange={(v) => onChange(v as TranspilerEngineId)}
+      options={[
+        { id: 'official', label: 'ADITO Transpiler' },
+        { id: 'experimental', label: 'Dito_Transpiler' },
+      ]}
+    />
   )
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { useTunnelState } from '../services/tunnelState'
 import { useProjectIndex } from '../editors/projectIndex'
@@ -9,6 +9,9 @@ import { parseAliasConfigRef } from './AliasConfigTab'
 import { CATALOG_SQL, PROCEDURES_SQL, TABLES_SQL, changelogFor, columnInfos, columnsSql, foreignKeyInfos, foreignKeysSql, indexInfos, indexesSql, viewDataSql, type ColumnInfo, type ForeignKeyInfo, type IndexInfo } from './dbBrowserSql'
 import { setSystemsDb } from '../services/tunnelState'
 import { errorText } from '../core/errorText'
+import { Button, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, TextArea } from '../core/ui/controls'
+import { copyText } from '../core/clipboard'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // "Database" tab of a database alias (original Designer, shots 95-98): tree Alias > Catalog >
 // Tables / Views, columns of the selected table on the right. The tree is loaded lazily: the table
@@ -43,8 +46,7 @@ export function DbBrowserTab({ api, path }: { api: ForgeApi; path: string | unde
   const [menu, setMenu] = useState<{ x: number; y: number; table: string } | null>(null)
   const [changelog, setChangelog] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     setTables(null)
     setError(null)
     if (!ref || !up) return
@@ -58,20 +60,16 @@ export function DbBrowserTab({ api, path }: { api: ForgeApi; path: string | unde
       }
       await api.dbActivate(sessionKey).catch(() => false)
       const [cat, list] = await Promise.all([api.dbQuery(CATALOG_SQL, false), api.dbQuery(TABLES_SQL, false)])
-      if (cancelled) return
+      if (signal.aborted) return
       setCatalog(cat.rows[0]?.[0] ?? null)
       setTables(list.rows.map((r) => ({ name: r[0] ?? '', view: (r[1] ?? '').toUpperCase().includes('VIEW') })))
     })().catch((e) => {
-      if (!cancelled) setError(errorText(e))
+      if (!signal.aborted) setError(errorText(e))
     })
-    return () => {
-      cancelled = true
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, path, up, reload])
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     setColumns(null)
     setIndexes(null)
     setForeignKeys(null)
@@ -79,19 +77,16 @@ export function DbBrowserTab({ api, path }: { api: ForgeApi; path: string | unde
     void api.dbActivate(sessionKey).catch(() => false)
     api
       .dbQuery(indexesSql(selected), false)
-      .then((r) => !cancelled && setIndexes(indexInfos(r.rows)))
-      .catch(() => !cancelled && setIndexes([]))
+      .then((r) => !signal.aborted && setIndexes(indexInfos(r.rows)))
+      .catch(() => !signal.aborted && setIndexes([]))
     api
       .dbQuery(foreignKeysSql(selected), false)
-      .then((r) => !cancelled && setForeignKeys(foreignKeyInfos(r.rows)))
-      .catch(() => !cancelled && setForeignKeys([]))
+      .then((r) => !signal.aborted && setForeignKeys(foreignKeyInfos(r.rows)))
+      .catch(() => !signal.aborted && setForeignKeys([]))
     api
       .dbQuery(columnsSql(selected), false)
-      .then((r) => !cancelled && setColumns(columnInfos(r.rows)))
-      .catch((e) => !cancelled && setError(errorText(e)))
-    return () => {
-      cancelled = true
-    }
+      .then((r) => !signal.aborted && setColumns(columnInfos(r.rows)))
+      .catch((e) => !signal.aborted && setError(errorText(e)))
   }, [api, selected, up, sessionKey])
 
   const visible = useMemo(() => {
@@ -164,7 +159,7 @@ export function DbBrowserTab({ api, path }: { api: ForgeApi; path: string | unde
   return (
     <div className="dbb" aria-label={`${ref.alias} database`}>
       <div className="dbb-tree">
-        <input aria-label="Filter tables" placeholder="Filter tables" value={filter} onChange={(e) => setFilter(e.target.value)} />
+        <Input aria-label="Filter tables" placeholder="Filter tables" value={filter} onChange={(e) => setFilter(e.target.value)} />
         <div className="dbb-root">{ref.alias}</div>
         <div className="dbb-catalog">Catalog: {catalog ?? '...'}</div>
         {error ? <p className="forge-field-error" role="alert">{error}</p> : null}
@@ -205,72 +200,72 @@ export function DbBrowserTab({ api, path }: { api: ForgeApi; path: string | unde
       <div className="dbb-detail">
         {selected ? (
           <>
-            <table className="dbb-grid" aria-label={`Columns of ${selected}`}>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Type</th>
-                  <th>DB Type</th>
-                  <th>Length</th>
-                  <th>Decimal Places</th>
-                  <th>Allows NULL</th>
-                  <th>Default Value</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="dbb-grid" aria-label={`Columns of ${selected}`}>
+              <TableHeader>
+
+                  <TableColumn isRowHeader>Name</TableColumn>
+                  <TableColumn>Type</TableColumn>
+                  <TableColumn>DB Type</TableColumn>
+                  <TableColumn>Length</TableColumn>
+                  <TableColumn>Decimal Places</TableColumn>
+                  <TableColumn>Allows NULL</TableColumn>
+                  <TableColumn>Default Value</TableColumn>
+
+              </TableHeader>
+              <TableBody>
                 {(columns ?? []).map((c) => (
-                  <tr key={c.name}>
-                    <td>{c.key === 'PRI' ? `${c.name} (key)` : c.name}</td>
-                    <td>{c.type}</td>
-                    <td>{c.dbType}</td>
-                    <td>{c.length}</td>
-                    <td>{c.scale}</td>
-                    <td>{c.nullable ? 'Yes' : 'No'}</td>
-                    <td>{c.defaultValue ?? ''}</td>
-                  </tr>
+                  <TableRow key={c.name}>
+                    <TableCell>{c.key === 'PRI' ? `${c.name} (key)` : c.name}</TableCell>
+                    <TableCell>{c.type}</TableCell>
+                    <TableCell>{c.dbType}</TableCell>
+                    <TableCell>{c.length}</TableCell>
+                    <TableCell>{c.scale}</TableCell>
+                    <TableCell>{c.nullable ? 'Yes' : 'No'}</TableCell>
+                    <TableCell>{c.defaultValue ?? ''}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
             <h4>Indexes</h4>
-            <table className="dbb-grid" aria-label={`Indexes of ${selected}`}>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Columns</th>
-                  <th>Unique</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="dbb-grid" aria-label={`Indexes of ${selected}`}>
+              <TableHeader>
+
+                  <TableColumn isRowHeader>Name</TableColumn>
+                  <TableColumn>Columns</TableColumn>
+                  <TableColumn>Unique</TableColumn>
+
+              </TableHeader>
+              <TableBody>
                 {(indexes ?? []).map((i) => (
-                  <tr key={i.name}>
-                    <td>{i.name}</td>
-                    <td>{i.columns}</td>
-                    <td>{i.unique ? 'Yes' : 'No'}</td>
-                  </tr>
+                  <TableRow key={i.name}>
+                    <TableCell>{i.name}</TableCell>
+                    <TableCell>{i.columns}</TableCell>
+                    <TableCell>{i.unique ? 'Yes' : 'No'}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
             <h4>Foreign Keys</h4>
-            <table className="dbb-grid" aria-label={`Foreign keys of ${selected}`}>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Column</th>
-                  <th>References</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="dbb-grid" aria-label={`Foreign keys of ${selected}`}>
+              <TableHeader>
+
+                  <TableColumn isRowHeader>Name</TableColumn>
+                  <TableColumn>Column</TableColumn>
+                  <TableColumn>References</TableColumn>
+
+              </TableHeader>
+              <TableBody>
                 {(foreignKeys ?? []).map((f) => (
-                  <tr key={`${f.name}.${f.column}`}>
-                    <td>{f.name}</td>
-                    <td>{f.column}</td>
-                    <td>
+                  <TableRow key={`${f.name}.${f.column}`}>
+                    <TableCell>{f.name}</TableCell>
+                    <TableCell>{f.column}</TableCell>
+                    <TableCell>
                       {f.refTable}.{f.refColumn}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
             <dl className="dbb-props" aria-label="Properties">
               <dt>Name</dt>
               <dd>{selected}</dd>
@@ -287,13 +282,13 @@ export function DbBrowserTab({ api, path }: { api: ForgeApi; path: string | unde
         )}
         {changelog ? (
           <div className="dbb-changelog">
-            <textarea readOnly aria-label="Generated changelog" value={changelog} rows={14} />
-            <button type="button" onClick={() => void navigator.clipboard?.writeText(changelog)}>
+            <TextArea readOnly aria-label="Generated changelog" value={changelog} rows={14} />
+            <Button variant="bare" onClick={() => void copyText(changelog)}>
               Copy
-            </button>
-            <button type="button" onClick={() => setChangelog(null)}>
+            </Button>
+            <Button variant="bare" onClick={() => setChangelog(null)}>
               Close
-            </button>
+            </Button>
             <p className="forge-field-hint">The text is only shown; nothing is run. Check it against a module changeset before you use it.</p>
           </div>
         ) : null}

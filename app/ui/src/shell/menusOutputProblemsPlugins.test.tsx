@@ -16,6 +16,7 @@ import { resetProblemsForTests, setProblems, fromProblemDto, type Problem } from
 import { resetPluginsForTests } from '../settings/plugins'
 import { resetOptionsForTests } from '../settings/options'
 import type { ProblemDto, TreeNode } from '../wire/types'
+import { choose } from '../test/dropdown'
 
 vi.mock('monaco-editor', () => import('../test/monacoMock'))
 
@@ -93,10 +94,10 @@ describe('Output window (manual chapter 7)', () => {
     render(<OutputBody active="output" {...base} onClear={onClear} logs={{ ...EMPTY, build: lines(3) }} />)
     for (const name of ['Start', 'Stop', 'Exit', 'Clear cache']) expect(screen.getByRole('button', { name })).toBeDisabled()
     expect(screen.getByText('line 0')).toBeInTheDocument()
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Show lines' }), 'error')
+    await choose(user, 'Show lines', 'error')
     expect(screen.queryByText('line 0')).toBeNull()
     expect(screen.getByText('line 1')).toBeInTheDocument()
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Show lines' }), 'all')
+    await choose(user, 'Show lines', 'all')
     await user.type(screen.getByRole('textbox', { name: 'Filter output' }), 'line 2')
     expect(screen.getByText('line 2')).toBeInTheDocument()
     expect(screen.queryByText('line 0')).toBeNull()
@@ -209,7 +210,7 @@ describe('Local Data dialog (manual chapter 12)', () => {
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     render(<LocalDataDialog api={api} onClose={() => {}} />)
     expect(await screen.findByTestId('forge-data-dir')).toHaveTextContent('dito-designer')
-    const versions = screen.getByRole('table', { name: 'Version folders' })
+    const versions = screen.getByRole('grid', { name: 'Version folders' })
     expect(within(versions).getByText('2020')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Run Janitor Now' }))
     expect(screen.getByRole('status')).toHaveTextContent('does not delete them')
@@ -289,7 +290,7 @@ describe('Shell - menus and toolbar of round 2', () => {
     await user.click(within(dialog).getByRole('tab', { name: 'Janitor' }))
     expect(within(dialog).getByRole('spinbutton', { name: 'Removal threshold' })).toHaveValue(30)
     await user.click(within(dialog).getByRole('tab', { name: /Keymap/ }))
-    expect(within(dialog).getByRole('table', { name: 'Shortcuts' })).toHaveTextContent('Ctrl+Shift+U')
+    expect(within(dialog).getByRole('grid', { name: 'Shortcuts' })).toHaveTextContent('Ctrl+Shift+U')
   })
 
   async function openUpdates(api: ReturnType<typeof createMockForgeApi>) {

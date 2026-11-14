@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { registerStatusBarItem, type StatusBarSlotProps } from '../../core/plugins/registry'
 import { errorText } from '../../core/errorText'
 import type { GitOverview } from '../../wire/types'
+import { Button, Input } from '../../core/ui/controls'
 
 export type GitStatusAction = 'commit' | 'pull' | 'push' | 'branches' | 'newBranch' | 'history'
 
@@ -62,11 +63,11 @@ export function GitStatusItem({ data, openMenu }: StatusBarSlotProps) {
 
   return (
     <>
-      <button
-        type="button"
+      <Button variant="bare"
+
         className="forge-status-btn forge-status-branch"
         title={branch ? `Git branch ${branch}: click to switch, right-click for Commit, Pull, Push` : 'No Git branch'}
-        disabled={branch === null}
+        isDisabled={branch === null}
         onClick={openBranches}
         onContextMenu={branchContext}
         onKeyDown={(e) => {
@@ -78,7 +79,7 @@ export function GitStatusItem({ data, openMenu }: StatusBarSlotProps) {
       >
         {pulling ? <span className="forge-spinner" role="status" aria-label="Pulling" /> : null}
         {pulling ? 'Pulling...' : (branch ?? '')}
-      </button>
+      </Button>
       {popup ? (
         <BranchPopup at={popup.at} data={popup.data} error={popup.error} onClose={() => setPopup(null)} onNew={() => onGit?.('newBranch')} onPick={(t) => onCheckoutBranch?.(t)} />
       ) : null}
@@ -136,13 +137,13 @@ function BranchPopup({
         <span>Git Branches</span>
         {data?.branch ? <span className="forge-branch-current">{data.branch}</span> : null}
       </header>
-      {data ? <input type="search" className="forge-branch-filter" placeholder="Filter branches" aria-label="Filter branches" value={filter} onChange={(e) => setFilter(e.target.value)} /> : null}
+      {data ? <Input type="search" className="forge-branch-filter" placeholder="Filter branches" aria-label="Filter branches" value={filter} onChange={(e) => setFilter(e.target.value)} /> : null}
       {error ? <p className="forge-field-error">{error}</p> : null}
       {!data && !error ? <p className="forge-field-hint">Loading...</p> : null}
       {data ? (
         <div className="forge-branch-list">
-          <button
-            type="button"
+          <Button variant="bare"
+
             className="forge-branch-item"
             onClick={() => {
               onClose()
@@ -150,15 +151,15 @@ function BranchPopup({
             }}
           >
             + New Branch
-          </button>
+          </Button>
           <h4>
             Local Branches <span className="forge-branch-count">{localBranches.length}</span>
           </h4>
           {localBranches.length === 0 ? <p className="forge-field-hint">No branch matches.</p> : null}
           {localBranches.map((b) => (
-            <button
+            <Button variant="bare"
               key={b.name}
-              type="button"
+
               className={`forge-branch-item${b.is_current ? ' is-current' : ''}`}
               aria-current={b.is_current ? 'true' : undefined}
               title={b.is_current ? 'Current branch' : `Switch to ${b.name} (confirm in the dialog)`}
@@ -170,16 +171,16 @@ function BranchPopup({
             >
               <span className="forge-branch-name">{b.is_current ? <span className="forge-branch-check" aria-hidden="true">&#10003;</span> : null}{b.name}</span>
               <span className="forge-branch-arrow" aria-hidden="true">&#9656;</span>
-            </button>
+            </Button>
           ))}
           <h4>
             Remote Branches <span className="forge-branch-count">{remoteBranches.length}</span>
           </h4>
           {remoteBranches.length === 0 ? <p className="forge-field-hint">{data.remote_branches.length === 0 ? 'None' : 'No branch matches.'}</p> : null}
           {remoteBranches.map((r) => (
-            <button
+            <Button variant="bare"
               key={r}
-              type="button"
+
               className="forge-branch-item"
               title={`Create a local branch from ${r} (confirm in the dialog)`}
               onClick={() => {
@@ -189,7 +190,7 @@ function BranchPopup({
             >
               <span className="forge-branch-name">{r}</span>
               <span className="forge-branch-arrow" aria-hidden="true">&#9656;</span>
-            </button>
+            </Button>
           ))}
         </div>
       ) : null}

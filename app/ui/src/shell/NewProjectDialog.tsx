@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { Modal } from '../core/Modal'
 import { errorText } from '../core/errorText'
+import { Button, Dropdown, Input } from '../core/ui/controls'
 
 // New Project, like the original Designer: first the source of the project, then its details. A clone
 // from a Git repository ends with the choice of the branch to check out. Sources that need a server or
@@ -17,7 +18,6 @@ const SOURCES: { id: Source; label: string; available: boolean; hint?: string }[
   { id: 'systemDb', label: 'Create from a system database', available: false, hint: 'Not available yet.' },
   { id: 'cloud', label: 'Load a cloud system', available: false, hint: 'Not available yet.' },
 ]
-
 
 /** `https://host/group/name.git` and `git@host:group/name.git` give `name`. */
 export function projectNameFromUrl(url: string): string {
@@ -123,33 +123,33 @@ export function NewProjectDialog({ api, currentProject, onClose, onCreated }: { 
   const footer =
     step === 'source' ? (
       <>
-        <button type="button" onClick={() => setStep('details')}>
+        <Button variant="bare" onClick={() => setStep('details')}>
           Next
-        </button>
-        <button type="button" onClick={onClose}>
+        </Button>
+        <Button variant="bare" onClick={onClose}>
           Cancel
-        </button>
+        </Button>
       </>
     ) : step === 'details' ? (
       <>
-        <button type="button" onClick={() => setStep('source')} disabled={busy}>
+        <Button variant="bare" onClick={() => setStep('source')} isDisabled={busy}>
           Back
-        </button>
-        <button type="button" onClick={() => void create()} disabled={busy || !detailsValid}>
+        </Button>
+        <Button variant="bare" onClick={() => void create()} isDisabled={busy || !detailsValid}>
           {busy ? (source === 'clone' ? 'Cloning…' : 'Creating…') : source === 'clone' ? 'Next' : 'Finish'}
-        </button>
-        <button type="button" onClick={onClose} disabled={busy}>
+        </Button>
+        <Button variant="bare" onClick={onClose} isDisabled={busy}>
           Cancel
-        </button>
+        </Button>
       </>
     ) : (
       <>
-        <button type="button" onClick={() => void finish()} disabled={busy || !branch}>
+        <Button variant="bare" onClick={() => void finish()} isDisabled={busy || !branch}>
           Finish
-        </button>
-        <button type="button" onClick={() => onCreated(created)} disabled={busy}>
+        </Button>
+        <Button variant="bare" onClick={() => onCreated(created)} isDisabled={busy}>
           Skip
-        </button>
+        </Button>
       </>
     )
 
@@ -161,7 +161,7 @@ export function NewProjectDialog({ api, currentProject, onClose, onCreated }: { 
             <legend>Create the project from</legend>
             {SOURCES.map((s) => (
               <label key={s.id} className="forge-check" title={s.available ? undefined : s.hint}>
-                <input type="radio" name="project-source" checked={source === s.id} disabled={!s.available} onChange={() => setSource(s.id)} />
+                <Input type="radio" name="project-source" checked={source === s.id} disabled={!s.available} onChange={() => setSource(s.id)} />
                 <span>
                   {s.label}
                   {s.available ? '' : ' (not available yet)'}
@@ -176,7 +176,7 @@ export function NewProjectDialog({ api, currentProject, onClose, onCreated }: { 
             {source === 'clone' ? (
               <label className="forge-field">
                 <span>Repository URL:</span>
-                <input
+                <Input
                   type="text"
                   aria-label="Repository URL"
                   value={url}
@@ -191,15 +191,15 @@ export function NewProjectDialog({ api, currentProject, onClose, onCreated }: { 
             <label className="forge-field">
               <span>Project Location:</span>
               <span className="forge-field-row">
-                <input type="text" aria-label="Project Location" value={location} onChange={(e) => setLocation(e.target.value)} />
-                <button type="button" aria-label="Browse project location" onClick={() => void browseLocation()}>
+                <Input type="text" aria-label="Project Location" value={location} onChange={(e) => setLocation(e.target.value)} />
+                <Button variant="bare" aria-label="Browse project location" onClick={() => void browseLocation()}>
                   {'…'}
-                </button>
+                </Button>
               </span>
             </label>
             <label className="forge-field">
               <span>Project Name:</span>
-              <input
+              <Input
                 type="text"
                 aria-label="Project Name"
                 value={name}
@@ -214,15 +214,15 @@ export function NewProjectDialog({ api, currentProject, onClose, onCreated }: { 
                 <label className="forge-field">
                   <span>SSH Key Location (optional):</span>
                   <span className="forge-field-row">
-                    <input type="text" aria-label="SSH Key Location" value={sshKey} onChange={(e) => setSshKey(e.target.value)} />
-                    <button type="button" aria-label="Browse SSH key" onClick={() => void browseKey()}>
+                    <Input type="text" aria-label="SSH Key Location" value={sshKey} onChange={(e) => setSshKey(e.target.value)} />
+                    <Button variant="bare" aria-label="Browse SSH key" onClick={() => void browseKey()}>
                       {'…'}
-                    </button>
+                    </Button>
                   </span>
                 </label>
                 <label className="forge-field">
                   <span>SSH Password (optional):</span>
-                  <input type="password" aria-label="SSH Password" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <Input type="password" aria-label="SSH Password" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} />
                 </label>
                 <p className="forge-field-hint">The password is only used for this clone and is not stored.</p>
               </>
@@ -235,13 +235,7 @@ export function NewProjectDialog({ api, currentProject, onClose, onCreated }: { 
             <p>The repository was cloned. Which branch should be checked out?</p>
             <label className="forge-field">
               <span>Branch:</span>
-              <select aria-label="Branch" value={branch} onChange={(e) => setBranch(e.target.value)}>
-                {choices.map((b) => (
-                  <option key={b} value={b}>
-                    {b}
-                  </option>
-                ))}
-              </select>
+              <Dropdown value={branch} aria-label="Branch" options={choices.map((b) => ({ id: b, label: b }))} onChange={(v) => setBranch(v)} />
             </label>
           </>
         ) : null}

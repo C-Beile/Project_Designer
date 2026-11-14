@@ -1,4 +1,7 @@
 @import './theme/tokens.css';
+@import './theme/tokens-primitives.css';
+@import './core/ui/controls/controls.css';
+@import './studio/ThemeStudio.css';
 @import './styles/base.css';
 @import './shell/Shell.css';
 @import './chrome/TitleBar.css';
@@ -17,7 +20,10 @@
 @import './features/git/PullResultDialog.css';
 @import './tree/TreeContextMenu.css';
 @import './styles/shell/menu.css';
+@import 'dockview-react/dist/styles/dockview.css';
 @import './styles/shell/dock.css';
+@import './shell/dock/DockHost.css';
+@import './core/ui/blocks/SchemaForm.css';
 @import './styles/shell/tab.css';
 @import './styles/shell/tabbar.css';
 @import './styles/shell/history.css';
@@ -110,5 +116,6 @@
 @import './styles/commit-window.css';
 @import './styles/branches-popup.css';
 @import './shell/DeployOptionsDialog.css';
+@import './shell/SshKeyPassphrase.css';
 @import './editors/WebserviceEditor.css';
 @import './styles/deploy-windows.css';

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { createMockForgeApi } from '../test/mockApi'
 import { NewProjectDialog, projectNameFromUrl } from './NewProjectDialog'
+import { choose } from '../test/dropdown'
 
 const OVERVIEW = { root: 'C:/p/x', branch: 'main', files: [], branches: [{ name: 'main', is_current: true }], remote_branches: ['origin/main', 'origin/dev'], commits: [] }
 
@@ -37,7 +38,8 @@ describe('NewProjectDialog', () => {
     expect(screen.getByLabelText('Project Location')).toHaveValue('C:/repos')
     await user.click(screen.getByRole('button', { name: 'Next' }))
     expect(projectClone).toHaveBeenCalledWith('https://github.com/a/x.git', 'C:/repos', 'x', null, null)
-    await user.selectOptions(await screen.findByLabelText('Branch'), 'dev')
+    await screen.findByRole('button', { name: /Branch/ })
+    await choose(user, 'Branch', 'dev')
     await user.click(screen.getByRole('button', { name: 'Finish' }))
     expect(gitCreateBranch).toHaveBeenCalledWith('C:/repos/x', 'dev', 'origin/dev')
     expect(onCreated).toHaveBeenCalledWith('C:/repos/x')

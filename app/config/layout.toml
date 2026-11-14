@@ -1,0 +1,57 @@
+# Standard-Layout des Hauptfensters. Gilt beim ersten Start, bei "Layout zurücksetzen" und für neue Panels.
+# Größen sind Pixel bei Standard-Schriftgröße (12). 0 = automatisch.
+
+[behavior]
+reopen = "last-position"       # last-position | default
+
+[area.left]
+width              = 340       # Pixel, 120 bis 1200
+min-width          = 160       # Pixel, 80 bis 600
+max-width-percent  = 40        # Prozent der Fensterbreite, 10 bis 80
+height             = 0         # Pixel, 0 = volle Höhe
+min-height         = 100       # Pixel, 40 bis 600
+max-height-percent = 100       # Prozent der Fensterhöhe, 10 bis 100
+
+[area.right]
+width              = 260       # Pixel, 120 bis 1200
+min-width          = 120       # Pixel, 80 bis 600
+max-width-percent  = 40        # Prozent der Fensterbreite, 10 bis 80
+height             = 0         # Pixel, 0 = volle Höhe
+min-height         = 100       # Pixel, 40 bis 600
+max-height-percent = 100       # Prozent der Fensterhöhe, 10 bis 100
+
+[area.bottom]
+width              = 0         # Pixel, 0 = volle Breite
+min-width          = 160       # Pixel, 80 bis 600
+max-width-percent  = 100       # Prozent der Fensterbreite, 10 bis 100
+height             = 240       # Pixel, 80 bis 800
+min-height         = 80        # Pixel, 40 bis 600
+max-height-percent = 50        # Prozent der Fensterhöhe, 10 bis 80
+
+[panel.projects]
+title    = "Projects"
+area     = "left"              # top-left | top | top-right | left | center | right | bottom-left | bottom | bottom-right
+group    = "left-top"          # gleiche Gruppe = Tabs
+opens    = "startup"           # startup | on-demand
+closable = true                # true | false
+
+[panel.properties]
+title    = "Properties"
+area     = "left"              # top-left | top | top-right | left | center | right | bottom-left | bottom | bottom-right
+group    = "left-bottom"       # gleiche Gruppe = Tabs
+opens    = "startup"           # startup | on-demand
+closable = true                # true | false
+
+[panel.navigator]
+title    = "Navigator"
+area     = "right"             # top-left | top | top-right | left | center | right | bottom-left | bottom | bottom-right
+group    = "right-top"         # gleiche Gruppe = Tabs
+opens    = "startup"           # startup | on-demand
+closable = true                # true | false
+
+[panel.output]
+title    = "Output"
+area     = "bottom"            # top-left | top | top-right | left | center | right | bottom-left | bottom | bottom-right
+group    = "bottom-main"       # gleiche Gruppe = Tabs
+opens    = "startup"           # startup | on-demand
+closable = true                # true | false

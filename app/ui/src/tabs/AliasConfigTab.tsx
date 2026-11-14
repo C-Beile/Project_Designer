@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { AliasConfigDto, TreeNode } from '../wire/types'
 import { useTunnelState } from '../services/tunnelState'
 import { useProjectIndex } from '../editors/projectIndex'
 import { AliasConfigPanel } from '../properties/AliasConfigPanel'
 import { errorText } from '../core/errorText'
+import { Button } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Editor tab of one alias config of a system (original Designer, shot 84): full-width grouped
 // property sheet Name | Value. The values come from the system database of exactly this system;
@@ -50,8 +52,7 @@ export function AliasConfigTab({ api, path }: { api: ForgeApi; path: string | un
   const [config, setConfig] = useState<AliasConfigDto | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     setConfig(null)
     setError(null)
     if (!ref || !up) return
@@ -60,17 +61,14 @@ export function AliasConfigTab({ api, path }: { api: ForgeApi; path: string | un
       const ids = await api.systemServerIds(ref.reference, ref.system).catch(() => [] as string[])
       const list = await api.systemAliasList(ids)
       const found = list.find((c) => c.name === ref.alias) ?? null
-      if (!cancelled) {
+      if (!signal.aborted) {
         setConfig(found)
         if (found) index?.selectAliasConfig?.(found, ref.system)
         if (!found) setError(`${ref.alias} is not in the system database of ${ref.system}.`)
       }
     })().catch((e) => {
-      if (!cancelled) setError(errorText(e))
+      if (!signal.aborted) setError(errorText(e))
     })
-    return () => {
-      cancelled = true
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, path, up, tunnel.reload])
 
@@ -79,15 +77,15 @@ export function AliasConfigTab({ api, path }: { api: ForgeApi; path: string | un
   return (
     <div className="alias-config-tab" aria-label={`${ref.alias} config`}>
       <div className="alias-config-subtabs" role="tablist" aria-label="Editor views">
-        <button type="button" role="tab" aria-selected="true" className="alias-config-subtab is-active">
+        <Button variant="bare" role="tab" aria-selected="true" className="alias-config-subtab is-active">
           Editor
-        </button>
-        <button type="button" role="tab" aria-selected="false" className="alias-config-subtab" disabled title="The source of a system config is not available yet">
+        </Button>
+        <Button variant="bare" role="tab" aria-selected="false" className="alias-config-subtab" isDisabled title="The source of a system config is not available yet">
           Source
-        </button>
-        <button type="button" role="tab" aria-selected="false" className="alias-config-subtab" disabled title="The history of a system config is not available yet">
+        </Button>
+        <Button variant="bare" role="tab" aria-selected="false" className="alias-config-subtab" isDisabled title="The history of a system config is not available yet">
           History
-        </button>
+        </Button>
       </div>
       {error ? <p className="forge-field-error" role="alert">{error}</p> : null}
       {!config && !error ? <p className="forge-field-hint">Please Wait…</p> : null}

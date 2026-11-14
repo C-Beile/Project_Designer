@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { dropdown } from '../test/dropdown'
 import { SelectDatabaseConnectionDialog, shortHost } from './SelectDatabaseConnectionDialog'
 
 const CONNECTIONS = [
@@ -18,7 +19,9 @@ describe('SelectDatabaseConnectionDialog', () => {
     const onOk = vi.fn()
     render(<SelectDatabaseConnectionDialog connections={CONNECTIONS} preferredAlias="Data_alias" title="Which database?" onOk={onOk} onCancel={() => {}} />)
     expect(screen.getByLabelText('Connection URL')).toHaveTextContent('jdbc:mariadb://adito-db.dev-fz-juelich-1-htc1-adito-cloud.svc.cluster.local:3306/cloud_data_alias')
+    await user.click(dropdown('Database connection'))
     expect(screen.getAllByRole('option')).toHaveLength(1)
+    await user.keyboard('{Escape}')
     await user.click(screen.getByRole('button', { name: 'OK' }))
     expect(onOk).toHaveBeenCalledWith({ connection: CONNECTIONS[0], useDist: false })
   })
@@ -27,6 +30,7 @@ describe('SelectDatabaseConnectionDialog', () => {
     const user = userEvent.setup()
     render(<SelectDatabaseConnectionDialog connections={CONNECTIONS} preferredAlias="Data_alias" title="Which database?" onOk={() => {}} onCancel={() => {}} />)
     await user.click(screen.getByRole('checkbox', { name: /Show all connections/ }))
+    await user.click(dropdown('Database connection'))
     expect(screen.getAllByRole('option')).toHaveLength(2)
     expect(screen.getByRole('option', { name: /TextAnalysis.*\(no tunnel\)/ })).toBeInTheDocument()
   })

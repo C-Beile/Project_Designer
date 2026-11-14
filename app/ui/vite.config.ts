@@ -11,6 +11,8 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    // Dev-Konfiguration liegt in app/config (neben app/ui).
+    fs: { allow: ['..'] },
     // Kein Vollbild-Fehlerfenster bei Syntaxfehlern im Dev-Modus: das Fenster bleibt bedienbar, der Fehler steht im Terminal von `tauri dev`.
     hmr: { overlay: false },
     // Windows meldet bei vielen Dateiänderungen auf einmal (Git-Wechsel, Skripte, Umbauten) nichts: der 16-KB-Puffer der

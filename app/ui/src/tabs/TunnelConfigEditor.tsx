@@ -11,6 +11,9 @@ import { confirmDialog, promptDialog } from '../core/dialogService'
 import type { DbStatus, ForwardStatusDto, TunnelRowDto } from '../wire/types'
 import { TunnelPorts } from './TunnelPorts'
 import { errorText } from '../core/errorText'
+import { Button, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
+import { copyText as copyToClipboard } from '../core/clipboard'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 function savedView(): 'ports' | 'table' {
   return configGet<string>('tunnels', 'view') === 'table' ? 'table' : 'ports'
@@ -100,22 +103,18 @@ export function TunnelConfigEditor({
     setForwardsUp(list.some((f) => f.up))
   }, [api])
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     api
       .readTunnelConfig(projectRoot, reference)
       .then((r) => {
-        if (cancelled) return
+        if (signal.aborted) return
         setRows(r)
         setError(null)
       })
       .catch((e) => {
-        if (!cancelled) setError(String(e))
+        if (!signal.aborted) setError(String(e))
       })
     void refreshForwards()
-    return () => {
-      cancelled = true
-    }
   }, [api, projectRoot, reference, reload, refreshForwards])
 
   useEffect(() => {
@@ -124,7 +123,8 @@ export function TunnelConfigEditor({
   }, [refreshForwards])
 
   const upKeys = useMemo(() => new Set(forwards.filter((f) => f.up).map((f) => rowKey(f))), [forwards])
-  const localPorts = useMemo(() => new Map(forwards.map((f) => [rowKey(f), f.local_port])), [forwards])
+  const foreignOwners = useMemo(() => new Map(forwards.filter((f) => f.owner !== 'designer').map((f) => [rowKey(f), f.owner])), [forwards])
+  const localAddrs = useMemo(() => new Map(forwards.map((f) => [rowKey(f), `${f.local_host}:${f.local_port}`])), [forwards])
 
   const stateOf = useCallback(
     (r: TunnelRowDto): RowState => {
@@ -157,7 +157,7 @@ export function TunnelConfigEditor({
       logOutput('default', `Tunnel ${hostPort(r)}: connecting through ${r.tunnel_host}:${r.tunnel_port} ...`)
       try {
         const status = await api.tunnelConnect(r, keyFile.trim() || null, password || null)
-        logOutput('default', `Tunnel ${hostPort(r)}: open on 127.0.0.1:${status.local_port}`)
+        logOutput('default', `Tunnel ${hostPort(r)}: open on ${status.local_host}:${status.local_port}`)
       } catch (e) {
         const message = String(e instanceof Error ? e.message : e)
         setRowErrors((prev) => ({ ...prev, [k]: message }))
@@ -209,7 +209,7 @@ export function TunnelConfigEditor({
     await refreshForwards()
   }, [api, db.tunnel_up, onDbChange, refreshForwards])
 
-  const copy = (text: string) => void navigator.clipboard?.writeText(text)
+  const copy = (text: string) => void copyToClipboard(text)
 
   const refresh = () => {
     setError(null)
@@ -287,34 +287,34 @@ export function TunnelConfigEditor({
   return (
     <div className="tunnel-editor">
       <div className="tunnel-toolbar" role="toolbar" aria-label="Tunnel config">
-        <button type="button" title="Adds a tunnel to the tunnel config file" aria-label="Add tunnel" onClick={() => void addTunnel()}>
+        <Button variant="bare" title="Adds a tunnel to the tunnel config file" aria-label="Add tunnel" onClick={() => void addTunnel()}>
           +
-        </button>
-        <button type="button" aria-label="Stop tunnels" title="Close all open tunnels" disabled={!anyUp && !db.tunnel_up} onClick={() => void stop()}>
+        </Button>
+        <Button variant="bare" aria-label="Stop tunnels" title="Close all open tunnels" isDisabled={!anyUp && !db.tunnel_up} onClick={() => void stop()}>
           {'■'}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button variant="bare"
+
           aria-label="Copy tunnel"
           title="Copy the selected tunnel (addresses only)"
-          disabled={!row}
+          isDisabled={!row}
           onClick={() => row && copy(copyText(row))}
         >
           {'⎘'}
-        </button>
-        <button type="button" aria-label="Refresh" title="Reload the file and the tunnel states" onClick={refresh}>
+        </Button>
+        <Button variant="bare" aria-label="Refresh" title="Reload the file and the tunnel states" onClick={refresh}>
           {'↻'}
-        </button>
+        </Button>
         <span className="tunnel-view" role="group" aria-label="View">
-          <button type="button" aria-pressed={view === 'ports'} className={view === 'ports' ? 'is-active' : undefined} onClick={() => setView('ports')}>
+          <Button variant="bare" aria-pressed={view === 'ports'} className={view === 'ports' ? 'is-active' : undefined} onClick={() => setView('ports')}>
             Ports
-          </button>
-          <button type="button" aria-pressed={view === 'table'} className={view === 'table' ? 'is-active' : undefined} onClick={() => setView('table')}>
+          </Button>
+          <Button variant="bare" aria-pressed={view === 'table'} className={view === 'table' ? 'is-active' : undefined} onClick={() => setView('table')}>
             Table
-          </button>
+          </Button>
         </span>
         <span className="tunnel-auth">
-          <input
+          <Input
             aria-label="SSH key file"
             placeholder={isMacPlatform() ? 'SSH key (OpenSSH, optional; otherwise ssh-agent)' : 'SSH key (.ppk, optional; otherwise Pageant)'}
             value={keyFile}
@@ -322,14 +322,14 @@ export function TunnelConfigEditor({
               setKeyFile(e.target.value)
             }}
           />
-          <button type="button" aria-label="Browse SSH key" title="Choose the SSH key file" onClick={() => void browseKey()}>
+          <Button variant="bare" aria-label="Browse SSH key" title="Choose the SSH key file" onClick={() => void browseKey()}>
             {'…'}
-          </button>
-          <input
+          </Button>
+          <Input
             aria-label="Tunnel password"
             type="password"
             autoComplete="off"
-            placeholder="Password (basic auth, optional)"
+            placeholder="Password or key passphrase (optional)"
             value={password}
             onChange={(e) => {
               credentials.password = e.target.value
@@ -347,7 +347,8 @@ export function TunnelConfigEditor({
         <TunnelPorts
           rows={rows}
           stateOf={stateOf}
-          localPorts={localPorts}
+          localAddrs={localAddrs}
+          foreignOwners={foreignOwners}
           errors={rowErrors}
           onConnect={(list) => void (async () => { for (const r of list) await connectRow(r) })()}
           onDisconnect={(list) => void (async () => { for (const r of list) await disconnectRow(r) })()}
@@ -356,25 +357,25 @@ export function TunnelConfigEditor({
         />
       ) : null}
       {rows && view === 'table' ? (
-        <table className="tunnel-table" aria-label="Tunnels">
-          <thead>
-            <tr>
-              <th>Status</th>
-              <th>Tunnel Host Address</th>
-              <th>Tunnel Host Port</th>
-              <th>Target Server Address</th>
-              <th>Target Server Port</th>
-              <th>Username</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="tunnel-table" aria-label="Tunnels">
+          <TableHeader>
+
+              <TableColumn isRowHeader>Status</TableColumn>
+              <TableColumn>Tunnel Host Address</TableColumn>
+              <TableColumn>Tunnel Host Port</TableColumn>
+              <TableColumn>Target Server Address</TableColumn>
+              <TableColumn>Target Server Port</TableColumn>
+              <TableColumn>Username</TableColumn>
+
+          </TableHeader>
+          <TableBody>
             {rows.map((r, i) => {
               const state = stateOf(r)
               const k = rowKey(r)
               const label = { idle: 'Tunnel inactive', busy: 'Tunnel connecting', up: 'Tunnel active', error: 'Tunnel error' }[state]
-              const tip = state === 'error' ? rowErrors[k] : state === 'up' ? `Open on 127.0.0.1:${localPorts.get(k) ?? '?'}` : label
+              const tip = state === 'error' ? rowErrors[k] : state === 'up' ? `Open on ${localAddrs.get(k) ?? '?'}` : label
               return (
-                <tr
+                <TableRow
                   key={i}
                   className={i === selected ? 'is-selected' : undefined}
                   aria-selected={i === selected}
@@ -386,21 +387,21 @@ export function TunnelConfigEditor({
                     setMenu({ x: e.clientX, y: e.clientY })
                   }}
                 >
-                  <td>
+                  <TableCell>
                     <span className={`tunnel-status is-${state}${state === 'up' ? ' is-active' : ''}`} role="img" aria-label={label} title={tip}>
                       {'◖'}
                     </span>
-                  </td>
-                  <td>{r.tunnel_host}</td>
-                  <td>{r.tunnel_port}</td>
-                  <td title={r.target_host}>{r.target_host}</td>
-                  <td>{r.target_port}</td>
-                  <td>{r.user}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell>{r.tunnel_host}</TableCell>
+                  <TableCell>{r.tunnel_port}</TableCell>
+                  <TableCell title={r.target_host}>{r.target_host}</TableCell>
+                  <TableCell>{r.target_port}</TableCell>
+                  <TableCell>{r.user}</TableCell>
+                </TableRow>
               )
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       ) : null}
       {menu && row ? (
         <TreeContextMenu

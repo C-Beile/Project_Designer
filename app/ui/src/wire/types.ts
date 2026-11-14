@@ -111,7 +111,7 @@ export function isOpenable(node: TreeNode): boolean {
 }
 
 export interface DiagnosticDto {
-  severity: 'Error' | 'Warning' | 'Info'
+  severity: string
   message: string
   path: string | null
 }
@@ -177,7 +177,7 @@ export interface PropertySheet {
 export interface ModificationOutcome {
   action: 'created' | 'updated' | 'unchanged' | 'removal_suggested' | 'removed'
   /** Folder below `modification/` that was written or became redundant. */
-  dir?: string
+  dir?: string | null
 }
 
 /** Properties of a file in the Projects tree. */
@@ -350,7 +350,7 @@ export interface GitFileStatus {
 export interface CompareGroup {
   folder: string
   kind: string
-  reason: 'missing' | 'different'
+  reason: string
   count: number
   example: string
 }
@@ -467,11 +467,31 @@ export interface AliasConfigDto {
   groups: AliasGroup[]
 }
 
+/** Zusatzadressen 127.0.200.x für Tunnel (Plugin `ssh-tunnel`, Befehl `loopback_status`). */
+export interface LoopbackStatusDto {
+  available: boolean
+  /** Auf diesem System lässt sich die Einrichtung per Admin-Passwort machen (macOS). */
+  setup_possible: boolean
+}
+
+/** Ergebnis der Prüfung einer SSH-Schlüsseldatei (Plugin `ssh-tunnel`, Befehl `key_inspect`). */
+export interface SshKeyInfoDto {
+  exists: boolean
+  /** Der Schlüssel ist mit einer Passphrase geschützt. */
+  encrypted: boolean
+  supported: boolean
+  problem: string | null
+}
+
 export interface ForwardStatusDto {
   target_host: string
   target_port: number
+  /** Adresse, auf der die Weiterleitung lauscht (127.0.200.x oder 127.0.0.1). */
+  local_host: string
   local_port: number
   up: boolean
+  /** Wer den Tunnel geöffnet hat: `designer` (dieser Designer) oder ein anderes Programm (`hub`). */
+  owner: string
 }
 
 /** An ADITO project found inside the projects folder. */
@@ -531,7 +551,7 @@ export interface ProblemDto {
   node_id: string
   object: string
   object_type: string
-  source: 'parse' | 'validator' | 'reference'
+  source: string
   severity: string
   message: string
   path?: string | null

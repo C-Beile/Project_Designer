@@ -6,6 +6,7 @@ import { isOpenable, type TreeNode } from '../wire/types'
 import { NodeIcon } from './treeIcons'
 import { TunnelStateIcon } from './TunnelStateIcon'
 import { TunnelGlyph } from './TunnelGlyph'
+import { Button } from '../core/ui/controls'
 
 // Projects tree like the original Designer (LAYOUT_SPEC §4.2/§4.4): several project roots, a
 // single click selects (fills Properties/Navigator later), double-click or Enter opens. Keyboard
@@ -344,8 +345,8 @@ export function ProjectTree({
                 return badge ? <TunnelStateIcon state={badge.state} title={badge.title} /> : null
               })()}
               {onSystemTunnel && node.object_type === 'system' && !node.id.startsWith('missing:') ? (
-                <button
-                  type="button"
+                <Button variant="bare"
+
                   className="project-tree-tunnel-btn"
                   aria-label={`Tunnel manager of ${node.label}`}
                   title="Open the tunnel manager"
@@ -356,7 +357,7 @@ export function ProjectTree({
                   onDoubleClick={(e) => e.stopPropagation()}
                 >
                   <TunnelGlyph size={13} />
-                </button>
+                </Button>
               ) : null}
             </>
           )

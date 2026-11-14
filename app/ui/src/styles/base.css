@@ -13,8 +13,8 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-ui, 'Segoe UI', system-ui, sans-serif);
-  /* LAYOUT_SPEC §11.8: density like the original Designer. */
-  font-size: 12px;
+  /* LAYOUT_SPEC §11.8: density like the original Designer (12px at the default size). */
+  font-size: var(--text-md);
 }
 
 button,

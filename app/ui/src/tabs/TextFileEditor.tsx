@@ -8,6 +8,8 @@ import { registerFormatter } from '../theme/formatOnSave'
 import { enableImportNavigation } from '../theme/monacoImports'
 import { useScm } from '../core/scm'
 import type { Gutter } from '../wire/types'
+import { Button } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Editor of a plain project file (package.json, .js, ...). Unsaved text lives in `drafts`, so it
 // survives switching sub-tabs or tabs and is written by the shell's Save.
@@ -98,43 +100,33 @@ export function TextFileEditor({
   const [mdText, setMdText] = useState('')
 
   // Changed lines against HEAD; read again whenever the Git status was refreshed (after a save, a Git action).
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (isNew || !projectRoot.trim()) return
-    let cancelled = false
     api
       .scmGutter(projectRoot, path)
-      .then((g) => !cancelled && setGutter(g))
-      .catch(() => !cancelled && setGutter(null))
-    return () => {
-      cancelled = true
-    }
+      .then((g) => !signal.aborted && setGutter(g))
+      .catch(() => !signal.aborted && setGutter(null))
   }, [api, projectRoot, path, isNew, scm.version])
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     setLoaded(null)
     setError(null)
     if (isNew) {
       setLoaded({ initial: drafts.get(path) ?? '' })
       setMdText(drafts.get(path) ?? '')
-      return () => {
-        cancelled = true
-      }
+      return
     }
     // A linked-file reference may be an absolute path, which is what the tree gives for files.
     api
       .readLinkedFile(projectRoot, path)
       .then((text) => {
-        if (cancelled) return
+        if (signal.aborted) return
         setLoaded({ initial: drafts.get(path) ?? text })
         setMdText(drafts.get(path) ?? text)
       })
       .catch((e) => {
-        if (!cancelled) setError(String(e instanceof Error ? e.message : e))
+        if (!signal.aborted) setError(String(e instanceof Error ? e.message : e))
       })
-    return () => {
-      cancelled = true
-    }
   }, [api, path, projectRoot, drafts, isNew])
 
   const language = languageForFile(label)
@@ -155,9 +147,9 @@ export function TextFileEditor({
       {language === 'markdown' ? (
         <div className="forge-md-switch" role="tablist" aria-label="Markdown view">
           {MARKDOWN_VIEWS.map(([id, text]) => (
-            <button key={id} type="button" role="tab" aria-selected={mdView === id} className={`forge-md-tab${mdView === id ? ' is-active' : ''}`} onClick={() => setMdView(id)}>
+            <Button variant="bare" key={id} role="tab" aria-selected={mdView === id} className={`forge-md-tab${mdView === id ? ' is-active' : ''}`} onClick={() => setMdView(id)}>
               {text}
-            </button>
+            </Button>
           ))}
         </div>
       ) : null}

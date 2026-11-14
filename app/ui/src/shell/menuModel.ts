@@ -1,4 +1,5 @@
 import type { PanelId } from './layoutState'
+import { LAYOUT_PRESETS } from './layouts'
 import type { TranspilerEngineId } from '../settings/transpilerEngine'
 import { TOOLBAR_GROUPS, type ToolbarPrefs } from './toolbarPrefs'
 import type { EditorPrefs } from '../theme/editorPrefs'
@@ -115,6 +116,8 @@ export interface MenuContext {
   canMoveEditor?: boolean
   /** How many editors live in windows of their own right now. */
   editorWindows?: number
+  /** Namen der gespeicherten Layouts des Nutzers (Window > Layouts). */
+  savedLayouts?: string[]
   onlyEditor?: boolean
   fullScreen?: boolean
 }
@@ -155,394 +158,440 @@ const editorPref = (ctx: { editorPrefs?: EditorPrefs }, key: keyof EditorPrefs, 
 const windowItem = (id: ToolWindowId, label: string, shortcut?: string) =>
   item('window.open', label, true, { id: `window.open.${id}`, arg: id, shortcut })
 
+/** Ein Hauptmenü als Daten: Wer ein Menü hinzufügt, meldet es hier an. `order` bestimmt die Stelle in der Leiste. */
+export interface MainMenuSpec {
+  id: string
+  label: string
+  mnemonic: string
+  order: number
+  items: (ctx: MenuContext) => MenuItemDef[]
+  /** Fehlt die Bedingung, ist das Menü immer da. */
+  when?: (ctx: MenuContext) => boolean
+}
+
+const mainMenus: MainMenuSpec[] = []
+
+export function registerMainMenu(spec: MainMenuSpec): () => void {
+  mainMenus.splice(0, mainMenus.length, ...mainMenus.filter((m) => m.id !== spec.id), spec)
+  return () => {
+    const i = mainMenus.indexOf(spec)
+    if (i >= 0) mainMenus.splice(i, 1)
+  }
+}
+
+const noProjectHint = NO_PROJECT_HINT
+const transpileEnabled = (ctx: MenuContext) => ctx.hasProject && !ctx.transpileRunning
+const transpileHint = (ctx: MenuContext) => (ctx.transpileRunning ? 'A transpile is already running' : noProjectHint)
+
+const CORE_MENUS: Omit<MainMenuSpec, 'order'>[] = [
+  {
+    id: 'file',
+    label: 'File',
+    mnemonic: 'f',
+    items: (ctx) => [
+      item('file.new', 'New', ctx.hasProject, { shortcut: 'Mod+N', hint: ctx.hasProject ? undefined : noProjectHint }),
+      item('file.newProject', 'New Project', true, { shortcut: 'Mod+Shift+N' }),
+      sep(),
+      item('file.find', 'Find', ctx.hasProject, { shortcut: 'Mod+O', hint: ctx.hasProject ? undefined : noProjectHint }),
+      item('file.openProject', 'Open Project', true, { shortcut: 'Mod+Shift+O' }),
+      {
+        id: 'file.recent',
+        kind: 'submenu',
+        label: 'Open Recent Project',
+        enabled: true,
+        children: [
+          item('file.openWorkspace', 'Projects from Folder...', true, { hint: 'Choose the folder with all your projects and pick the ones to show in the tree' }),
+          sep(),
+          ...(ctx.workspaceFolders ?? []).map((folder, i) => item('file.openWorkspaceFolder', folder, true, { arg: folder, id: `file.openWorkspaceFolder.${i}`, hint: 'Pick the projects of this folder' })),
+          ...((ctx.workspaceFolders ?? []).length > 0 ? [sep()] : []),
+          ...(ctx.recentProject
+            ? [item('file.openRecent', ctx.recentProject, true, { arg: ctx.recentProject, id: 'file.openRecent.0' })]
+            : [item('file.openRecent', '(none)', false, { hint: 'No project opened yet', id: 'file.openRecent.none' })]),
+        ],
+      },
+      sep(),
+      item('file.closeProject', 'Close Project', ctx.hasProject, {
+        hint: ctx.hasProject ? (ctx.projectName ? `Closes ${ctx.projectName}` : undefined) : noProjectHint,
+      }),
+      item('file.closeOtherProjects', 'Close Other Projects', (ctx.projectCount ?? 0) > 1),
+      item('file.closeAllProjects', 'Close All Projects', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
+      sep(),
+      later('file.projectGroups', 'Project Groups...'),
+      sep(),
+      item('file.importProject', 'Import Project...', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
+      item('file.exportProject', 'Export Project...', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
+      sep(),
+      // The original binds Save to Ctrl+Shift+S and Save All to Ctrl+S; kept that way on purpose.
+      item('file.save', 'Save', ctx.hasSelection, { shortcut: 'Mod+Shift+S', hint: ctx.hasSelection ? undefined : 'No object open' }),
+      later('file.saveAs', 'Save As...'),
+      item('file.saveAll', 'Save All', ctx.hasUnsaved, { shortcut: 'Mod+S', hint: ctx.hasUnsaved ? undefined : 'Nothing to save' }),
+      sep(),
+      item('file.reloadAll', 'Reload All from Disk', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
+      sep(),
+      item('file.exit', 'Exit', true),
+    ],
+  },
+  {
+    id: 'edit',
+    label: 'Edit',
+    mnemonic: 'e',
+    items: (ctx) => [
+      item('edit.undo', 'Undo', ctx.canUndo, { shortcut: 'Mod+Z', hint: ctx.canUndo ? undefined : 'Nothing to undo' }),
+      // The original binds Redo to Ctrl+Y; Mod+Shift+Z stays as the usual macOS/Monaco alias.
+      item('edit.redo', 'Redo', ctx.canRedo, {
+        shortcut: 'Mod+Y',
+        extraShortcuts: ['Mod+Shift+Z'],
+        hint: ctx.canRedo ? undefined : 'Nothing to redo',
+      }),
+      sep(),
+      item('edit.cut', 'Cut', true, { shortcut: 'Mod+X', nativeShortcut: true }),
+      item('edit.copy', 'Copy', true, { shortcut: 'Mod+C', nativeShortcut: true }),
+      item('edit.paste', 'Paste', true, { shortcut: 'Mod+V', nativeShortcut: true }),
+      later('edit.pasteFormatted', 'Paste Formatted'),
+      later('edit.pasteFromHistory', 'Paste from History'),
+      later('edit.pasteAsLines', 'Paste as Lines'),
+      editorItem(ctx, 'edit.delete', 'Delete', 'deleteRight', 'Delete'),
+      editorItem(ctx, 'edit.selectAll', 'Select All', 'editor.action.selectAll', 'Mod+A'),
+      later('edit.selectIdentifier', 'Select Identifier'),
+      sep(),
+      editorItem(ctx, 'edit.findSelection', 'Find Selection', 'actions.findWithSelection'),
+      editorItem(ctx, 'edit.findNext', 'Find Next', 'editor.action.nextMatchFindAction', 'F3'),
+      editorItem(ctx, 'edit.findPrevious', 'Find Previous', 'editor.action.previousMatchFindAction', 'Shift+F3'),
+      sep(),
+      editorItem(ctx, 'edit.find', 'Find...', 'actions.find', 'Mod+F'),
+      editorItem(ctx, 'edit.replace', 'Replace...', 'editor.action.startFindReplace', 'Mod+H'),
+      item('refactor.usages', 'Find Usages', !!ctx.usageTarget, { shortcut: 'Alt+F7', hint: ctx.usageTarget ? undefined : 'Select an entity, view or webservice of the project first' }),
+      sep(),
+      later('edit.findInProjects', 'Find in Projects...', { shortcut: 'Mod+Shift+F' }),
+      later('edit.replaceInProjects', 'Replace in Projects...', { shortcut: 'Mod+Shift+H' }),
+    ],
+  },
+  {
+    id: 'view',
+    label: 'View',
+    mnemonic: 'v',
+    items: (ctx) => [
+      laterSub('view.editors', 'Editors'),
+      laterSub('view.split', 'Split'),
+      {
+        id: 'view.codeFolds',
+        kind: 'submenu',
+        label: 'Code Folds',
+        enabled: !!ctx.hasCodeEditor,
+        hint: ctx.hasCodeEditor ? undefined : 'Open a code editor first',
+        children: [
+          editorItem(ctx, 'view.fold', 'Collapse Fold', 'editor.fold'),
+          editorItem(ctx, 'view.unfold', 'Expand Fold', 'editor.unfold'),
+          editorItem(ctx, 'view.foldAll', 'Collapse All', 'editor.foldAll'),
+          editorItem(ctx, 'view.unfoldAll', 'Expand All', 'editor.unfoldAll'),
+        ],
+      },
+      {
+        id: 'view.toolbars',
+        kind: 'submenu',
+        label: 'Toolbars',
+        enabled: true,
+        children: [
+          ...TOOLBAR_GROUPS.map((g) =>
+            item('view.toolbarGroup', g.label, true, { id: `view.toolbar.${g.id}`, arg: g.id, check: 'checkbox', checked: ctx.toolbar ? ctx.toolbar.groups[g.id] : g.id !== 'performance' }),
+          ),
+          item('view.toolbarSmall', 'Small Toolbar Icons', true, { check: 'checkbox', checked: ctx.toolbar ? ctx.toolbar.smallIcons : true }),
+          sep(),
+          item('view.resetToolbars', 'Reset Toolbars', true),
+          later('view.customizeToolbars', 'Customize'),
+        ],
+      },
+      sep(),
+      editorPref(ctx, 'lineNumbers', 'Toggle Line Numbers'),
+      editorPref(ctx, 'nonPrintable', 'Toggle Non-printable Characters'),
+      laterCheck('view.breadcrumbs', 'Show Breadcrumbs'),
+      editorPref(ctx, 'indentGuides', 'Show Indent Guide Lines'),
+      editorPref(ctx, 'inlineHints', 'Show Inline Hints'),
+      laterCheck('view.diffSidebar', 'Show Diff Sidebar'),
+      laterCheck('view.versioningLabels', 'Show Versioning Labels'),
+      laterCheck('view.syncEditor', 'Synchronize Editor with Views'),
+      sep(),
+      item('view.onlyEditor', 'Show Only Editor', true, { shortcut: 'Mod+Shift+Enter', check: 'checkbox', checked: !!ctx.onlyEditor }),
+      item('view.fullScreen', 'Full Screen', true, { shortcut: 'F11', check: 'checkbox', checked: !!ctx.fullScreen }),
+    ],
+  },
+  {
+    id: 'navigate',
+    label: 'Navigate',
+    mnemonic: 'n',
+    items: (ctx) => [
+      later('navigate.previous', 'Previous', { shortcut: 'Mod+Alt+ArrowLeft' }),
+      later('navigate.next', 'Next', { shortcut: 'Mod+Alt+ArrowRight' }),
+      item('file.find', 'Go to File...', ctx.hasProject, { id: 'navigate.goToFile', shortcut: 'Alt+Shift+O', extraShortcuts: ['Mod+P'], hint: ctx.hasProject ? undefined : noProjectHint }),
+      later('navigate.goToType', 'Go to Type...', { shortcut: 'Mod+J' }),
+      later('navigate.goToSymbol', 'Go to Symbol...', { shortcut: 'Mod+Alt+Shift+O' }),
+      later('navigate.previousWindow', 'Go to Previous Window'),
+      sep(),
+      later('navigate.goToSource', 'Go to Source'),
+      editorItem(ctx, 'navigate.goToDeclaration', 'Go to Declaration', 'editor.action.revealDefinition', 'F12'),
+      later('navigate.goToSuper', 'Go to Super Implementation'),
+      sep(),
+      later('navigate.lastEdit', 'Last Edit Location'),
+      editorItem(ctx, 'navigate.back', 'Back', 'cursorUndo'),
+      editorItem(ctx, 'navigate.forward', 'Forward', 'cursorRedo'),
+      sep(),
+      editorItem(ctx, 'navigate.goToLine', 'Go to Line...', 'editor.action.gotoLine', 'Mod+G'),
+      later('navigate.toggleBookmark', 'Toggle Bookmark', { shortcut: 'Mod+Shift+M' }),
+      later('navigate.bookmarkNext', 'Bookmark History Popup Next', { shortcut: 'Mod+Shift+.' }),
+      later('navigate.bookmarkPrevious', 'Bookmark History Popup Previous', { shortcut: 'Mod+Shift+,' }),
+      sep(),
+      editorItem(ctx, 'navigate.nextError', 'Next Error', 'editor.action.marker.next', 'F8'),
+      editorItem(ctx, 'navigate.previousError', 'Previous Error', 'editor.action.marker.prev', 'Shift+F8'),
+      sep(),
+      later('navigate.selectInProjects', 'Select in Projects', { shortcut: 'Mod+Shift+1' }),
+      later('navigate.selectInFiles', 'Select in Files', { shortcut: 'Mod+Shift+2' }),
+      later('navigate.selectInFavorites', 'Select in Favorites', { shortcut: 'Mod+Shift+3' }),
+    ],
+  },
+  {
+    id: 'source',
+    label: 'Source',
+    mnemonic: 's',
+    items: (ctx) => [
+      editorItem(ctx, 'source.format', 'Format', 'editor.action.formatDocument', 'Alt+Shift+F'),
+      editorItem(ctx, 'source.removeTrailing', 'Remove Trailing Spaces', 'editor.action.trimTrailingWhitespace'),
+      editorItem(ctx, 'source.shiftLeft', 'Shift Left', 'editor.action.outdentLines'),
+      editorItem(ctx, 'source.shiftRight', 'Shift Right', 'editor.action.indentLines'),
+      editorItem(ctx, 'source.moveUp', 'Move Up', 'editor.action.moveLinesUpAction', 'Alt+ArrowUp'),
+      editorItem(ctx, 'source.moveDown', 'Move Down', 'editor.action.moveLinesDownAction', 'Alt+ArrowDown'),
+      later('source.moveElementUp', 'Move Code Element Up', { shortcut: 'Alt+Shift+PageUp' }),
+      later('source.moveElementDown', 'Move Code Element Down', { shortcut: 'Alt+Shift+PageDown' }),
+      editorItem(ctx, 'source.duplicateUp', 'Duplicate Up', 'editor.action.copyLinesUpAction'),
+      editorItem(ctx, 'source.duplicateDown', 'Duplicate Down', 'editor.action.copyLinesDownAction'),
+      editorItem(ctx, 'source.toggleComment', 'Toggle Comment', 'editor.action.commentLine', 'Mod+/'),
+      sep(),
+      editorItem(ctx, 'source.completeCode', 'Complete Code...', 'editor.action.triggerSuggest', 'Mod+Space'),
+      later('source.insertCode', 'Insert Code...'),
+      editorItem(ctx, 'source.fixCode', 'Fix Code...', 'editor.action.quickFix', 'Alt+Enter'),
+      editorItem(ctx, 'source.showParameters', 'Show Method Parameters', 'editor.action.triggerParameterHints', 'Mod+Shift+Space'),
+      later('source.showDocumentation', 'Show Documentation'),
+      sep(),
+      later('source.nextMatchingWord', 'Insert Next Matching Word'),
+      later('source.previousMatchingWord', 'Insert Previous Matching Word'),
+      sep(),
+      later('source.scanExternal', 'Scan for External Changes'),
+    ],
+  },
+  {
+    id: 'refactor',
+    label: 'Refactor',
+    mnemonic: 'r',
+    items: (ctx) => [
+      item('refactor.rename', 'Rename...', !!ctx.usageTarget, { shortcut: 'Mod+R', hint: ctx.usageTarget ? undefined : 'Select an entity, view or webservice of the project first' }),
+      later('refactor.move', 'Move...', { shortcut: 'Mod+M' }),
+      later('refactor.copy', 'Copy...', { shortcut: 'Alt+C' }),
+      item('refactor.safeDelete', 'Safely Delete...', !!ctx.usageTarget, { shortcut: 'Alt+Delete', hint: ctx.usageTarget ? undefined : 'Select an entity, view or webservice of the project first' }),
+    ],
+  },
+  {
+    id: 'team',
+    label: 'Team',
+    mnemonic: 't',
+    items: () => [
+      later('team.shelve', 'Shelve Changes'),
+    ],
+  },
+  {
+    id: 'tools',
+    label: 'Tools',
+    mnemonic: 'o',
+    items: (ctx) => [
+      item('tools.generateUuid', 'Generate UUID', true, { shortcut: 'Mod+Shift+U' }),
+      item('tools.restClient', 'REST Client', ctx.hasProject, { hint: ctx.hasProject ? 'Call the entity web services of the project' : undefined }),
+      {
+        id: 'tools.toolsMenu',
+        kind: 'submenu',
+        label: 'Tools',
+        enabled: false,
+        hint: NOT_YET_AVAILABLE,
+        children: [later('tools.applyPatch', 'Apply Diff Patch...'), later('tools.diff', 'Diff...'), later('tools.addFavorites', 'Add to Favorites'), later('tools.openTerminal', 'Open in Terminal')],
+      },
+      later('tools.reportDatasources', 'Report Datasources'),
+      later('tools.dtds', 'DTDs and XML Schemas'),
+      laterSub('tools.palette', 'Palette'),
+      later('tools.dependencyGraph', 'Create Dependency Graph...'),
+      sep(),
+      {
+        id: 'tools.nativeTools',
+        kind: 'submenu',
+        label: 'Native Tools',
+        enabled: false,
+        hint: NOT_YET_AVAILABLE,
+        children: [later('tools.refreshNativeTools', 'Re-fresh Native Tools'), later('tools.nativeToolsStatus', 'View Native Tools Status'), later('tools.nativeToolsDirectory', 'Open Native Tools Directory')],
+      },
+      sep(),
+      // Dito Designer's own commands have no counterpart in the original menus; they sit in one block above Plugins.
+      item('file.projectProperties', 'Project Properties', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
+      item('project.deploy', 'Deploy...', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
+      item('project.buildDeploy', 'Build and Deploy...', ctx.hasProject && !ctx.transpileRunning, { shortcut: 'Mod+Shift+F9', hint: ctx.hasProject ? undefined : noProjectHint }),
+      item('tools.transpilePartial', 'Transpile (Partial)', transpileEnabled(ctx), { hint: transpileEnabled(ctx) ? undefined : transpileHint(ctx) }),
+      item('tools.transpileFull', 'Transpile (Full)', transpileEnabled(ctx), { hint: transpileEnabled(ctx) ? undefined : transpileHint(ctx) }),
+      {
+        id: 'tools.engine',
+        kind: 'submenu',
+        label: 'Transpiler',
+        enabled: true,
+        children: [
+          item('tools.engine', 'ADITO transpiler (default)', true, { id: 'tools.engine.official', arg: 'official', check: 'radio', checked: ctx.engine === 'official' }),
+          item('tools.engine', 'Dito_Transpiler (built in)', true, { id: 'tools.engine.experimental', arg: 'experimental', check: 'radio', checked: ctx.engine === 'experimental' }),
+        ],
+      },
+      item('tools.compareReference', 'Transpile Match with Reference...', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
+      later('tools.exportStructure', 'Export Project Structure'),
+      {
+        id: 'view.theme',
+        kind: 'submenu',
+        label: 'Theme',
+        enabled: true,
+        children: [
+          item('view.theme', 'Dark (Night Owl)', true, { id: 'view.theme.dark', arg: 'dark', check: 'radio', checked: !ctx.colorTheme && ctx.theme === 'dark' }),
+          item('view.theme', 'Light', true, { id: 'view.theme.light', arg: 'light', check: 'radio', checked: !ctx.colorTheme && ctx.theme === 'light' }),
+          item('view.theme', 'Lion in der City', true, { id: 'view.theme.lion', arg: 'lion', check: 'radio', checked: !ctx.colorTheme && ctx.theme === 'lion' }),
+          ...(ctx.customThemes ?? []).map((t) => item('view.theme', t.name, true, { id: `view.theme.custom.${t.id}`, arg: `custom:${t.id}`, check: 'radio', checked: ctx.colorTheme === t.id })),
+        ],
+      },
+      item('help.localData', 'Local Data...', true),
+      item('help.openBackupFolder', 'Open Backup Folder', true),
+      sep(),
+      item('tools.plugins', 'Plugins', true),
+      sep(),
+      item('tools.options', 'Options', true),
+    ],
+  },
+  {
+    id: 'window',
+    label: 'Window',
+    mnemonic: 'w',
+    items: (ctx) => [
+      windowItem('projects', 'Projects', 'Mod+1'),
+      later('window.files', 'Files', { shortcut: 'Mod+2' }),
+      later('window.favorites', 'Favorites', { shortcut: 'Mod+3' }),
+      windowItem('output', 'Output', 'Mod+4'),
+      windowItem('services', 'Services', 'Mod+5'),
+      windowItem('scanservices', 'Scan Services'),
+      windowItem('navigator', 'Navigator', 'Mod+7'),
+      windowItem('editor', 'Editor', 'Mod+0'),
+      later('window.debugger', 'Debugger'),
+      later('window.palette', 'Palette', { shortcut: 'Mod+Shift+8' }),
+      later('window.userhelp', 'Userhelp'),
+      windowItem('properties', 'Properties', 'Mod+Shift+7'),
+      later('window.bookmarks', 'Bookmarks'),
+      sep(),
+      {
+        id: 'window.ideTools',
+        kind: 'submenu',
+        label: 'IDE Tools',
+        enabled: true,
+        children: [
+          windowItem('idelog', 'IDE Log'),
+          sep(),
+          windowItem('notifications', 'Notifications'),
+          later('window.exceptionReporter', 'Exception Reporter'),
+          later('window.terminal', 'Terminal'),
+          later('window.processes', 'Processes'),
+          sep(),
+          windowItem('problems', 'Problems'),
+        ],
+      },
+      laterSub('window.reportDesigner', 'Report designer'),
+      sep(),
+      {
+        id: 'window.configure',
+        kind: 'submenu',
+        label: 'Configure Window',
+        enabled: true,
+        children: [
+          later('window.maximize', 'Maximize', { shortcut: 'Shift+Escape' }),
+          later('window.floatWindow', 'Float'),
+          later('window.minimize', 'Minimize'),
+          later('window.dockWindow', 'Dock', { shortcut: 'Alt+Shift+D' }),
+          sep(),
+          ...FLOAT_ENTRIES.map(([view, label]) => item('window.float', ctx.floating?.includes(view) ? `Dock ${label}` : `Float ${label}`, true, { id: `window.float.${view}`, arg: view })),
+          item('window.dockAll', 'Dock All Floating Windows', (ctx.floating?.length ?? 0) > 0),
+          item('window.moveEditor', 'Move Editor to New Window', !!ctx.canMoveEditor, { hint: ctx.canMoveEditor ? undefined : 'Open an object or file first' }),
+          item('window.dockEditors', 'Dock All Editor Windows', (ctx.editorWindows ?? 0) > 0, { hint: (ctx.editorWindows ?? 0) > 0 ? undefined : 'No editor is in a window of its own' }),
+          sep(),
+          item('window.panel.wider', 'Make Active Panel Wider', true),
+          item('window.panel.narrower', 'Make Active Panel Narrower', true),
+          item('window.panel.taller', 'Make Active Panel Taller', true),
+          item('window.panel.shorter', 'Make Active Panel Shorter', true),
+          sep(),
+          later('window.clone', 'Clone'),
+          later('window.splitDocument', 'Split Document'),
+        ],
+      },
+      {
+        id: 'window.layouts',
+        kind: 'submenu',
+        label: 'Layouts',
+        enabled: true,
+        children: [
+          ...LAYOUT_PRESETS.map((p) => item('window.layout.preset', p.label, true, { id: `window.layout.preset.${p.id}`, arg: p.id })),
+          sep(),
+          ...(ctx.savedLayouts ?? []).map((name) => item('window.layout.load', name, true, { id: `window.layout.load.${name}`, arg: name })),
+          item('window.layout.save', 'Save Current Layout...', true),
+          ...((ctx.savedLayouts ?? []).length > 0 ? [item('window.layout.delete', 'Delete a Saved Layout...', true)] : []),
+        ],
+      },
+      item('window.resetLayout', 'Reset Panel Layout', true, { hint: 'Put every panel back where it starts' }),
+      sep(),
+      later('window.closeWindow', 'Close Window', { shortcut: 'Mod+W' }),
+      later('window.closeAllDocuments', 'Close All Documents', { shortcut: 'Mod+Shift+W' }),
+      later('window.closeOtherDocuments', 'Close Other Documents'),
+      laterSub('window.documentGroups', 'Document Groups'),
+      later('window.documents', 'Documents...', { shortcut: 'Shift+F4' }),
+    ],
+  },
+  {
+    id: 'help',
+    label: 'Help',
+    mnemonic: 'h',
+    items: () => [
+      item('help.checkUpdates', 'Check for Updates', true),
+      item('help.openLogFolder', 'Open Log Folder', true),
+      later('help.bugReport', 'Send Bug Report'),
+      sep(),
+      later('help.userGuide', 'Show Documentation'),
+      sep(),
+      item('help.about', 'About Dito Designer', true),
+    ],
+  },
+]
+CORE_MENUS.forEach((menu, i) => registerMainMenu({ ...menu, order: (i + 1) * 10 }))
+
+// Debug-Menü: nur im Dev-Build, vor Help. Plugins hängen sich mit registerMenuContribution({ menu: 'debug' }) ein.
+registerMainMenu({
+  id: 'debug',
+  label: 'Debug',
+  mnemonic: 'd',
+  order: 95,
+  when: (ctx) => ctx.devBuild ?? isDevBuild(),
+  items: (ctx) => [
+    {
+      id: 'debug.index',
+      kind: 'submenu',
+      label: 'Index',
+      enabled: true,
+      children: [
+        item('debug.rebuildIndex', 'Rebuild Index', ctx.hasProject, { hint: ctx.hasProject ? 'Delete the project index and build it again, like on opening the project' : noProjectHint }),
+        item('debug.dumpIndex', 'Dump Index as JSON', ctx.hasProject, { hint: ctx.hasProject ? 'Write everything the index holds into the log folder and open the folder' : noProjectHint }),
+      ],
+    },
+  ],
+})
+
 export function buildMenus(ctx: MenuContext): MenuDef[] {
   separatorCount = 0
-  const noProjectHint = NO_PROJECT_HINT
-  const transpileEnabled = ctx.hasProject && !ctx.transpileRunning
-  const transpileHint = ctx.transpileRunning ? 'A transpile is already running' : noProjectHint
+  const menus: MenuDef[] = [...mainMenus]
+    .sort((a, b) => a.order - b.order)
+    .filter((m) => m.when?.(ctx) ?? true)
+    .map((m) => ({ id: m.id, label: m.label, mnemonic: m.mnemonic, items: m.items(ctx) }))
 
-  const menus: MenuDef[] = [
-    {
-      id: 'file',
-      label: 'File',
-      mnemonic: 'f',
-      items: [
-        item('file.new', 'New', ctx.hasProject, { shortcut: 'Mod+N', hint: ctx.hasProject ? undefined : noProjectHint }),
-        item('file.newProject', 'New Project', true, { shortcut: 'Mod+Shift+N' }),
-        sep(),
-        item('file.find', 'Find', ctx.hasProject, { shortcut: 'Mod+O', hint: ctx.hasProject ? undefined : noProjectHint }),
-        item('file.openProject', 'Open Project', true, { shortcut: 'Mod+Shift+O' }),
-        {
-          id: 'file.recent',
-          kind: 'submenu',
-          label: 'Open Recent Project',
-          enabled: true,
-          children: [
-            item('file.openWorkspace', 'Projects from Folder...', true, { hint: 'Choose the folder with all your projects and pick the ones to show in the tree' }),
-            sep(),
-            ...(ctx.workspaceFolders ?? []).map((folder, i) => item('file.openWorkspaceFolder', folder, true, { arg: folder, id: `file.openWorkspaceFolder.${i}`, hint: 'Pick the projects of this folder' })),
-            ...((ctx.workspaceFolders ?? []).length > 0 ? [sep()] : []),
-            ...(ctx.recentProject
-              ? [item('file.openRecent', ctx.recentProject, true, { arg: ctx.recentProject, id: 'file.openRecent.0' })]
-              : [item('file.openRecent', '(none)', false, { hint: 'No project opened yet', id: 'file.openRecent.none' })]),
-          ],
-        },
-        sep(),
-        item('file.closeProject', 'Close Project', ctx.hasProject, {
-          hint: ctx.hasProject ? (ctx.projectName ? `Closes ${ctx.projectName}` : undefined) : noProjectHint,
-        }),
-        item('file.closeOtherProjects', 'Close Other Projects', (ctx.projectCount ?? 0) > 1),
-        item('file.closeAllProjects', 'Close All Projects', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
-        sep(),
-        later('file.projectGroups', 'Project Groups...'),
-        sep(),
-        item('file.importProject', 'Import Project...', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
-        item('file.exportProject', 'Export Project...', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
-        sep(),
-        // The original binds Save to Ctrl+Shift+S and Save All to Ctrl+S; kept that way on purpose.
-        item('file.save', 'Save', ctx.hasSelection, { shortcut: 'Mod+Shift+S', hint: ctx.hasSelection ? undefined : 'No object open' }),
-        later('file.saveAs', 'Save As...'),
-        item('file.saveAll', 'Save All', ctx.hasUnsaved, { shortcut: 'Mod+S', hint: ctx.hasUnsaved ? undefined : 'Nothing to save' }),
-        sep(),
-        item('file.reloadAll', 'Reload All from Disk', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
-        sep(),
-        item('file.exit', 'Exit', true),
-      ],
-    },
-    {
-      id: 'edit',
-      label: 'Edit',
-      mnemonic: 'e',
-      items: [
-        item('edit.undo', 'Undo', ctx.canUndo, { shortcut: 'Mod+Z', hint: ctx.canUndo ? undefined : 'Nothing to undo' }),
-        // The original binds Redo to Ctrl+Y; Mod+Shift+Z stays as the usual macOS/Monaco alias.
-        item('edit.redo', 'Redo', ctx.canRedo, {
-          shortcut: 'Mod+Y',
-          extraShortcuts: ['Mod+Shift+Z'],
-          hint: ctx.canRedo ? undefined : 'Nothing to redo',
-        }),
-        sep(),
-        item('edit.cut', 'Cut', true, { shortcut: 'Mod+X', nativeShortcut: true }),
-        item('edit.copy', 'Copy', true, { shortcut: 'Mod+C', nativeShortcut: true }),
-        item('edit.paste', 'Paste', true, { shortcut: 'Mod+V', nativeShortcut: true }),
-        later('edit.pasteFormatted', 'Paste Formatted'),
-        later('edit.pasteFromHistory', 'Paste from History'),
-        later('edit.pasteAsLines', 'Paste as Lines'),
-        editorItem(ctx, 'edit.delete', 'Delete', 'deleteRight', 'Delete'),
-        editorItem(ctx, 'edit.selectAll', 'Select All', 'editor.action.selectAll', 'Mod+A'),
-        later('edit.selectIdentifier', 'Select Identifier'),
-        sep(),
-        editorItem(ctx, 'edit.findSelection', 'Find Selection', 'actions.findWithSelection'),
-        editorItem(ctx, 'edit.findNext', 'Find Next', 'editor.action.nextMatchFindAction', 'F3'),
-        editorItem(ctx, 'edit.findPrevious', 'Find Previous', 'editor.action.previousMatchFindAction', 'Shift+F3'),
-        sep(),
-        editorItem(ctx, 'edit.find', 'Find...', 'actions.find', 'Mod+F'),
-        editorItem(ctx, 'edit.replace', 'Replace...', 'editor.action.startFindReplace', 'Mod+H'),
-        item('refactor.usages', 'Find Usages', !!ctx.usageTarget, { shortcut: 'Alt+F7', hint: ctx.usageTarget ? undefined : 'Select an entity, view or webservice of the project first' }),
-        sep(),
-        later('edit.findInProjects', 'Find in Projects...', { shortcut: 'Mod+Shift+F' }),
-        later('edit.replaceInProjects', 'Replace in Projects...', { shortcut: 'Mod+Shift+H' }),
-      ],
-    },
-    {
-      id: 'view',
-      label: 'View',
-      mnemonic: 'v',
-      items: [
-        laterSub('view.editors', 'Editors'),
-        laterSub('view.split', 'Split'),
-        {
-          id: 'view.codeFolds',
-          kind: 'submenu',
-          label: 'Code Folds',
-          enabled: !!ctx.hasCodeEditor,
-          hint: ctx.hasCodeEditor ? undefined : 'Open a code editor first',
-          children: [
-            editorItem(ctx, 'view.fold', 'Collapse Fold', 'editor.fold'),
-            editorItem(ctx, 'view.unfold', 'Expand Fold', 'editor.unfold'),
-            editorItem(ctx, 'view.foldAll', 'Collapse All', 'editor.foldAll'),
-            editorItem(ctx, 'view.unfoldAll', 'Expand All', 'editor.unfoldAll'),
-          ],
-        },
-        {
-          id: 'view.toolbars',
-          kind: 'submenu',
-          label: 'Toolbars',
-          enabled: true,
-          children: [
-            ...TOOLBAR_GROUPS.map((g) =>
-              item('view.toolbarGroup', g.label, true, { id: `view.toolbar.${g.id}`, arg: g.id, check: 'checkbox', checked: ctx.toolbar ? ctx.toolbar.groups[g.id] : g.id !== 'performance' }),
-            ),
-            item('view.toolbarSmall', 'Small Toolbar Icons', true, { check: 'checkbox', checked: ctx.toolbar ? ctx.toolbar.smallIcons : true }),
-            sep(),
-            item('view.resetToolbars', 'Reset Toolbars', true),
-            later('view.customizeToolbars', 'Customize'),
-          ],
-        },
-        sep(),
-        editorPref(ctx, 'lineNumbers', 'Toggle Line Numbers'),
-        editorPref(ctx, 'nonPrintable', 'Toggle Non-printable Characters'),
-        laterCheck('view.breadcrumbs', 'Show Breadcrumbs'),
-        editorPref(ctx, 'indentGuides', 'Show Indent Guide Lines'),
-        editorPref(ctx, 'inlineHints', 'Show Inline Hints'),
-        laterCheck('view.diffSidebar', 'Show Diff Sidebar'),
-        laterCheck('view.versioningLabels', 'Show Versioning Labels'),
-        laterCheck('view.syncEditor', 'Synchronize Editor with Views'),
-        sep(),
-        item('view.onlyEditor', 'Show Only Editor', true, { shortcut: 'Mod+Shift+Enter', check: 'checkbox', checked: !!ctx.onlyEditor }),
-        item('view.fullScreen', 'Full Screen', true, { shortcut: 'F11', check: 'checkbox', checked: !!ctx.fullScreen }),
-      ],
-    },
-    {
-      id: 'navigate',
-      label: 'Navigate',
-      mnemonic: 'n',
-      items: [
-        later('navigate.previous', 'Previous', { shortcut: 'Mod+Alt+ArrowLeft' }),
-        later('navigate.next', 'Next', { shortcut: 'Mod+Alt+ArrowRight' }),
-        item('file.find', 'Go to File...', ctx.hasProject, { id: 'navigate.goToFile', shortcut: 'Alt+Shift+O', extraShortcuts: ['Mod+P'], hint: ctx.hasProject ? undefined : noProjectHint }),
-        later('navigate.goToType', 'Go to Type...', { shortcut: 'Mod+J' }),
-        later('navigate.goToSymbol', 'Go to Symbol...', { shortcut: 'Mod+Alt+Shift+O' }),
-        later('navigate.previousWindow', 'Go to Previous Window'),
-        sep(),
-        later('navigate.goToSource', 'Go to Source'),
-        editorItem(ctx, 'navigate.goToDeclaration', 'Go to Declaration', 'editor.action.revealDefinition', 'F12'),
-        later('navigate.goToSuper', 'Go to Super Implementation'),
-        sep(),
-        later('navigate.lastEdit', 'Last Edit Location'),
-        editorItem(ctx, 'navigate.back', 'Back', 'cursorUndo'),
-        editorItem(ctx, 'navigate.forward', 'Forward', 'cursorRedo'),
-        sep(),
-        editorItem(ctx, 'navigate.goToLine', 'Go to Line...', 'editor.action.gotoLine', 'Mod+G'),
-        later('navigate.toggleBookmark', 'Toggle Bookmark', { shortcut: 'Mod+Shift+M' }),
-        later('navigate.bookmarkNext', 'Bookmark History Popup Next', { shortcut: 'Mod+Shift+.' }),
-        later('navigate.bookmarkPrevious', 'Bookmark History Popup Previous', { shortcut: 'Mod+Shift+,' }),
-        sep(),
-        editorItem(ctx, 'navigate.nextError', 'Next Error', 'editor.action.marker.next', 'F8'),
-        editorItem(ctx, 'navigate.previousError', 'Previous Error', 'editor.action.marker.prev', 'Shift+F8'),
-        sep(),
-        later('navigate.selectInProjects', 'Select in Projects', { shortcut: 'Mod+Shift+1' }),
-        later('navigate.selectInFiles', 'Select in Files', { shortcut: 'Mod+Shift+2' }),
-        later('navigate.selectInFavorites', 'Select in Favorites', { shortcut: 'Mod+Shift+3' }),
-      ],
-    },
-    {
-      id: 'source',
-      label: 'Source',
-      mnemonic: 's',
-      items: [
-        editorItem(ctx, 'source.format', 'Format', 'editor.action.formatDocument', 'Alt+Shift+F'),
-        editorItem(ctx, 'source.removeTrailing', 'Remove Trailing Spaces', 'editor.action.trimTrailingWhitespace'),
-        editorItem(ctx, 'source.shiftLeft', 'Shift Left', 'editor.action.outdentLines'),
-        editorItem(ctx, 'source.shiftRight', 'Shift Right', 'editor.action.indentLines'),
-        editorItem(ctx, 'source.moveUp', 'Move Up', 'editor.action.moveLinesUpAction', 'Alt+ArrowUp'),
-        editorItem(ctx, 'source.moveDown', 'Move Down', 'editor.action.moveLinesDownAction', 'Alt+ArrowDown'),
-        later('source.moveElementUp', 'Move Code Element Up', { shortcut: 'Alt+Shift+PageUp' }),
-        later('source.moveElementDown', 'Move Code Element Down', { shortcut: 'Alt+Shift+PageDown' }),
-        editorItem(ctx, 'source.duplicateUp', 'Duplicate Up', 'editor.action.copyLinesUpAction'),
-        editorItem(ctx, 'source.duplicateDown', 'Duplicate Down', 'editor.action.copyLinesDownAction'),
-        editorItem(ctx, 'source.toggleComment', 'Toggle Comment', 'editor.action.commentLine', 'Mod+/'),
-        sep(),
-        editorItem(ctx, 'source.completeCode', 'Complete Code...', 'editor.action.triggerSuggest', 'Mod+Space'),
-        later('source.insertCode', 'Insert Code...'),
-        editorItem(ctx, 'source.fixCode', 'Fix Code...', 'editor.action.quickFix', 'Alt+Enter'),
-        editorItem(ctx, 'source.showParameters', 'Show Method Parameters', 'editor.action.triggerParameterHints', 'Mod+Shift+Space'),
-        later('source.showDocumentation', 'Show Documentation'),
-        sep(),
-        later('source.nextMatchingWord', 'Insert Next Matching Word'),
-        later('source.previousMatchingWord', 'Insert Previous Matching Word'),
-        sep(),
-        later('source.scanExternal', 'Scan for External Changes'),
-      ],
-    },
-    {
-      id: 'refactor',
-      label: 'Refactor',
-      mnemonic: 'r',
-      items: [
-        item('refactor.rename', 'Rename...', !!ctx.usageTarget, { shortcut: 'Mod+R', hint: ctx.usageTarget ? undefined : 'Select an entity, view or webservice of the project first' }),
-        later('refactor.move', 'Move...', { shortcut: 'Mod+M' }),
-        later('refactor.copy', 'Copy...', { shortcut: 'Alt+C' }),
-        item('refactor.safeDelete', 'Safely Delete...', !!ctx.usageTarget, { shortcut: 'Alt+Delete', hint: ctx.usageTarget ? undefined : 'Select an entity, view or webservice of the project first' }),
-      ],
-    },
-    {
-      id: 'team',
-      label: 'Team',
-      mnemonic: 't',
-      items: [
-        later('team.shelve', 'Shelve Changes'),
-      ],
-    },
-    {
-      id: 'tools',
-      label: 'Tools',
-      mnemonic: 'o',
-      items: [
-        item('tools.generateUuid', 'Generate UUID', true, { shortcut: 'Mod+Shift+U' }),
-        item('tools.restClient', 'REST Client', ctx.hasProject, { hint: ctx.hasProject ? 'Call the entity web services of the project' : undefined }),
-        {
-          id: 'tools.toolsMenu',
-          kind: 'submenu',
-          label: 'Tools',
-          enabled: false,
-          hint: NOT_YET_AVAILABLE,
-          children: [later('tools.applyPatch', 'Apply Diff Patch...'), later('tools.diff', 'Diff...'), later('tools.addFavorites', 'Add to Favorites'), later('tools.openTerminal', 'Open in Terminal')],
-        },
-        later('tools.reportDatasources', 'Report Datasources'),
-        later('tools.dtds', 'DTDs and XML Schemas'),
-        laterSub('tools.palette', 'Palette'),
-        later('tools.dependencyGraph', 'Create Dependency Graph...'),
-        sep(),
-        {
-          id: 'tools.nativeTools',
-          kind: 'submenu',
-          label: 'Native Tools',
-          enabled: false,
-          hint: NOT_YET_AVAILABLE,
-          children: [later('tools.refreshNativeTools', 'Re-fresh Native Tools'), later('tools.nativeToolsStatus', 'View Native Tools Status'), later('tools.nativeToolsDirectory', 'Open Native Tools Directory')],
-        },
-        sep(),
-        // Dito Designer's own commands have no counterpart in the original menus; they sit in one block above Plugins.
-        item('file.projectProperties', 'Project Properties', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
-        item('project.deploy', 'Deploy...', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
-        item('project.buildDeploy', 'Build and Deploy...', ctx.hasProject && !ctx.transpileRunning, { shortcut: 'Mod+Shift+F9', hint: ctx.hasProject ? undefined : noProjectHint }),
-        item('tools.transpilePartial', 'Transpile (Partial)', transpileEnabled, { hint: transpileEnabled ? undefined : transpileHint }),
-        item('tools.transpileFull', 'Transpile (Full)', transpileEnabled, { hint: transpileEnabled ? undefined : transpileHint }),
-        {
-          id: 'tools.engine',
-          kind: 'submenu',
-          label: 'Transpiler',
-          enabled: true,
-          children: [
-            item('tools.engine', 'ADITO transpiler (default)', true, { id: 'tools.engine.official', arg: 'official', check: 'radio', checked: ctx.engine === 'official' }),
-            item('tools.engine', 'Dito_Transpiler (built in)', true, { id: 'tools.engine.experimental', arg: 'experimental', check: 'radio', checked: ctx.engine === 'experimental' }),
-          ],
-        },
-        item('tools.compareReference', 'Transpile Match with Reference...', ctx.hasProject, { hint: ctx.hasProject ? undefined : noProjectHint }),
-        later('tools.exportStructure', 'Export Project Structure'),
-        {
-          id: 'view.theme',
-          kind: 'submenu',
-          label: 'Theme',
-          enabled: true,
-          children: [
-            item('view.theme', 'Dark (Night Owl)', true, { id: 'view.theme.dark', arg: 'dark', check: 'radio', checked: !ctx.colorTheme && ctx.theme === 'dark' }),
-            item('view.theme', 'Light', true, { id: 'view.theme.light', arg: 'light', check: 'radio', checked: !ctx.colorTheme && ctx.theme === 'light' }),
-            item('view.theme', 'Lion in der City', true, { id: 'view.theme.lion', arg: 'lion', check: 'radio', checked: !ctx.colorTheme && ctx.theme === 'lion' }),
-            ...(ctx.customThemes ?? []).map((t) => item('view.theme', t.name, true, { id: `view.theme.custom.${t.id}`, arg: `custom:${t.id}`, check: 'radio', checked: ctx.colorTheme === t.id })),
-          ],
-        },
-        item('help.localData', 'Local Data...', true),
-        item('help.openBackupFolder', 'Open Backup Folder', true),
-        sep(),
-        item('tools.plugins', 'Plugins', true),
-        sep(),
-        item('tools.options', 'Options', true),
-      ],
-    },
-    {
-      id: 'window',
-      label: 'Window',
-      mnemonic: 'w',
-      items: [
-        windowItem('projects', 'Projects', 'Mod+1'),
-        later('window.files', 'Files', { shortcut: 'Mod+2' }),
-        later('window.favorites', 'Favorites', { shortcut: 'Mod+3' }),
-        windowItem('output', 'Output', 'Mod+4'),
-        windowItem('services', 'Services', 'Mod+5'),
-        windowItem('scanservices', 'Scan Services'),
-        windowItem('navigator', 'Navigator', 'Mod+7'),
-        windowItem('editor', 'Editor', 'Mod+0'),
-        later('window.debugger', 'Debugger'),
-        later('window.palette', 'Palette', { shortcut: 'Mod+Shift+8' }),
-        later('window.userhelp', 'Userhelp'),
-        windowItem('properties', 'Properties', 'Mod+Shift+7'),
-        later('window.bookmarks', 'Bookmarks'),
-        sep(),
-        {
-          id: 'window.ideTools',
-          kind: 'submenu',
-          label: 'IDE Tools',
-          enabled: true,
-          children: [
-            windowItem('idelog', 'IDE Log'),
-            sep(),
-            windowItem('notifications', 'Notifications'),
-            later('window.exceptionReporter', 'Exception Reporter'),
-            later('window.terminal', 'Terminal'),
-            later('window.processes', 'Processes'),
-            sep(),
-            windowItem('problems', 'Problems'),
-          ],
-        },
-        laterSub('window.reportDesigner', 'Report designer'),
-        sep(),
-        {
-          id: 'window.configure',
-          kind: 'submenu',
-          label: 'Configure Window',
-          enabled: true,
-          children: [
-            later('window.maximize', 'Maximize', { shortcut: 'Shift+Escape' }),
-            later('window.floatWindow', 'Float'),
-            later('window.minimize', 'Minimize'),
-            later('window.dockWindow', 'Dock', { shortcut: 'Alt+Shift+D' }),
-            sep(),
-            ...FLOAT_ENTRIES.map(([view, label]) => item('window.float', ctx.floating?.includes(view) ? `Dock ${label}` : `Float ${label}`, true, { id: `window.float.${view}`, arg: view })),
-            item('window.dockAll', 'Dock All Floating Windows', (ctx.floating?.length ?? 0) > 0),
-            item('window.moveEditor', 'Move Editor to New Window', !!ctx.canMoveEditor, { hint: ctx.canMoveEditor ? undefined : 'Open an object or file first' }),
-            item('window.dockEditors', 'Dock All Editor Windows', (ctx.editorWindows ?? 0) > 0, { hint: (ctx.editorWindows ?? 0) > 0 ? undefined : 'No editor is in a window of its own' }),
-            sep(),
-            later('window.clone', 'Clone'),
-            later('window.splitDocument', 'Split Document'),
-          ],
-        },
-        item('window.resetLayout', 'Reset Windows', true),
-        sep(),
-        later('window.closeWindow', 'Close Window', { shortcut: 'Mod+W' }),
-        later('window.closeAllDocuments', 'Close All Documents', { shortcut: 'Mod+Shift+W' }),
-        later('window.closeOtherDocuments', 'Close Other Documents'),
-        laterSub('window.documentGroups', 'Document Groups'),
-        later('window.documents', 'Documents...', { shortcut: 'Shift+F4' }),
-      ],
-    },
-    {
-      id: 'help',
-      label: 'Help',
-      mnemonic: 'h',
-      items: [
-        item('help.checkUpdates', 'Check for Updates', true),
-        item('help.openLogFolder', 'Open Log Folder', true),
-        later('help.bugReport', 'Send Bug Report'),
-        sep(),
-        later('help.userGuide', 'Show Documentation'),
-        sep(),
-        item('help.about', 'About Dito Designer', true),
-      ],
-    },
-  ]
-  // Debug-Menü: nur im Dev-Build, vor Help. Plugins hängen sich mit registerMenuContribution({ menu: 'debug' }) ein.
-  if (ctx.devBuild ?? isDevBuild()) {
-    const debugMenu: MenuDef = {
-      id: 'debug',
-      label: 'Debug',
-      mnemonic: 'd',
-      items: [
-        {
-          id: 'debug.index',
-          kind: 'submenu',
-          label: 'Index',
-          enabled: true,
-          children: [
-            item('debug.rebuildIndex', 'Rebuild Index', ctx.hasProject, { hint: ctx.hasProject ? 'Delete the project index and build it again, like on opening the project' : noProjectHint }),
-            item('debug.dumpIndex', 'Dump Index as JSON', ctx.hasProject, { hint: ctx.hasProject ? 'Write everything the index holds into the log folder and open the folder' : noProjectHint }),
-          ],
-        },
-      ],
-    }
-    menus.splice(menus.length - 1, 0, debugMenu)
-  }
   // Beiträge aus dem Plugin-Register (z. B. Git im Menü Team) hinter die festen Einträge.
   return menus.map((m) => {
     const extra = getMenuContributions(m.id, ctx)

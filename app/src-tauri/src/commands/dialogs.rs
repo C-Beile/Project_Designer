@@ -7,6 +7,7 @@ use platform::{FileDialog, FileFilter, OpenFileOptions, PickFolderOptions};
 /// a Tauri command - see `p3-platform-notes.md`). Returns `None` on cancel, which the frontend
 /// treats as "nothing changed", not an error.
 #[tauri::command]
+#[specta::specta]
 pub fn pick_project_folder(title: Option<String>) -> Option<String> {
     crate::commands::guard("pick_project_folder", || {
     let title = title.filter(|t| !t.trim().is_empty()).unwrap_or_else(|| "Open Forge project".to_string());
@@ -18,6 +19,7 @@ pub fn pick_project_folder(title: Option<String>) -> Option<String> {
 
 /// Open Project: the same folder picker, with several folders selectable at once; empty on cancel.
 #[tauri::command]
+#[specta::specta]
 pub fn pick_project_folders(title: Option<String>) -> Vec<String> {
     crate::commands::guard("pick_project_folders", || {
     let title = title.filter(|t| !t.trim().is_empty()).unwrap_or_else(|| "Open projects".to_string());
@@ -35,6 +37,7 @@ pub fn platform_file_dialog() -> platform::native::RfdFileDialog {
 
 /// Services tab: native file picker for the two export files and the SSH key; `None` on cancel.
 #[tauri::command]
+#[specta::specta]
 pub fn pick_file(title: Option<String>, label: String, extensions: Vec<String>) -> Option<String> {
     crate::commands::guard("pick_file", || {
     platform_file_dialog()
@@ -49,6 +52,7 @@ pub fn pick_file(title: Option<String>, label: String, extensions: Vec<String>) 
 
 /// Native "save as" dialog for the export file; `None` on cancel.
 #[tauri::command]
+#[specta::specta]
 pub fn pick_save_file(title: Option<String>, default_name: String, label: String, extensions: Vec<String>) -> Option<String> {
     crate::commands::guard("pick_save_file", || {
     platform_file_dialog()

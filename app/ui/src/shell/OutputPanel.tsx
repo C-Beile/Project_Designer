@@ -6,6 +6,8 @@ import { RefactoringPanel, type RefactoringState } from './RefactoringPanel'
 import type { UsageDto } from '../wire/types'
 import { ScanServicesPanel } from '../diagnostics/ScanServicesPanel'
 import type { Problem } from '../problems/problemStore'
+import { Button, Dropdown, Input } from '../core/ui/controls'
+import { copyText } from '../core/clipboard'
 
 // Bottom tool window (manual chapter 7, screenshot 082). Like the original, a vertical button bar
 // sits left of the console (start, stop, exit, clear cache) - these four act on a server instance,
@@ -55,9 +57,9 @@ export function OutputTabs({
   return (
     <div className="forge-panel-tabs" role="tablist" aria-label="Output windows">
       {OUTPUT_MAIN_TABS.map((t) => (
-        <button
+        <Button variant="bare"
           key={t.id}
-          type="button"
+
           role="tab"
           aria-selected={active === t.id}
           className={`forge-panel-tab${active === t.id ? ' is-active' : ''}`}
@@ -69,7 +71,7 @@ export function OutputTabs({
               {problemCount}
             </span>
           ) : null}
-        </button>
+        </Button>
       ))}
     </div>
   )
@@ -79,9 +81,9 @@ const NOT_AVAILABLE_SERVER = 'Needs a running server instance - Dito Designer ca
 
 function SideButton({ label, title, disabled, pressed, onClick, children }: { label: string; title: string; disabled?: boolean; pressed?: boolean; onClick?: () => void; children: string }) {
   return (
-    <button type="button" className="forge-output-btn" aria-label={label} title={title} aria-pressed={pressed} disabled={disabled} onClick={onClick}>
+    <Button variant="bare" className="forge-output-btn" aria-label={label} title={title} aria-pressed={pressed} isDisabled={disabled} onClick={onClick}>
       {children}
-    </button>
+    </Button>
   )
 }
 
@@ -170,10 +172,9 @@ export function OutputBody({
   }
 
   async function copyAll() {
-    try {
-      await navigator.clipboard.writeText(shown.map((l) => l.text).join('\n'))
+    if (await copyText(shown.map((l) => l.text).join('\n'))) {
       setNotice('Copied to the clipboard.')
-    } catch {
+    } else {
       setNotice('The clipboard is not available.')
     }
   }
@@ -182,9 +183,9 @@ export function OutputBody({
     <div className="forge-output">
       <div className="forge-output-subtabs" role="tablist" aria-label="Output sources">
         {(ideLog ? [] : OUTPUT_SUB_TABS).map((t) => (
-          <button
+          <Button variant="bare"
             key={t.id}
-            type="button"
+
             role="tab"
             aria-selected={sub === t.id}
             className={`forge-output-subtab${sub === t.id ? ' is-active' : ''}`}
@@ -192,15 +193,11 @@ export function OutputBody({
           >
             {t.label}
             {(logs[t.id] ?? []).length > 0 ? <span className="forge-output-count">{logs[t.id].length}</span> : null}
-          </button>
+          </Button>
         ))}
         <span className="forge-output-filter">
-          <select aria-label="Show lines" value={level} onChange={(e) => setLevel(e.target.value as 'all' | 'warn' | 'error')}>
-            <option value="all">All</option>
-            <option value="warn">Warnings and errors</option>
-            <option value="error">Errors only</option>
-          </select>
-          <input type="text" aria-label="Filter output" placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <Dropdown value={level} aria-label="Show lines" options={[{ id: "all", label: "All" }, { id: "warn", label: "Warnings and errors" }, { id: "error", label: "Errors only" }]} onChange={(v) => setLevel(v as 'all' | 'warn' | 'error')} />
+          <Input type="text" aria-label="Filter output" placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
         </span>
       </div>
       <div className="forge-output-main">
@@ -277,7 +274,7 @@ export function OutputBody({
           x={logMenu.x}
           y={logMenu.y}
           onPick={(id) => {
-            if (id === 'copy') void navigator.clipboard?.writeText(logMenu.selection)
+            if (id === 'copy') void copyText(logMenu.selection)
             else if (id === 'copyAll') void copyAll()
             else if (id === 'wrap') setWrap((v) => !v)
             else if (id === 'clear') onClear(logSub)

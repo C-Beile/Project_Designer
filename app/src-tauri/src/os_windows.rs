@@ -30,7 +30,7 @@ pub struct ModalWindows(Mutex<Vec<String>>);
 #[derive(Default)]
 pub struct CloseGuards(Mutex<HashSet<String>>);
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, specta::Type)]
 pub struct OpenRequest {
     /// `float`, `dialog` or `editor`.
     pub kind: String,
@@ -46,6 +46,10 @@ pub struct OpenRequest {
     pub payload: Option<String>,
     /// Hintergrundfarbe `#rrggbb`, damit das neue Fenster nicht weiß aufblitzt, bevor die Seite lädt.
     pub background: Option<String>,
+    /// Höchstzahl gleichzeitiger Popups (`float` und `dialog`) laut `app/config/limits.toml`; darüber meldet `window_open` `window-limit`.
+    pub max_popups: Option<u32>,
+    /// Höchstzahl gleichzeitiger Editor-Fenster (`max-editor-windows`); darüber meldet `window_open` `window-limit`.
+    pub max_editors: Option<u32>,
 }
 
 fn parse_hex_color(s: &str) -> Option<tauri::window::Color> {
@@ -81,12 +85,20 @@ fn geometry_of(window: &Window) -> Option<Geometry> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn window_open(app: AppHandle, payloads: State<'_, WindowPayloads>, modals: State<'_, ModalWindows>, req: OpenRequest) -> Result<(), String> {
     crate::commands::guard_async("window_open", async {
     let label = label_of(&req.kind, &req.name)?;
     if let Some(existing) = app.get_webview_window(&label) {
         existing.set_focus().map_err(|e| e.to_string())?;
         return Ok(());
+    }
+    let (limit, is_editor) = if req.kind == "editor" { (req.max_editors, true) } else { (req.max_popups, false) };
+    if let Some(max) = limit {
+        let open = app.webview_windows().keys().filter(|l| parse_label(l).is_some_and(|(kind, _)| (kind == "editor") == is_editor)).count();
+        if open >= max as usize {
+            return Err("window-limit".to_string());
+        }
     }
     if let Some(payload) = req.payload {
         payloads.0.lock().map_err(|_| "window payloads poisoned".to_string())?.insert(label.clone(), payload);
@@ -149,6 +161,7 @@ pub async fn window_open(app: AppHandle, payloads: State<'_, WindowPayloads>, mo
 
 /// Das Fenster zeigt sich, sobald seine Seite fertig gezeichnet ist.
 #[tauri::command]
+#[specta::specta]
 pub fn window_show(window: tauri::WebviewWindow) -> Result<(), String> {
     crate::commands::guard("window_show", || {
         window.show().map_err(|e| e.to_string())?;
@@ -159,6 +172,7 @@ pub fn window_show(window: tauri::WebviewWindow) -> Result<(), String> {
 
 /// The payload the window was opened with (read once by the new window).
 #[tauri::command]
+#[specta::specta]
 pub fn window_payload(payloads: State<'_, WindowPayloads>, kind: String, name: String) -> Result<Option<String>, String> {
     crate::commands::guard("window_payload", || {
     let label = label_of(&kind, &name)?;
@@ -168,6 +182,7 @@ pub fn window_payload(payloads: State<'_, WindowPayloads>, kind: String, name: S
 
 /// A dialog window reports its result and closes.
 #[tauri::command]
+#[specta::specta]
 pub fn window_result(app: AppHandle, kind: String, name: String, result: Option<String>) -> Result<(), String> {
     crate::commands::guard("window_result", || {
     let label = label_of(&kind, &name)?;
@@ -182,6 +197,7 @@ pub fn window_result(app: AppHandle, kind: String, name: String, result: Option<
 
 /// The main window closes a floating panel again (docking it); no cancel event is sent.
 #[tauri::command]
+#[specta::specta]
 pub fn window_close(app: AppHandle, kind: String, name: String) -> Result<(), String> {
     crate::commands::guard("window_close", || {
     let label = label_of(&kind, &name)?;
@@ -195,6 +211,7 @@ pub fn window_close(app: AppHandle, kind: String, name: String) -> Result<(), St
 /// Switches the "ask before closing" behaviour of one window on or off. `kind` is `main`,
 /// `float`, `dialog` or `editor`.
 #[tauri::command]
+#[specta::specta]
 pub fn window_close_guard(guards: State<'_, CloseGuards>, kind: String, name: String, on: bool) -> Result<(), String> {
     crate::commands::guard("window_close_guard", || {
     let label = if kind == "main" { "main".to_string() } else { label_of(&kind, &name)? };
@@ -210,6 +227,7 @@ pub fn window_close_guard(guards: State<'_, CloseGuards>, kind: String, name: St
 
 /// Ends the application after the frontend has asked about unsaved changes.
 #[tauri::command]
+#[specta::specta]
 pub fn app_exit(app: AppHandle, guards: State<'_, CloseGuards>) -> Result<(), String> {
     crate::commands::guard("app_exit", || {
     guards.0.lock().map_err(|_| "close guards poisoned".to_string())?.clear();
@@ -227,6 +245,7 @@ pub fn app_exit(app: AppHandle, guards: State<'_, CloseGuards>) -> Result<(), St
 /// Whether a screen point (logical pixels, as the webview reports them) lies inside the main
 /// window; used to dock an editor window that was dragged back onto the Designer.
 #[tauri::command]
+#[specta::specta]
 pub fn main_window_contains(app: AppHandle, x: f64, y: f64) -> Result<bool, String> {
     crate::commands::guard("main_window_contains", || {
     let Some(main) = app.get_webview_window("main") else { return Ok(false) };

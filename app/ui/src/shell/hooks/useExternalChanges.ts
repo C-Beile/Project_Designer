@@ -6,6 +6,7 @@ import type { DetachedEditor, useEditorWindows } from '../../windows/useEditorWi
 import type { ProjectChanged, TreeNode } from '../../wire/types'
 import { pathKey } from '../../platform/pathKey'
 import { listenBackend } from './backendEvent'
+import { invalidateResources } from '../../core/hooks/useResource'
 
 export interface ExternalChangesDeps {
   api: ForgeApi
@@ -69,6 +70,7 @@ export function useExternalChanges({ api, tabState, unsaved, projects, detached,
       if (!p || !Array.isArray(p.changed)) return
       const w = watchRef.current
       if (!w.projects.some((x) => pathKey(x) === pathKey(p.project))) return
+      invalidateResources('project')
       if (p.full) {
         setReloadToken((t) => t + 1)
         setScanTick((t) => t + 1)

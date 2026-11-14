@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { MenuEntry } from './contextMenu'
+import { Button } from '../core/ui/controls'
 
 // Popup of the tree's context menu. Dimmed entries stay visible with their reason as tooltip;
 // submenus open on hover or with Right arrow. Up/Down move between the enabled entries, Enter picks,
@@ -65,8 +66,8 @@ export function TreeContextMenu({
         <li key={e.id} role="separator" className="forge-ctx-sep" />
       ) : (
         <li key={e.id} role="none" className={e.children ? 'forge-ctx-parent' : undefined}>
-          <button
-            type="button"
+          <Button variant="bare"
+
             role="menuitem"
             aria-disabled={!e.enabled}
             aria-haspopup={e.children ? 'menu' : undefined}
@@ -81,7 +82,7 @@ export function TreeContextMenu({
             {e.label}
             {e.shortcut ? <span className="forge-ctx-shortcut">{e.shortcut}</span> : null}
             {e.children ? <span aria-hidden="true"> &#9656;</span> : null}
-          </button>
+          </Button>
           {e.children && e.enabled ? (
             <ul role="menu" aria-label={e.label} className="forge-ctx-sub">
               {render(e.children)}

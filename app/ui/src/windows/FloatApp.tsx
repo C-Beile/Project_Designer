@@ -11,6 +11,8 @@ import type { DbStatus, DiffTarget } from '../wire/types'
 import { OutputBody, type OutputLine, type OutputSubTab } from '../shell/OutputPanel'
 import { EVENTS, FLOAT_TITLES, type FloatAction, type FloatView, type MainState } from './protocol'
 import { getWindowBackend } from './windowService'
+import { Button } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Content of a floating panel window. The window has no state of its own about the project: the
 // main window sends the selection and versions (`MainState`) and gets back what the user does here
@@ -67,18 +69,16 @@ export function FloatApp({ view, api }: { view: FloatView; api: ForgeApi }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scm.overview, view])
 
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (view !== 'services') return
-    let cancelled = false
     const poll = () =>
       api
         .dbStatus()
-        .then((s) => !cancelled && setDb(s))
+        .then((s) => !signal.aborted && setDb(s))
         .catch(() => {})
     void poll()
     const timer = window.setInterval(poll, 5000)
     return () => {
-      cancelled = true
       window.clearInterval(timer)
     }
   }, [api, view])
@@ -153,9 +153,9 @@ export function FloatApp({ view, api }: { view: FloatView; api: ForgeApi }) {
     <div className="forge-float" data-float={view}>
       <div className="forge-float-bar">
         <strong>{title}</strong>
-        <button type="button" title="Dock this window back into the Designer" onClick={() => void getWindowBackend().result('float', view, null)}>
+        <Button variant="bare" title="Dock this window back into the Designer" onClick={() => void getWindowBackend().result('float', view, null)}>
           Dock
-        </button>
+        </Button>
       </div>
       <div className="forge-float-body">{body}</div>
       <DialogHost />

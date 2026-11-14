@@ -8,7 +8,7 @@ pub const EVENT_CHANGED: &str = "forge://project-changed";
 /// How many changed files one event lists at most.
 pub const MAX_CHANGED_FILES: usize = 500;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum IndexPhase {
     Queued,
@@ -78,10 +78,11 @@ pub struct ProjectChanged {
     pub own_only: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct IndexStatus {
     pub project: String,
+    #[specta(type = u32)]
     pub generation: u64,
     pub phase: IndexPhase,
     pub done: u32,
@@ -89,13 +90,15 @@ pub struct IndexStatus {
     pub files: u32,
     pub objects: u32,
     pub references: u32,
+    #[specta(type = Option<u32>)]
     pub last_build_ms: Option<u64>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct VerifyOutcome {
     pub changed: u32,
+    #[specta(type = u32)]
     pub duration_ms: u64,
 }
 

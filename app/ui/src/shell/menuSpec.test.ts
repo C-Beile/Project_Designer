@@ -40,7 +40,7 @@ const norm = (s: string) => s.replace(/\.{3}$/, '').trim().toLowerCase()
 const names = (items: MenuItemDef[]) => items.filter((i) => i.kind !== 'separator').map((i) => norm(i.label))
 
 describe.skipIf(!haveSpec)('menu bar against runtime.json', () => {
-  const runtime = JSON.parse(readFileSync(RUNTIME, 'utf8')) as { menubar: RuntimeMenu[]; toolbars: { group: string; buttons: { name: string }[] }[] }
+  const runtime = (haveSpec ? JSON.parse(readFileSync(RUNTIME, 'utf8')) : { menubar: [], toolbars: [] }) as { menubar: RuntimeMenu[]; toolbars: { group: string; buttons: { name: string }[] }[] }
   const menus = buildMenus(ctx)
 
   it('has the menus of the original in the same order', () => {

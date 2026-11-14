@@ -25,7 +25,7 @@ use std::path::{Path, PathBuf};
 
 pub const GENERAL_GROUP: &str = "GENERAL";
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum PropKind {
     Text,

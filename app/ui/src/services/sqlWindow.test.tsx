@@ -6,6 +6,7 @@ import { createMockForgeApi } from '../test/mockApi'
 import { lastEditor, resetEditors } from '../test/monacoMock'
 import { loadSqlHistory, } from './sqlTools'
 import type { DbStatus } from '../wire/types'
+import { choose, shown } from '../test/dropdown'
 
 vi.mock('monaco-editor', () => import('../test/monacoMock'))
 
@@ -29,14 +30,14 @@ describe('Execute SQL window (manual chapter 8)', () => {
   it('has the original layout: connection row, icon bar, result tab per statement with the middle bar', async () => {
     const user = userEvent.setup()
     await setup('select * from t')
-    expect(screen.getByRole('combobox', { name: 'Connection' })).toHaveTextContent('adito-db.svc')
+    expect(shown('Connection')).toContain('adito-db.svc')
     const bar = screen.getByRole('toolbar', { name: 'SQL toolbar' })
     for (const name of ['Run', 'Run selected statement', 'SQL history', 'Keep prior tabs', 'Find', 'Comment', 'Uncomment']) expect(within(bar).getByRole('button', { name })).toBeInTheDocument()
     expect(within(bar).getByRole('button', { name: 'Start macro' })).toBeDisabled()
     await user.click(within(bar).getByRole('button', { name: 'Run' }))
     expect(await screen.findByRole('tab', { name: 'select * from t' })).toBeInTheDocument()
     const mid = screen.getByRole('toolbar', { name: 'Result toolbar' })
-    expect(within(mid).getByRole('combobox', { name: 'Max. rows' })).toHaveValue('100')
+    expect(shown('Max. rows', within(mid))).toContain('100')
     expect(screen.getByTestId('sql-summary')).toHaveTextContent('Fetched Rows: 3')
     expect(within(mid).getByRole('textbox', { name: 'Matching Rows' })).toBeInTheDocument()
   })
@@ -69,11 +70,11 @@ describe('Execute SQL window (manual chapter 8)', () => {
     const user = userEvent.setup()
     await setup('select * from t')
     await user.click(screen.getByRole('button', { name: 'Run' }))
-    const table = await screen.findByRole('table', { name: 'Query result' })
+    const table = await screen.findByRole('grid', { name: 'Query result' })
     await user.type(screen.getByRole('textbox', { name: 'Matching Rows' }), 'gam')
     expect(within(table).getAllByRole('row')).toHaveLength(2)
     await user.clear(screen.getByRole('textbox', { name: 'Matching Rows' }))
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Max. rows' }), '100')
+    await choose(user, 'Max. rows', '100')
     await user.click(within(table).getByRole('columnheader', { name: 'NAME' }))
     await user.click(within(table).getByRole('columnheader', { name: /NAME/ }))
     expect(within(table).getAllByRole('row')[1]).toHaveTextContent('gamma')
@@ -83,7 +84,7 @@ describe('Execute SQL window (manual chapter 8)', () => {
     const user = userEvent.setup()
     const api = await setup('select * from t', { 'select * from t': one, "UPDATE t SET `NAME` = 'beta' WHERE `ID` = '2' AND `NAME` IS NULL LIMIT 1": two })
     await user.click(screen.getByRole('button', { name: 'Run' }))
-    const table = await screen.findByRole('table', { name: 'Query result' })
+    const table = await screen.findByRole('grid', { name: 'Query result' })
     await user.dblClick(within(table).getAllByRole('row')[2].querySelectorAll('td')[2] as HTMLElement)
     await user.type(screen.getByRole('textbox', { name: 'Edit NAME' }), 'beta{Enter}')
     await user.click(screen.getByRole('button', { name: 'Save row' }))
@@ -112,8 +113,8 @@ describe('Result grid context menu', () => {
     const user = userEvent.setup()
     await setup('select * from t')
     await user.click(screen.getByRole('button', { name: 'Run' }))
-    const table = await screen.findByRole('table', { name: 'Query result' })
-    const cell = within(table).getAllByRole('cell')[1]
+    const table = await screen.findByRole('grid', { name: 'Query result' })
+    const cell = within(table).getAllByRole('gridcell')[0]
     expect(fireEvent.contextMenu(cell)).toBe(false)
     expect((await screen.findAllByRole('menuitem')).map((i) => i.textContent)).toEqual(['Copy Cell', 'Copy Row', 'Copy Result', 'Export CSV', 'Edit Cell'])
     expect(screen.getByRole('menuitem', { name: 'Edit Cell' })).not.toHaveAttribute('aria-disabled', 'true')

@@ -12,12 +12,14 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, specta::Type)]
 pub struct FileInfo {
     pub name: String,
     pub extension: String,
+    #[specta(type = u32)]
     pub size: u64,
     /// Milliseconds since 1970-01-01 UTC; `None` when the file system gives no time.
+    #[specta(type = Option<u32>)]
     pub modified_ms: Option<u64>,
     pub path: String,
 }

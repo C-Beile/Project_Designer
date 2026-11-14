@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
 import type { ForgeApi } from '../../api/ForgeApi'
-import { runCommandAsync } from '../../core/plugins/registry'
+import { runCommandAsync, runCommandById } from '../../core/plugins/registry'
 import { copyNewUuid } from '../../core/uuid'
+import { setContextKey } from '../../core/contrib/contextKeys'
+import { commandForKey } from '../../core/contrib/keybindings'
 import { matchesShortcut } from '../../core/shortcuts'
 import { closeWindow } from '../../chrome/tauriWindow'
 import { getEditorPrefs, setEditorPref, type EditorPrefs } from '../../theme/editorPrefs'
@@ -16,8 +18,10 @@ import { activeTab, isFileNode, isServiceNode, isTunnelNode, type TabState } fro
 import type { TreeNode, UndoRedoOutcome } from '../../wire/types'
 import { useEditorWindows } from '../../windows/useEditorWindows'
 import { canMoveToWindow } from '../../windows/editorWindows'
-import { osWindowsAvailable } from '../../windows/windowService'
+import { osEditorWindowAvailable } from '../../windows/windowService'
 import { defaultLayout, type LayoutState } from '../layoutState'
+import { deleteNamedLayout, LAYOUT_PRESETS, listSavedLayouts, loadNamedLayout, saveNamedLayout } from '../layouts'
+import { choiceDialog, promptDialog } from '../../core/dialogService'
 import { buildMenus, shortcutItems, type MenuItemDef, type ToolWindowId } from '../menuModel'
 import { defaultToolbarPrefs, type ToolbarGroup, type ToolbarPrefs } from '../toolbarPrefs'
 import { baseName, samePath } from '../shellHelpers'
@@ -185,7 +189,27 @@ export function useShellCommands({
       for (const id of Object.keys(editorWindows.detached)) editorWindows.requestDock(id)
     },
     'window.resetLayout': () => {
-      setLayout(defaultLayout())
+      setLayout({ ...defaultLayout(), reset: Date.now() })
+    },
+    'window.layout.preset': (arg) => {
+      const preset = LAYOUT_PRESETS.find((p) => p.id === arg)
+      if (preset) setLayout(preset.build())
+    },
+    'window.layout.load': (arg) => {
+      const loaded = loadNamedLayout(String(arg))
+      if (loaded) setLayout(loaded)
+    },
+    'window.layout.save': async () => {
+      const name = await promptDialog('Name of the layout:', { title: 'Save Current Layout', validate: (v) => (v.trim() ? null : 'Enter a name') })
+      if (!name) return
+      saveNamedLayout(name.trim(), layout)
+      setLayout((l) => ({ ...l }))
+    },
+    'window.layout.delete': async () => {
+      const name = await choiceDialog('Delete which layout?', [...listSavedLayouts().map((n) => ({ id: n, label: n })), { id: '', label: 'Cancel' }], 'Delete a Saved Layout')
+      if (!name) return
+      deleteNamedLayout(name)
+      setLayout((l) => ({ ...l }))
     },
     'help.about': () => {
       setDialog('about')
@@ -321,8 +345,9 @@ export function useShellCommands({
         gitRepo,
         gitChanges,
         floating: floatingViews,
-        canMoveEditor: osWindowsAvailable() && !!currentTabNode && canMoveToWindow(currentTabNode),
+        canMoveEditor: osEditorWindowAvailable(Object.keys(editorWindows.detached).length) && !!currentTabNode && canMoveToWindow(currentTabNode),
         editorWindows: Object.keys(editorWindows.detached).length,
+        savedLayouts: listSavedLayouts(),
         onlyEditor: layoutBeforeOnlyEditor.current !== null,
         fullScreen: typeof document !== 'undefined' && !!document.fullscreenElement,
       }),
@@ -330,11 +355,20 @@ export function useShellCommands({
   )
 
   useEffect(() => {
+    setContextKey('hasProject', !!root)
+    setContextKey('dialogOpen', !!dialog)
+  }, [root, dialog])
+
+  useEffect(() => {
     const items = shortcutItems(menus)
     function onKeyDown(e: KeyboardEvent) {
       if (dialog) return
       const hit = items.find((i) => [i.shortcut!, ...(i.extraShortcuts ?? [])].some((s) => matchesShortcut(e, s)))
-      if (!hit) return
+      if (!hit) {
+        const contributed = commandForKey(e)
+        if (contributed && runCommandById(contributed.command)) e.preventDefault()
+        return
+      }
       // Inside a code editor Undo/Redo and the clipboard belong to the editor itself.
       const inCodeEditor = e.target instanceof Element && e.target.closest('.monaco-editor') !== null
       if (inCodeEditor && /^edit\.(undo|redo|cut|copy|paste)$/.test(hit.command!)) return

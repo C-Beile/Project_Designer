@@ -5,6 +5,9 @@ import type { NavNode } from '../wire/types'
 import { setApplicationFilter, useApplicationFilter } from '../editors/applicationFilter'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
+import { Button } from '../core/ui/controls'
+import { copyText } from '../core/clipboard'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Navigator (LAYOUT_SPEC §7): the structure of the selected object. Selecting an element shows
 // its properties in the Properties panel. Entities: RecordContainers with field bindings, Fields,
@@ -150,7 +153,7 @@ export function NavigatorPanel({
   const treeRef = useRef<HTMLDivElement | null>(null)
   const scrollFrame = useRef<number | null>(null)
 
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (lastNode.current !== nodeId) {
       setCollapsed(new Set(nodeId ? (collapsedMemory.get(nodeId) ?? []) : []))
       setNodes(null)
@@ -160,22 +163,18 @@ export function NavigatorPanel({
       setNodes(null)
       return
     }
-    let cancelled = false
     setLoading(true)
     api
       .getNavigator(nodeId)
       .then((n) => {
-        if (!cancelled) setNodes(n)
+        if (!signal.aborted) setNodes(n)
       })
       .catch(() => {
-        if (!cancelled) setNodes([])
+        if (!signal.aborted) setNodes([])
       })
       .finally(() => {
-        if (!cancelled) setLoading(false)
+        if (!signal.aborted) setLoading(false)
       })
-    return () => {
-      cancelled = true
-    }
   }, [api, nodeId, objectType, version])
 
   // After the first edit of a grey entry its mapping exists: the selection follows to the real element.
@@ -203,7 +202,7 @@ export function NavigatorPanel({
   const pick = (id: string, node: NavNode) => {
     if (id === 'reset' && node.path && onReset) onReset(node.path, node.label)
     else if (id === 'activate' && node.path && onActivate) onActivate(node.path, node.label)
-    else if (id === 'copy') void navigator.clipboard?.writeText(node.label)
+    else if (id === 'copy') void copyText(node.label)
   }
 
   interface Row {
@@ -333,14 +332,14 @@ function ApplicationFilter() {
   return (
     <div className="nav-filter" role="group" aria-label="Object filter">
       {entries.map(([label, color, indent]) => (
-        <button
+        <Button variant="bare"
           key={label}
-          type="button"
+
           role="checkbox"
           aria-checked={checked[label]}
           className={checked[label] ? 'nav-row nav-filter-row' : 'nav-row nav-filter-row is-dimmed'}
           style={{ paddingLeft: 6 + indent * 16 }}
-          disabled={!(label in shared) && label !== 'Executables Only'}
+          isDisabled={!(label in shared) && label !== 'Executables Only'}
           title={label === 'Process' || label === 'Report' ? 'Shown in the list for orientation; the node kind in the menu is not documented, so it cannot be dragged.' : label === 'Executables Only' ? 'Only processes of the tree group executables (variant EXECUTABLE)' : undefined}
           onClick={() => {
             const k = (label === 'Executables Only' ? 'ExecutablesOnly' : label) as keyof typeof shared
@@ -351,7 +350,7 @@ function ApplicationFilter() {
             <path d="M1 3.5h4l1 1h7v7.5H1z" fill={`var(${color})`} opacity={checked[label] ? 1 : 0.35} />
           </svg>
           <span className="nav-label">{label}</span>
-        </button>
+        </Button>
       ))}
     </div>
   )

@@ -6,6 +6,7 @@ import type { TreeNode, WireValue } from '../wire/types'
 import { useProjectIndex } from './projectIndex'
 import { acceptsEntityFields } from './viewFields'
 import { ChartSketch, MapSketch, Placeholder, Steps } from './viewSketches'
+import { Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 
 // Visual preview of a neonView: renders the layout, the field templates and the referenced
 // sub-views the way the ADITO client arranges them. Field titles and types come from the entity
@@ -342,8 +343,8 @@ function Drawer({ caption, fixed, children }: { caption: string; fixed: boolean;
       <div className="vp-drawer-bar">
         <span>{caption}</span>
         {fixed ? null : (
-          <button
-            type="button"
+          <Button variant="bare"
+
             className="vp-drawer-toggle"
             aria-label={open ? 'Collapse' : 'Expand'}
             aria-expanded={open}
@@ -353,7 +354,7 @@ function Drawer({ caption, fixed, children }: { caption: string; fixed: boolean;
             }}
           >
             {open ? '^' : 'v'}
-          </button>
+          </Button>
         )}
       </div>
       {open || fixed ? <div className="vp-drawer-content">{children}</div> : null}
@@ -595,30 +596,30 @@ function Template({ child }: { child: Child }) {
             ))}
           </div>
         ) : (
-        <table className="vp-table" {...dropFor(null)}>
-          <thead>
-            <tr>
+        <Table className="vp-table" aria-label="View preview" domProps={dropFor(null)}>
+          <TableHeader>
+
               {cols.map((c, i) => (
-                <th key={`${c}${i}`} title={fieldsMeta?.get(c) ? `${c} (${typeLabel(fieldsMeta.get(c)!.type)})` : c} {...dropFor(i)}>
+                <TableColumn isRowHeader={i === 0} key={`${c}${i}`} title={fieldsMeta?.get(c) ? `${c} (${typeLabel(fieldsMeta.get(c)!.type)})` : c} domProps={dropFor(i)}>
                   {label(c)}
-                </th>
+                </TableColumn>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+
+          </TableHeader>
+          <TableBody>
             {[0, 1, 2].map((r) => (
-              <tr key={r}>
+              <TableRow key={r}>
                 {cols.map((c, i) => (
-                  <td key={`${c}${i}`}>
+                  <TableCell key={`${c}${i}`}>
                     {tree && i === 0 ? <span className="vp-arrow">{r === 1 ? '' : '▸'}</span> : null}
                     {editable ? <span className="vp-field-box is-edit" /> : <span className="vp-skeleton" />}
                     {showCount && i === 0 && r !== 1 ? <span className="vp-muted"> (3)</span> : null}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
         )}
         {kind === 'basicTableViewTemplate' ? <div className="vp-pager">‹ 1 2 3 ›</div> : null}
       </section>
@@ -966,9 +967,9 @@ function Layout({ layout, children, render }: { layout: { kind: string; value: W
           {details.length > 1 ? (
             <div className="vp-tabbar" role="tablist" aria-label="Detail views">
               {details.map((c, i) => (
-                <button key={`${c.kind}${c.path}`} type="button" role="tab" aria-selected={i === detail} className={`vp-tab${i === detail ? ' is-active' : ''}`} onClick={() => setDetail(i)}>
+                <Button variant="bare" key={`${c.kind}${c.path}`} role="tab" aria-selected={i === detail} className={`vp-tab${i === detail ? ' is-active' : ''}`} onClick={() => setDetail(i)}>
                   {labelOfChild(c)}
-                </button>
+                </Button>
               ))}
             </div>
           ) : null}
@@ -1021,9 +1022,9 @@ function Layout({ layout, children, render }: { layout: { kind: string; value: W
         <div className="vp-drawer-bar">
           <span>{textField(layout.value, 'layoutCaption') ?? ''}</span>
           {fixed ? null : (
-            <button type="button" className="vp-drawer-toggle" aria-label={drawerOpen ? 'Collapse' : 'Expand'} aria-expanded={drawerOpen} onClick={() => setDrawerOpen(!drawerOpen)}>
+            <Button variant="bare" className="vp-drawer-toggle" aria-label={drawerOpen ? 'Collapse' : 'Expand'} aria-expanded={drawerOpen} onClick={() => setDrawerOpen(!drawerOpen)}>
               {drawerOpen ? '^' : 'v'}
-            </button>
+            </Button>
           )}
         </div>
         {drawerOpen || fixed ? <div className="vp-stack vp-drawer-content">{children.map(render)}</div> : null}
@@ -1036,22 +1037,22 @@ function Layout({ layout, children, render }: { layout: { kind: string; value: W
       <div className="vp-group" data-layout="group">
         {children.length > 1 ? (
           <div className="vp-group-picker">
-            <button type="button" className="vp-group-button" aria-haspopup="listbox" aria-expanded={pickerOpen} aria-label="Select view" onClick={() => setPickerOpen(!pickerOpen)}>
+            <Button variant="bare" className="vp-group-button" aria-haspopup="listbox" aria-expanded={pickerOpen} aria-label="Select view" onClick={() => setPickerOpen(!pickerOpen)}>
               {current ? labelOfChild(current) : ''} {'▾'}
-            </button>
+            </Button>
             {pickerOpen ? (
               <ul className="vp-group-list" role="listbox" aria-label="Views">
                 {children.map((c, i) => (
                   <li key={`${c.kind}${c.path}`} role="option" aria-selected={i === picked}>
-                    <button
-                      type="button"
+                    <Button variant="bare"
+
                       onClick={() => {
                         setPicked(i)
                         setPickerOpen(false)
                       }}
                     >
                       {labelOfChild(c)}
-                    </button>
+                    </Button>
                   </li>
                 ))}
               </ul>

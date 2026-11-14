@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { FormDialog, type FieldDef } from './FormDialog'
+import { selected } from '../../test/dropdown'
 
 const FIELDS: FieldDef[] = [
   { id: 'name', type: 'text', label: 'Name', required: true, validate: (v) => (typeof v === 'string' && v.includes(' ') ? 'No spaces.' : null) },
@@ -14,7 +15,7 @@ describe('FormDialog', () => {
   it('renders all field types with the first select option and keeps OK off until the required field is filled', () => {
     render(<FormDialog title="Make" fields={FIELDS} onSubmit={() => {}} onCancel={() => {}} />)
     expect(screen.getByRole('dialog', { name: 'Make' })).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: 'Mode' })).toHaveValue('a')
+    expect(selected('Mode')).toBe('a')
     expect(screen.getByRole('checkbox', { name: 'Force' })).not.toBeChecked()
     expect(screen.getByRole('button', { name: 'OK' })).toBeDisabled()
   })

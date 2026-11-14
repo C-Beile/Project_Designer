@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Modal } from '../core/Modal'
+import { Button, Input } from '../core/ui/controls'
 
 // Confirmations behind the tree's context menu. Nothing is deleted or created by the menu click
 // itself; only the confirming button inside these dialogs runs the action.
@@ -11,12 +12,12 @@ export function ConfirmDeleteDialog({ name, onConfirm, onClose }: { name: string
       onClose={onClose}
       footer={
         <>
-          <button type="button" onClick={onConfirm}>
+          <Button variant="bare" onClick={onConfirm}>
             Delete
-          </button>
-          <button type="button" onClick={onClose}>
+          </Button>
+          <Button variant="bare" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >
@@ -39,18 +40,18 @@ export function PasteNameDialog({ folder, initial, onConfirm, onClose }: { folde
       onClose={onClose}
       footer={
         <>
-          <button type="button" disabled={!ok} onClick={() => onConfirm(name)}>
+          <Button variant="bare" isDisabled={!ok} onClick={() => onConfirm(name)}>
             Paste
-          </button>
-          <button type="button" onClick={onClose}>
+          </Button>
+          <Button variant="bare" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >
       <label className="forge-field">
         <span>Name of the new {folder} object</span>
-        <input
+        <Input
           type="text"
           value={name}
           aria-label="New object name"
@@ -74,18 +75,18 @@ export function RenameDialog({ folder, initial, onConfirm, onClose }: { folder: 
       onClose={onClose}
       footer={
         <>
-          <button type="button" disabled={!ok} onClick={() => onConfirm(name)}>
+          <Button variant="bare" isDisabled={!ok} onClick={() => onConfirm(name)}>
             Preview
-          </button>
-          <button type="button" onClick={onClose}>
+          </Button>
+          <Button variant="bare" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >
       <label className="forge-field">
         <span>New name of the {folder} object</span>
-        <input
+        <Input
           type="text"
           value={name}
           aria-label="New name"

@@ -1,5 +1,6 @@
 import { callSite, logError } from './errorLog'
 import { useSyncExternalStore } from 'react'
+import { Button } from './ui/controls'
 
 // Non-blocking notifications: a toast above the status bar that never takes focus away from the
 // editor, with optional actions (link, Undo). All notifications are kept in a list for the
@@ -77,9 +78,9 @@ export function ToastHost() {
         <div key={n.id} className={`forge-toast is-${n.kind}`} role="status">
           <span className="forge-toast-text">{n.text}</span>
           {n.actions.map((a) => (
-            <button
+            <Button variant="bare"
               key={a.label}
-              type="button"
+
               className="forge-toast-action"
               onClick={() => {
                 dismissToast(n.id)
@@ -87,11 +88,11 @@ export function ToastHost() {
               }}
             >
               {a.label}
-            </button>
+            </Button>
           ))}
-          <button type="button" className="forge-toast-close" aria-label="Dismiss notification" onClick={() => dismissToast(n.id)}>
+          <Button variant="bare" className="forge-toast-close" aria-label="Dismiss notification" onClick={() => dismissToast(n.id)}>
             ×
-          </button>
+          </Button>
         </div>
       ))}
     </div>

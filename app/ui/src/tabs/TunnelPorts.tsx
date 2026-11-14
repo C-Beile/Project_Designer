@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { TunnelRowDto } from '../wire/types'
+import { Button, Input } from '../core/ui/controls'
 
 // Tunnel manager view: the targets of a tunnel config grouped by service (the first part of the
 // host name), the four everyday services on top (database, manager, Solr, file browser), the
@@ -22,7 +23,10 @@ export type PortState = 'idle' | 'busy' | 'up' | 'error'
 export interface TunnelPortsProps {
   rows: TunnelRowDto[]
   stateOf: (row: TunnelRowDto) => PortState
-  localPorts: Map<string, number>
+  /** Lokale Adresse je Ziel, `host:port`. */
+  localAddrs: Map<string, string>
+  /** Ziele, deren Tunnel ein anderes Programm geöffnet hat (Wert: Name, etwa `hub`). */
+  foreignOwners?: Map<string, string>
   errors: Record<string, string>
   onConnect: (rows: TunnelRowDto[]) => void
   onDisconnect: (rows: TunnelRowDto[]) => void
@@ -32,33 +36,40 @@ export interface TunnelPortsProps {
   compact?: boolean
 }
 
-function PortRow({ row, state, port, error, p }: { row: TunnelRowDto; state: PortState; port: number | undefined; error?: string; p: TunnelPortsProps }) {
-  const address = port ? `127.0.0.1:${port}` : ''
+function PortRow({ row, state, address: addr, foreign, error, p }: { row: TunnelRowDto; state: PortState; address: string | undefined; foreign?: string; error?: string; p: TunnelPortsProps }) {
+  const address = addr ?? ''
   return (
     <div className={`tp-port${state === 'up' ? ' is-up' : ''}${state === 'error' ? ' is-error' : ''}`} data-state={state}>
       <span className="tp-port-no">{row.target_port}</span>
       <span className="tp-port-addr" title={error ?? row.target_host}>
-        {state === 'up' && address ? <code>{address}</code> : state === 'busy' ? <span className="tp-hint">connecting…</span> : state === 'error' ? <span className="tp-error">{error ?? 'failed'}</span> : <span className="tp-hint">disconnected</span>}
+        {state === 'up' && address ? (
+          <>
+            <code>{address}</code>
+            {foreign ? <span className="tp-hint"> via {foreign === 'hub' ? 'AditoHub' : foreign}</span> : null}
+          </>
+        ) : state === 'busy' ? <span className="tp-hint">connecting…</span> : state === 'error' ? <span className="tp-error">{error ?? 'failed'}</span> : <span className="tp-hint">disconnected</span>}
       </span>
       <span className="tp-grow" />
       {state === 'up' ? (
         <>
-          <button type="button" className="tp-btn" onClick={() => p.onCopy(address)}>
+          <Button variant="bare" className="tp-btn" onClick={() => p.onCopy(address)}>
             copy
-          </button>
+          </Button>
           {BROWSER_PORTS.includes(row.target_port) && address ? (
-            <button type="button" className="tp-btn" onClick={() => p.onBrowser(`http://${address}`)}>
+            <Button variant="bare" className="tp-btn" onClick={() => p.onBrowser(`http://${address}`)}>
               in browser
-            </button>
+            </Button>
           ) : null}
-          <button type="button" className="tp-btn" onClick={() => p.onDisconnect([row])}>
-            Disconnect
-          </button>
+          {foreign ? null : (
+            <Button variant="bare" className="tp-btn" onClick={() => p.onDisconnect([row])}>
+              Disconnect
+            </Button>
+          )}
         </>
       ) : (
-        <button type="button" className="tp-btn is-primary" disabled={state === 'busy'} onClick={() => p.onConnect([row])}>
+        <Button variant="bare" className="tp-btn is-primary" isDisabled={state === 'busy'} onClick={() => p.onConnect([row])}>
           {state === 'busy' ? 'Connecting…' : 'Connect'}
-        </button>
+        </Button>
       )}
     </div>
   )
@@ -79,17 +90,17 @@ function ServiceBlock({ service, rows, p }: { service: string; rows: TunnelRowDt
         <span className="tp-grow" />
         {rows.length > 1 ? (
           <>
-            <button type="button" className="tp-btn" disabled={up === rows.length} onClick={() => p.onConnect(rows.filter((r) => p.stateOf(r) !== 'up'))}>
+            <Button variant="bare" className="tp-btn" isDisabled={up === rows.length} onClick={() => p.onConnect(rows.filter((r) => p.stateOf(r) !== 'up'))}>
               connect all
-            </button>
-            <button type="button" className="tp-btn" disabled={up === 0} onClick={() => p.onDisconnect(rows.filter((r) => p.stateOf(r) === 'up'))}>
+            </Button>
+            <Button variant="bare" className="tp-btn" isDisabled={up === 0} onClick={() => p.onDisconnect(rows.filter((r) => p.stateOf(r) === 'up'))}>
               disconnect all
-            </button>
+            </Button>
           </>
         ) : null}
       </div>
       {rows.map((r) => (
-        <PortRow key={key(r)} row={r} state={p.stateOf(r)} port={p.localPorts.get(key(r))} error={p.errors[key(r)]} p={p} />
+        <PortRow key={key(r)} row={r} state={p.stateOf(r)} address={p.localAddrs.get(key(r))} foreign={p.foreignOwners?.get(key(r))} error={p.errors[key(r)]} p={p} />
       ))}
     </div>
   )
@@ -125,15 +136,15 @@ export function TunnelPorts(p: TunnelPortsProps) {
         <strong>Ports</strong>
         <span className="tp-hint">every service with its own local address</span>
         <span className="tp-grow" />
-        <button type="button" className={`tp-btn${standardUp ? '' : ' is-primary'}`} disabled={standardUp || standardRows.length === 0} title="Database, manager, Solr and file browser" onClick={() => p.onConnect(standardRows.filter((r) => p.stateOf(r) !== 'up'))}>
+        <Button variant="bare" className={`tp-btn${standardUp ? '' : ' is-primary'}`} isDisabled={standardUp || standardRows.length === 0} title="Database, manager, Solr and file browser" onClick={() => p.onConnect(standardRows.filter((r) => p.stateOf(r) !== 'up'))}>
           Connect standard ({standardRows.length})
-        </button>
-        <button type="button" className="tp-btn" title="Every target of the tunnel config" disabled={upRows.length === p.rows.length} onClick={() => p.onConnect(p.rows.filter((r) => p.stateOf(r) !== 'up'))}>
+        </Button>
+        <Button variant="bare" className="tp-btn" title="Every target of the tunnel config" isDisabled={upRows.length === p.rows.length} onClick={() => p.onConnect(p.rows.filter((r) => p.stateOf(r) !== 'up'))}>
           Connect all ({p.rows.length})
-        </button>
-        <button type="button" className="tp-btn" disabled={upRows.length === 0} onClick={() => p.onDisconnect(upRows)}>
+        </Button>
+        <Button variant="bare" className="tp-btn" isDisabled={upRows.length === 0} onClick={() => p.onDisconnect(upRows)}>
           Disconnect all
-        </button>
+        </Button>
       </div>
       {p.rows.length > 0 ? (
         <div className="tp-info" aria-label="Tunnel details">
@@ -161,7 +172,7 @@ export function TunnelPorts(p: TunnelPortsProps) {
           <div className="tp-more" role="button" tabIndex={0} aria-expanded={open} onClick={() => setMoreOpen((v) => !v)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setMoreOpen((v) => !v)}>
             <span className="tp-chev">{open ? '▼' : '▶'}</span> Other services <span className="tp-hint">{otherCount} targets</span>
             <span className="tp-grow" />
-            {open ? <input type="search" placeholder="Service or port…" aria-label="Filter services" value={filter} onClick={(e) => e.stopPropagation()} onChange={(e) => setFilter(e.target.value)} /> : null}
+            {open ? <Input type="search" placeholder="Service or port…" aria-label="Filter services" value={filter} onClick={(e) => e.stopPropagation()} onChange={(e) => setFilter(e.target.value)} /> : null}
           </div>
           {open ? others.map(([s, l]) => <ServiceBlock key={s} service={s} rows={l} p={p} />) : null}
           {open && others.length === 0 ? <div className="tp-hint tp-pad">Nothing matches the filter.</div> : null}

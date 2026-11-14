@@ -24,7 +24,7 @@ const LEFT_OUT = [
 ]
 
 describe.skipIf(!existsSync(RUNTIME))('toolbar against runtime.json', () => {
-  const runtime = JSON.parse(readFileSync(RUNTIME, 'utf8')) as { toolbars: { group: string; buttons: { name: string; tooltip?: string }[] }[] }
+  const runtime = (existsSync(RUNTIME) ? JSON.parse(readFileSync(RUNTIME, 'utf8')) : { toolbars: [] }) as { toolbars: { group: string; buttons: { name: string; tooltip?: string }[] }[] }
 
   it('shows the buttons of every group in the original order, Dito Designer additions aside', () => {
     render(

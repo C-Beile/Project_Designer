@@ -1,6 +1,7 @@
 import type { EditorProps } from './registry'
 import { asArray, field, textField, textValue } from '../wire/types'
 import { EditableText } from './EditableText'
+import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 
 // Ziel 2 (neonContext-Editor): "welche Entity, welche Views/Aktionen"
 // (feature-matrix.md's MUST subset) - the context's own identity (`title`), its bound `entity`,
@@ -65,59 +66,59 @@ export function ContextEditor({ nodeId, tree, api, onTreeChange }: EditorProps) 
         />
       </label>
 
-      <table aria-label="Context view references">
-        <thead>
-          <tr>
-            <th>Reference id</th>
-            <th>View</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table aria-label="Context view references">
+        <TableHeader>
+
+            <TableColumn isRowHeader>Reference id</TableColumn>
+            <TableColumn>View</TableColumn>
+
+        </TableHeader>
+        <TableBody>
           {viewReferences.map((reference, index) => {
             const refId = textField(reference, 'name') ?? ''
             const view = textField(reference, 'view') ?? ''
             return (
-              <tr key={refId || index}>
-                <td>{refId}</td>
-                <td>
+              <TableRow key={refId || index}>
+                <TableCell>{refId}</TableCell>
+                <TableCell>
                   <EditableText
                     value={view}
                     ariaLabel={`View reference ${index} view`}
                     onCommit={(next) => commitScalar(`references.neonViewReference[${index}].view`, next)}
                   />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
-      <table aria-label="Context webservice references">
-        <thead>
-          <tr>
-            <th>Reference id</th>
-            <th>Webservice</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table aria-label="Context webservice references">
+        <TableHeader>
+
+            <TableColumn isRowHeader>Reference id</TableColumn>
+            <TableColumn>Webservice</TableColumn>
+
+        </TableHeader>
+        <TableBody>
           {webserviceReferences.map((reference, index) => {
             const refId = textField(reference, 'name') ?? ''
             const webservice = textField(reference, 'webservice') ?? ''
             return (
-              <tr key={refId || index}>
-                <td>{refId}</td>
-                <td>
+              <TableRow key={refId || index}>
+                <TableCell>{refId}</TableCell>
+                <TableCell>
                   <EditableText
                     value={webservice}
                     ariaLabel={`Webservice reference ${index} webservice`}
                     onCommit={(next) => commitScalar(`references.webserviceReference[${index}].webservice`, next)}
                   />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { EditorProps } from './registry'
 import { asArray, boolField, field, intField, textField, textValue } from '../wire/types'
 import { EditableText } from './EditableText'
+import { Button, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 
 // Ziel 1 (aliasDefinition-Editor): name/targetAliasName/DB-type-hint plus the
 // per-table column model (feature-matrix.md's AliasEditor MUST subset - "Editor für DB-Aliase").
@@ -118,14 +119,14 @@ export function AliasDbEditor({ nodeId, tree, api, onTreeChange }: EditorProps) 
       </label>
 
       <div className="alias-db-toolbar">
-        <input type="search" aria-label="Filter tables and columns" placeholder="Filter tables and columns" value={filter} onChange={(e) => setFilter(e.target.value)} />
+        <Input type="search" aria-label="Filter tables and columns" placeholder="Filter tables and columns" value={filter} onChange={(e) => setFilter(e.target.value)} />
         <span className="alias-db-meta">{tables.length} tables</span>
-        <button type="button" onClick={() => setCollapsed(new Set(tables.map((_, i) => i)))}>
+        <Button variant="bare" onClick={() => setCollapsed(new Set(tables.map((_, i) => i)))}>
           Collapse all
-        </button>
-        <button type="button" onClick={() => setCollapsed(new Set())}>
+        </Button>
+        <Button variant="bare" onClick={() => setCollapsed(new Set())}>
           Expand all
-        </button>
+        </Button>
       </div>
 
       {tables.map((table, t) => {
@@ -143,9 +144,9 @@ export function AliasDbEditor({ nodeId, tree, api, onTreeChange }: EditorProps) 
         return (
           <section key={tableName || t} className="alias-card" aria-label={`Table ${tableName || t}`}>
             <header className="alias-card-head">
-              <button type="button" className="alias-card-toggle" aria-expanded={!isCollapsed} aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${tableName}`} onClick={() => toggleCard(t)}>
+              <Button variant="bare" className="alias-card-toggle" aria-expanded={!isCollapsed} aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} ${tableName}`} onClick={() => toggleCard(t)}>
                 {isCollapsed ? '▸' : '▾'}
-              </button>
+              </Button>
               <h3>{tableName}</h3>
               <label>
                 Id column
@@ -159,26 +160,19 @@ export function AliasDbEditor({ nodeId, tree, api, onTreeChange }: EditorProps) 
             </header>
 
             {isCollapsed ? null : (
-            <table className="alias-columns" aria-label={`Table ${tableName || t} columns`}>
-              <colgroup>
-                <col className="alias-col-pk" />
-                <col className="alias-col-name" />
-                <col className="alias-col-override" />
-                <col className="alias-col-type" />
-                <col className="alias-col-size" />
-                <col className="alias-col-null" />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th aria-label="Primary key" />
-                  <th>Column</th>
-                  <th>DB name override</th>
-                  <th>SQL type</th>
-                  <th className="alias-num">Size</th>
-                  <th>Not null</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="alias-columns" aria-label={`Table ${tableName || t} columns`}>
+
+              <TableHeader>
+
+                  <TableColumn isRowHeader className="alias-col-pk" aria-label="Primary key" />
+                  <TableColumn className="alias-col-name">Column</TableColumn>
+                  <TableColumn className="alias-col-override">DB name override</TableColumn>
+                  <TableColumn className="alias-col-type">SQL type</TableColumn>
+                  <TableColumn className="alias-num alias-col-size">Size</TableColumn>
+                  <TableColumn className="alias-col-null">Not null</TableColumn>
+
+              </TableHeader>
+              <TableBody>
                 {columns.map((column, c) => {
                   const columnName = textField(column, 'name') ?? ''
                   const dbName = textField(column, 'dbName') ?? ''
@@ -189,24 +183,24 @@ export function AliasDbEditor({ nodeId, tree, api, onTreeChange }: EditorProps) 
                   const columnBasePath = `${tableBasePath}.entityFields.entityFieldDb[${c}]`
 
                   return (
-                    <tr key={columnName || c}>
-                      <td className="alias-pk">{primaryKey ? <span role="img" aria-label="primary key" title="Primary key">{'⚿'}</span> : null}</td>
-                      <td>{columnName}</td>
-                      <td>
+                    <TableRow key={columnName || c}>
+                      <TableCell className="alias-pk">{primaryKey ? <span role="img" aria-label="primary key" title="Primary key">{'⚿'}</span> : null}</TableCell>
+                      <TableCell>{columnName}</TableCell>
+                      <TableCell>
                         <EditableText
                           value={dbName}
                           ariaLabel={`Table ${t} column ${c} db name`}
                           onCommit={(next) => commitScalar(`${columnBasePath}.dbName`, next)}
                         />
-                      </td>
-                      <td className="alias-type-name" title={columnType === undefined ? undefined : `java.sql.Types ${columnType}`}>{sqlTypeName(columnType)}</td>
-                      <td className="alias-num">{size ?? ''}</td>
-                      <td>{notNull ? 'yes' : ''}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="alias-type-name" title={columnType === undefined ? undefined : `java.sql.Types ${columnType}`}>{sqlTypeName(columnType)}</TableCell>
+                      <TableCell className="alias-num">{size ?? ''}</TableCell>
+                      <TableCell>{notNull ? 'yes' : ''}</TableCell>
+                    </TableRow>
                   )
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
             )}
           </section>
         )

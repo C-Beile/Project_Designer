@@ -9,6 +9,7 @@ import { useDialog } from '../core/plugins/registry'
 import { UsersTab } from '../services/UsersTable'
 import { systemKey, useTunnelState } from '../services/tunnelState'
 import { SUB_TAB_LABELS, isFileNode, isServiceNode, isRestNode, isTunnelNode, isAliasConfigNode, subTabsFor, type EditorTab, type SubTab } from './tabModel'
+import { Button } from '../core/ui/controls'
 
 // Content of the active editor tab: the sub-tab row (Editor | Source | History, plus Users for
 // system and alias; LAYOUT_SPEC §6) and the selected view. Monaco is only loaded once a
@@ -158,16 +159,16 @@ export function ObjectEditorArea({
     <div className="forge-object-editor">
       <div className="forge-subtabs" role="tablist" aria-label="Editor views">
         {subTabs.map((s) => (
-          <button
+          <Button variant="bare"
             key={s}
-            type="button"
+
             role="tab"
             aria-selected={s === sub}
             className={`forge-subtab${s === sub ? ' is-active' : ''}`}
             onClick={() => onSubTab(s)}
           >
             {SUB_TAB_LABELS[s]}
-          </button>
+          </Button>
         ))}
         <span className="forge-subtabs-fill" />
       </div>

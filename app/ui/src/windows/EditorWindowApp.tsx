@@ -13,6 +13,8 @@ import type { DbStatus, TreeNode, UndoRedoOutcome, WireValue } from '../wire/typ
 import { EVENTS, type EditorCommand, type EditorDockResult, type EditorWindowPayload, type FloatAction } from './protocol'
 import { getWindowBackend } from './windowService'
 import { errorText } from '../core/errorText'
+import { Button } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Content of the window an editor was moved into. The document itself stays in the backend (one
 // copy for all windows), so this window only draws the editor and reports back what the main
@@ -30,12 +32,11 @@ export function EditorWindowApp({ name, api }: { name: string; api: ForgeApi }) 
   const [payload, setPayload] = useState<EditorWindowPayload | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     getWindowBackend()
       .payload('editor', name)
       .then((text) => {
-        if (cancelled) return
+        if (signal.aborted) return
         try {
           const parsed = text ? (JSON.parse(text) as EditorWindowPayload) : null
           if (parsed?.node?.id) setPayload(parsed)
@@ -44,10 +45,7 @@ export function EditorWindowApp({ name, api }: { name: string; api: ForgeApi }) 
           setFailed('The editor window could not read its document.')
         }
       })
-      .catch((e) => !cancelled && setFailed(String(e)))
-    return () => {
-      cancelled = true
-    }
+      .catch((e) => !signal.aborted && setFailed(String(e)))
   }, [name])
 
   let body: ReactNode
@@ -95,15 +93,11 @@ function EditorWindowBody({ name, api, payload }: { name: string; api: ForgeApi;
     void loadValue()
   }, [loadValue])
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     api
       .openProject(project)
-      .then((t) => !cancelled && setTree(t))
+      .then((t) => !signal.aborted && setTree(t))
       .catch(() => {})
-    return () => {
-      cancelled = true
-    }
   }, [api, project])
 
   const markDirty = useCallback((next: boolean) => {
@@ -347,22 +341,22 @@ function EditorWindowBody({ name, api, payload }: { name: string; api: ForgeApi;
           {dirty ? <span className="forge-tab-dirty" role="img" aria-label="Unsaved changes"> ●</span> : null}
         </strong>
         <span className="forge-ew-fill" />
-        <button type="button" onClick={() => void save()} disabled={!dirty} title="Save (Ctrl+S)">
+        <Button variant="bare" onClick={() => void save()} isDisabled={!dirty} title="Save (Ctrl+S)">
           Save
-        </button>
+        </Button>
         {!isFile ? (
           <>
-            <button type="button" onClick={() => void undoRedo('undo')} title="Undo (Ctrl+Z)">
+            <Button variant="bare" onClick={() => void undoRedo('undo')} title="Undo (Ctrl+Z)">
               Undo
-            </button>
-            <button type="button" onClick={() => void undoRedo('redo')} title="Redo (Ctrl+Y)">
+            </Button>
+            <Button variant="bare" onClick={() => void undoRedo('redo')} title="Redo (Ctrl+Y)">
               Redo
-            </button>
+            </Button>
           </>
         ) : null}
-        <button type="button" onClick={() => void dock()} title="Put this editor back into the Designer window">
+        <Button variant="bare" onClick={() => void dock()} title="Put this editor back into the Designer window">
           Dock
-        </button>
+        </Button>
       </div>
       <div className="forge-ew-body">
         <ProjectIndexContext.Provider value={index}>

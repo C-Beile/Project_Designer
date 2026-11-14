@@ -15,19 +15,22 @@ use serde::{Deserialize, Serialize};
 /// `Vec` (not a JSON object) for `Object`, because ADITO's own format is order-sensitive
 /// (aod-format.md §1.2, `value.rs`'s own doc comment) and a plain JSON object's key order is not
 /// a format guarantee worth relying on across the IPC boundary.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, specta::Type)]
 // The frontend (ui/src/wire/types.ts) reads the lowercase tags: "text", "object", ... (rc2 fix: without
 // the rename every editor received "Object"/"Text" and rendered an empty tree).
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum WireValue {
     Text { value: String },
     Bool { value: bool },
-    Int { value: i64 },
+    Int {
+        #[specta(type = i32)]
+        value: i64,
+    },
     Object { fields: Vec<WireField> },
     Array { items: Vec<WireValue> },
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, specta::Type)]
 pub struct WireField {
     pub key: String,
     pub value: WireValue,

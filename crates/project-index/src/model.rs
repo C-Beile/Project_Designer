@@ -50,7 +50,7 @@ pub struct RefEntry {
     pub column: Option<u32>,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct ProblemDto {
     /// The object file (also the tree node id).
     pub node_id: String,
@@ -65,7 +65,7 @@ pub struct ProblemDto {
     pub column: Option<u32>,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct UsageDto {
     pub node_id: String,
     pub object: String,

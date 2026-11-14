@@ -7,6 +7,7 @@ import { createMockForgeApi } from '../test/mockApi'
 import { LAYOUT_PATH, defaultLayout, loadLayout, sanitizeLayout } from './layoutState'
 import { buildMenus, shortcutItems, type MenuContext } from './menuModel'
 import type { TreeNode } from '../wire/types'
+import { selected } from '../test/dropdown'
 
 function treeWithSystems(): TreeNode[] {
   return [
@@ -98,14 +99,14 @@ describe('menu model', () => {
     for (const id of ['file.new', 'file.importProject', 'file.exportProject', 'refactor.rename']) expect(find(open, id)?.enabled, id).toBe(true)
   })
 
-  it('places the Forge transpile block before Plugins and offers Reset Windows', () => {
+  it('places the Forge transpile block before Plugins and offers Reset Panel Layout', () => {
     const menus = buildMenus(ctx)
     const tools = menus[7].items.map((i) => i.label)
     expect(tools.indexOf('Native Tools')).toBeLessThan(tools.indexOf('Transpile (Partial)'))
     expect(tools.indexOf('Transpile (Partial)')).toBeLessThan(tools.indexOf('Plugins'))
     expect(tools.slice(-1)).toEqual(['Options'])
     expect(tools).toEqual(expect.arrayContaining(['Project Properties', 'Build and Deploy...', 'Transpile (Full)', 'Transpiler', 'Export Project Structure', 'Theme']))
-    expect(menus[8].items.map((i) => i.label)).toContain('Reset Windows')
+    expect(menus[8].items.map((i) => i.label)).toContain('Reset Panel Layout')
     expect(menus[9].items.map((i) => i.label)).toContain('About Dito Designer')
   })
 })
@@ -120,11 +121,12 @@ describe('layout persistence', () => {
     expect(loadLayout()).toEqual(defaultLayout())
   })
 
-  it('keeps valid fields, clamps sizes and ignores unknown panel modes', () => {
-    const l = sanitizeLayout({ leftWidth: 99999, panels: { navigator: 'closed', output: 'weird' } })
-    expect(l.leftWidth).toBe(900)
+  it('keeps valid fields, reads the old minimized mode as closed and ignores unknown panel modes', () => {
+    const l = sanitizeLayout({ panels: { navigator: 'closed', projects: 'minimized', output: 'weird' }, dock: { grid: 1 } })
     expect(l.panels.navigator).toBe('closed')
+    expect(l.panels.projects).toBe('closed')
     expect(l.panels.output).toBe('open')
+    expect(l.dock).toEqual({ grid: 1 })
   })
 
   it('a closed panel stays closed after a restart', async () => {
@@ -139,23 +141,23 @@ describe('layout persistence', () => {
 })
 
 describe('Shell - docking', () => {
-  it('shows every tool window of the original at start', () => {
+  it('shows every tool window of the original at start', async () => {
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     render(<Shell api={api} projectRoot="" />)
     expect(screen.getByRole('tab', { name: 'Projects' })).toBeInTheDocument()
     expect(screen.queryByRole('tab', { name: 'Services' })).not.toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Properties' })).toHaveTextContent('<No Properties>')
+    expect(await screen.findByText('<No Properties>')).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Navigator' })).toBeInTheDocument()
-    for (const t of [/^Output/, 'Search Results', 'Notifications', 'Refactoring', 'Problems']) {
-      expect(screen.getByRole('tab', { name: t })).toBeInTheDocument()
+    for (const t of [/^Output - /, 'Search Results', 'Notifications', 'Refactoring', 'Problems']) {
+      expect(await screen.findByRole('tab', { name: t })).toBeInTheDocument()
     }
     for (const t of ['Database', 'Build', 'Default', 'NodeJS']) {
       expect(screen.getByRole('tab', { name: t })).toBeInTheDocument()
     }
-    expect(screen.getByRole('tab', { name: /^Output/ })).toHaveTextContent('Output - Build')
+    expect(screen.getByRole('tab', { name: /^Output - / })).toHaveTextContent('Output - Build')
   })
 
-  it('a closed panel comes back through the Window menu, and Reset Windows restores everything', async () => {
+  it('a closed panel comes back through the Window menu, and Reset Panel Layout restores everything', async () => {
     const user = userEvent.setup()
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     render(<Shell api={api} projectRoot="" />)
@@ -165,23 +167,12 @@ describe('Shell - docking', () => {
     await openMenuItem(user, 'Window', /^Navigator/)
     expect(screen.getByRole('region', { name: 'Navigator' })).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Minimize Output' }))
+    await user.click(screen.getByRole('button', { name: 'Close Output' }))
     await user.click(screen.getByRole('button', { name: 'Close Properties' }))
-    expect(screen.getByRole('button', { name: 'Output' })).toBeInTheDocument()
-    await openMenuItem(user, 'Window', /Reset Windows/)
+    expect(screen.queryByRole('region', { name: 'Output' })).toBeNull()
+    await openMenuItem(user, 'Window', /Reset Panel Layout/)
     expect(screen.getByRole('region', { name: 'Properties' })).toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: 'Build' })).toBeInTheDocument()
-  })
-
-  it('dividers move with the keyboard', async () => {
-    const user = userEvent.setup()
-    const api = createMockForgeApi({ projectTree: [], documents: {} })
-    render(<Shell api={api} projectRoot="" />)
-    const splitter = screen.getByRole('separator', { name: 'Resize left column' })
-    const before = Number(splitter.getAttribute('aria-valuenow'))
-    splitter.focus()
-    await user.keyboard('{ArrowRight}')
-    expect(Number(splitter.getAttribute('aria-valuenow'))).toBe(before + 10)
+    expect(await screen.findByRole('tab', { name: 'Build' })).toBeInTheDocument()
   })
 })
 
@@ -259,8 +250,8 @@ describe('Shell - toolbar, transpile and options', () => {
   it('a fresh start is always back on the ADITO transpiler', () => {
     const api = createMockForgeApi({ projectTree: [], documents: {} })
     render(<Shell api={api} projectRoot="" />)
-    expect(screen.getByRole('combobox', { name: 'Transpiler engine' })).toHaveValue('official')
-    expect(screen.queryByRole('alert')).toBeNull()
+    expect(selected('Transpiler engine')).toBe('official')
+    expect(screen.queryAllByRole('alert').filter((el) => !el.className.includes('dv-live-region'))).toEqual([])
   })
 
   it('Tools > Options shows the detected installation, saves a chosen one and transpile hands it on', async () => {

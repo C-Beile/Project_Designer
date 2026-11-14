@@ -1,0 +1,67 @@
+[theme]
+name = "Dark (Night Owl)"
+id = "dark"
+kind = "dark"                       # dark | light
+author = "Sarah Drasner (Night Owl), angepasst"
+
+[surface]
+base = "#011627"                # Hauptfläche, Editor
+raised = "#021320"              # Menüs, Dialoge, Popover
+panel = "#0b2942"               # Seitenflächen, aktiver Tab
+inset = "#01111d"               # vertiefte oder inaktive Flächen
+titlebar = "#011627"            # Titelleiste
+titlebar-inactive = "#010e1a"   # Titelleiste, Fenster ohne Fokus
+
+[text]
+primary = "#d6deeb"             # normaler Text
+muted = "#62829c"               # Nebentext
+comment = "#6d8484"             # Kommentare, Platzhalter
+titlebar = "#eeefff"            # Text der Titelleiste
+titlebar-inactive = "#62829c"   # Text der Titelleiste ohne Fokus
+
+[border]
+subtle = "#1d3b53"              # feine Trennlinien
+strong = "#5f7e97"              # deutliche Rahmen
+focus = "#82aaff"               # Fokusring
+
+[accent]
+primary = "#82aaff"             # Hauptakzent, Links
+secondary = "#c792ea"           # zweiter Akzent
+warm = "#ecc48d"                # warmer Akzent
+cool = "#7fdbca"                # kühler Akzent
+
+[state]
+error = "#ef5350"               # Fehler
+warning = "#ffca28"             # Warnung
+success = "#addb67"             # Erfolg
+
+[selection]
+background = "#82aaff"          # Hintergrund einer Auswahl
+text = "#011627"                # Text einer Auswahl
+row = "#0b4f8f"                 # gewählte Zeile in Listen und Properties
+
+[button.primary]
+background = "#82aaff"          # Hauptknopf, Hintergrund
+text = "#011627"                # Hauptknopf, Text
+
+[editor]
+background = "#011627"
+foreground = "#d6deeb"
+selection = "#1d3b53"
+line-highlight = "#0b294280"
+cursor = "#82aaff"
+line-number = "#62829c"
+line-number-active = "#d6deeb"
+
+[editor.syntax]
+keyword = "#c792ea"
+string = "#ecc48d"
+number = "#f78c6c"
+comment = "#637777"
+function = "#82aaff"
+type = "#ffcb8b"
+variable = "#d6deeb"
+constant = "#82aaff"
+identifier = "#d6deeb"
+operator = "#7fdbca"
+delimiter = "#d6deeb"

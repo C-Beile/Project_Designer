@@ -3,13 +3,14 @@
 use serde::Serialize;
 use std::path::Path;
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct WebserviceDto {
     pub name: String,
     pub module: Option<String>,
     pub methods: Vec<String>,
     pub login_types: Vec<String>,
+    #[specta(type = u32)]
     pub fields: usize,
 }
 

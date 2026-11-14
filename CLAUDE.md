@@ -71,9 +71,9 @@ Wichtige Ordner haben eine eigene `CLAUDE.md` (Karte) mit Dateiliste, Regeln, Fa
 
 ## Bibliotheken
 
-- Frontend: react, react-dom, monaco-editor, marked, dompurify, @tauri-apps/api. Kein State-Manager, kein Komponenten-Kit, kein Router. Alles eigenes CSS (`styles.css`).
+- Frontend: react, react-dom, monaco-editor, marked, dompurify, @tauri-apps/api, react-aria-components (nur in `core/ui/controls/`), dockview-react (Docking, nur in `shell/dock/`), smol-toml (Dev-Config und Themes). Kein State-Manager, kein Router (kleine Stores: `core/store.ts`). Alles eigenes CSS (`styles.css`) auf Tokens.
 - Rust: tauri 2 (+ updater, log), serde, quick-xml, tokio, sqlx (MySQL/Postgres), tiberius (MSSQL), zip, notify, rfd (Datei-Dialoge), windows-sys, clap, thiserror.
-- Git, SSH-Tunnel und Transpiler laufen über externe Programme, nicht über Bibliotheken.
+- Git und Transpiler laufen über externe Programme. Der SSH-Tunnel läuft in der App über `russh` (kein plink mehr).
 
 ## Bauen und starten (Windows)
 
@@ -89,12 +89,12 @@ Wichtige Ordner haben eine eigene `CLAUDE.md` (Karte) mit Dateiliste, Regeln, Fa
 ## Stand der Tests (nach Index + File-Watcher, 2026-11-12)
 
 - Rust: 676 grün, 12 rot. Alle 12 brauchen eine echte ADITO-Installation oder ein Korpus (`native-transpiler` lib 2 + `full_harness_run`, `npm-modules` resolve_real_corpus 3 + resolve_synthetic 2, `adito-transpiler` real_transpiler 2, `project` transpile_action_real 2: `official_engine...` und `missing_engine_param...`, weil der offizielle Transpiler Standard ist). `native-transpiler` `incremental_stage` ist manchmal flaky.
-- UI: 606 grün, 3 rot (`newObjectRenameZip.test.tsx`), 4 Testdateien laden nicht (fehlende Dateien unter `E:0_design`: sheetLayout, menuSpec, toolbarSpec, popupSpec).
+- UI (2026-11-14): 755 grün, 10 übersprungen. Die vier Spec-Tests (sheetLayout, menuSpec, toolbarSpec, popupSpec) überspringen sich, wenn `E:\60_design` fehlt.
 - Bauen mit MSVC: `rust-toolchain.toml` steht auf GNU (braucht MinGW im PATH). Ohne MinGW: `RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-msvc` setzen.
 
 ## Umbau
 
-Aufteilung in Crates und Plugins nach `docs/refactoring-plan.md` (dort Stand, Namen, Begründungen). Umgesetzt, aber **nicht committet** und **nicht in der laufenden App geprüft**. Umgestellt auf das UI-Register: Git-Toolbar-Knöpfe, Statusleisten-Slots, Baum-Kontextmenü-Slot, Plugins-Dialog (`mergePluginList`). Auch der Git-Branch-Knopf der Statusleiste (`features/git/GitStatusItem.tsx`) und die Git-Befehle (`team.*`) hängen jetzt am Register. Offen: optional `ts-rs`/`specta`. CI: `.github/workflows/ci.yml` (Tests blockieren noch nicht, siehe Basislinie).
+Aufteilung in Crates und Plugins nach `docs/refactoring-plan.md` (dort Stand, Namen, Begründungen). Umgesetzt, aber **nicht committet** und **nicht in der laufenden App geprüft**. Umgestellt auf das UI-Register: Git-Toolbar-Knöpfe, Statusleisten-Slots, Baum-Kontextmenü-Slot, Plugins-Dialog (`mergePluginList`). Auch der Git-Branch-Knopf der Statusleiste (`features/git/GitStatusItem.tsx`) und die Git-Befehle (`team.*`) hängen jetzt am Register. tauri-specta typisiert alle Befehle (`app/src-tauri/src/bindings.rs`, erzeugt `app/ui/src/api/bindings.ts` beim Debug-Start). CI: `.github/workflows/ci.yml` (Tests blockieren noch nicht, siehe Basislinie).
 
 ## Konfiguration (`designer.conf`)
 
@@ -121,3 +121,6 @@ Aufteilung in Crates und Plugins nach `docs/refactoring-plan.md` (dort Stand, Na
 - Nichts committen oder pushen ohne Auftrag.- Neue UI-Teile eines Features über das UI-Register (`core/plugins/registry.ts`) anmelden, nicht fest in Shell/Toolbar/StatusBar einbauen. Eigene Masken aus `core/ui/` nutzen (Recycling).
 - Neue Befehle eines Plugins über `plugin_call` laufen lassen, nicht als neuer Tauri-Befehl. Jeder Tauri-Befehl packt seinen Rumpf in `commands::guard`/`guard_async` (Panic-Schutz, siehe `app/src-tauri/CLAUDE.md`).
 - Einfache, mechanische Aufgaben an Haiku (`code-chores`), nicht an Opus.
+- UI-Umbau: Plan und Entscheidungen stehen in `docs/ui-refactor-plan.md` (React Aria, TOML-Themes, Docking mit dockview, tauri-specta, `app/config/` für Dev-Konfiguration). Vor Arbeit an der UI lesen.
+- Quelldateien nie mit PowerShell 5.1 (`Set-Content`, `Out-File`) schreiben, das speichert ANSI statt UTF-8. Prüfung: `node scripts/check-encoding.mjs`.
+- Lint: `cd app/ui && npm run lint`. Die Basislinie `lint-baseline.json` darf nicht schlechter werden.

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { copyText } from '../clipboard'
+import { Button } from './controls'
 
 export interface CopyButtonProps {
   /** Der Text, oder eine Funktion, die ihn erst beim Klick liefert (spart Arbeit bei vielen Knöpfen). */
@@ -32,7 +33,7 @@ export function CopyButton({ text, label = 'Copy', className, feedbackMs = 1500,
 
   const title = state === 'done' ? 'Copied' : state === 'failed' ? 'Copy failed' : label
   return (
-    <button type="button" className={`forge-copy-btn${className ? ` ${className}` : ''}`} data-state={state} aria-label={label} title={title} onClick={(e) => void copy(e)}>
+    <Button variant="bare" className={`forge-copy-btn${className ? ` ${className}` : ''}`} data-state={state} aria-label={label} title={title} onClick={(e) => void copy(e)}>
       <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" className="forge-copy-icon">
         <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
         <path d="M10.5 3.5V3a1.5 1.5 0 0 0-1.5-1.5H3A1.5 1.5 0 0 0 1.5 3v6A1.5 1.5 0 0 0 3 10.5h.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
@@ -43,6 +44,6 @@ export function CopyButton({ text, label = 'Copy', className, feedbackMs = 1500,
       <span className="forge-copy-live" role="status">
         {state === 'done' ? 'Copied' : state === 'failed' ? 'Copy failed' : ''}
       </span>
-    </button>
+    </Button>
   )
 }

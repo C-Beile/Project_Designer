@@ -6,6 +6,7 @@ import { TunnelStateIcon } from '../tree/TunnelStateIcon'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { canMoveToWindow } from '../windows/editorWindows'
 import type { EditorTab } from './tabModel'
+import { Button } from '../core/ui/controls'
 
 function canMove(tab: EditorTab | undefined): boolean {
   return !!tab && canMoveToWindow(tab.node)
@@ -166,8 +167,8 @@ export function EditorTabBar({
                   ●
                 </span>
               ) : null}
-              <button
-                type="button"
+              <Button variant="bare"
+
                 className="forge-tab-close"
                 tabIndex={-1}
                 aria-label={`Close ${tab.node.label}`}
@@ -177,13 +178,13 @@ export function EditorTabBar({
                 }}
               >
                 ×
-              </button>
+              </Button>
             </div>
           )
         })}
       </div>
-      <button
-        type="button"
+      <Button variant="bare"
+
         className="forge-tabbar-more"
         aria-label="Show all open editors"
         aria-haspopup="menu"
@@ -191,13 +192,13 @@ export function EditorTabBar({
         onClick={() => setMenuOpen((v) => !v)}
       >
         ▾
-      </button>
+      </Button>
       {menuOpen ? (
         <div className="forge-tabbar-menu" role="menu" aria-label="Open editors">
           {tabs.map((tab) => (
-            <button
+            <Button variant="bare"
               key={tab.id}
-              type="button"
+
               role="menuitemradio"
               aria-checked={tab.id === activeId}
               className={`forge-tabbar-menuitem${tab.id === activeId ? ' is-active' : ''}`}
@@ -211,7 +212,7 @@ export function EditorTabBar({
                 {tab.node.label}
                 {dirtyIds.has(tab.id) ? ' ●' : ''}
               </span>
-            </button>
+            </Button>
           ))}
         </div>
       ) : null}

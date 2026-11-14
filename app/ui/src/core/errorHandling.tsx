@@ -5,15 +5,20 @@ import { isTauriRuntime } from '../chrome/tauriWindow'
 import { Modal } from './Modal'
 import { logError } from './errorLog'
 import { copyText } from './clipboard'
-import { errorText } from './errorText'
+import { errorDetails, errorText } from './errorText'
+import { Button } from './ui/controls'
 
 // No silent failures: a render crash of one editor shows an error panel inside that editor area
 // (the rest of the app keeps working), a crash of the whole shell shows a full-window message, and
 // every error is written to the log file in the app data folder (Help > Open Log Folder).
 
-function describe(error: unknown): string {
-  if (error instanceof Error) return `${error.name}: ${error.message}\n${error.stack ?? ''}`
-  return String(error)
+const describe = errorDetails
+
+/** Wo und wann der Fehler auftrat: für den Knopf "Copy details", damit eine Nachricht ohne Rückfrage reicht. */
+function crashContext(): string {
+  const where = typeof window === 'undefined' ? '?' : `${window.location.pathname}${window.location.search}`
+  const agent = typeof navigator === 'undefined' ? '?' : navigator.userAgent
+  return `Window: ${where}\nTime: ${new Date().toISOString()}\nUser agent: ${agent}`
 }
 
 // Browsers report this when a layout pass needed a second frame (Monaco and the dock panels resize
@@ -33,8 +38,8 @@ export function isBenignRejection(reason: unknown): boolean {
 function CopyDetails({ text }: { text: string }) {
   const [state, setState] = useState<'idle' | 'done' | 'failed'>('idle')
   return (
-    <button
-      type="button"
+    <Button variant="bare"
+
       onClick={() =>
         void copyText(text).then((ok) => {
           setState(ok ? 'done' : 'failed')
@@ -43,7 +48,7 @@ function CopyDetails({ text }: { text: string }) {
       }
     >
       {state === 'done' ? 'Copied' : state === 'failed' ? 'Copy failed' : 'Copy details'}
-    </button>
+    </Button>
   )
 }
 
@@ -55,13 +60,13 @@ function ErrorPanel({ api, title, detail, onRetry }: { api?: ForgeApi; title: st
       <pre className="forge-error-detail">{detail.split('\n').slice(0, 6).join('\n')}</pre>
       <div className="forge-error-actions">
         {onRetry ? (
-          <button type="button" onClick={onRetry}>
+          <Button variant="bare" onClick={onRetry}>
             Try again
-          </button>
+          </Button>
         ) : null}
-        <button type="button" onClick={() => void api?.openLogFolder().catch(() => {})}>
+        <Button variant="bare" onClick={() => void api?.openLogFolder().catch(() => {})}>
           Open Log Folder
-        </button>
+        </Button>
         <CopyDetails text={`${title}${String.fromCharCode(10)}${detail}`} />
       </div>
     </div>
@@ -73,9 +78,9 @@ function CompactError({ label, detail, onRetry }: { label: string; detail: strin
   return (
     <div className="forge-error-compact" role="alert" title={detail}>
       <span>{label} failed: {detail.split(String.fromCharCode(10))[0].slice(0, 160)}</span>
-      <button type="button" onClick={onRetry}>
+      <Button variant="bare" onClick={onRetry}>
         Try again
-      </button>
+      </Button>
     </div>
   )
 }
@@ -104,7 +109,7 @@ export class ErrorBoundary extends Component<{ api?: ForgeApi; label: string; co
 // Catches what no boundary can: errors in event handlers and rejected promises, plus panics of the
 // Rust side (event `forge://panic`). The user gets a dialog instead of a silently dead button.
 export function CrashListener({ api }: { api: ForgeApi }) {
-  const [crash, setCrash] = useState<{ message: string; log?: string } | null>(null)
+  const [crash, setCrash] = useState<{ message: string; log?: string; details?: string } | null>(null)
 
   useEffect(() => {
     const onError = (e: ErrorEvent) => {
@@ -112,16 +117,19 @@ export function CrashListener({ api }: { api: ForgeApi }) {
         e.stopImmediatePropagation()
         return
       }
-      void api.logClientError(`window error: ${describe(e.error ?? e.message)}\nstelle: ${e.filename || '?'}:${e.lineno}:${e.colno}`)?.catch?.(() => {})
-      setCrash({ message: e.message || 'Unexpected error in the user interface.' })
+      const where = `at ${e.filename || '?'}:${e.lineno}:${e.colno}`
+      const details = `${describe(e.error ?? e)}\n${where}`
+      void api.logClientError(`window error: ${details}`)?.catch?.(() => {})
+      setCrash({ message: e.message || errorText(e.error ?? e) || 'Unexpected error in the user interface.', details })
     }
     const onRejection = (e: PromiseRejectionEvent) => {
       if (isBenignRejection(e.reason)) {
         e.preventDefault()
         return
       }
-      void api.logClientError(`unhandled promise rejection: ${describe(e.reason)}`)?.catch?.(() => {})
-      setCrash({ message: e.reason instanceof Error ? e.reason.message : String(e.reason) })
+      const details = describe(e.reason)
+      void api.logClientError(`unhandled promise rejection: ${details}`)?.catch?.(() => {})
+      setCrash({ message: errorText(e.reason), details })
     }
     window.addEventListener('error', onError)
     window.addEventListener('unhandledrejection', onRejection)
@@ -148,13 +156,13 @@ export function CrashListener({ api }: { api: ForgeApi }) {
       onClose={() => setCrash(null)}
       footer={
         <>
-          <button type="button" onClick={() => void api.openLogFolder().catch(() => {})}>
+          <Button variant="bare" onClick={() => void api.openLogFolder().catch(() => {})}>
             Open Log Folder
-          </button>
-          <CopyDetails text={`${crash.message}${crash.log ? `${String.fromCharCode(10)}${crash.log}` : ''}`} />
-          <button type="button" onClick={() => setCrash(null)}>
+          </Button>
+          <CopyDetails text={[crash.message, crash.details, crash.log, crashContext()].filter(Boolean).join(String.fromCharCode(10, 10))} />
+          <Button variant="bare" onClick={() => setCrash(null)}>
             Close
-          </button>
+          </Button>
         </>
       }
     >

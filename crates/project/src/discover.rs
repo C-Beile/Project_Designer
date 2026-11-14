@@ -4,7 +4,7 @@
 use serde::Serialize;
 use std::path::Path;
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, specta::Type)]
 pub struct FoundProject {
     pub path: String,
     pub name: String,

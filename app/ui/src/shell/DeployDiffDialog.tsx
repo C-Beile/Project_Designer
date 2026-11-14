@@ -1,6 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from 'react'
 import type { DeployChangeView } from '../wire/types'
 import { Modal } from '../core/Modal'
+import { Button, Dropdown } from '../core/ui/controls'
 
 const DeployDiffEditor = lazy(() => import('./DeployDiffEditor').then((m) => ({ default: m.DeployDiffEditor })))
 
@@ -114,9 +115,9 @@ export function DeployDiffDialog({ name, view, onClose }: { name: string; view: 
       title={`Diff Deploy ${name}`}
       onClose={onClose}
       footer={
-        <button type="button" onClick={onClose}>
+        <Button variant="bare" onClick={onClose}>
           Close
-        </button>
+        </Button>
       }
     >
       <div className="forge-ddiff">
@@ -126,10 +127,7 @@ export function DeployDiffDialog({ name, view, onClose }: { name: string; view: 
           </span>
           <label>
             <span>Whitespace Treatment:</span>
-            <select aria-label="Whitespace Treatment" value={ignore ? 'ignore' : 'keep'} onChange={(e) => setIgnore(e.target.value === 'ignore')}>
-              <option value="ignore">Ignore all whitespace</option>
-              <option value="keep">Do not ignore whitespace</option>
-            </select>
+            <Dropdown value={ignore ? 'ignore' : 'keep'} aria-label="Whitespace Treatment" options={[{ id: "ignore", label: "Ignore all whitespace" }, { id: "keep", label: "Do not ignore whitespace" }]} onChange={(v) => setIgnore(v === 'ignore')} />
           </label>
         </div>
         <div className="forge-ddiff-head">

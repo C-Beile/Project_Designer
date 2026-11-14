@@ -1,0 +1,22 @@
+{
+  "defaultSeverity": "warning",
+  "rules": {
+    "color-no-hex": true,
+    "color-named": "never",
+    "function-disallowed-list": ["rgb", "rgba", "hsl", "hsla"],
+    "declaration-property-value-disallowed-list": {
+      "font-size": ["/px$/"]
+    }
+  },
+  "overrides": [
+    {
+      "files": ["src/theme/tokens.css"],
+      "rules": {
+        "color-no-hex": null,
+        "color-named": null,
+        "function-disallowed-list": null,
+        "declaration-property-value-disallowed-list": null
+      }
+    }
+  ]
+}

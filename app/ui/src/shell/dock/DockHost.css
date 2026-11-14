@@ -1,0 +1,47 @@
+/* Dockview an unsere Tokens hängen. Nur Variablen, keine festen Farben. */
+.forge-dock {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--bg);
+}
+
+.forge-dockview {
+  flex: 1 1 auto;
+  min-width: 0;
+  --dv-group-view-background-color: var(--bg-panel);
+  --dv-tabs-and-actions-container-background-color: var(--bg-inset);
+  --dv-tabs-and-actions-container-height: var(--tab-h);
+  --dv-tabs-and-actions-container-font-size: inherit;
+  --dv-activegroup-visiblepanel-tab-background-color: var(--bg-panel);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--bg-inset);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--bg-panel);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--bg-inset);
+  --dv-activegroup-visiblepanel-tab-color: var(--fg);
+  --dv-activegroup-hiddenpanel-tab-color: var(--fg-muted);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--fg);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--fg-muted);
+  --dv-tab-divider-color: var(--border);
+  --dv-separator-border: var(--border);
+  --dv-paneview-active-outline-color: var(--focus-ring);
+  --dv-sash-color: var(--border);
+  --dv-active-sash-color: var(--focus-ring);
+  --dv-drag-over-background-color: var(--selected-bg);
+  --dv-icon-hover-background-color: var(--bg-elevated);
+}
+
+.forge-dock-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  padding: 0 4px 0 8px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.forge-dock-tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -8,7 +8,7 @@ const MAX_HITS: usize = 2000;
 const MAX_FILE_BYTES: u64 = 2 * 1024 * 1024;
 const MAX_LINE_CHARS: usize = 300;
 
-#[derive(Debug, Clone, Copy, Default, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchOptions {
     #[serde(default)]
@@ -19,25 +19,31 @@ pub struct SearchOptions {
     pub whole_word: bool,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, specta::Type)]
 pub struct SearchHit {
     pub path: String,
+    #[specta(type = u32)]
     pub line: usize,
+    #[specta(type = u32)]
     pub column: usize,
     pub text: String,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, specta::Type)]
 pub struct SearchResult {
     pub hits: Vec<SearchHit>,
+    #[specta(type = u32)]
     pub files_searched: usize,
+    #[specta(type = u32)]
     pub files_with_hits: usize,
     pub truncated: bool,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, specta::Type)]
 pub struct ReplaceResult {
+    #[specta(type = u32)]
     pub files_changed: usize,
+    #[specta(type = u32)]
     pub replacements: usize,
     pub skipped: Vec<String>,
 }

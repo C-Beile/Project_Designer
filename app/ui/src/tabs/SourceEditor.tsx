@@ -3,6 +3,7 @@ import type { ForgeApi } from '../api/ForgeApi'
 import type { ObjectSource, UndoRedoOutcome } from '../wire/types'
 import type { Problem } from '../problems/problemStore'
 import { MonacoText, type EditorMarker, type MonacoTextHandle } from './MonacoText'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Source sub-tab: the raw `.aod` file. Edits are handed to the backend after a short pause (and
 // before every save), where they take the same byte-exact path as Properties edits and become
@@ -69,15 +70,14 @@ export function SourceEditor({
   const applyRef = useRef(apply)
   applyRef.current = apply
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     setSource(null)
     setLoadError(null)
     setError(null)
     api
       .getObjectSource(nodeId)
       .then((s: ObjectSource) => {
-        if (cancelled) return
+        if (signal.aborted) return
         const draft = drafts.get(nodeId)
         applied.current = s.text
         current.current = draft ?? s.text
@@ -85,11 +85,8 @@ export function SourceEditor({
         if (draft !== undefined && draft !== s.text) timer.current = window.setTimeout(() => void applyRef.current(), 0)
       })
       .catch((e) => {
-        if (!cancelled) setLoadError(String(e instanceof Error ? e.message : e))
+        if (!signal.aborted) setLoadError(String(e instanceof Error ? e.message : e))
       })
-    return () => {
-      cancelled = true
-    }
   }, [api, nodeId, drafts])
 
   useEffect(() => {
@@ -103,13 +100,12 @@ export function SourceEditor({
 
   // The object changed elsewhere: show the new text unless the user is typing right now.
   const firstVersion = useRef(version)
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (version === firstVersion.current || timer.current !== undefined || !source) return
-    let cancelled = false
     api
       .getObjectSource(nodeId)
       .then((s) => {
-        if (cancelled || timer.current !== undefined || s.text === current.current) return
+        if (signal.aborted || timer.current !== undefined || s.text === current.current) return
         current.current = s.text
         applied.current = s.text
         drafts.delete(nodeId)
@@ -117,9 +113,6 @@ export function SourceEditor({
         setError(null)
       })
       .catch(() => {})
-    return () => {
-      cancelled = true
-    }
     // Only a new version triggers a refetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version])

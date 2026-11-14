@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Input } from '../core/ui/controls'
 
 // Combobox content search (manual appendix A.3): for long lists (icons, record fields) a typed
 // pattern narrows the choices; `*` is the wildcard, so `*circle` finds every name containing
@@ -39,7 +40,7 @@ export function WildcardPicker({ label, options, current, onPick, onClose }: { l
         }
       }}
     >
-      <input autoFocus type="text" aria-label={`Filter ${label}`} placeholder="e.g. *circle" value={query} onChange={(e) => (setQuery(e.target.value), setIndex(0))} />
+      <Input autoFocus type="text" aria-label={`Filter ${label}`} placeholder="e.g. *circle" value={query} onChange={(e) => (setQuery(e.target.value), setIndex(0))} />
       <ul role="listbox" aria-label={`${label} choices`}>
         {hits.slice(0, 300).map((h, i) => (
           <li key={h} role="option" aria-selected={i === active} className={`${i === active ? 'is-selected' : ''}${h === current ? ' is-current' : ''}`} onClick={() => onPick(h)}>

@@ -80,7 +80,7 @@ describe('SqlEditor', () => {
     const api = await connected()
     render(<SqlEditor api={api} db={ON} label="SQL 1" initial="SELECT 1" onTextChange={() => {}} />)
     await user.click(screen.getByRole('button', { name: 'Run' }))
-    expect(await screen.findByRole('table', { name: 'Query result' })).toBeInTheDocument()
+    expect(await screen.findByRole('grid', { name: 'Query result' })).toBeInTheDocument()
     expect(screen.getByText('NULL')).toBeInTheDocument()
     expect(api.dbCalls).toEqual([{ sql: 'SELECT 1', allowWrite: true }])
   })

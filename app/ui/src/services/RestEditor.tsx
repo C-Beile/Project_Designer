@@ -1,5 +1,5 @@
 import { configGet, configSet } from '../settings/appConfig'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { RestResponseDto, RestUserDto, WebserviceDto } from '../wire/types'
@@ -24,6 +24,9 @@ import {
   type LoginKind,
   type RestCall,
 } from './restTools'
+import { Button, Dropdown, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, TextArea } from '../core/ui/controls'
+import { copyText } from '../core/clipboard'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Zuletzt benutzte Werte des REST-Clients, Abschnitt [rest] in designer.conf (nie das Passwort: das liegt im Schlüsselbund).
 const BASE_KEY = 'base'
@@ -61,7 +64,7 @@ function HighlightedUrl({ value, onChange, onEnter, label }: { value: string; on
         ))}
         {'​'}
       </pre>
-      <input
+      <Input
         className="rest-url"
         value={value}
         aria-label={label}
@@ -102,7 +105,7 @@ function BodyEditor({ value, onChange }: { value: string; onChange: (v: string) 
         <JsonText text={value} />
         {'\n'}
       </pre>
-      <textarea
+      <TextArea
         className="rest-body"
         value={value}
         aria-label="Request body"
@@ -132,17 +135,17 @@ function KeyValueTable({ rows, onChange, label }: { rows: KeyValue[]; onChange: 
       </div>
       {rows.map((r, i) => (
         <div key={i} className={`rest-kv-row${r.on ? '' : ' is-off'}`}>
-          <input type="checkbox" checked={r.on} aria-label={`${label} ${i + 1} active`} onChange={(e) => set(i, { on: e.target.checked })} />
-          <input value={r.key} placeholder="Key" aria-label={`${label} key ${i + 1}`} onChange={(e) => set(i, { key: e.target.value })} />
-          <input value={r.value} placeholder="Value" aria-label={`${label} value ${i + 1}`} onChange={(e) => set(i, { value: e.target.value })} />
-          <button type="button" className="rest-x" aria-label={`Remove ${label} ${i + 1}`} onClick={() => onChange(rows.filter((_, n) => n !== i))}>
+          <Input type="checkbox" checked={r.on} aria-label={`${label} ${i + 1} active`} onChange={(e) => set(i, { on: e.target.checked })} />
+          <Input value={r.key} placeholder="Key" aria-label={`${label} key ${i + 1}`} onChange={(e) => set(i, { key: e.target.value })} />
+          <Input value={r.value} placeholder="Value" aria-label={`${label} value ${i + 1}`} onChange={(e) => set(i, { value: e.target.value })} />
+          <Button variant="bare" className="rest-x" aria-label={`Remove ${label} ${i + 1}`} onClick={() => onChange(rows.filter((_, n) => n !== i))}>
             ×
-          </button>
+          </Button>
         </div>
       ))}
-      <button type="button" className="rest-add" onClick={() => onChange([...rows, { key: '', value: '', on: true }])}>
+      <Button variant="bare" className="rest-add" onClick={() => onChange([...rows, { key: '', value: '', on: true }])}>
         + Add
-      </button>
+      </Button>
     </div>
   )
 }
@@ -184,51 +187,39 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     api
       .restListWebservices(projectRoot)
       .then((list) => {
-        if (cancelled) return
+        if (signal.aborted) return
         setServices(list)
         setOpen(new Set(list.filter((w) => w.module === null).map((w) => w.name)))
       })
       .catch(() => setServices([]))
-    return () => {
-      cancelled = true
-    }
   }, [api, projectRoot])
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     api
       .restUsers()
       .then((list) => {
-        if (cancelled) return
+        if (signal.aborted) return
         setUsers(list)
         setUser((cur) => (cur !== '' ? cur : (defaultUser(list)?.title ?? '')))
       })
       .catch(() => setUsers([]))
-    return () => {
-      cancelled = true
-    }
   }, [api])
 
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (loginKind !== 'basic' || user.trim() === '' || base.trim() === '') {
       setHasPassword(false)
       return
     }
-    let cancelled = false
     api
       .restHasPassword(base, user)
       .then((has) => {
-        if (!cancelled) setHasPassword(has)
+        if (!signal.aborted) setHasPassword(has)
       })
       .catch(() => setHasPassword(false))
-    return () => {
-      cancelled = true
-    }
   }, [api, base, user, loginKind])
 
   const groups = useMemo(() => {
@@ -352,11 +343,10 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
   }
 
   async function copyBody(text: string) {
-    try {
-      await navigator.clipboard.writeText(text)
+    if (await copyText(text)) {
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1200)
-    } catch {
+    } else {
       setCopied(false)
     }
   }
@@ -364,16 +354,16 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
   const pretty = response ? prettyBody(response) : ''
   const methodsOfSelected = selected ? selected.methods.join(', ') : ''
   const tab = (id: ReqTab, label: string, badge?: ReactNode) => (
-    <button type="button" role="tab" aria-selected={reqTab === id} className={`rest-tab${reqTab === id ? ' is-active' : ''}`} onClick={() => setReqTab(id)}>
+    <Button variant="bare" role="tab" aria-selected={reqTab === id} className={`rest-tab${reqTab === id ? ' is-active' : ''}`} onClick={() => setReqTab(id)}>
       {label}
       {badge}
-    </button>
+    </Button>
   )
 
   return (
     <div className="rest-root">
       <aside className="rest-side" aria-label="Web services">
-        <input className="rest-filter" value={filter} placeholder="Filter web services" aria-label="Filter web services" onChange={(e) => setFilter(e.target.value)} />
+        <Input className="rest-filter" value={filter} placeholder="Filter web services" aria-label="Filter web services" onChange={(e) => setFilter(e.target.value)} />
         <div className="rest-list">
           {groups.length === 0 ? <p className="rest-empty">No entity web services in this project.</p> : null}
           {groups.map(([group, list]) => (
@@ -384,23 +374,23 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
                 const isOpen = open.has(ws.name) || filter.trim() !== ''
                 return (
                   <div key={`${group}/${ws.name}`} className="rest-ws">
-                    <button
-                      type="button"
+                    <Button variant="bare"
+
                       className={`rest-ws-head${selected?.name === ws.name ? ' is-selected' : ''}`}
                       aria-expanded={isOpen}
                       onClick={() => setOpen((cur) => { const next = new Set(cur); if (!next.delete(ws.name)) next.add(ws.name); return next })}
                     >
                       <span className="rest-caret">{isOpen ? '▾' : '▸'}</span>
                       <span className="rest-ws-name">{ws.name}</span>
-                    </button>
+                    </Button>
                     {isOpen
                       ? calls.length === 0
                         ? <p className="rest-empty rest-nomethods">No method is allowed.</p>
                         : calls.map((c) => (
-                            <button key={c.id} type="button" className={`rest-item${call?.id === c.id ? ' is-active' : ''}`} title={`${c.method} ${c.path}`} onClick={() => choose(ws, c)}>
+                            <Button variant="bare" key={c.id} className={`rest-item${call?.id === c.id ? ' is-active' : ''}`} title={`${c.method} ${c.path}`} onClick={() => choose(ws, c)}>
                               <span className={`rest-method m-${c.method}`}>{c.method}</span>
                               <span className="rest-item-name">{c.label}</span>
-                            </button>
+                            </Button>
                           ))
                       : null}
                   </div>
@@ -415,7 +405,7 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
         <div className="rest-conn">
           <label className="rest-base">
             <span>Server</span>
-            <input value={base} list="rest-bases" aria-label="Server URL" spellCheck={false} placeholder="https://server:8443" onChange={(e) => changeBase(e.target.value)} />
+            <Input value={base} list="rest-bases" aria-label="Server URL" spellCheck={false} placeholder="https://server:8443" onChange={(e) => changeBase(e.target.value)} />
             <datalist id="rest-bases">
               {bases.map((b) => (
                 <option key={b} value={b} />
@@ -423,22 +413,17 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
             </datalist>
           </label>
           <label className="rest-check" title="Accept a certificate that is self-signed or does not match the name">
-            <input type="checkbox" checked={insecure} onChange={(e) => setInsecure(e.target.checked)} />
+            <Input type="checkbox" checked={insecure} onChange={(e) => setInsecure(e.target.checked)} />
             <span>Accept untrusted certificate</span>
           </label>
         </div>
 
         <div className="rest-bar">
-          <select value={method} onChange={(e) => changeMethod(e.target.value)} aria-label="Method" className={`rest-methodpick m-${method}`}>
-            {(selected ? [...new Set(callsOf(selected).map((c) => c.method))] : [...METHODS]).map((m) => (
-              <option key={m}>{m}</option>
-            ))}
-            {selected && !callsOf(selected).some((c) => c.method === method) ? <option>{method}</option> : null}
-          </select>
+          <Dropdown value={method} aria-label="Method" className={`rest-methodpick m-${method}`} onChange={(v) => changeMethod(v)} options={[...new Set([...(selected ? callsOf(selected).map((c) => c.method) : [...METHODS]), method])].map((m) => ({ id: m, label: m }))} />
           <HighlightedUrl value={fullUrl} onChange={changeFull} onEnter={() => void send()} label="Request URL" />
-          <button type="button" className="rest-send" disabled={busy} onClick={() => void send()}>
+          <Button variant="bare" className="rest-send" isDisabled={busy} onClick={() => void send()}>
             {busy ? 'Sending…' : 'Send'}
-          </button>
+          </Button>
         </div>
         {selected ? (
           <p className="rest-hint">
@@ -457,9 +442,9 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
             <>
               <div className="rest-chips" aria-label="Add a parameter">
                 {PARAM_CHIPS.map((c) => (
-                  <button key={c.key} type="button" className="rest-chip" title={c.hint} disabled={params.some((p) => p.key === c.key)} onClick={() => addChip(c.key, c.value)}>
+                  <Button variant="bare" key={c.key} className="rest-chip" title={c.hint} isDisabled={params.some((p) => p.key === c.key)} onClick={() => addChip(c.key, c.value)}>
                     + {c.key}
-                  </button>
+                  </Button>
                 ))}
               </div>
               <KeyValueTable rows={params} onChange={setParams} label="Param" />
@@ -469,11 +454,7 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
             <div className="rest-auth">
               <label>
                 <span>Type</span>
-                <select value={loginKind} aria-label="Authorization type" onChange={(e) => setLoginKind(e.target.value as LoginKind)}>
-                  <option value="basic">Basic (user and password)</option>
-                  <option value="usertoken">Usertoken</option>
-                  <option value="none">No authorization</option>
-                </select>
+                <Dropdown value={loginKind} aria-label="Authorization type" options={[{ id: "basic", label: "Basic (user and password)" }, { id: "usertoken", label: "Usertoken" }, { id: "none", label: "No authorization" }]} onChange={(v) => setLoginKind(v as LoginKind)} />
               </label>
               {selected ? <p className="rest-hint">Login type of the web service: {selected.loginTypes.length > 0 ? selected.loginTypes.join(', ') : 'not set (default)'}</p> : null}
               {loginKind === 'basic' ? (
@@ -481,34 +462,27 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
                   <label>
                     <span>User</span>
                     {users.length > 0 ? (
-                      <select value={user} aria-label="User" onChange={(e) => changeUser(e.target.value)}>
-                        {users.some((u) => u.title === user) || user === '' ? null : <option value={user}>{user}</option>}
-                        {users.map((u) => (
-                          <option key={u.id} value={u.title}>
-                            {u.title}
-                          </option>
-                        ))}
-                      </select>
+                      <Dropdown value={user} aria-label="User" onChange={(v) => changeUser(v)} options={[...(users.some((u) => u.title === user) || user === '' ? [] : [{ id: user, label: user }]), ...users.map((u) => ({ id: u.title, label: u.title }))]} />
                     ) : (
-                      <input value={user} aria-label="User" placeholder="Web service user" onChange={(e) => changeUser(e.target.value)} />
+                      <Input value={user} aria-label="User" placeholder="Web service user" onChange={(e) => changeUser(e.target.value)} />
                     )}
                   </label>
                   {hasPassword ? (
                     <p className="rest-saved">
                       Password saved in the system keychain.{' '}
-                      <button type="button" className="rest-link" onClick={() => void forgetPassword()}>
+                      <Button variant="bare" className="rest-link" onClick={() => void forgetPassword()}>
                         Forget it
-                      </button>
+                      </Button>
                     </p>
                   ) : (
                     <div className="rest-pw">
                       <label>
                         <span>Password</span>
-                        <input type="password" value={password} autoComplete="off" aria-label="Password" onChange={(e) => setPassword(e.target.value)} />
+                        <Input type="password" value={password} autoComplete="off" aria-label="Password" onChange={(e) => setPassword(e.target.value)} />
                       </label>
-                      <button type="button" disabled={password === '' || user.trim() === ''} onClick={() => void savePassword()}>
+                      <Button variant="bare" isDisabled={password === '' || user.trim() === ''} onClick={() => void savePassword()}>
                         Save once
-                      </button>
+                      </Button>
                       <p className="rest-hint">Needed once per server and user. After that every call signs in by itself.</p>
                     </div>
                   )}
@@ -517,7 +491,7 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
               {loginKind === 'usertoken' ? (
                 <label>
                   <span>Token id</span>
-                  <input value={tokenId} aria-label="Token id" placeholder="Id of the usertoken" onChange={(e) => setTokenId(e.target.value)} />
+                  <Input value={tokenId} aria-label="Token id" placeholder="Id of the usertoken" onChange={(e) => setTokenId(e.target.value)} />
                 </label>
               ) : null}
             </div>
@@ -537,31 +511,32 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
                 <span className="rest-meta">{response.elapsedMs} ms</span>
                 <span className="rest-meta">{formatSize(response.size)}</span>
                 <span className="rest-spacer" />
-                <button type="button" className={`rest-tab${resTab === 'body' ? ' is-active' : ''}`} onClick={() => setResTab('body')}>
+                <Button variant="bare" className={`rest-tab${resTab === 'body' ? ' is-active' : ''}`} onClick={() => setResTab('body')}>
                   Body
-                </button>
-                <button type="button" className={`rest-tab${resTab === 'headers' ? ' is-active' : ''}`} onClick={() => setResTab('headers')}>
+                </Button>
+                <Button variant="bare" className={`rest-tab${resTab === 'headers' ? ' is-active' : ''}`} onClick={() => setResTab('headers')}>
                   Headers <span className="rest-badge">{response.headers.length}</span>
-                </button>
-                <button type="button" onClick={() => void copyBody(resTab === 'body' ? pretty : response.headers.map(([k, v]) => `${k}: ${v}`).join('\n'))}>
+                </Button>
+                <Button variant="bare" onClick={() => void copyBody(resTab === 'body' ? pretty : response.headers.map(([k, v]) => `${k}: ${v}`).join('\n'))}>
                   {copied ? 'Copied' : 'Copy'}
-                </button>
+                </Button>
               </div>
               {resTab === 'body' ? (
                 <pre className="rest-code" aria-label="Response body">
                   <JsonText text={pretty} />
                 </pre>
               ) : (
-                <table className="rest-headers" aria-label="Response headers">
-                  <tbody>
+                <Table className="rest-headers" aria-label="Response headers">
+                  <TableHeader><TableColumn isRowHeader className="forge-sr-only">Name</TableColumn><TableColumn className="forge-sr-only">Value</TableColumn></TableHeader>
+                  <TableBody>
                     {response.headers.map(([k, v], i) => (
-                      <tr key={i}>
-                        <th>{k}</th>
-                        <td>{v}</td>
-                      </tr>
+                      <TableRow key={i}>
+                        <TableCell>{k}</TableCell>
+                        <TableCell>{v}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               )}
             </>
           ) : error ? null : (

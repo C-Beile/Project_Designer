@@ -7,7 +7,7 @@ import { setSubTab, openTab, type SubTab, type TabState } from '../../tabs/tabMo
 import { diskFolderOf, objectLayout, type TreeMenuContext } from '../../tree/contextMenu'
 import type { TreeNode } from '../../wire/types'
 import { useOsDialog } from '../../windows/useOsDialog'
-import { openDialogWindow, osWindowsAvailable } from '../../windows/windowService'
+import { openDialogWindow, osPopupsAvailable } from '../../windows/windowService'
 import { runCommandById } from '../../core/plugins/registry'
 import type { OutputLine, OutputSubTab } from '../OutputPanel'
 import { nodeKind } from '../shellHelpers'
@@ -266,7 +266,7 @@ export function useTreeActions(d: TreeActionsDeps) {
 
   // New opens as a window of its own (modal: the main window is locked meanwhile); in a plain browser the embedded dialog is used.
   useEffect(() => {
-    if (!newTarget || !osWindowsAvailable() || newWindowOpen.current) return
+    if (!newTarget || !osPopupsAvailable() || newWindowOpen.current) return
     newWindowOpen.current = true
     const target = newTarget
     void openDialogWindow<{ aod: string; folder: string; name: string }>('new', 'Create New Model', { width: 433, height: 340 }, { projectRoot: target.project, projects, folder: target.folder }, { modal: true, resizable: false })

@@ -1,9 +1,11 @@
+import { useResource } from '../core/hooks/useResource'
 import { useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { AliasConfigTable, DbStatus, TableDump } from '../wire/types'
 import { confirmDialog, promptDialog } from '../core/dialogService'
 import { getUserSelection, notifyUsersChanged, setUserSelection, useUsersChanged } from './userSelection'
 import { errorText } from '../core/errorText'
+import { Button, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 
 // Users tab and the alias-config list of the system editor, read from the system database
 // (ASYS_USERS, ASYS_ALIASCONFIG). Credential columns are removed by the backend; this view only
@@ -12,24 +14,24 @@ import { errorText } from '../core/errorText'
 function DumpTable({ dump, label }: { dump: TableDump; label: string }) {
   return (
     <>
-      <table className="forge-users-table" aria-label={label}>
-        <thead>
-          <tr>
-            {dump.columns.map((c) => (
-              <th key={c}>{c}</th>
+      <Table className="forge-users-table" aria-label={label}>
+        <TableHeader>
+
+            {dump.columns.map((c, i) => (
+              <TableColumn isRowHeader={i === 0} key={c}>{c}</TableColumn>
             ))}
-          </tr>
-        </thead>
-        <tbody>
+
+        </TableHeader>
+        <TableBody>
           {dump.rows.map((row, r) => (
-            <tr key={r}>
+            <TableRow key={r}>
               {row.map((cell, i) => (
-                <td key={i}>{cell ?? ''}</td>
+                <TableCell key={i}>{cell ?? ''}</TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       {dump.hidden_columns.length > 0 ? <p className="forge-field-hint">Hidden for security: {dump.hidden_columns.join(', ')}</p> : null}
       {dump.truncated ? <p className="forge-field-hint">Only the first rows are shown.</p> : null}
     </>
@@ -37,22 +39,8 @@ function DumpTable({ dump, label }: { dump: TableDump; label: string }) {
 }
 
 function useRemote<T>(db: DbStatus, load: () => Promise<T>, reload = 0) {
-  const [data, setData] = useState<T | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  useEffect(() => {
-    let cancelled = false
-    setData(null)
-    setError(null)
-    if (!db.connected) return
-    load()
-      .then((d) => !cancelled && setData(d))
-      .catch((e) => !cancelled && setError(errorText(e)))
-    return () => {
-      cancelled = true
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [db.connected, reload])
-  return { data, error }
+  const loaded = useResource(async () => (db.connected ? load() : null), [db.connected, reload], [], { clearOnReload: true })
+  return { data: loaded.data ?? null, error: loaded.error ?? null }
 }
 
 const PAGE_SIZE = 100
@@ -121,7 +109,7 @@ function UsersGrid({ api, dump, systemKey, systemName, onReload }: { api: ForgeA
   return (
     <>
       <div className="users-toolbar">
-        <input
+        <Input
           type="search"
           placeholder="Filter users"
           aria-label="Filter users"
@@ -132,26 +120,26 @@ function UsersGrid({ api, dump, systemKey, systemName, onReload }: { api: ForgeA
           }}
         />
         <span className="users-count">{rows.length} users</span>
-        <button type="button" className="users-reload" title="Add a user" aria-label="Add user" onClick={() => void addUser()}>
+        <Button variant="bare" className="users-reload" title="Add a user" aria-label="Add user" onClick={() => void addUser()}>
           +
-        </button>
-        <button type="button" className="users-reload" title="Remove the selected user" aria-label="Remove user" disabled={!selectedUser} onClick={() => void removeUser()}>
+        </Button>
+        <Button variant="bare" className="users-reload" title="Remove the selected user" aria-label="Remove user" isDisabled={!selectedUser} onClick={() => void removeUser()}>
           {'−'}
-        </button>
-        <button type="button" className="users-reload" title="Read the users again" aria-label="Reload users" onClick={onReload}>
+        </Button>
+        <Button variant="bare" className="users-reload" title="Read the users again" aria-label="Reload users" onClick={onReload}>
           {'↻'}
-        </button>
+        </Button>
         {pages > 1 ? (
           <span className="users-pager">
-            <button type="button" disabled={page <= 0} onClick={() => setPage(page - 1)} aria-label="Previous page">
+            <Button variant="bare" isDisabled={page <= 0} onClick={() => setPage(page - 1)} aria-label="Previous page">
               {'‹'}
-            </button>
+            </Button>
             <span>
               {Math.min(page, pages - 1) + 1} / {pages}
             </span>
-            <button type="button" disabled={page >= pages - 1} onClick={() => setPage(page + 1)} aria-label="Next page">
+            <Button variant="bare" isDisabled={page >= pages - 1} onClick={() => setPage(page + 1)} aria-label="Next page">
               {'›'}
-            </button>
+            </Button>
           </span>
         ) : null}
       </div>
@@ -161,35 +149,35 @@ function UsersGrid({ api, dump, systemKey, systemName, onReload }: { api: ForgeA
         </p>
       ) : null}
       <div className="users-list">
-      <table className="forge-users-table users-grid" aria-label="Users">
-        <thead>
-          <tr>
+      <Table className="forge-users-table users-grid" aria-label="Users">
+        <TableHeader>
+
             {dump.columns.map((c, i) => (
-              <th key={c} aria-sort={sort?.col === i ? (sort.desc ? 'descending' : 'ascending') : 'none'}>
-                <button type="button" onClick={() => setSort(sort?.col === i ? { col: i, desc: !sort.desc } : { col: i, desc: false })}>
+              <TableColumn isRowHeader={i === 0} key={c} aria-sort={sort?.col === i ? (sort.desc ? 'descending' : 'ascending') : 'none'}>
+                <Button variant="bare" onClick={() => setSort(sort?.col === i ? { col: i, desc: !sort.desc } : { col: i, desc: false })}>
                   {c}
                   {sort?.col === i ? (sort.desc ? ' ▾' : ' ▴') : ''}
-                </button>
-              </th>
+                </Button>
+              </TableColumn>
             ))}
-          </tr>
-        </thead>
-        <tbody>
+
+        </TableHeader>
+        <TableBody>
           {shown.map((entry, r) => (
-            <tr key={r} className={entry.user !== null && entry.user === selectedUser ? 'is-selected' : undefined} aria-selected={entry.user !== null && entry.user === selectedUser} onClick={() => {
+            <TableRow key={r} className={entry.user !== null && entry.user === selectedUser ? 'is-selected' : undefined} aria-selected={entry.user !== null && entry.user === selectedUser} onClick={() => {
                 if (entry.user === null) return
                 setSelectedUser(entry.user)
                 setUserSelection({ systemKey: systemKey ?? '', systemName: systemName ?? '', user: entry.user, title: entry.cells[dump.columns.indexOf('title')] ?? entry.user })
               }}>
               {entry.cells.map((cell, i) => (
-                <td key={i} className={dump.columns[i].toLowerCase() === 'isactive' ? 'users-check' : undefined}>
-                  {dump.columns[i].toLowerCase() === 'isactive' ? <input type="checkbox" checked={isTrue(cell)} readOnly aria-label={isTrue(cell) ? 'active' : 'inactive'} /> : (cell ?? '')}
-                </td>
+                <TableCell key={i} className={dump.columns[i].toLowerCase() === 'isactive' ? 'users-check' : undefined}>
+                  {dump.columns[i].toLowerCase() === 'isactive' ? <Input type="checkbox" checked={isTrue(cell)} readOnly aria-label={isTrue(cell) ? 'active' : 'inactive'} /> : (cell ?? '')}
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       {dump.truncated ? <p className="forge-field-hint">Only the first users are shown.</p> : null}
       </div>
     </>

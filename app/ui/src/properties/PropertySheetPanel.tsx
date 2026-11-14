@@ -1,10 +1,11 @@
-import { TunnelGlyph } from '../tree/TunnelGlyph'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { CSSProperties, KeyboardEvent } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { WildcardPicker } from './WildcardPicker'
 import { IconPicker } from './IconPicker'
-import { IconCombo } from './IconCombo'
+import { PropertyGrid } from '../core/ui/blocks/PropertyGrid'
+import { findFieldEditor, getFieldActions, type FieldContext } from '../core/contrib/fieldEditors'
+import { registerBuiltinFieldEditors } from './fieldEditors'
+import { isDefaultRow, listItems, textOf } from './rowValues'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
 import { PATH_VARIABLE_PROPERTIES, resolvePathVariables } from './pathVariables'
@@ -14,11 +15,30 @@ import { confirmDialog } from '../core/dialogService'
 import { notify } from '../core/notifications'
 import type { CodeTarget, ModificationOutcome, PropertySheet, SheetRow, UndoRedoOutcome, WireValue } from '../wire/types'
 import { errorText } from '../core/errorText'
+import { Button, Input } from '../core/ui/controls'
+import { copyText } from '../core/clipboard'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Properties panel (LAYOUT_SPEC §5): the central place where object properties are edited, as in
 // the Designer. All properties the installed Designer knows for the object are listed in its own
 // groups and order; unset ones italic and dimmed. Below the grid: name and description of the
 // selected property, or the object's name and type when nothing is selected.
+
+registerBuiltinFieldEditors()
+
+export { isDefaultRow }
+
+function FieldValue({ ctx }: { ctx: FieldContext }) {
+  const Editor = findFieldEditor(ctx.row)?.component
+  return (
+    <>
+      {Editor ? <Editor ctx={ctx} /> : null}
+      {getFieldActions(ctx.row, ctx).map((action) => (
+        <action.component key={action.id} ctx={ctx} />
+      ))}
+    </>
+  )
+}
 
 export interface SheetTarget {
   nodeId: string
@@ -65,7 +85,6 @@ export function PropertySheetPanel({
   const [sheet, setSheet] = useState<PropertySheet | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
   const [listRow, setListRow] = useState<SheetRow | null>(null)
   const [pickerRow, setPickerRow] = useState<SheetRow | null>(null)
   const [iconRow, setIconRow] = useState<SheetRow | null>(null)
@@ -77,36 +96,28 @@ export function PropertySheetPanel({
   const statusRef = useRef(onStatus)
   statusRef.current = onStatus
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     api
       .getPropertySheet(target.nodeId, target.path)
       .then((s) => {
-        if (cancelled) return
+        if (signal.aborted) return
         setSheet(s)
         setError(null)
         if (s.catalog_missing) statusRef.current('Property catalog not available (Designer installation not found): showing stored values only.')
       })
       .catch((e) => {
-        if (!cancelled) setError(String(e))
+        if (!signal.aborted) setError(String(e))
       })
-    return () => {
-      cancelled = true
-    }
   }, [api, target.nodeId, target.path, version, reload])
 
   useEffect(() => setSelected(null), [target.nodeId, target.path])
   useEffect(() => setActiveTab(null), [target.nodeId, target.path])
 
   // The description texts of the specification are loaded on first use; the backend's own texts win.
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     void import('./propertyDescriptions.generated').then((m) => {
-      if (!cancelled) setDescriptions(m.PROPERTY_DESCRIPTIONS)
+      if (!signal.aborted) setDescriptions(m.PROPERTY_DESCRIPTIONS)
     })
-    return () => {
-      cancelled = true
-    }
   }, [])
 
   const layout = useMemo(() => (sheet ? layoutSheet(sheet, 'en', descriptions) : null), [sheet, descriptions])
@@ -251,6 +262,24 @@ export function PropertySheetPanel({
     if (reference) onOpenCode?.({ ownerNodeId: target.nodeId, ownerName: sheet.name, path: target.path, prop: row.name, reference, linkedRoot, isNew: !row.set }, false)
   }
 
+  const fieldContext = (row: SheetRow): FieldContext => ({
+    api,
+    row,
+    canEdit: !!sheet && (row.editable || (!!sheet.read_only && !sheet.modification && !!row.would_edit)),
+    options: row.reference ? referenceOptions(row.reference) : [],
+    commit: (value) => void commit(row, value),
+    openLinked: () => openLinked(row),
+    openList: () => setListRow(row),
+    goTo: () => row.reference && onGoTo(row.reference, row.display),
+    search: () => setPickerRow(row),
+    pickIcon: () => setIconRow(row),
+    browseImage: () => void browseImage(row),
+    browseConfig: () => void browseConfig(row),
+    editConfig: () => onEditConfig?.(row.name, row.display),
+    canEditConfig: !!onEditConfig && target.path === '$',
+    hasProject: !!projectRoot,
+  })
+
   if (error) return <div className="forge-panel-empty">{error}</div>
   if (!sheet) return <div className="forge-panel-empty">Please Wait…</div>
 
@@ -267,145 +296,26 @@ export function PropertySheetPanel({
       {layout && layout.tabs.length > 1 ? (
         <div className="psheet-tabs" role="tablist" aria-label="Property tabs">
           {layout.tabs.map((t) => (
-            <button key={t.id} type="button" role="tab" aria-selected={t.id === tab?.id} className={`psheet-tab${t.id === tab?.id ? ' is-active' : ''}`} onClick={() => setActiveTab(t.id)}>
+            <Button variant="bare" key={t.id} role="tab" aria-selected={t.id === tab?.id} className={`psheet-tab${t.id === tab?.id ? ' is-active' : ''}`} onClick={() => setActiveTab(t.id)}>
               {t.label}
-            </button>
+            </Button>
           ))}
         </div>
       ) : null}
-      <div className="psheet-grid" role="grid" aria-label={`${sheet.name} properties`} style={{ '--sheet-split': `${sheetSplit.split}%` } as CSSProperties}>
-        <div className="psheet-rows" ref={rowsRef}>
-        {tabGroups.map((group) => {
-          const isCollapsed = collapsed.has(group.key)
-          return (
-            <div key={group.key} role="rowgroup" className="psheet-group">
-              <div role="row" className="psheet-group-head">
-                <button
-                  type="button"
-                  className="psheet-toggle"
-                  aria-expanded={!isCollapsed}
-                  aria-label={group.label ? `${isCollapsed ? 'Expand' : 'Collapse'} ${group.label}` : isCollapsed ? 'Expand' : 'Collapse'}
-                  onClick={() =>
-                    setCollapsed((prev) => {
-                      const next = new Set(prev)
-                      if (next.has(group.key)) next.delete(group.key)
-                      else next.add(group.key)
-                      return next
-                    })
-                  }
-                >
-                  {isCollapsed ? '▸' : '▾'}
-                </button>
-                <span className="psheet-group-label">{group.label}</span>
-              </div>
-              {isCollapsed
-                ? null
-                : group.rows.map((row) => (
-                    <div
-                      key={row.name}
-                      role="row"
-                      className={`psheet-row${isDefaultRow(row) ? ' is-unset' : ''}${selected === row.name ? ' is-selected' : ''}`}
-                      onMouseDown={() => setSelected(row.name)}
-                      onFocusCapture={() => setSelected(row.name)}
-                      onContextMenu={(e) => {
-                        e.preventDefault()
-                        setSelected(row.name)
-                        setRowMenu({ row, x: e.clientX, y: e.clientY })
-                      }}
-                    >
-                      <span role="rowheader" className="psheet-label" title={row.reason ?? row.name}>
-                        {row.name}
-                      </span>
-                      <span role="gridcell" className="psheet-value">
-                        {isIconRow(row) ? (
-                          <IconCombo
-                            api={api}
-                            value={row.display}
-                            disabled={!(row.editable || (!!sheet.read_only && !sheet.modification && !!row.would_edit))}
-                            onCommit={(id) => void commit(row, { kind: 'text', value: id })}
-                          />
-                        ) : (
-                        <ValueEditor
-                          row={row}
-                          canEdit={row.editable || (!!sheet.read_only && !sheet.modification && !!row.would_edit)}
-                          options={row.reference ? referenceOptions(row.reference) : []}
-                          onCommit={(v) => commit(row, v)}
-                          onOpenLinked={() => openLinked(row)}
-                          onOpenList={() => setListRow(row)}
-                          onGoTo={() => row.reference && onGoTo(row.reference, row.display)}
-                          onSearch={() => setPickerRow(row)}
-                        />
-                        )}
-                        {isImageRow(row) ? (
-                          <button
-                            type="button"
-                            className="psheet-btn"
-                            aria-label={`Choose ${row.name}`}
-                            title="Choose the image file in the file explorer"
-                            disabled={!(row.editable || (!!sheet.read_only && !sheet.modification && !!row.would_edit))}
-                            onClick={() => void browseImage(row)}
-                          >
-                            {'…'}
-                          </button>
-                        ) : null}
-                        {isIconRow(row) ? (
-                          <button
-                            type="button"
-                            className="psheet-btn"
-                            aria-label={`Choose ${row.name}`}
-                            title="Choose the icon from the icon chooser"
-                            disabled={!(row.editable || (!!sheet.read_only && !sheet.modification && !!row.would_edit))}
-                            onClick={() => setIconRow(row)}
-                          >
-                            {'…'}
-                          </button>
-                        ) : null}
-                        {onEditConfig && target.path === '$' && CONFIG_PATH_ROWS.includes(row.name) ? (
-                          <>
-                            <button
-                              type="button"
-                              className="psheet-btn"
-                              aria-label={`Choose ${row.name}`}
-                              title="Choose the file in the file explorer; it is copied into the project (others/cloud) and replaces an older copy"
-                              disabled={!projectRoot}
-                              onClick={() => void browseConfig(row)}
-                            >
-                              {'…'}
-                            </button>
-                            <button
-                              type="button"
-                              className="psheet-btn psheet-pencil"
-                              aria-label={`Edit ${row.name}`}
-                              title={row.name === 'tunnelConfigPath' ? 'Open the tunnel manager' : 'Open the server config file'}
-                              disabled={!row.display}
-                              onClick={() => onEditConfig(row.name, row.display)}
-                            >
-                              {row.name === 'tunnelConfigPath' ? <TunnelGlyph /> : '✎'}
-                            </button>
-                          </>
-                        ) : null}
-                      </span>
-                    </div>
-                  ))}
-            </div>
-          )
-        })}
-        <div
-          className="sheet-splitter"
-          role="separator"
-          aria-orientation="vertical"
-          aria-label="Column divider"
-          aria-valuemin={15}
-          aria-valuemax={85}
-          aria-valuenow={Math.round(sheetSplit.split)}
-          tabIndex={0}
-          title="Drag to resize the columns, double-click to reset"
-          onPointerDown={sheetSplit.onPointerDown}
-          onKeyDown={sheetSplit.onKeyDown}
-          onDoubleClick={sheetSplit.reset}
-        />
-        </div>
-      </div>
+      <PropertyGrid
+        ariaLabel={`${sheet.name} properties`}
+        groups={tabGroups}
+        rowKey={(row) => row.name}
+        rowLabel={(row) => row.name}
+        rowTitle={(row) => row.reason ?? row.name}
+        isUnset={isDefaultRow}
+        selected={selected}
+        onSelect={setSelected}
+        onRowMenu={(row, e) => setRowMenu({ row, x: e.clientX, y: e.clientY })}
+        renderValue={(row) => <FieldValue ctx={fieldContext(row)} />}
+        split={sheetSplit}
+        rowsRef={rowsRef}
+      />
       <div className="psheet-desc" aria-live="polite">
         <strong>{selectedRow ? selectedRow.name : sheet.name}</strong>
         <p>{selectedRow ? (selectedRow.description ?? '') : `${sheet.name} (${sheet.type_label})`}</p>
@@ -437,7 +347,7 @@ export function PropertySheetPanel({
             const row = rowMenu.row
             if (id === 'reset') void resetRow(row)
             else if (id === 'open') openLinked(row)
-            else if (id === 'copy') void navigator.clipboard?.writeText(row.display)
+            else if (id === 'copy') void copyText(row.display)
           }}
           onClose={() => setRowMenu(null)}
         />
@@ -480,9 +390,9 @@ export function PropertySheetPanel({
                 <li key={i}>{item}</li>
               ))}
             </ul>
-            <button type="button" onClick={() => setListRow(null)}>
+            <Button variant="bare" onClick={() => setListRow(null)}>
               Close
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
@@ -504,225 +414,17 @@ export function rowMenuEntries(row: SheetRow, moduleWithoutProject: boolean): Me
   return entries
 }
 
-// Properties holding an icon id (`iconId`, and `icon` of alias definitions; `VAADIN:HOME`): they get the icon chooser instead of a typed id.
-function isIconRow(row: SheetRow): boolean {
-  return (row.name === 'iconId' || row.name === 'icon') && row.kind !== 'bool' && row.kind !== 'enum' && row.kind !== 'reference' && row.kind !== 'linked'
-}
-
-// The `image` property is a plain path to an image file.
-function isImageRow(row: SheetRow): boolean {
-  return row.name === 'image' && (row.kind === 'text' || row.kind === undefined)
-}
-
-const CONFIG_PATH_ROWS = ['serverConfigPath', 'tunnelConfigPath']
-
-// Empty and unset values are shown grey italic, as in the original (shot 56). A checked box is a
-// real value; an unchecked one is the default.
-export function isDefaultRow(row: SheetRow): boolean {
-  if (!row.set) return true
-  if (row.kind === 'bool') return !(row.value?.kind === 'bool' ? row.value.value : textOf(row.value) === 'true')
-  return row.display === ''
-}
-
-function textOf(v: WireValue | undefined): string | undefined {
-  if (!v) return undefined
-  if (v.kind === 'text') return v.value
-  if (v.kind === 'bool' || v.kind === 'int') return String(v.value)
-  return undefined
-}
-
-function listItems(v: WireValue | undefined): string[] {
-  if (!v) return []
-  if (v.kind === 'array') return v.items.flatMap(listItems)
-  if (v.kind === 'object') {
-    const name = v.fields.find((f) => f.key === 'name')
-    if (name) return [textOf(name.value) ?? '']
-    return v.fields.flatMap((f) => listItems(f.value))
-  }
-  return [textOf(v) ?? '']
-}
-
-function ValueEditor({
-  row,
-  canEdit,
-  options,
-  onCommit,
-  onOpenLinked,
-  onOpenList,
-  onGoTo,
-  onSearch,
-}: {
-  row: SheetRow
-  canEdit: boolean
-  options: string[]
-  onCommit: (value: WireValue) => void
-  onOpenLinked: () => void
-  onOpenList: () => void
-  onGoTo: () => void
-  onSearch: () => void
-}) {
-  const disabled = !canEdit
-  const title = canEdit ? undefined : row.reason
-
-  if (row.kind === 'bool') {
-    const checked = row.value?.kind === 'bool' ? row.value.value : textOf(row.value) === 'true'
-    return (
-      <input
-        type="checkbox"
-        aria-label={row.name}
-        checked={checked}
-        disabled={disabled}
-        title={title}
-        onChange={(e) => onCommit({ kind: 'bool', value: e.target.checked })}
-      />
-    )
-  }
-
-  if (row.kind === 'enum') {
-    return (
-      <span className="psheet-ref">
-      <select
-        aria-label={row.name}
-        value={row.display}
-        disabled={disabled}
-        title={title}
-        onChange={(e) => onCommit({ kind: 'text', value: e.target.value })}
-      >
-        <option value="" />
-        {(row.enum_values ?? []).map((v) => (
-          <option key={v} value={v}>
-            {v}
-          </option>
-        ))}
-      </select>
-        {(row.enum_values?.length ?? 0) > 8 && !disabled ? (
-          <button type="button" className="psheet-btn" aria-label={`Search ${row.name}`} title="Search the list (* is a wildcard)" onClick={onSearch}>
-            ⌕
-          </button>
-        ) : null}
-      </span>
-    )
-  }
-
-  if (row.kind === 'reference') {
-    const values = row.display && !options.includes(row.display) ? [row.display, ...options] : options
-    return (
-      <span className="psheet-ref">
-        <select
-          aria-label={row.name}
-          value={row.display}
-          disabled={disabled}
-          title={title}
-          onChange={(e) => onCommit({ kind: 'text', value: e.target.value })}
-        >
-          <option value="" />
-          {values.map((v) => (
-            <option key={v} value={v}>
-              {v}
-            </option>
-          ))}
-        </select>
-        {options.length > 8 && !disabled ? (
-          <button type="button" className="psheet-btn" aria-label={`Search ${row.name}`} title="Search the list (* is a wildcard)" onClick={onSearch}>
-            ⌕
-          </button>
-        ) : null}
-        <button type="button" className="psheet-btn" aria-label={`Go to ${row.display || row.name}`} title="Go to object" disabled={!row.display} onClick={onGoTo}>
-          ➜
-        </button>
-      </span>
-    )
-  }
-
-  if (row.kind === 'linked') {
-    const canOpen = row.set || !!row.new_reference
-    return (
-      <span className="psheet-linked" onDoubleClick={() => canOpen && onOpenLinked()}>
-        <span className="psheet-text" title={row.set ? row.display : 'Not set - double-click or use "..." to write the code'}>
-          {row.display}
-        </span>
-        <button type="button" className="psheet-btn" aria-label={`Open ${row.name}`} title={row.set ? 'Open the code in an editor tab' : 'Create and edit the code of this property'} disabled={!canOpen} onClick={onOpenLinked}>
-          …
-        </button>
-      </span>
-    )
-  }
-
-  if (row.kind === 'list' || row.kind === 'object') {
-    return (
-      <span className="psheet-linked">
-        <span className="psheet-text" title={title}>
-          {row.display}
-        </span>
-        <button type="button" className="psheet-btn" aria-label={`Show ${row.name}`} title={title} disabled={!row.set} onClick={onOpenList}>
-          …
-        </button>
-      </span>
-    )
-  }
-
-  return <TextValue row={row} canEdit={canEdit} onCommit={onCommit} />
-}
-
-function TextValue({ row, canEdit, onCommit }: { row: SheetRow; canEdit: boolean; onCommit: (value: WireValue) => void }) {
-  const [draft, setDraft] = useState(row.display)
-  const ref = useRef<HTMLInputElement | null>(null)
-  useEffect(() => setDraft(row.display), [row.display])
-
-  const commit = () => {
-    if (draft === row.display) return
-    if (row.kind === 'int') {
-      const n = Number(draft)
-      if (!Number.isInteger(n)) {
-        setDraft(row.display)
-        return
-      }
-      onCommit({ kind: 'int', value: n })
-      return
-    }
-    onCommit({ kind: 'text', value: draft })
-  }
-
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      commit()
-    } else if (e.key === 'Escape') {
-      setDraft(row.display)
-    }
-  }
-
-  return (
-    <input
-      ref={ref}
-      type="text"
-      className="psheet-input"
-      aria-label={row.name}
-      value={draft}
-      readOnly={!canEdit}
-      title={canEdit ? undefined : row.reason}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={commit}
-      onKeyDown={onKeyDown}
-    />
-  )
-}
-
 /** Properties of a project root or an External Libraries module (LAYOUT_SPEC §10a). */
 export function ProjectPropertiesPanel({ api, name, path }: { api: ForgeApi; name: string; path: string }) {
   const [version, setVersion] = useState('')
   const [selected, setSelected] = useState<string | null>(null)
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     api
       .readLinkedFile(path, '.aditoprj/project.version')
       .then((v) => {
-        if (!cancelled) setVersion(v.trim())
+        if (!signal.aborted) setVersion(v.trim())
       })
       .catch(() => setVersion(''))
-    return () => {
-      cancelled = true
-    }
   }, [api, path])
   const rows: [string, string][] = [
     ['Name', name],
@@ -733,26 +435,16 @@ export function ProjectPropertiesPanel({ api, name, path }: { api: ForgeApi; nam
   ]
   return (
     <div className="psheet">
-      <div className="psheet-grid" role="grid" aria-label="Project properties">
-        <div role="rowgroup" className="psheet-group">
-          <div role="row" className="psheet-group-head">
-            <span className="psheet-toggle" aria-hidden="true">
-              ▾
-            </span>
-            <span className="psheet-group-label">Properties</span>
-          </div>
-          {rows.map(([label, value]) => (
-            <div key={label} role="row" className={`psheet-row${value ? '' : ' is-unset'}${selected === label ? ' is-selected' : ''}`} onMouseDown={() => setSelected(label)}>
-              <span role="rowheader" className="psheet-label">
-                {label}
-              </span>
-              <span role="gridcell" className="psheet-value">
-                <input type="text" className="psheet-input" aria-label={label} value={value} readOnly title="Read-only" />
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <PropertyGrid
+        ariaLabel="Project properties"
+        groups={[{ key: 'properties', label: 'Properties', rows }]}
+        rowKey={([label]) => label}
+        rowLabel={([label]) => label}
+        isUnset={([, value]) => !value}
+        selected={selected}
+        onSelect={setSelected}
+        renderValue={([label, value]) => <Input type="text" className="psheet-input" aria-label={label} value={value} readOnly title="Read-only" />}
+      />
       <div className="psheet-desc">
         <strong>{selected ?? name}</strong>
         <p>{selected ? '' : path}</p>

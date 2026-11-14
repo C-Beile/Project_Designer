@@ -39,7 +39,7 @@ export function fromProblemDto(dto: ProblemDto, channel: string): Problem {
   return {
     id: `${channel}|${dto.node_id}|${dto.source}|${dto.path ?? ''}|${dto.line ?? ''}|${dto.message}`,
     channel,
-    source: dto.source,
+    source: dto.source as ProblemSource, // das Backend liefert einen Text: parse, validator oder reference
     severity: severityOf(dto.severity),
     message: dto.message,
     nodeId: dto.node_id,

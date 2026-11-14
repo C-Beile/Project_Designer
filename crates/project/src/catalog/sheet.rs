@@ -7,7 +7,7 @@ use crate::wire::WireValue;
 use aod::tree::path::{NodePath, PathSegment};
 use serde::Serialize;
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct SheetRow {
     pub name: String,
     pub kind: PropKind,
@@ -37,7 +37,7 @@ pub struct SheetRow {
     pub new_reference: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct SheetGroup {
     pub key: String,
     /// Empty for the first, untitled group (as in the Designer).
@@ -45,7 +45,7 @@ pub struct SheetGroup {
     pub rows: Vec<SheetRow>,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct PropertySheet {
     pub name: String,
     pub type_label: String,
@@ -313,7 +313,7 @@ fn row_for(
 // ---------------------------------------------------------------------------------------------
 // Navigator outline
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct NavNode {
     pub label: String,
     /// Path of the element (selects it into Properties); absent for folders and unset bindings.

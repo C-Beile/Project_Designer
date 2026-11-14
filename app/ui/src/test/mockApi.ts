@@ -1,5 +1,6 @@
 import type { ForgeApi } from '../api/ForgeApi'
 import type { AliasConfigDto, AliasConfigTable, DeployOverview, DeployPlan, TableDump, DbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitCommit, GitOutput, GitOverview, SchemaTable, SqlResult, NavNode, PropKind, PropertySheet, SheetRow, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { UserTheme } from '../api/bindings'
 import { getAt, parseNodePath, setAt } from '../wire/path'
 
 // In-memory stand-in for the real Tauri-backed `ForgeApi` (src/api/tauriApi.ts), mirroring
@@ -56,6 +57,7 @@ export function createMockForgeApi(options: {
   deployOverview?: DeployOverview
   deployError?: string
   pickedFiles?: (string | null)[]
+  userThemes?: UserTheme[]
   git?: GitOverview
   // Source Control panel stand-in: status, history and the gutter of any file.
   scm?: import('../wire/types').ScmOverview
@@ -77,6 +79,8 @@ export function createMockForgeApi(options: {
   jditoTypes?: import('../wire/types').JditoTypes | null
 }): ForgeApi & { diagnosticsFor: (nodeId: string) => DiagnosticDto[]; dbCalls: { sql: string; allowWrite: boolean }[]; gitCalls: string[]; liquibaseCalls: string[]; treeCalls: string[]; deployCalls: string[]; connectCalls: string[]; enabledModifications: string[] } {
   const mockForwards = new Map<string, import('../wire/types').ForwardStatusDto>()
+  const mockStoredPassphrases = new Set<string>()
+  const mockLoopback = { available: false }
   const mockTunnelCalls = options.tunnelCalls ?? []
   const NO_DB_STATUS: DbStatus = { connected: false, tunnel_up: false, database: null, host: null }
   let db: DbStatus = NO_DB_STATUS
@@ -190,6 +194,21 @@ export function createMockForgeApi(options: {
     },
     async openLogFolder() {
       return 'C:/logs'
+    },
+    async userThemes() {
+      return [...(options.userThemes ?? [])]
+    },
+    async saveUserTheme(file, text) {
+      const list = (options.userThemes ??= [])
+      const at = list.findIndex((t) => t.file === file)
+      if (at >= 0) list[at] = { file, text }
+      else list.push({ file, text })
+    },
+    async deleteUserTheme(file) {
+      options.userThemes = (options.userThemes ?? []).filter((t) => t.file !== file)
+    },
+    async openUserThemesFolder() {
+      return 'C:/themes'
     },
     async openBackupFolder() {
       return 'C:/backups'
@@ -445,7 +464,7 @@ export function createMockForgeApi(options: {
     },
     async tunnelConnect(row, keyFile, tunnelPassword) {
       if (options.tunnelError) throw new Error(options.tunnelError)
-      mockForwards.set(`${row.target_host}:${row.target_port}`, { target_host: row.target_host, target_port: row.target_port, local_port: 40000 + mockForwards.size, up: true })
+      mockForwards.set(`${row.target_host}:${row.target_port}`, { target_host: row.target_host, target_port: row.target_port, local_host: '127.0.0.1', local_port: 40000 + mockForwards.size, up: true, owner: 'designer' })
       mockTunnelCalls.push({ row, keyFile, hasPassword: !!tunnelPassword })
       return mockForwards.get(`${row.target_host}:${row.target_port}`)!
     },
@@ -457,6 +476,29 @@ export function createMockForgeApi(options: {
     },
     async tunnelList() {
       return [...mockForwards.values()]
+    },
+    async sshKeyInspect(path) {
+      return { exists: path.trim() !== '', encrypted: path.includes('locked'), supported: true, problem: null }
+    },
+    async sshKeyUnlock(_path, passphrase) {
+      if (passphrase !== 'right') throw new Error('The passphrase does not unlock the SSH key. Check it and try again.')
+    },
+    async sshKeySavePassphrase(_path, passphrase) {
+      if (passphrase !== 'right') throw new Error('The passphrase does not unlock the SSH key. Check it and try again.')
+      mockStoredPassphrases.add(_path)
+    },
+    async sshKeyForgetPassphrase(path) {
+      mockStoredPassphrases.delete(path)
+    },
+    async loopbackStatus() {
+      return { available: mockLoopback.available, setup_possible: true }
+    },
+    async loopbackSetup() {
+      mockLoopback.available = true
+      return { available: true, setup_possible: true }
+    },
+    async sshKeyHasPassphrase(path) {
+      return mockStoredPassphrases.has(path)
     },
     async systemTunnelState() {
       return { db_tunnel_up: false, target: null, problem: null }

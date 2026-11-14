@@ -9,6 +9,7 @@
 //! nothing about "entity" vs. any future object type (architecture.md §6) - the entity-specific
 //! pieces (validators) are registered inside `project::project_actor`, not here.
 
+pub mod bindings;
 pub mod commands;
 pub mod lsp_bridge;
 pub mod os_windows;
@@ -106,6 +107,9 @@ fn build_transpiler_registry() -> std::sync::Arc<plugin_api::TranspilerRegistry>
 pub fn run() {
     let transpilers = build_transpiler_registry();
     project::transpile_action::set_transpilers(transpilers.clone());
+    // Alle Befehle sind typisiert (tauri-specta, siehe bindings.rs); `bindings.ts` entsteht beim Debug-Start.
+    #[cfg(debug_assertions)]
+    bindings::export_bindings();
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(ProjectActorHandle::spawn())
@@ -134,7 +138,7 @@ pub fn run() {
             // installed before anything else can fail. Panics reach the window as an event.
             #[cfg(feature = "ssh-tunnel")]
             if let Ok(settings_path) = commands::settings::settings_file(app.handle()) {
-                ::ssh_tunnel::tunnel_client::set_accept_new_host_keys(settings::load_settings(&settings_path).ssh_accept_new_host_keys.unwrap_or(false));
+                ::ssh_tunnel::ssh_session::set_known_hosts_file(settings_path);
             }
             #[cfg(target_os = "macos")]
             build_native_menu(app.handle())?;
@@ -169,110 +173,7 @@ pub fn run() {
             }
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![
-            commands::plugins::plugin_call,
-            commands::misc::set_log_timezone,
-            commands::plugins::plugin_list,
-            commands::misc::check_for_update,
-            commands::misc::install_update,
-            commands::project::open_project,
-            commands::project::list_tree_children,
-            commands::project::restore_open_projects,
-            commands::project::list_icons,
-            commands::project::add_open_project,
-            commands::project::remove_open_project,
-            commands::editor::get_property_tree,
-            commands::editor::set_property,
-            commands::editor::list_diagnostics,
-            commands::transpile::execute_action,
-            commands::editor::undo,
-            commands::editor::redo,
-            commands::editor::save,
-            commands::editor::save_overwrite,
-            commands::editor::reload_object,
-            commands::editor::external_changes,
-            commands::index::index_status,
-            commands::index::index_verify,
-            commands::index::index_rebuild,
-            commands::index::index_dump,
-            commands::misc::open_log_folder,
-            commands::misc::open_backup_folder,
-            commands::misc::log_client_error,
-            commands::files::read_linked_file,
-            commands::project::resolve_import,
-            commands::project::list_project_files,
-            commands::files::read_theme_file,
-            commands::files::read_theme_pack,
-            commands::misc::open_local_url,
-            commands::files::write_linked_file,
-            commands::dialogs::pick_project_folder,
-            commands::dialogs::pick_project_folders,
-            commands::project::get_recent_projects,
-            commands::project::find_projects_in_folder,
-            commands::rest::rest_list_webservices,
-            commands::rest::rest_send,
-            commands::rest::rest_has_password,
-            commands::rest::rest_save_password,
-            commands::rest::rest_forget_password,
-            commands::project::search_in_projects,
-            commands::project::replace_in_projects,
-            commands::project::get_recent_project,
-            commands::project::set_recent_project,
-            commands::settings::get_settings,
-            commands::settings::config_get,
-            commands::settings::config_set,
-            commands::settings::set_settings,
-            commands::settings::detect_designer_install,
-            commands::editor::get_property_sheet,
-            commands::editor::get_navigator,
-            commands::editor::set_sheet_property,
-            commands::editor::remove_sheet_property,
-            commands::editor::reset_sheet_property,
-            commands::editor::reset_sheet_element,
-            commands::files::file_info,
-            commands::files::file_paste,
-            commands::files::file_rename,
-            commands::files::file_delete,
-            commands::files::open_in_system,
-            commands::transpile::cancel_build,
-            commands::transpile::npm_run,
-            commands::editor::activate_mapping,
-            commands::project::scan_problems,
-            commands::misc::local_data_info,
-            commands::project::find_usages,
-            commands::editor::enable_modification,
-            commands::editor::set_modification_property,
-            commands::editor::set_modification_script,
-            commands::editor::discard_modification,
-            commands::editor::get_object_source,
-            commands::editor::set_object_source,
-            commands::dialogs::pick_file,
-            commands::files::copy_object,
-            commands::files::delete_object,
-            commands::files::new_object_kinds,
-            commands::files::validate_new_name,
-            commands::files::create_object,
-            commands::files::rename_plan,
-            commands::files::rename_object,
-            commands::project::list_project_models,
-            commands::project::export_project_zip,
-            commands::project::inspect_project_zip,
-            commands::project::import_project_zip,
-            commands::dialogs::pick_save_file,
-            commands::editor::read_jdito_types,
-            commands::transpile::transpile_compare,
-            commands::project::project_create_empty,
-            os_windows::window_open,
-            os_windows::window_payload,
-            os_windows::window_result,
-            os_windows::window_close,
-            os_windows::window_close_guard,
-            os_windows::app_exit,
-            os_windows::main_window_contains,
-            os_windows::window_show,
-            lsp_bridge::start_lsp,
-            lsp_bridge::send_lsp_message,
-        ])
+        .invoke_handler(bindings::builder().invoke_handler())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

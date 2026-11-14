@@ -33,7 +33,7 @@ const object = (type: string, id = `C:/p/${type}/Person/Person.aod`): TreeNode =
 const labelsOf = (items: MenuEntry[]) => items.filter((i) => !i.separator).map((i) => i.label.replace(/^Deploy ".*"$/, 'Deploy'))
 
 describe.skipIf(!haveSpec)('object popup against popups.json', () => {
-  const layer = (JSON.parse(readFileSync(POPUPS, 'utf8')).popups['de/adito/aod/action'].items as LayerItem[])
+  const layer = ((haveSpec ? JSON.parse(readFileSync(POPUPS, 'utf8')).popups['de/adito/aod/action'].items : []) as LayerItem[])
     .filter((i) => i.kind !== 'separator' && i.label_en != null)
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
   const expectedOrder = layer.map((i) => LAYER_LABEL[i.label_en as string]).filter(Boolean)

@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { Modal } from '../core/Modal'
 import { errorText } from '../core/errorText'
 import { samePath } from './shellHelpers'
 import { getWorkspaceFolder, setWorkspaceFolder, takePendingWorkspaceFolder } from '../settings/workspaceFolder'
 import type { FoundProjectDto } from '../wire/types'
+import { Button, Input } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // "Open Projects from Folder": one folder holds all ADITO projects of a person; the dialog lists them and the
 // tree shows only the ones ticked here. Unticking an open project closes it, ticking a closed one opens it.
@@ -26,30 +28,26 @@ export function WorkspaceDialog({
   const [filter, setFilter] = useState('')
   const [ticked, setTicked] = useState<Set<string>>(() => new Set(openProjects))
 
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (folder === '') {
       setFound(null)
       return
     }
-    let cancelled = false
     setError(null)
     api
       .findProjectsInFolder(folder)
       .then((list) => {
-        if (cancelled) return
+        if (signal.aborted) return
         setFound(list)
         // Projects of the folder that are open now start ticked.
         setTicked(new Set(list.filter((p) => openProjects.some((o) => samePath(o, p.path))).map((p) => p.path)))
       })
       .catch((e) => {
-        if (!cancelled) {
+        if (!signal.aborted) {
           setFound([])
           setError(errorText(e))
         }
       })
-    return () => {
-      cancelled = true
-    }
     // The open projects are read once per folder: ticking must not be reset by the project list changing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, folder])
@@ -86,12 +84,12 @@ export function WorkspaceDialog({
       onEnter={folder !== '' ? apply : undefined}
       footer={
         <>
-          <button type="button" onClick={onClose}>
+          <Button variant="bare" onClick={onClose}>
             Cancel
-          </button>
-          <button type="button" disabled={found === null} onClick={apply}>
+          </Button>
+          <Button variant="bare" isDisabled={found === null} onClick={apply}>
             OK
-          </button>
+          </Button>
         </>
       }
     >
@@ -100,22 +98,22 @@ export function WorkspaceDialog({
           <span className="ws-folder-path" title={folder}>
             {folder === '' ? 'No folder chosen yet' : folder}
           </span>
-          <button type="button" onClick={() => void chooseFolder()}>
+          <Button variant="bare" onClick={() => void chooseFolder()}>
             {folder === '' ? 'Choose folder...' : 'Change...'}
-          </button>
+          </Button>
         </div>
         {error ? <p className="forge-field-error">{error}</p> : null}
         {found && found.length === 0 && !error ? <p className="forge-field-hint">No ADITO projects found directly inside this folder.</p> : null}
         {found && found.length > 0 ? (
           <>
             <div className="ws-tools">
-              <input type="search" value={filter} placeholder="Filter projects" aria-label="Filter projects" onChange={(e) => setFilter(e.target.value)} />
-              <button type="button" onClick={() => setTicked(new Set(found.map((p) => p.path)))}>
+              <Input type="search" value={filter} placeholder="Filter projects" aria-label="Filter projects" onChange={(e) => setFilter(e.target.value)} />
+              <Button variant="bare" onClick={() => setTicked(new Set(found.map((p) => p.path)))}>
                 All
-              </button>
-              <button type="button" onClick={() => setTicked(new Set())}>
+              </Button>
+              <Button variant="bare" onClick={() => setTicked(new Set())}>
                 None
-              </button>
+              </Button>
               <span className="ws-count">
                 {ticked.size} of {found.length} shown in the tree
               </span>
@@ -124,7 +122,7 @@ export function WorkspaceDialog({
               {shown.map((p) => (
                 <li key={p.path}>
                   <label>
-                    <input type="checkbox" checked={ticked.has(p.path)} onChange={() => toggle(p.path)} />
+                    <Input type="checkbox" checked={ticked.has(p.path)} onChange={() => toggle(p.path)} />
                     <span className="ws-name">{p.name}</span>
                     {openProjects.some((o) => samePath(o, p.path)) ? <span className="ws-open">open</span> : null}
                   </label>

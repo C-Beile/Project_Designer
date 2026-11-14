@@ -3,6 +3,7 @@ import type { ForgeApi } from '../api/ForgeApi'
 import type { LocalDataInfo, UpdateInfo } from '../wire/types'
 import { Modal } from '../core/Modal'
 import { errorText } from '../core/errorText'
+import { Button } from '../core/ui/controls'
 
 // Help > Check for Updates (manual chapter 13 / menu Help). Asks the private release repository
 // for a newer Dito Designer, shows its version and release notes and installs it only after the
@@ -42,9 +43,9 @@ export function UpdatesDialog({ api, onClose, onOpenTableCenter }: { api: ForgeA
       title="Check for Updates"
       onClose={onClose}
       footer={
-        <button type="button" onClick={onClose}>
+        <Button variant="bare" onClick={onClose}>
           Close
-        </button>
+        </Button>
       }
     >
       <div className="forge-updates">
@@ -52,9 +53,9 @@ export function UpdatesDialog({ api, onClose, onOpenTableCenter }: { api: ForgeA
           Installed version: <strong data-testid="installed-version">{info?.app_version ?? '…'}</strong>
         </p>
         <div className="forge-updates-check">
-          <button type="button" disabled={state.phase === 'checking' || state.phase === 'installing'} onClick={() => void search()}>
+          <Button variant="bare" isDisabled={state.phase === 'checking' || state.phase === 'installing'} onClick={() => void search()}>
             Check for Updates
-          </button>
+          </Button>
           {state.phase === 'checking' ? <span>Searching for a newer version…</span> : null}
           {state.phase === 'current' ? <span>Dito Designer is up to date.</span> : null}
           {state.phase === 'error' ? <span role="alert">Update check failed: {state.message}</span> : null}
@@ -65,9 +66,9 @@ export function UpdatesDialog({ api, onClose, onOpenTableCenter }: { api: ForgeA
               Version <strong>{state.update.version}</strong> is available.
             </p>
             {state.update.notes ? <pre className="forge-updates-notes">{state.update.notes}</pre> : null}
-            <button type="button" disabled={state.phase === 'installing'} onClick={() => void install(state.update)}>
+            <Button variant="bare" isDisabled={state.phase === 'installing'} onClick={() => void install(state.update)}>
               {state.phase === 'installing' ? 'Installing…' : 'Install and restart'}
-            </button>
+            </Button>
           </div>
         ) : null}
         <h3>Update the ADITO project</h3>
@@ -76,9 +77,9 @@ export function UpdatesDialog({ api, onClose, onOpenTableCenter }: { api: ForgeA
         </p>
         <h3>Update the database</h3>
         <p>The system tables of the connected system database can be checked in the System Table Control Center.</p>
-        <button type="button" onClick={onOpenTableCenter}>
+        <Button variant="bare" onClick={onOpenTableCenter}>
           Organize System Tables…
-        </button>
+        </Button>
       </div>
     </Modal>
   )

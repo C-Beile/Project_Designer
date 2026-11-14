@@ -9,11 +9,17 @@ pub mod plugins;
 pub mod project;
 pub mod rest;
 pub mod settings;
+pub mod themes;
 pub mod transpile;
 
 // ---------- Panic-Schutz für Tauri-Befehle ----------
 // Ein Panic in einem Befehl darf weder die App beenden noch das Versprechen im Frontend offen lassen.
 // `guard`/`guard_async` fangen ihn ab, schreiben ihn ins Protokoll und liefern einen Fehler (bei `Result`) oder einen leeren Wert.
+
+/// Beliebiges JSON über die Befehlsgrenze. Nach TypeScript wird es `any` (specta kann `serde_json::Value` wegen `i64` nicht schreiben).
+#[derive(serde::Serialize, serde::Deserialize, specta::Type)]
+#[serde(transparent)]
+pub struct Json(#[specta(type = specta_typescript::Any)] pub serde_json::Value);
 
 use std::future::Future;
 use std::panic::{catch_unwind, AssertUnwindSafe};

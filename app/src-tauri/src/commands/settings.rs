@@ -20,6 +20,7 @@ pub fn settings_file(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 
 /// P8 Tools > Options: Forge's own user settings (see `project::settings`).
 #[tauri::command(async)]
+#[specta::specta]
 pub fn get_settings(app: tauri::AppHandle) -> Result<ForgeSettings, String> {
     crate::commands::guard("get_settings", || {
     Ok(settings::load_settings(&settings_file(&app)?))
@@ -27,36 +28,37 @@ pub fn get_settings(app: tauri::AppHandle) -> Result<ForgeSettings, String> {
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn set_settings(mut settings: ForgeSettings, app: tauri::AppHandle) -> Result<(), String> {
     crate::commands::guard("set_settings", || {
     // The open-project list is owned by add/remove_open_project; the Options dialog never
     // carries it, so it must not wipe it.
     let file = settings_file(&app)?;
     settings.open_projects = settings::load_settings(&file).open_projects;
-    #[cfg(feature = "ssh-tunnel")]
-    ::ssh_tunnel::tunnel_client::set_accept_new_host_keys(settings.ssh_accept_new_host_keys.unwrap_or(false));
     write_settings(&file, &settings)
 })
 }
 
 /// Die ganze Konfiguration (`designer.conf`) als JSON; die Oberfläche lädt sie beim Start einmal.
 #[tauri::command(async)]
-pub fn config_get(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+#[specta::specta]
+pub fn config_get(app: tauri::AppHandle) -> Result<crate::commands::Json, String> {
     crate::commands::guard("config_get", || {
-        Ok(app_base::config::table_to_json(&app_base::config::load(&settings_file(&app)?)))
+        Ok(crate::commands::Json(app_base::config::table_to_json(&app_base::config::load(&settings_file(&app)?))))
     })
 }
 
 /// Ersetzt einen Abschnitt der Konfiguration (Pfad `["appearance", "theme"]`, `["popups", "git"]` ...). `null` oder ein leerer Wert löscht
 /// ihn. Alle Fenster erfahren die Änderung über das Ereignis `forge://config-changed`.
 #[tauri::command(async)]
-pub fn config_set(path: Vec<String>, value: serde_json::Value, app: tauri::AppHandle) -> Result<(), String> {
+#[specta::specta]
+pub fn config_set(path: Vec<String>, value: crate::commands::Json, app: tauri::AppHandle) -> Result<(), String> {
     crate::commands::guard("config_set", || {
         use tauri::Emitter;
         let file = settings_file(&app)?;
         // Die Fenster bekommen den bereinigten Wert (Schrägstriche, ohne null) und übernehmen ihn.
         let stored = app_base::config::update(&file, |table| {
-            app_base::config::set_path(table, &path, &value);
+            app_base::config::set_path(table, &path, &value.0);
             app_base::config::get_path(table, &path)
         })?;
         let _ = app.emit("forge://config-changed", serde_json::json!({ "path": path, "value": stored }));
@@ -67,6 +69,7 @@ pub fn config_set(path: Vec<String>, value: serde_json::Value, app: tauri::AppHa
 /// P8 Tools > Options: the Designer installation automatic discovery would pick, shown next to
 /// the user's own choice. Scans a few folders, so it runs off the UI thread.
 #[tauri::command]
+#[specta::specta]
 pub async fn detect_designer_install() -> Result<Option<String>, String> {
     crate::commands::guard_async("detect_designer_install", async {
     blocking(settings::detect_designer_install).await

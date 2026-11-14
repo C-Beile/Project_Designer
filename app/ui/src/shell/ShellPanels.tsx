@@ -17,7 +17,7 @@ import { useTunnelState } from '../services/tunnelState'
 import { osWindowsAvailable } from '../windows/windowService'
 import type { useEditorWindows } from '../windows/useEditorWindows'
 import type { AliasConfigDto, TreeNode, TreeNodeKind, UndoRedoOutcome, WireValue } from '../wire/types'
-import type { PanelContent } from './DockLayout'
+import type { PanelContent } from './dock/DockHost'
 import type { PanelId } from './layoutState'
 import { OutputBody, OutputTabs, type OutputMainTab, type OutputSubTab } from './OutputPanel'
 import { PropertiesBody } from './PropertiesBody'
@@ -29,6 +29,7 @@ import type { useOutputLogs } from './hooks/useOutputLogs'
 import type { useProblemScan } from './hooks/useProblemScan'
 import type { useRefactoring } from './hooks/useRefactoring'
 import type { useTreeActions } from './hooks/useTreeActions'
+import { Button } from '../core/ui/controls'
 
 type Refactoring = ReturnType<typeof useRefactoring>
 type TreeActions = ReturnType<typeof useTreeActions>
@@ -141,9 +142,9 @@ export function useShellPanels({
       <p>No project open yet.</p>
       <p className="forge-field-hint">Use File &gt; Open Project… or the Open Project button in the toolbar to choose a project folder.</p>
       {recent ? (
-        <button type="button" className="forge-link-btn" onClick={() => openProjectAt(recent)}>
+        <Button variant="bare" className="forge-link-btn" onClick={() => openProjectAt(recent)}>
           Recent: {recent}
-        </button>
+        </Button>
       ) : null}
     </div>
   ) : (
@@ -251,12 +252,14 @@ export function useShellPanels({
     },
     properties: {
       title: propertiesTitle,
-      header: <span className="forge-panel-title">{propertiesTitle}</span>,
+      header: null,
+      tabTitle: propertiesTitle,
       body: propertiesBody,
     },
     navigator: {
       title: navigatorTitle,
-      header: <span className="forge-panel-title">{navigatorTitle}</span>,
+      header: null,
+      tabTitle: navigatorTitle,
       body: configTabOpen ? (
         <ConfigNavigator />
       ) : (

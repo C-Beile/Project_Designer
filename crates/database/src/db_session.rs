@@ -1,6 +1,6 @@
 //! Database session for the Services tab: reads the system-DB alias and the tunnel entry from the
 //! two export files the user picks (`*_serverconfig_system.xml`, `*_tunnelconfig.xml`), opens an
-//! SSH port forward with `plink` and connects through `drivers`.
+//! SSH port forward (in-process, `ssh_tunnel`) and connects through `drivers`.
 //!
 //! Business rule: the credentials exist only in memory while a session is open. They are never
 //! written to disk, never logged and never part of an error message (see `scrub`).
@@ -11,13 +11,11 @@ use quick_xml::events::Event;
 use quick_xml::Reader;
 use serde::Serialize;
 use std::path::Path;
-use std::process::Child;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 pub use ssh_tunnel::tunnel_config::parse_tunnels;
-pub use ssh_tunnel::tunnel_core::{find_plink, percent_encode, plink_args, plink_args_auth, scrub, TunnelAuth, TunnelEntry};
-use ssh_tunnel::tunnel_core::{free_local_port, wait_for_port_cancellable};
+pub use ssh_tunnel::tunnel_core::{percent_encode, scrub, TunnelAuth, TunnelEntry};
 
 /// Hard cap so a careless `SELECT *` on a large table cannot flood the UI.
 pub const MAX_ROWS: usize = 1000;
@@ -199,7 +197,8 @@ fn system_label(system: &str) -> String {
 }
 
 struct Session {
-    plink: Option<Child>,
+    /// Target of a forward this session opened itself; `disconnect_system` closes it again.
+    owned_forward: Option<(String, u16)>,
     runtime: Option<tokio::runtime::Runtime>,
     conn: Box<dyn DbConnection>,
     secrets: Vec<String>,
@@ -207,8 +206,8 @@ struct Session {
     host: String,
     /// Target of a forward owned by the tunnel manager; this session only uses its local port.
     shared: Option<(String, u16)>,
-    /// Database host, port and the local port this session reaches it on (for tools that need their own connection).
-    forward: Option<(String, u16, u16)>,
+    /// Database host, port and the local address (host, port) this session reaches it on (for tools that need their own connection).
+    forward: Option<(String, u16, String, u16)>,
 }
 
 impl Session {
@@ -221,10 +220,6 @@ impl Drop for Session {
     fn drop(&mut self) {
         if let Some(rt) = self.runtime.take() {
             rt.shutdown_background();
-        }
-        if let Some(mut p) = self.plink.take() {
-            let _ = p.kill();
-            let _ = p.wait();
         }
     }
 }
@@ -267,11 +262,10 @@ impl DbManager {
 
     fn status_of(&self, mut s: Option<&mut Session>) -> DbStatus {
         let tunnel_up = match s {
-            Some(ref mut s) if s.shared.is_some() => {
-                let (h, p) = s.shared.clone().unwrap();
-                self.tunnels.local_port(&h, p).is_some()
-            }
-            Some(ref mut s) => s.plink.as_mut().map(|p| matches!(p.try_wait(), Ok(None))).unwrap_or(false),
+            Some(ref mut s) => match s.shared.clone().or_else(|| s.owned_forward.clone()) {
+                Some((h, p)) => self.tunnels.local_port(&h, p).is_some(),
+                None => false,
+            },
             None => false,
         };
         let present = s.is_some();
@@ -328,6 +322,9 @@ impl DbManager {
     /// Closes the session of one system; the others stay open.
     pub fn disconnect_system(&self, system: &str) {
         let removed = self.sessions.lock().unwrap().remove(system);
+        if let Some((host, port)) = removed.as_ref().and_then(|s| s.owned_forward.clone()) {
+            self.tunnels.disconnect(&host, port);
+        }
         drop(removed);
         let mut active = self.active.lock().unwrap();
         if active.as_deref() == Some(system) {
@@ -370,29 +367,23 @@ impl DbManager {
             secrets.push((*password).to_string());
         }
         let shared_port = self.tunnels.local_port(&tunnel.target_host, tunnel.target_port);
-        let (mut child, local_port) = match shared_port {
-            Some(p) => (None, p),
+        let local = match self.tunnels.local_addr(&tunnel.target_host, tunnel.target_port) {
+            Some(addr) => addr,
             None => {
-                self.report(system, "Starting ssh/plink", false);
-                let local_port = free_local_port()?;
-                let mut child = ssh_tunnel::tunnel_client::default_client().spawn(&tunnel, auth, local_port).map_err(|e| ssh_tunnel::tunnels::friendly_error(&e, false))?;
                 self.report(system, "Authenticating and forwarding the port", false);
-                if let Err(e) = wait_for_port_cancellable(&mut child, local_port, Duration::from_secs(20), Some(&self.cancel)) {
-                    let _ = child.kill();
-                    let _ = child.wait();
-                    let refs: Vec<&str> = secrets.iter().map(|s| s.as_str()).collect();
-                    return Err(ssh_tunnel::tunnels::friendly_error(&scrub(&e, &refs), matches!(auth, TunnelAuth::Key(Some(_)))));
-                }
-                (Some(child), local_port)
+                let status = self.tunnels.connect_cancellable(&tunnel, auth, Some(&self.cancel))?;
+                (status.local_host, status.local_port)
             }
         };
+        let (local_host, local_port) = local;
+        let owned_forward = shared_port.is_none().then(|| (tunnel.target_host.clone(), tunnel.target_port));
         self.report(system, "Waiting for the database", false);
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(2)
             .enable_all()
             .build()
             .map_err(|e| plugin_api::at!(e.to_string()))?;
-        let mut config = ConnectionConfig::new("127.0.0.1", local_port, percent_encode(&alias.database), percent_encode(&alias.user), percent_encode(&alias.password));
+        let mut config = ConnectionConfig::new(&local_host, local_port, percent_encode(&alias.database), percent_encode(&alias.user), percent_encode(&alias.password));
         config.connect_timeout = Duration::from_secs(10);
         let connected = runtime.block_on(async {
             let conn = mariadb::connect(&config).await?;
@@ -403,16 +394,15 @@ impl DbManager {
         let conn = match connected {
             Ok(c) => c,
             Err(e) => {
-                if let Some(c) = child.as_mut() {
-                    let _ = c.kill();
-                    let _ = c.wait();
+                if let Some((host, port)) = &owned_forward {
+                    self.tunnels.disconnect(host, *port);
                 }
                 runtime.shutdown_background();
                 let hint = " The tunnel opened, but the database did not answer; the dev environment may be switched off.";
                 return Err(format!("{}{hint}", scrub(&e.to_string(), &refs)));
             }
         };
-        let session = Session { plink: child, runtime: Some(runtime), conn: Box::new(conn), secrets, database: alias.database.clone(), host: alias.host.clone(), shared: shared_port.map(|_| (tunnel.target_host.clone(), tunnel.target_port)), forward: Some((alias.host.clone(), alias.port, local_port)) };
+        let session = Session { owned_forward, runtime: Some(runtime), conn: Box::new(conn), secrets, database: alias.database.clone(), host: alias.host.clone(), shared: shared_port.map(|_| (tunnel.target_host.clone(), tunnel.target_port)), forward: Some((alias.host.clone(), alias.port, local_host.clone(), local_port)) };
         self.sessions.lock().unwrap().insert(system.to_string(), session);
         *self.active.lock().unwrap() = Some(system.to_string());
         Ok(self.status_for(system))
@@ -429,14 +419,14 @@ impl DbManager {
             .iter()
             .find(|t| t.target_host.eq_ignore_ascii_case(&alias.host) && t.target_port == alias.port)
             .ok_or_else(|| format!("No tunnel entry points to {}:{}. Add it in the tunnel config editor.", alias.host, alias.port))?;
-        let local_port = self
+        let (local_host, local_port) = self
             .tunnels
-            .local_port(&tunnel.target_host, tunnel.target_port)
+            .local_addr(&tunnel.target_host, tunnel.target_port)
             .ok_or_else(|| format!("Open the tunnel to {}:{} first (tunnel config editor).", alias.host, alias.port))?;
         let secrets = vec![alias.user.clone(), alias.password.clone()];
         let refs: Vec<&str> = secrets.iter().map(|s| s.as_str()).collect();
         let runtime = tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().map_err(|e| plugin_api::at!(e.to_string()))?;
-        let mut config = ConnectionConfig::new("127.0.0.1", local_port, percent_encode(&alias.database), percent_encode(&alias.user), percent_encode(&alias.password));
+        let mut config = ConnectionConfig::new(&local_host, local_port, percent_encode(&alias.database), percent_encode(&alias.user), percent_encode(&alias.password));
         config.connect_timeout = Duration::from_secs(10);
         let connected = runtime.block_on(async {
             let conn = mariadb::connect(&config).await?;
@@ -450,7 +440,7 @@ impl DbManager {
                 return Err(scrub(&e.to_string(), &refs));
             }
         };
-        let session = Session { plink: None, runtime: Some(runtime), conn: Box::new(conn), secrets, database: alias.database.clone(), host: alias.host.clone(), shared: Some((tunnel.target_host.clone(), tunnel.target_port)), forward: Some((alias.host.clone(), alias.port, local_port)) };
+        let session = Session { owned_forward: None, runtime: Some(runtime), conn: Box::new(conn), secrets, database: alias.database.clone(), host: alias.host.clone(), shared: Some((tunnel.target_host.clone(), tunnel.target_port)), forward: Some((alias.host.clone(), alias.port, local_host.clone(), local_port)) };
         self.sessions.lock().unwrap().insert(key.to_string(), session);
         *self.active.lock().unwrap() = Some(key.to_string());
         Ok(self.status_for(key))
@@ -500,17 +490,22 @@ impl DbManager {
     #[doc(hidden)]
     pub fn attach_connection_for(&self, system: &str, conn: Box<dyn DbConnection>, secrets: Vec<String>) {
         let runtime = tokio::runtime::Builder::new_multi_thread().worker_threads(1).enable_all().build().unwrap();
-        self.sessions.lock().unwrap().insert(system.to_string(), Session { plink: None, runtime: Some(runtime), conn, secrets, database: system_label(system), host: "localhost".into(), shared: None, forward: None });
+        self.sessions.lock().unwrap().insert(system.to_string(), Session { owned_forward: None, runtime: Some(runtime), conn, secrets, database: system_label(system), host: "localhost".into(), shared: None, forward: None });
         *self.active.lock().unwrap() = Some(system.to_string());
     }
 
     /// Local port of an open forward to `host:port`: one the tunnel manager owns, or the one a
     /// session of this manager opened for it.
     pub fn forward_port_for(&self, host: &str, port: u16) -> Option<u16> {
-        if let Some(p) = self.tunnels.local_port(host, port) {
-            return Some(p);
+        self.forward_addr_for(host, port).map(|(_, p)| p)
+    }
+
+    /// Wie `forward_port_for`, mit dem lokalen Host der Weiterleitung.
+    pub fn forward_addr_for(&self, host: &str, port: u16) -> Option<(String, u16)> {
+        if let Some(addr) = self.tunnels.local_addr(host, port) {
+            return Some(addr);
         }
-        self.sessions.lock().unwrap().values().find_map(|s| s.forward.as_ref().filter(|(h, p, _)| h.eq_ignore_ascii_case(host) && *p == port).map(|(_, _, local)| *local))
+        self.sessions.lock().unwrap().values().find_map(|s| s.forward.as_ref().filter(|(h, p, _, _)| h.eq_ignore_ascii_case(host) && *p == port).map(|(_, _, lh, lp)| (lh.clone(), *lp)))
     }
 
     /// Credentials of the open session, only for scrubbing texts that go to the UI.
@@ -545,15 +540,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn basic_auth_passes_the_password_and_never_prints_it() {
-        let t = TunnelEntry { tunnel_host: "j".into(), tunnel_port: 22, target_host: "db".into(), target_port: 3306, user: "u".into() };
-        let auth = TunnelAuth::Basic { password: "s3cret!" };
-        let args = plink_args_auth(&t, &auth, 4000);
-        let i = args.iter().position(|a| a == "-pw").unwrap();
-        assert_eq!(args[i + 1], "s3cret!");
-        assert!(!args.contains(&"-i".to_string()));
-        assert!(!format!("{auth:?}").contains("s3cret"));
-        assert!(!plink_args_auth(&t, &TunnelAuth::Key(None), 4000).contains(&"-pw".to_string()));
+    fn credentials_are_never_printed() {
+        let basic = TunnelAuth::Basic { password: "s3cret!" };
+        let pass = TunnelAuth::KeyPass { key: Path::new("k.ppk"), passphrase: "s3cret!" };
+        assert!(!format!("{basic:?} {pass:?}").contains("s3cret"));
     }
 
     const SERVER: &str = r#"<preferences><root type="system"><map/><node name="systemdb"><map><entry key="caching" value="3"/></map>
@@ -594,16 +584,6 @@ mod tests {
         let alias = parse_system_alias(SERVER).unwrap();
         let t = find_db_tunnel(&tunnels, &alias).unwrap();
         assert_eq!((t.tunnel_host.as_str(), t.tunnel_port, t.user.as_str()), ("jump.example", 22, "tu"));
-    }
-
-    #[test]
-    fn plink_arguments_forward_the_local_port_to_the_target() {
-        let t = parse_tunnels(TUNNEL).unwrap().remove(1);
-        let args = plink_args(&t, Some(Path::new("k.ppk")), 40000);
-        assert!(args.contains(&"-batch".to_string()));
-        assert!(args.windows(2).any(|w| w[0] == "-L" && w[1] == "127.0.0.1:40000:adito-db.svc.cluster.local:3306"));
-        assert!(args.windows(2).any(|w| w[0] == "-i" && w[1] == "k.ppk"));
-        assert_eq!(args.last().unwrap(), "jump.example");
     }
 
     #[test]

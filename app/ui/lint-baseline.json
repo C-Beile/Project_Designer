@@ -1,0 +1,9 @@
+{
+  "eslint:max-lines": 32,
+  "eslint:max-lines-per-function": 96,
+  "eslint:parse": 2,
+  "eslint:react-hooks/exhaustive-deps": 32,
+  "stylelint:color-no-hex": 81,
+  "stylelint:declaration-property-value-disallowed-list": 213,
+  "stylelint:function-disallowed-list": 31
+}

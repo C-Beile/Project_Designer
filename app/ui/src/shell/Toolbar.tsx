@@ -21,6 +21,7 @@ import { TOOLBAR_GROUPS, type ToolbarGroup, type ToolbarPrefs } from './toolbarP
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { formatShortcut } from '../core/shortcuts'
 import { toolbarItemState, useToolbarItems, type ToolbarContext } from '../core/plugins/registry'
+import { Button } from '../core/ui/controls'
 
 export const DEPLOY_DISABLED_HINT = 'Deploy (open a project first)'
 export const RUN_DISABLED_HINT = 'Not available yet: Dito Designer cannot start a server or client'
@@ -43,8 +44,8 @@ function ToolButton({
   className?: string
 }) {
   return (
-    <button
-      type="button"
+    <Button variant="bare"
+
       className={`forge-tool-btn${className ? ` ${className}` : ''}`}
       aria-label={label}
       title={hint ?? label}
@@ -54,7 +55,7 @@ function ToolButton({
       }}
     >
       {children}
-    </button>
+    </Button>
   )
 }
 

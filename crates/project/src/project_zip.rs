@@ -21,12 +21,14 @@ use crate::tree::OBJECT_FOLDERS;
 
 const MAX_TOTAL_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct ModelEntry {
     pub folder: String,
     pub name: String,
+    #[specta(type = u32)]
     pub files: usize,
     /// Latest change of the model's files, seconds since 1970 (0 when unknown, e.g. inside a zip).
+    #[specta(type = u32)]
     pub modified_secs: u64,
     /// Import only: a model with this name already exists in the project.
     pub exists: bool,
@@ -182,7 +184,7 @@ pub fn inspect_zip(root: &Path, zip_path: &Path) -> Result<Vec<ModelEntry>, Stri
         .collect())
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Default)]
+#[derive(Debug, Clone, Serialize, PartialEq, Default, specta::Type)]
 pub struct ImportOutcome {
     pub imported: Vec<String>,
     pub skipped: Vec<String>,

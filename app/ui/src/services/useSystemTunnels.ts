@@ -5,6 +5,7 @@ import { textField } from '../wire/types'
 import { resolvePathVariables } from '../properties/pathVariables'
 import { getTunnelState, setForwardFor, setUnconfigured, setSystemsDb, setTunnelError, systemKey, tunnelConnecting } from './tunnelState'
 import { errorText } from '../core/errorText'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // One source of truth per system and project: is the tunnel to its database open (tunnel manager),
 // is a database session connected, did something fail. The shell polls the tunnel state of every
@@ -93,8 +94,7 @@ export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Recor
     })()
   }, [api, projects])
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     let busy = false
     const refsOf = (project: string, node: TreeNode): Promise<SystemRefs | null> => {
       const key = systemKey(project, node.label)
@@ -112,14 +112,14 @@ export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Recor
       return refs
     }
     const tick = async () => {
-      if (busy || cancelled) return
+      if (busy || signal.aborted) return
       busy = true
       try {
         const { projects: open, trees: all } = latest.current
         for (const project of open) {
           for (const node of systemNodesOf(all[project] ?? [])) {
             const refs = await refsOf(project, node)
-            if (!refs || cancelled) continue
+            if (!refs || signal.aborted) continue
             const key = systemKey(project, refs.name)
             if (closing.has(key)) continue
             if (!refs.tunnelRef || !refs.serverRef) {
@@ -129,7 +129,7 @@ export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Recor
             }
             setUnconfigured(key, false)
             const st = await api.systemTunnelState(project, refs.tunnelRef, refs.serverRef).catch(() => null)
-            if (!st || cancelled) continue
+            if (!st || signal.aborted) continue
             setForwardFor(key, st.db_tunnel_up)
             const session = getTunnelState().bySystem[key]
             if (st.db_tunnel_up && session?.connected && !aliasesTried.current.has(key)) {
@@ -138,7 +138,7 @@ export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Recor
               const server = resolvePathVariables('serverConfigPath', refs.serverRef, { projectHome: project })
               if (tunnel.unresolved.length === 0 && server.unresolved.length === 0) {
                 await connectDataAliases(api, key, refs.name, server.resolved, tunnel.resolved).catch(() => undefined)
-                if (!cancelled) setSystemsDb(await api.dbSystems().catch(() => []))
+                if (!signal.aborted) setSystemsDb(await api.dbSystems().catch(() => []))
               }
             }
             if (st.db_tunnel_up && !session?.connected && !(getTunnelState().connectingBy[key] > 0)) {
@@ -166,7 +166,7 @@ export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Recor
             }
           }
         }
-        if (!cancelled) setSystemsDb(await api.dbSystems().catch(() => []))
+        if (!signal.aborted) setSystemsDb(await api.dbSystems().catch(() => []))
       } finally {
         busy = false
       }
@@ -174,7 +174,6 @@ export function useSystemTunnels(api: ForgeApi, projects: string[], trees: Recor
     void tick()
     const timer = setInterval(() => void tick(), SYSTEM_TUNNEL_POLL_MS)
     return () => {
-      cancelled = true
       clearInterval(timer)
     }
   }, [api])

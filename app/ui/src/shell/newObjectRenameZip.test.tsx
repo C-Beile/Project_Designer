@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Shell } from './Shell'
 import { NewObjectDialog } from './NewObjectDialog'
@@ -60,12 +60,12 @@ describe('New object', () => {
     await user.click(select)
     expect(within(screen.getByRole('listbox', { name: 'Object types' })).getByRole('option', { name: /Report/ })).toHaveAttribute('aria-disabled', 'true')
     await user.click(select)
-    await user.type(screen.getByRole('textbox', { name: 'Object name' }), 'R_one')
+    await user.type(screen.getByRole('textbox', { name: 'Object name' }), 'PROJECT_one')
     expect(screen.getByRole('button', { name: 'Finish' })).toBeDisabled()
     await user.type(screen.getByRole('textbox', { name: 'Object title' }), 'Role one')
-    expect(screen.getByRole('button', { name: 'Finish' })).toBeEnabled()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Finish' })).toBeEnabled())
     await user.click(screen.getByRole('button', { name: 'Finish' }))
-    expect(api.treeCalls).toEqual(['create:role:R_one:Role one:'])
+    expect(api.treeCalls).toEqual(['create:role:PROJECT_one:Role one:'])
   })
 
   it('shows the rule violation of the name and keeps Create off', async () => {
@@ -101,8 +101,8 @@ describe('Rename', () => {
     await user.type(input, 'Human')
     await user.click(within(dialog).getByRole('button', { name: 'Preview' }))
     expect(api.treeCalls).toEqual(['renamePlan:C:/p/entity/Person/Person.aod->Human'])
-    expect(await screen.findByRole('table', { name: 'Usages' })).toBeInTheDocument()
-    expect(screen.getByRole('table', { name: 'Mentions not updated' })).toHaveTextContent('var e = "Person"')
+    expect(await screen.findByRole('grid', { name: 'Usages' })).toBeInTheDocument()
+    expect(screen.getByRole('grid', { name: 'Mentions not updated' })).toHaveTextContent('var e = "Person"')
     await user.click(screen.getByRole('button', { name: 'Do Refactoring' }))
     expect(api.treeCalls).toEqual(['renamePlan:C:/p/entity/Person/Person.aod->Human', 'rename:C:/p/entity/Person/Person.aod->Human'])
   })
@@ -135,7 +135,7 @@ describe('Export and Import Project', () => {
     render(<ProjectZipDialog api={api} projectRoot="C:/p" mode="export" onClose={() => {}} onDone={(m) => (message = m)} />)
     await user.click(await screen.findByRole('tab', { name: /neonView/ }))
     await user.click(screen.getByRole('checkbox', { name: 'neonView/B_view' }))
-    await user.click(screen.getByRole('button', { name: 'Finish' }))
+    await user.click(screen.getByRole('button', { name: 'OK' }))
     expect(api.treeCalls).toEqual(['export:entity/A_entity->C:\\out\\export.zip'])
     expect(message).toContain('Exported 1 data model')
   })
@@ -155,7 +155,7 @@ describe('Export and Import Project', () => {
     expect(screen.queryByRole('checkbox', { name: 'Overwrite neonView/B_view' })).toBeNull()
     await user.click(screen.getByRole('tab', { name: /entity/ }))
     await user.click(screen.getByRole('checkbox', { name: 'Overwrite entity/A_entity' }))
-    await user.click(screen.getByRole('button', { name: 'Finish' }))
+    await user.click(screen.getByRole('button', { name: 'OK' }))
     expect(api.treeCalls).toEqual(['import:C:/in/p.zip:entity/A_entity,neonView/B_view:entity/A_entity'])
   })
 

@@ -3,6 +3,7 @@ import type { ForgeApi } from '../api/ForgeApi'
 import type { LocalDataInfo } from '../wire/types'
 import { Modal } from '../core/Modal'
 import { getOptions } from '../settings/options'
+import { Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 
 // Help > Local Data (manual chapter 12, screenshot 185): where the Designer keeps its local files.
 // Shows Dito Designer's own data folder and, read-only, the version folders of the original Designer
@@ -38,9 +39,9 @@ export function LocalDataDialog({ api, onClose }: { api: ForgeApi; onClose: () =
       title="Local Data"
       onClose={onClose}
       footer={
-        <button type="button" onClick={onClose}>
+        <Button variant="bare" onClick={onClose}>
           Close
-        </button>
+        </Button>
       }
     >
       <div className="forge-localdata">
@@ -59,33 +60,33 @@ export function LocalDataDialog({ api, onClose }: { api: ForgeApi; onClose: () =
               Settings file: <code>{info.forge_settings_file}</code>
             </p>
             <p className="forge-field-hint">Colors, layout and the last project are kept here and in the browser storage of the application. Renaming the folder starts with fresh settings.</p>
-            <table aria-label="Files of the data folder" className="forge-opt-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Date modified</th>
-                  <th>Size</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table aria-label="Files of the data folder" className="forge-opt-table">
+              <TableHeader>
+
+                  <TableColumn isRowHeader>Name</TableColumn>
+                  <TableColumn>Date modified</TableColumn>
+                  <TableColumn>Size</TableColumn>
+
+              </TableHeader>
+              <TableBody>
                 {info.forge_entries.length === 0 ? (
-                  <tr>
-                    <td colSpan={3}>The folder is empty.</td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={3}>The folder is empty.</TableCell>
+                  </TableRow>
                 ) : (
                   info.forge_entries.map((e) => (
-                    <tr key={e.name}>
-                      <td>
+                    <TableRow key={e.name}>
+                      <TableCell>
                         {e.is_dir ? '📁 ' : ''}
                         {e.name}
-                      </td>
-                      <td>{when(e.modified_unix)}</td>
-                      <td>{formatBytes(e.size_bytes)}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell>{when(e.modified_unix)}</TableCell>
+                      <TableCell>{formatBytes(e.size_bytes)}</TableCell>
+                    </TableRow>
                   ))
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
 
             <h3>Original ADITO Designer</h3>
             {info.designer_roaming_dir ? (
@@ -97,33 +98,33 @@ export function LocalDataDialog({ api, onClose }: { api: ForgeApi; onClose: () =
               <p className="forge-field-hint">The roaming folder of the original Designer could not be determined.</p>
             )}
             {info.designer_versions.length > 0 ? (
-              <table aria-label="Version folders" className="forge-opt-table">
-                <thead>
-                  <tr>
-                    <th>Version</th>
-                    <th>Last use</th>
-                    <th>Unused for</th>
-                    <th>Size</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table aria-label="Version folders" className="forge-opt-table">
+                <TableHeader>
+
+                    <TableColumn isRowHeader>Version</TableColumn>
+                    <TableColumn>Last use</TableColumn>
+                    <TableColumn>Unused for</TableColumn>
+                    <TableColumn>Size</TableColumn>
+                    <TableColumn>Status</TableColumn>
+
+                </TableHeader>
+                <TableBody>
                   {info.designer_versions.map((v) => (
-                    <tr key={v.name} className={janitor && v.outdated ? 'is-outdated' : undefined}>
-                      <td>{v.name}</td>
-                      <td>{when(v.modified_unix)}</td>
-                      <td>{v.days_unused === null ? '-' : `${v.days_unused} days`}</td>
-                      <td>{formatBytes(v.size_bytes)}</td>
-                      <td>{janitor ? (v.outdated ? 'outdated' : 'in use') : ''}</td>
-                    </tr>
+                    <TableRow key={v.name} className={janitor && v.outdated ? 'is-outdated' : undefined}>
+                      <TableCell>{v.name}</TableCell>
+                      <TableCell>{when(v.modified_unix)}</TableCell>
+                      <TableCell>{v.days_unused === null ? '-' : `${v.days_unused} days`}</TableCell>
+                      <TableCell>{formatBytes(v.size_bytes)}</TableCell>
+                      <TableCell>{janitor ? (v.outdated ? 'outdated' : 'in use') : ''}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             ) : null}
             <p>
-              <button type="button" onClick={() => setJanitor(true)} disabled={info.designer_versions.length === 0}>
+              <Button variant="bare" onClick={() => setJanitor(true)} isDisabled={info.designer_versions.length === 0}>
                 Run Janitor Now
-              </button>{' '}
+              </Button>{' '}
               <span className="forge-field-hint">Threshold: {threshold} days (Tools &gt; Options &gt; Miscellaneous &gt; Janitor)</span>
             </p>
             {janitor ? (

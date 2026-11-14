@@ -6,7 +6,7 @@ use serde::Serialize;
 use std::sync::Arc;
 use tauri::State;
 
-#[derive(Serialize)]
+#[derive(Serialize, specta::Type)]
 pub struct PluginInfo {
     pub id: &'static str,
     pub name: &'static str,
@@ -15,9 +15,11 @@ pub struct PluginInfo {
 
 /// Leitet `command` mit `args` an das angemeldete Plugin weiter. Fehlt es: Fehlertext "nicht installiert".
 #[tauri::command]
-pub async fn plugin_call(registry: State<'_, Arc<FeatureRegistry>>, plugin: String, command: String, args: serde_json::Value) -> Result<serde_json::Value, String> {
+#[specta::specta]
+pub async fn plugin_call(registry: State<'_, Arc<FeatureRegistry>>, plugin: String, command: String, args: crate::commands::Json) -> Result<crate::commands::Json, String> {
     crate::commands::guard_async("plugin_call", async {
     let registry = Arc::clone(&registry);
+    let args = args.0;
     let summary = args_summary(&args);
     let (p, c) = (plugin.clone(), command.clone());
     let result = blocking(move || registry.call(&plugin, &command, args)).await?;
@@ -25,7 +27,7 @@ pub async fn plugin_call(registry: State<'_, Arc<FeatureRegistry>>, plugin: Stri
         // Jeder Fehler eines Plugin-Befehls kommt ins Protokoll (Datei im Log-Ordner), damit er später nachlesbar ist.
         let _ = app_base::crashlog::write_entry("ERROR", &format!("plugin_call {p}.{c} ({summary}): {e}"));
     }
-    result
+    result.map(crate::commands::Json)
 }).await
 }
 
@@ -48,6 +50,7 @@ fn args_summary(args: &serde_json::Value) -> String {
 
 /// Die angemeldeten Plugins; `available` ist false, wenn eine Abhängigkeit fehlt.
 #[tauri::command]
+#[specta::specta]
 pub fn plugin_list(registry: State<'_, Arc<FeatureRegistry>>) -> Vec<PluginInfo> {
     crate::commands::guard("plugin_list", || {
     registry

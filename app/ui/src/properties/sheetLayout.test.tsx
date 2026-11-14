@@ -31,7 +31,7 @@ function entitySheet(over: Partial<PropertySheet> = {}): PropertySheet {
 }
 
 describe.skipIf(!existsSync(SPEC))('generated sheet model against sheet_model.json', () => {
-  const spec = JSON.parse(readFileSync(SPEC, 'utf8')) as Record<string, { model_type_id: number; properties: { name: string; sheetTab?: string; sheetTabCategory?: string; position: string }[] }>
+  const spec = (existsSync(SPEC) ? JSON.parse(readFileSync(SPEC, 'utf8')) : {}) as Record<string, { model_type_id: number; properties: { name: string; sheetTab?: string; sheetTabCategory?: string; position: string }[] }>
 
   it('covers all 210 model types and 2169 properties', () => {
     expect(Object.keys(SHEET_MODELS)).toHaveLength(Object.keys(spec).length)
