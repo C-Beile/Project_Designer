@@ -103,7 +103,6 @@ export interface ShellPanelsDeps {
   handleTreeSelect: (node: TreeNode, top: TreeNode) => void
   handleOpen: (node: TreeNode, top?: TreeNode) => Promise<void>
   openProjectAt: (path: string) => void
-  closeProjects: (toClose: string[]) => void
   openSql: (sql: string) => void
   openProblem: (p: Problem) => void
   markUnsaved: (nodeId: string, dirty: boolean) => void
@@ -121,7 +120,7 @@ export function useShellPanels({
   problemList, problemCounts, scanning, logs, clearLog, db, changeDb, drafts, historyFlags, sqlTexts, sqlNonce, reveal, setReveal, projectIndex, editorWindows, bridge, systemBadge, gitFor, loadingProjects,
   iconSvgs, projectsTab, setProjectsTab, outputTab, setOutputTab, outputSub, setOutputSub, aliasSel, inspected, inspectedKind, inspectedObject, elementSel, focusLabel, setNavSel, resetNavElement,
   activateNavElement, refactoring, setRefactoring, doRefactoring, setCtxMenu, runTreeAction, handleActivateTab, handleCloseTab, handleCloseOthers, handleCloseAll, handleTreeSelect, handleOpen,
-  openProjectAt, closeProjects, openSql, openProblem, markUnsaved, refreshDiagnostics, applyOutcome, registerFlush, setScanTick, setReloadToken, setStatus,
+  openProjectAt, openSql, openProblem, markUnsaved, refreshDiagnostics, applyOutcome, registerFlush, setScanTick, setReloadToken, setStatus,
 }: ShellPanelsDeps) {
   // The Services tab only exists while a system is connected; it is the place to see and close the connections.
   const tunnelStates = useTunnelState()
@@ -228,7 +227,6 @@ export function useShellPanels({
           api={api}
           tab={projectsTab}
           tree={tree}
-          root={root}
           loading={loadingProjects.size > 0}
           problemCounts={problemCounts}
           badgeFor={systemBadge}
@@ -240,7 +238,6 @@ export function useShellPanels({
           onOpen={handleOpen}
           onContextMenu={(node, top, x, y) => setCtxMenu({ node, top, x, y })}
           onFileKey={(key, node, top) => runTreeAction(key === 'cut' ? 'file.cut' : key === 'copy' ? 'file.copy' : key === 'paste' ? 'file.paste' : 'file.delete', node, top)}
-          onCloseProject={() => closeProjects([root])}
           onOpenSql={openSql}
           setStatus={setStatus}
           recentProjects={recentList}

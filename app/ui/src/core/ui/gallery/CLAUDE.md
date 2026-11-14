@@ -21,4 +21,4 @@ Vorschau-Tabs des Theme Studios (`studio/`). Zeigen alle Elemente der App im gew
 - Die Theme-Vorschau legt Farben nur auf `<html>`. Beim Schließen stellt `restoreTheme` den vorigen Stand her.
 
 ## Tests
-- `themePreview.test.ts`, dazu `studio/ThemeStudio.test.tsx`.
+- `themePreview.test.ts` (entfernt: keine), dazu `studio/ThemeStudio.test.tsx`.

@@ -39,4 +39,4 @@ Projects-Baum und sein Kontextmenü. Der Baum selbst kommt als `TreeNode` vom Ba
 | Namensregel | `nameRules.ts` und das Gegenstück in Rust |
 
 ## Tests
-- `ProjectTree.test.tsx`, `contextMenu.test.tsx`. `popupSpec.test.ts` braucht Spec-Dateien unter `E:\60_design` (fehlen laut Root-`CLAUDE.md`). `npx vitest run src/tree`.
+- `ProjectTree.test.tsx`, `contextMenu.test.tsx`. `npx vitest run tests/tree`.

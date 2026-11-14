@@ -65,6 +65,7 @@ fn official_params() -> HashMap<String, String> {
 }
 
 #[test]
+#[ignore = "braucht eine echte ADITO-Installation oder ein Korpus (cargo test -- --ignored)"]
 fn official_engine_transpiles_the_minimal_project_through_the_installed_app_path() {
     let _serial = serial();
     let project = fresh_fixture_copy("official");
@@ -79,6 +80,7 @@ fn official_engine_transpiles_the_minimal_project_through_the_installed_app_path
 }
 
 #[test]
+#[ignore = "braucht eine echte ADITO-Installation oder ein Korpus (cargo test -- --ignored)"]
 fn missing_engine_param_runs_the_built_in_engine() {
     let _serial = serial();
     let project = fresh_fixture_copy("default");

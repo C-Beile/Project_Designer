@@ -88,8 +88,9 @@ Wichtige Ordner haben eine eigene `CLAUDE.md` (Karte) mit Dateiliste, Regeln, Fa
 
 ## Stand der Tests (nach Index + File-Watcher, 2026-11-12)
 
-- Rust: 676 grün, 12 rot. Alle 12 brauchen eine echte ADITO-Installation oder ein Korpus (`native-transpiler` lib 2 + `full_harness_run`, `npm-modules` resolve_real_corpus 3 + resolve_synthetic 2, `adito-transpiler` real_transpiler 2, `project` transpile_action_real 2: `official_engine...` und `missing_engine_param...`, weil der offizielle Transpiler Standard ist). `native-transpiler` `incremental_stage` ist manchmal flaky.
-- UI (2026-11-14): 755 grün, 10 übersprungen. Die vier Spec-Tests (sheetLayout, menuSpec, toolbarSpec, popupSpec) überspringen sich, wenn `E:\60_design` fehlt.
+- Rust: 12 Tests sind `#[ignore]` (laufen nur mit `cargo test -- --ignored`), weil sie eine echte ADITO-Installation oder ein Korpus brauchen (`native-transpiler` lib 2 + `full_harness_run`, `npm-modules` resolve_real_corpus 3 + resolve_synthetic 2, `adito-transpiler` real_transpiler 2, `project` transpile_action_real 2: `official_engine...` und `missing_engine_param...`, weil der offizielle Transpiler Standard ist). `native-transpiler` `incremental_stage` ist manchmal flaky.
+- Rust-Tests laufen in Sekunden, die Zeit steckt im Bauen und Linken (`[profile.test]` in `Cargo.toml` spart Debug-Infos). Beim Iterieren nur die geänderte Crate: `cargo test -p <crate>`.
+- UI (2026-11-15): 739 grün, ca. 35 s. Tests liegen in `app/ui/tests/` (gleiche Ordner wie `src/`, Hilfen in `tests/support/`). Beim Iterieren gezielt: `npx vitest run tests/<ordner>`.
 - Bauen mit MSVC: `rust-toolchain.toml` steht auf GNU (braucht MinGW im PATH). Ohne MinGW: `RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-msvc` setzen.
 
 ## Umbau

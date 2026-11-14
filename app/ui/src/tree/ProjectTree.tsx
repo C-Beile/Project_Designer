@@ -448,7 +448,6 @@ export function ProjectTree({
               <span className={`project-tree-label${node.bold ? ' is-bold' : ''}`}>{node.label}</span>
               {onRight ? null : statusIcons}
               {node.type_label ? <span className="project-tree-type is-bold">[{node.type_label}]</span> : null}
-              {node.path ? <span className="project-tree-dim">{node.path}</span> : null}
               {node.origin && node.kind !== 'module' ? <span className="project-tree-dim project-tree-origin">{node.origin}</span> : null}
               {node.overrides?.length ? <span className="project-tree-dim">({node.overrides.join(', ')})</span> : null}
               {onRight ? <span className="project-tree-tail">{statusIcons}{trailIcons}</span> : trailIcons}

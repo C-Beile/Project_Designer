@@ -85,4 +85,4 @@ Der Kern liest den Stand (Baum-Farben, Tabs, Speichern). Das SCM-Plugin sagt mit
 - Große Dialoge mit eigenem Layout bleiben normale Komponenten mit `Modal` (siehe `shell/`).
 
 ## Tests
-- `*.test.tsx` neben den Dateien, z. B. `plugins/registry.test.tsx`. `npx vitest run src/core`.
+- `*.test.tsx` in `tests/core/`, z. B. `plugins/registry.test.tsx`. `npx vitest run tests/core`.

@@ -32,7 +32,7 @@ Eigene Betriebssystem-Fenster: schwebende Panels, Dialoge, verschobene Editoren.
 ## Regeln und Fallen
 - Alles reist als Tauri-Event (`EVENTS` in `protocol.ts`). Ein Fenster hat keinen eigenen Projektzustand. Es bekommt `MainState` und schickt `FloatAction` zurück.
 - Ein Dokument ist in genau einem Fenster offen.
-- Ohne Tauri (Browser, Tests) gibt `osWindowsAvailable()` false. Dann laufen die eingebetteten Dialoge. Tests setzen ein Fake mit `setWindowBackend` (`src/test/fakeWindowBackend.ts`).
+- Ohne Tauri (Browser, Tests) gibt `osWindowsAvailable()` false. Dann laufen die eingebetteten Dialoge. Tests setzen ein Fake mit `setWindowBackend` (`tests/support/fakeWindowBackend.ts`).
 - Jedes OS-Fenster hat sein eigenes Register. `WindowRoot` meldet die Plugins an (`registerFeaturePlugins`), bevor es zeichnet. Git-Fenster (`git`, `sync`, `commitdiff`) und das scm-Panel kommen über `getDialog`/`useDialog`; ohne Plugin bleiben sie leer.
 - Das Ergebnis eines Dialog-Fensters wird als JSON-Text übertragen. Es muss serialisierbar sein.
 - `WindowRoot` und `DialogWindowApp` laden Fenster und Dialoge per `lazyNamed`: ein Popup holt nur seinen Code.
@@ -47,4 +47,4 @@ Eigene Betriebssystem-Fenster: schwebende Panels, Dialoge, verschobene Editoren.
 | Was ein Float-Fenster vom Hauptfenster weiß | `MainState` in `protocol.ts` |
 
 ## Tests
-- `windows.test.tsx`, `dialogWindows.test.tsx`, `editorWindows.test.tsx` mit `src/test/fakeWindowBackend.ts`. `npx vitest run src/windows`.
+- `windows.test.tsx`, `dialogWindows.test.tsx`, `editorWindows.test.tsx` mit `tests/support/fakeWindowBackend.ts`. `npx vitest run tests/windows`.

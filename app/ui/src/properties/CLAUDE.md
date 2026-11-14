@@ -49,4 +49,4 @@ Properties-Panel und was dazugehört. Zeilen und Werte kommen vom Backend. Das S
 | Eigenschaft anders darstellen (auch aus einem Plugin) | `registerFieldEditor({ id, matches, component })` oder `registerFieldAction` (`core/contrib/fieldEditors.ts`), Vorlage `fieldEditors.tsx` |
 
 ## Tests
-- `PropertySheetPanel.test.tsx`, `sheetLayout.test.tsx` (kann `60_design` brauchen, laut Root-`CLAUDE.md` fehlt es), `configSections.test.tsx`, `codeSave.test.ts` u. a. `npx vitest run src/properties`.
+- `PropertySheetPanel.test.tsx`, `configSections.test.tsx`, `codeSave.test.ts` u. a. `npx vitest run tests/properties`.

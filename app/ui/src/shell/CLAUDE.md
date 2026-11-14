@@ -8,13 +8,12 @@
 | `hooks/` | Die ausgezogenen Hooks. Siehe `hooks/CLAUDE.md`. |
 | `layoutState.ts` | Zustand und Speicherung des Layouts. |
 | `menuModel.ts` | Hauptmenü als Daten (`buildMenus`, `TOOL_WINDOWS`, `MenuContext`). Menü "Debug" (vor Help) nur wenn `isDevBuild()`; Tests setzen `ctx.devBuild`. |
-| `debugMenu.test.ts` | Test: Debug-Menü nur im Dev-Build, Plugin-Einträge. |
 | `MenuBar.tsx` | Menüleiste mit Tastaturbedienung. |
 | `Toolbar.tsx` | Werkzeugleiste, liest auch `useToolbarItems` aus dem Register. |
 | `toolbarPrefs.ts` | Gruppen der Werkzeugleiste, an/aus, gespeichert. |
 | `StatusBar.tsx` | Statusleiste, Plätze für Plugin-Felder. |
 | `IndexStatusItem.tsx` | Feld der Statusleiste: Fortschritt des Projekt-Index (`Indexing 45%  Datei`), danach kurz `Index ready`. Klick öffnet den IDE-Log. |
-| `coreStatusItems.ts` | `registerCoreStatusItems()`: Statusleisten-Beiträge des Kerns (ohne Plugin). Aufruf in `App.tsx` und `test/setup.ts`. |
+| `coreStatusItems.ts` | `registerCoreStatusItems()`: Statusleisten-Beiträge des Kerns (ohne Plugin). Aufruf in `App.tsx` und `tests/support/setup.ts`. |
 | `ProjectsPanel.tsx` | Kopf und Inhalt des Projects-Panels. |
 | `PropertiesBody.tsx` | Inhalt des Properties-Panels je Auswahl. |
 | `OutputPanel.tsx` | Output-Fenster (Unter-Reiter `database`, `build`, `default`, `nodejs`). |
@@ -50,7 +49,6 @@
 | `ThemePicker.tsx` | Options > Appearance > Theme: Galerie der Themes mit Vorschaubild. |
 | `CodeFormattingPage.tsx` | Options > Appearance > Code formatting: Schrift, Größe, Zeilenabstand, Ligaturen der Code-Editoren mit Vorschau. |
 | `shellHelpers.ts` | Kleine reine Helfer (`findNodeByPath`, `baseName`, `samePath`). |
-| `__golden__/` | Gespeicherte Menü-Ausgaben für `menuGolden.test.ts` (Ids, Labels, Kürzel, enabled, hint je Kontext). Ändert sich das Menü mit Absicht: `npx vitest run src/shell/menuGolden.test.ts -u` und den Diff prüfen. |
 | `TextAndDensity.tsx` | Options > General > Text and density: Schriftgröße, Schriftart und Dichte. Wirkt sofort über `theme/appearance.ts`. |
 | `TextAndSizePage.tsx` | Options > Appearance > Text & size: Interface size (Zoom) und `TextAndDensity`. |
 | `UserThemeSection.tsx` | Options > Appearance > Theme: eigene Themes wählen, Knopf für das Theme Studio. |
@@ -59,7 +57,7 @@
 <!-- AUTO:END -->
 
 ## Zweck
-Hauptfenster: Layout, Menü, Toolbar, Dialoge und die Hooks, die den Zustand halten. Tests: `*.test.tsx` neben den Dateien (`Shell.test.tsx` fährt das ganze Fenster mit `mockApi`).
+Hauptfenster: Layout, Menü, Toolbar, Dialoge und die Hooks, die den Zustand halten. Tests: `tests/shell/*.test.tsx` (`Shell.test.tsx` fährt das ganze Fenster mit `mockApi`).
 
 ## Einstiegspunkte
 - `Shell({ api, projectRoot })` in `Shell.tsx`. `groupOpenTunnels` ist dort ebenfalls exportiert.
@@ -88,6 +86,5 @@ Hauptfenster: Layout, Menü, Toolbar, Dialoge und die Hooks, die den Zustand hal
 | Neuer Zustand mit Logik | neuer Hook in `hooks/`, Aufruf in `Shell.tsx` |
 
 ## Tests
-- `npm test` in `app/ui`. Einzeln: `npx vitest run src/shell/Shell.test.tsx`.
-- `test/setup.ts` stellt `import.meta.env.DEV` auf false: Tests sehen das Menü ohne Debug.
-- `menuSpec.test.ts` und `toolbarSpec.test.tsx` brauchen Spec-Dateien unter `E:\60_design` und überspringen sich ohne sie. `menuGolden.test.ts` hält das Hauptmenü in 7 Kontexten fest.
+- `npm test` in `app/ui`. Einzeln: `npx vitest run tests/shell/Shell.test.tsx`.
+- `tests/support/setup.ts` stellt `import.meta.env.DEV` auf false: Tests sehen das Menü ohne Debug.

@@ -37,7 +37,7 @@ export default tseslint.config(
   },
   // Hier sind die Rohelemente und die Bibliotheken zu Hause (und die Tests: sie prüfen das Verhalten, nicht den Stil).
   {
-    files: ['src/core/ui/controls/**', 'src/core/ui/blocks/**', 'src/shell/dock/**', 'src/**/*.test.{ts,tsx}', 'src/test/**'],
+    files: ['src/core/ui/controls/**', 'src/core/ui/blocks/**', 'src/shell/dock/**', 'tests/**'],
     rules: { 'no-restricted-syntax': 'off', 'no-restricted-imports': 'off' },
   },
   // Die Zwischenablage selbst.

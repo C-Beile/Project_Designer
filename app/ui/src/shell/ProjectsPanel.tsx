@@ -3,7 +3,6 @@ import type { ComponentProps } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { ServicesPanel } from '../services/ServicesPanel'
 import { ProjectTree } from '../tree/ProjectTree'
-import { ProjectIcon } from '../tree/treeIcons'
 import { tunnelTabNode } from '../tabs/tabModel'
 import { errorText } from '../core/errorText'
 import { textField } from '../wire/types'
@@ -42,7 +41,6 @@ export interface ProjectsPanelBodyProps {
   api: ForgeApi
   tab: ProjectsTab
   tree: TreeNode[]
-  root: string
   loading: boolean
   problemCounts: ComponentProps<typeof ProjectTree>['problemCounts']
   badgeFor: ComponentProps<typeof ProjectTree>['badgeFor']
@@ -54,7 +52,6 @@ export interface ProjectsPanelBodyProps {
   onOpen: (node: TreeNode, top?: TreeNode) => Promise<void>
   onContextMenu: ComponentProps<typeof ProjectTree>['onContextMenu']
   onFileKey: ComponentProps<typeof ProjectTree>['onFileKey']
-  onCloseProject: () => void
   onOpenSql: (sql: string) => void
   setStatus: (text: string) => void
   /** Recently opened projects for the context menu of the empty panel area. */
@@ -65,7 +62,7 @@ export interface ProjectsPanelBodyProps {
 }
 
 // Inhalt des Projects-Panels: Projektbaum mit Leiste des aktiven Projekts, oder die Services.
-export function ProjectsPanelBody({ api, tab, tree, root, loading, problemCounts, badgeFor, gitFor, iconSvg, db, onDbChange, onSelect, onOpen, onContextMenu, onFileKey, onCloseProject, onOpenSql, setStatus, recentProjects, openProjects, onOpenProjects, onOpenRecent }: ProjectsPanelBodyProps) {
+export function ProjectsPanelBody({ api, tab, tree, loading, problemCounts, badgeFor, gitFor, iconSvg, db, onDbChange, onSelect, onOpen, onContextMenu, onFileKey, onOpenSql, setStatus, recentProjects, openProjects, onOpenProjects, onOpenRecent }: ProjectsPanelBodyProps) {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const [inside, setInside] = useState<Record<string, FoundProjectDto[]>>({})
   useAbortableEffect((signal) => {
@@ -111,7 +108,7 @@ export function ProjectsPanelBody({ api, tab, tree, root, loading, problemCounts
     <div
       className="projects-panel"
       onContextMenu={(e) => {
-        // A row of the tree has its own menu; this one belongs to the empty area and the active project bar.
+        // A row of the tree has its own menu; this one belongs to the empty area.
         if (e.defaultPrevented) return
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })
@@ -140,17 +137,6 @@ export function ProjectsPanelBody({ api, tab, tree, root, loading, problemCounts
         gitFor={gitFor}
         onFileKey={onFileKey}
       />
-      {root ? (
-        <div className="projects-active-bar" aria-label="Active project">
-          <ProjectIcon />
-          <span className="projects-active-name" title={root}>
-            {baseName(root)}
-          </span>
-          <Button variant="bare" aria-label={`Close project ${baseName(root)}`} title="Close Project" onClick={onCloseProject}>
-            ×
-          </Button>
-        </div>
-      ) : null}
       {menu ? (
         <TreeContextMenu
           entries={[

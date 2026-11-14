@@ -70,11 +70,11 @@ Ein Editor je Objekttyp (`object_type` aus dem Baum). Die Registry ordnet Typ un
 | Schritt 4 | Baum-Icon: Fall in `objectIcon` in `src/tree/treeIcons.tsx` (sonst Standard-Blatt), Icon-Farbe als `--icon-<typ>` in `src/theme/tokens.css` |
 | Schritt 5 | Kontextmenü-Regeln des Typs in `src/tree/contextMenu.ts` (`COPY_BLOCKED_TYPES`, `USAGE_TYPES`, `RENAME_TYPES`) |
 | Schritt 6 | Properties-Blatt: kommt aus `sheetModel.generated.ts` (`src/properties/CLAUDE.md`) |
-| Schritt 7 | Test `src/editors/<Name>Editor.test.tsx` mit `createMockForgeApi` |
+| Schritt 7 | Test `tests/editors/<Name>Editor.test.tsx` mit `createMockForgeApi` |
 | Hilfsfunktion für Namen im Projekt | `ProjectIndexContext` in `projectIndex.ts` |
 | Neue Editor-CSS | neben die `.tsx` legen und in `src/styles.css` eintragen |
 
 ## Tests
-- Je Editor eine `*.test.tsx`, Text-Ops als `*.test.ts`. Backend-Ersatz: `src/test/mockApi.ts`, Beispiel-Baum `src/test/fixtures/activity_entity.tree.json`.
+- Je Editor eine `tests/editors/*.test.tsx`, Text-Ops als `*.test.ts`. Backend-Ersatz: `tests/support/mockApi.ts`, Beispiel-Baum `tests/support/fixtures/activity_entity.tree.json`.
 - Echte Dateien liest z. B. `applicationTree.test.ts` aus `crates/aod/tests/fixtures`.
-- `npx vitest run src/editors`.
+- `npx vitest run tests/editors`.

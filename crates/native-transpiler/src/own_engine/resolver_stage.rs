@@ -100,6 +100,7 @@ mod tests {
     /// `npm-modules` resolved in isolation, for the same real fixture used by
     /// `npm-modules`'s own `pichler_diamond_resolves_via_project_root_override` test.
     #[test]
+#[ignore = "braucht eine echte ADITO-Installation oder ein Korpus (cargo test -- --ignored)"]
     fn resolve_npm_modules_matches_npm_modules_resolved_in_isolation() {
         let project = npm_modules_fixture("pichler_diamond");
 
@@ -138,6 +139,7 @@ mod tests {
     /// `OwnEngineError`, not panic or silently succeed - reuses `npm-modules`'s own
     /// synthetic-cycle fixture rather than building a new one.
     #[test]
+#[ignore = "braucht eine echte ADITO-Installation oder ein Korpus (cargo test -- --ignored)"]
     fn resolver_engine_run_surfaces_npm_modules_errors() {
         let project = npm_modules_fixture("synthetic_cycle");
         let output_dir = std::env::temp_dir().join(format!(

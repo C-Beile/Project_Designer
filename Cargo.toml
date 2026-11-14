@@ -33,3 +33,8 @@ toml = { version = "0.8", features = ["preserve_order"] }
 # Shared lint policy for the whole workspace — kept intentionally light for P3, tightened later.
 [workspace.lints.rust]
 unsafe_code = "warn"
+
+# Tests bauen schneller und linken schneller, wenn weniger Debug-Infos entstehen (Zeilen-Tabellen reichen für Backtraces).
+# Betrifft nur `cargo test`. Der Debugger-Lauf (F5, Profil dev) bleibt unverändert.
+[profile.test]
+debug = "line-tables-only"

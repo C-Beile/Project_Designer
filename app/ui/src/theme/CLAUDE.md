@@ -61,4 +61,4 @@ Farben der Oberfläche und Einrichtung des Monaco-Editors. Die Paletten stehen i
 | JDito- oder ADITO-Vervollständigung | `monacoJdito.ts`, `monacoAdito.ts`, `aditoIntel.ts` |
 
 ## Tests
-- `uiTheme.test.ts`, `vscodeTheme.test.ts`, `lion.test.tsx`, `aditoIntel.test.ts`, `monacoImports.test.ts`, `monacoWorkers.test.ts`, `themeToml.test.ts`, `appearance.test.ts`. Monaco-Ersatz: `src/test/monacoMock.ts`. `npx vitest run src/theme`.
+- `uiTheme.test.ts`, `vscodeTheme.test.ts`, `lion.test.tsx`, `aditoIntel.test.ts`, `monacoImports.test.ts`, `monacoWorkers.test.ts`, `themeToml.test.ts`, `appearance.test.ts`. Monaco-Ersatz: `tests/support/monacoMock.ts`. `npx vitest run tests/theme`.

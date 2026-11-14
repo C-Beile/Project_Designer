@@ -26,4 +26,4 @@ Theme Studio (Tools > Theme Studio, eigenes Fenster `themestudio`): Themes anseh
 - Offen: Config-Tab für `layout.toml`/`limits.toml`, Farben für weitere Sprachen (JSON, Markdown, Git-Dateien).
 
 ## Tests
-- `themeText.test.ts`, `ThemeStudio.test.tsx`. `npx vitest run src/studio`.
+- `themeText.test.ts`, `ThemeStudio.test.tsx`. `npx vitest run tests/studio`.

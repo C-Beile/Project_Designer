@@ -45,4 +45,4 @@ Die Reiter des Editorbereichs: Zustand (`tabModel.ts`) und was ein Reiter zeigt.
 | Editor eines Objekttyps | `src/editors/CLAUDE.md` |
 
 ## Tests
-- `tabModel.test.ts`, `EditorTabBar.test.tsx`, `DbBrowser.test.tsx`, `Tunnel*.test.tsx`, `CodeTab.test.tsx`. `npx vitest run src/tabs`.
+- `tabModel.test.ts`, `EditorTabBar.test.tsx`, `DbBrowser.test.tsx`, `Tunnel*.test.tsx`, `CodeTab.test.tsx`. `npx vitest run tests/tabs`.

@@ -27,7 +27,7 @@
 Die Git-Oberfläche. Pilot für das UI-Plugin-Muster: Der Kern kennt Git nicht, das Plugin hängt sich über `core/plugins/registry.ts` ein.
 
 ## Einstiegspunkte
-- `registerGitPlugin()` wird in `src/App.tsx` aufgerufen (wenn `plugin_list` das Plugin `git` als `available` meldet, oder wenn `plugin_list` fehlschlägt) und in `src/test/setup.ts`.
+- `registerGitPlugin()` wird in `src/App.tsx` aufgerufen (wenn `plugin_list` das Plugin `git` als `available` meldet, oder wenn `plugin_list` fehlschlägt) und in `tests/support/setup.ts`.
 - Befehle (`team.commit`, `team.pull`, `team.history`, `git.openDiff` ...) meldet `GitShellBridge` selbst unter Plugin `git` an. Der Kern ruft sie mit `runCommandById`.
 - Das Statusfeld bekommt seine Daten von `GitShellBridge` über `setPluginData('git', ...)`.
 - Register-Ids: Dialoge `git.window`, `git.syncWindow`, `git.commitDiff`; Panels `git.scmPanel`, `git.diffView`; Shell-Beitrag `git.shell`. Der Kern holt sie mit `getDialog`/`useDialog`.
@@ -35,7 +35,7 @@ Die Git-Oberfläche. Pilot für das UI-Plugin-Muster: Der Kern kennt Git nicht, 
 
 ## Abhängigkeiten
 - Rein: `core/plugins/registry`, `core/scm`, `ForgeApi`, `wire/types`, `windows/useOsDialog`, `shell/menuModel`, `shell/icons`, `shell/hooks/commandTypes` und `dialogTypes`.
-- Raus: nur über das Register. Von außen importiert `test/setup.ts` den Ordner; `features/registerFeatures.ts` (für `App.tsx` und `windows/WindowRoot.tsx`) ruft `registerGitPlugin` auf.
+- Raus: nur über das Register. Von außen importiert `tests/support/setup.ts` den Ordner; `features/registerFeatures.ts` (für `App.tsx` und `windows/WindowRoot.tsx`) ruft `registerGitPlugin` auf.
 
 ## Regeln und Fallen
 - Kleine Reste im Kern: `gitActive` (Plugin-Schalter) in `Shell.tsx`, Menü-Kontext und Toolbar; die Dialog-Namen `'git'`/`'sync'` in `ShellDialog` (`shell/hooks/dialogTypes.ts`); `styles.css` bindet die Git-CSS ein (Reihenfolge zählt).
@@ -49,12 +49,12 @@ So baust du ein neues UI-Plugin (Vorlage: dieser Ordner).
 | Anmelden | In `<name>Plugin.ts`: `registerPlugin({id, name, requires, switchable})`, dann die `register...`-Aufrufe (`registerMenuContribution`, `registerOptionsPage`, `registerToolbarItem`, `registerStatusBarItem`, `registerTreeContextItem`). Alle Rückgaben sammeln und als eine Abmelde-Funktion liefern. |
 | Id | Gleiche Id wie das Rust-Plugin (`plugin_list`) und im Feld `plugin` jedes Beitrags |
 | Start | In `src/features/registerFeatures.ts` in `FEATURES` eintragen (läuft in `App.tsx` und in jedem OS-Fenster) |
-| Tests | `registerXPlugin()` in `src/test/setup.ts` |
+| Tests | `registerXPlugin()` in `tests/support/setup.ts` |
 | Befehle und Zustand | Shell-Beitrag mit `registerShellExtension` (Vorlage: `GitShellBridge.tsx`); dort `registerCommand(id, run, '<name>')`. Statusfeld-Daten mit `setPluginData`. |
 | Rust-Seite | `crates/<name>` und Aufruf über `plugin_call` (siehe `app/ui/CLAUDE.md`) |
 | Neuer Git-Knopf | `registerToolbarItem` in `gitPlugin.ts` plus Befehl in `useGit.ts` (`commands`) |
 | Neuer Menüpunkt | `teamItems` in `gitPlugin.ts` |
 
 ## Tests
-- `gitPlugin.test.tsx`, `gitMenu.test.tsx`, `scm.test.tsx`, `SyncDialog.test.tsx`, `GitDialog.test.tsx`, `shellWithoutGit.test.tsx` (Shell ohne und mit Plugin). `npx vitest run src/features/git`.
+- `gitPlugin.test.tsx`, `gitMenu.test.tsx`, `scm.test.tsx`, `SyncDialog.test.tsx`, `GitDialog.test.tsx`, `shellWithoutGit.test.tsx` (Shell ohne und mit Plugin). `npx vitest run tests/features/git`.
 - Tests, die ein leeres Register brauchen, rufen `_resetPluginRegistryForTests()`.

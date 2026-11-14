@@ -6,7 +6,7 @@
 | `package.json` | Skripte: `dev`, `build`, `test` (vitest). Abhängigkeiten laut Root-`CLAUDE.md`. |
 | `package-lock.json` | Gesperrte npm-Versionen. |
 | `index.html` | Einstiegsseite von Vite. |
-| `vite.config.ts` | Vite und Vitest (jsdom, `src/test/setup.ts`), Port 5173. |
+| `vite.config.ts` | Vite und Vitest (jsdom, `tests/support/setup.ts`), Port 5173. |
 | `tsconfig.json` | Nur Verweise (`files: []`). Prüft selbst nichts. |
 | `tsconfig.app.json` | Echte TS-Regeln für `src`. |
 | `tsconfig.node.json` | TS-Regeln für die Vite-Konfiguration. |
@@ -29,7 +29,7 @@
 | `src/shell/` | Hauptfenster, Dialoge, Menü, Toolbar. Siehe `src/shell/CLAUDE.md`. |
 | `src/styles/` | Geteilte CSS (`styles/shell/` für die Shell). |
 | `src/tabs/` | Editor-Tabs (`tabModel.ts`), Text-/Code-/Markdown-Tabs, DB-Browser. |
-| `src/test/` | Test-Hilfen: `mockApi.ts`, `setup.ts`, Monaco-Mock, Fixtures. |
+| `tests/` | Alle Tests, gleiche Ordner wie `src/` (`tests/shell/Shell.test.tsx` zu `src/shell/Shell.tsx`). `tests/support/`: `mockApi.ts`, `setup.ts`, Monaco-Mock, Fixtures. |
 | `src/theme/` | Themes, `tokens.css`, Monaco-Einrichtung. |
 | `src/tree/` | Projektbaum und sein Kontextmenü. |
 | `src/windows/` | Eigene OS-Fenster (Editor, Panel, Dialog) und ihre Brücke. |
@@ -61,9 +61,9 @@ React-19-Oberfläche des Designers. Läuft in Tauri. Spricht nur über `ForgeApi
 ## Wenn du X ändern willst
 | Aufgabe | Datei |
 |---|---|
-| Neuer Tauri-Befehl | Rust: `app/src-tauri/src/commands/*.rs` + `collect_commands!` in `app/src-tauri/src/bindings.rs`; UI: `src/api/ForgeApi.ts`, `src/api/tauriApi.ts`, `src/test/mockApi.ts` |
+| Neuer Tauri-Befehl | Rust: `app/src-tauri/src/commands/*.rs` + `collect_commands!` in `app/src-tauri/src/bindings.rs`; UI: `src/api/ForgeApi.ts`, `src/api/tauriApi.ts`, `tests/support/mockApi.ts` |
 | Neuer Toolbar-Knopf eines Plugins | `registerToolbarItem` in `src/features/<plugin>/<plugin>Plugin.ts` (Vorlage: `features/git/gitPlugin.ts`). Der Befehl (`command`) wird als `registerCommand(id, run, plugin)` angemeldet (`core/plugins/registry.ts`); für Git in `features/git/GitShellBridge.tsx` aus den Handlern von `features/git/useGit.ts`. `shell/Toolbar.tsx` und `toolbarPrefs.ts` sind nur für Kern-Knöpfe. |
-| Neuer Plugin-Befehl | Rust: `crates/<plugin>/src/plugin.rs` (Arm in `call`) + Logik im Crate; UI: Aufruf über `plugin_call` in `src/api/tauriApi.ts` (Git: `gitCall`), Signatur in `src/api/ForgeApi.ts`, Mock in `src/test/mockApi.ts` |
+| Neuer Plugin-Befehl | Rust: `crates/<plugin>/src/plugin.rs` (Arm in `call`) + Logik im Crate; UI: Aufruf über `plugin_call` in `src/api/tauriApi.ts` (Git: `gitCall`), Signatur in `src/api/ForgeApi.ts`, Mock in `tests/support/mockApi.ts` |
 | Neuer Editor-Typ | `src/editors/<Name>Editor.tsx`, `registerEditor(typ, Komponente)` in einer `src/editors/register*Builtins.ts` (in `src/App.tsx` importiert) |
 | Neuer Menüpunkt | `src/shell/menuModel.ts` plus Befehl in `src/shell/hooks/useShellCommands.ts`; für Plugins `registerMenuContribution` |
 | Neue Toolbar-Taste | Plugin: `registerToolbarItem`; Kern: `src/shell/Toolbar.tsx`, `src/shell/toolbarPrefs.ts` |
@@ -73,6 +73,6 @@ React-19-Oberfläche des Designers. Läuft in Tauri. Spricht nur über `ForgeApi
 | Farbe oder Theme | `src/theme/tokens.css`, `src/theme/uiTheme.ts` |
 
 ## Tests
-- `npm test` (vitest run). Tests liegen als `*.test.tsx` neben den Dateien. Backend-Ersatz: `src/test/mockApi.ts`.
-- Basislinie (2026-11-14): alles grün, 10 Tests übersprungen. Die vier Spec-Tests (`sheetLayout`, `menuSpec`, `toolbarSpec`, `popupSpec`) überspringen sich, wenn `E:\60_design` fehlt.
+- `npm test` (vitest run). Tests liegen in `tests/` (gleiche Ordner wie `src/`). Beim Iterieren nur gezielt laufen lassen: `npx vitest run tests/shell/Shell.test.tsx` oder `npx vitest run tests/tabs`. Backend-Ersatz: `tests/support/mockApi.ts`.
+- Basislinie (2026-11-15): 739 Tests, alle grün, ca. 35 s. Die vier Spec-Tests gegen `E:\60_design` wurden entfernt (liefen ohne den Ordner nie).
 - Prüfungen: `node ../../scripts/check-encoding.mjs` (gültiges UTF-8, keine kaputten Umlaute), `npm run lint`. Quelldateien nie mit PowerShell 5.1 `Set-Content`/`Out-File` schreiben (ANSI statt UTF-8).
