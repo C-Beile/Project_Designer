@@ -1,6 +1,5 @@
-import { configGet, configSet } from '../settings/appConfig'
+import { configGet, configSet, onConfigChange } from '../settings/appConfig'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { isMacPlatform } from '../core/shortcuts'
 import { useSshKeyPath } from '../settings/sshKey'
 import { setForwardsUp, setTunnelError, tunnelConnecting } from '../services/tunnelState'
 import type { ForgeApi } from '../api/ForgeApi'
@@ -9,9 +8,9 @@ import type { MenuEntry } from '../tree/contextMenu'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { confirmDialog, promptDialog } from '../core/dialogService'
 import type { DbStatus, ForwardStatusDto, TunnelRowDto } from '../wire/types'
-import { TunnelPorts } from './TunnelPorts'
+import { TunnelPorts, pinKey } from './TunnelPorts'
 import { errorText } from '../core/errorText'
-import { Button, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
+import { Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 import { copyText as copyToClipboard } from '../core/clipboard'
 import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
@@ -25,8 +24,7 @@ function savedView(): 'ports' | 'table' {
 // The row menu starts with the entries of the original (reference shot 82: Add Tunnel, Delete Tunnel,
 // Disconnect/Connect); Add and Delete stay disabled until the config file can be written. The rest is an own choice: the manual (appendix E, chapter 11) only names "Open
 // Tunnels" and "Close opened tunnels" on the system node and shows no row menu.
-// The file holds no passwords. Key file and password are typed here, kept in memory only and
-// never written to a file or the log.
+// The file holds no passwords. The key file and its passphrase are set in Options > ADITO > General.
 
 export function isTunnelActive(row: TunnelRowDto, db: DbStatus): boolean {
   return db.tunnel_up && !!db.host && row.target_host.toLowerCase() === db.host.toLowerCase()
@@ -46,8 +44,11 @@ export function hostPort(row: TunnelRowDto): string {
 
 export type RowState = 'idle' | 'busy' | 'up' | 'error'
 
-// Memory-only credentials, shared by all tunnel editor tabs of this window session.
-const credentials = { password: '' }
+/** Pinned targets (`service:port`), the same for every project. */
+function savedPins(): Set<string> {
+  const list = configGet<unknown>('tunnels', 'pinned')
+  return new Set(Array.isArray(list) ? list.filter((x): x is string => typeof x === 'string') : [])
+}
 
 export function buildRowMenu(opts: { rowUp: boolean; rowBusy: boolean; anyUp: boolean; allUp: boolean; hasRow?: boolean }): MenuEntry[] {
   return [
@@ -88,8 +89,18 @@ export function TunnelConfigEditor({
   const [busy, setBusy] = useState<Set<string>>(new Set())
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({})
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
-  const [keyFile, setKeyFile] = useSshKeyPath(api)
-  const [password, setPassword] = useState(credentials.password)
+  // Key file and passphrase are set once in Options > ADITO > General; no input here.
+  const [keyFile] = useSshKeyPath(api)
+  const [pinned, setPinned] = useState<Set<string>>(savedPins)
+  useEffect(() => onConfigChange((path) => path[0] === 'tunnels' && setPinned(savedPins())), [])
+  const togglePin = useCallback((r: TunnelRowDto) => {
+    const next = savedPins()
+    const k = pinKey(r)
+    if (next.has(k)) next.delete(k)
+    else next.add(k)
+    configSet(['tunnels', 'pinned'], next.size ? [...next].sort() : undefined)
+    setPinned(next)
+  }, [])
   const [view, setViewState] = useState<'ports' | 'table'>(savedView)
   const setView = (v: 'ports' | 'table') => {
     setViewState(v)
@@ -156,7 +167,7 @@ export function TunnelConfigEditor({
       })
       logOutput('default', `Tunnel ${hostPort(r)}: connecting through ${r.tunnel_host}:${r.tunnel_port} ...`)
       try {
-        const status = await api.tunnelConnect(r, keyFile.trim() || null, password || null)
+        const status = await api.tunnelConnect(r, keyFile.trim() || null, null)
         logOutput('default', `Tunnel ${hostPort(r)}: open on ${status.local_host}:${status.local_port}`)
       } catch (e) {
         const message = String(e instanceof Error ? e.message : e)
@@ -170,14 +181,27 @@ export function TunnelConfigEditor({
         await refreshForwards()
       }
     },
-    [api, db, keyFile, password, refreshForwards, upKeys],
+    [api, db, keyFile, refreshForwards, upKeys],
   )
 
   const disconnectRow = useCallback(
     async (r: TunnelRowDto) => {
       const k = rowKey(r)
-      if (upKeys.has(k)) await api.tunnelDisconnect(r.target_host, r.target_port)
-      else if (isTunnelActive(r, db)) {
+      if (upKeys.has(k)) {
+        await api.tunnelDisconnect(r.target_host, r.target_port)
+        // Gehört der Tunnel einem anderen Programm (Hub), schließt es ihn selbst: kurz warten, bis er weg ist.
+        if (foreignOwners.has(k)) {
+          setBusyFor(k, true)
+          try {
+            for (let i = 0; i < 8; i++) {
+              await new Promise((resolve) => setTimeout(resolve, 1000))
+              if (!(await api.tunnelList().catch(() => [])).some((f) => f.up && rowKey(f) === k)) break
+            }
+          } finally {
+            setBusyFor(k, false)
+          }
+        }
+      } else if (isTunnelActive(r, db)) {
         await api.dbDisconnect()
         onDbChange(await api.dbStatus())
       }
@@ -188,7 +212,7 @@ export function TunnelConfigEditor({
       logOutput('default', `Tunnel ${hostPort(r)}: closed`)
       await refreshForwards()
     },
-    [api, db, onDbChange, refreshForwards, upKeys],
+    [api, db, foreignOwners, onDbChange, refreshForwards, upKeys],
   )
 
   const toggleRow = (r: TunnelRowDto) => (stateOf(r) === 'up' ? void disconnectRow(r) : void connectRow(r))
@@ -214,13 +238,6 @@ export function TunnelConfigEditor({
   const refresh = () => {
     setError(null)
     setReload((n) => n + 1)
-  }
-
-  async function browseKey() {
-    const picked = await api.pickFile('Choose the SSH key', isMacPlatform() ? 'OpenSSH key' : 'PuTTY key', isMacPlatform() ? [] : ['ppk']).catch(() => null)
-    if (picked) {
-      setKeyFile(picked)
-    }
   }
 
   const row = rows?.[selected]
@@ -313,30 +330,6 @@ export function TunnelConfigEditor({
             Table
           </Button>
         </span>
-        <span className="tunnel-auth">
-          <Input
-            aria-label="SSH key file"
-            placeholder={isMacPlatform() ? 'SSH key (OpenSSH, optional; otherwise ssh-agent)' : 'SSH key (.ppk, optional; otherwise Pageant)'}
-            value={keyFile}
-            onChange={(e) => {
-              setKeyFile(e.target.value)
-            }}
-          />
-          <Button variant="bare" aria-label="Browse SSH key" title="Choose the SSH key file" onClick={() => void browseKey()}>
-            {'…'}
-          </Button>
-          <Input
-            aria-label="Tunnel password"
-            type="password"
-            autoComplete="off"
-            placeholder="Password or key passphrase (optional)"
-            value={password}
-            onChange={(e) => {
-              credentials.password = e.target.value
-              setPassword(e.target.value)
-            }}
-          />
-        </span>
       </div>
       {error ? (
         <p className="forge-field-hint" role="alert">
@@ -350,6 +343,8 @@ export function TunnelConfigEditor({
           localAddrs={localAddrs}
           foreignOwners={foreignOwners}
           errors={rowErrors}
+          pinned={pinned}
+          onTogglePin={togglePin}
           onConnect={(list) => void (async () => { for (const r of list) await connectRow(r) })()}
           onDisconnect={(list) => void (async () => { for (const r of list) await disconnectRow(r) })()}
           onCopy={copy}

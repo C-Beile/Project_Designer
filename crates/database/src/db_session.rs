@@ -332,8 +332,7 @@ impl DbManager {
         }
     }
 
-    /// Opens tunnel and database connection. `key_file` is the PuTTY key; without it `plink` falls
-    /// back to a running Pageant.
+    /// Opens tunnel and database connection. `key_file` is the SSH key; without it connecting fails.
     pub fn connect(&self, tunnel_xml_path: &Path, server_xml_path: &Path, key_file: Option<&Path>) -> Result<DbStatus, String> {
         self.connect_with(tunnel_xml_path, server_xml_path, &TunnelAuth::Key(key_file))
     }

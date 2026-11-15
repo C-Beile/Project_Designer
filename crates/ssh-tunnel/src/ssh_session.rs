@@ -1,12 +1,10 @@
 //! Eine SSH-Sitzung (russh) je Tunnel-Host und Benutzer. Alle Weiterleitungen dieses Hosts laufen
 //! als Kanäle durch dieselbe Sitzung. Anmeldung: Schlüsseldatei (mit Passphrase), Passwort oder
-//! laufender Agent (Pageant, ssh-agent). Der Host-Key wird beim ersten Mal gemerkt und danach geprüft.
+//! (kein Agent, kein Pageant). Der Host-Key wird beim ersten Mal gemerkt und danach geprüft.
 
 use crate::ssh_keys::load_key;
 use crate::tunnel_core::{TunnelAuth, TunnelEntry};
 use russh::client::{self, Handle, KeyboardInteractiveAuthResponse};
-use russh::keys::agent::client::{AgentClient, AgentStream};
-use russh::keys::agent::AgentIdentity;
 use russh::keys::{HashAlg, PrivateKeyWithHashAlg, PublicKeyOrCertificate};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -41,6 +39,14 @@ fn saved_fingerprint(id: &str) -> Option<String> {
         return app_base::config::get_path(&table, &["ssh", "known_hosts", id]).and_then(|v| v.as_str().map(str::to_string));
     }
     KNOWN_MEMORY.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_ref().and_then(|m| m.get(id).cloned())
+}
+
+/// Der Schlüsselpfad aus den Optionen (`[ssh] key_path` in `designer.conf`). Für Aufrufe, die keinen Pfad mitschicken
+/// (Datenbank-Verbindung, Tunnel eines Systems), da es keinen Agenten mehr gibt.
+pub fn configured_key_path() -> Option<String> {
+    let file = known_file()?;
+    let table = app_base::config::load(&file);
+    app_base::config::get_section(&table, "ssh.key_path").and_then(|v| v.as_str()).map(|s| s.trim().to_string()).filter(|s| !s.is_empty())
 }
 
 pub fn check_host(id: &str, fingerprint: &str) -> HostKeyState {
@@ -156,10 +162,13 @@ pub async fn connect(entry: &TunnelEntry, auth: &OwnedAuth) -> Result<SshHandle,
     Ok(handle)
 }
 
+/// Ohne Schlüsseldatei und ohne Passwort gibt es keine Anmeldung.
+pub const NO_KEY: &str = "No SSH key file set: choose a key file in Options > ADITO > General.";
+
 fn refused_text(auth: &OwnedAuth) -> String {
     match auth {
         OwnedAuth::Key(Some(_)) | OwnedAuth::KeyPass(..) => "The server rejected the SSH key. Check the key file, the user name and that the key is still valid on the server.".into(),
-        OwnedAuth::Key(None) => "No SSH key available: choose a key file or start Pageant with the key loaded.".into(),
+        OwnedAuth::Key(None) => NO_KEY.into(),
         OwnedAuth::Basic(_) => "Login refused: wrong user name or password.".into(),
     }
 }
@@ -168,7 +177,7 @@ async fn authenticate(handle: &mut SshHandle, user: &str, auth: &OwnedAuth) -> R
     match auth {
         OwnedAuth::Key(Some(path)) => auth_key(handle, user, path, None).await,
         OwnedAuth::KeyPass(path, passphrase) => auth_key(handle, user, path, Some(passphrase)).await,
-        OwnedAuth::Key(None) => auth_agent(handle, user).await,
+        OwnedAuth::Key(None) => Err(NO_KEY.to_string()),
         OwnedAuth::Basic(password) => auth_password(handle, user, password).await,
     }
 }
@@ -178,29 +187,6 @@ async fn auth_key(handle: &mut SshHandle, user: &str, path: &Path, passphrase: O
     let hash = handle.best_supported_rsa_hash().await.map_err(|e| e.to_string())?.flatten();
     let result = handle.authenticate_publickey(user, PrivateKeyWithHashAlg::new(Arc::new(key), hash)).await.map_err(|e| e.to_string())?;
     Ok(result.success())
-}
-
-async fn auth_agent(handle: &mut SshHandle, user: &str) -> Result<bool, String> {
-    #[cfg(windows)]
-    let mut agent = AgentClient::connect_pageant().await.map_err(|_| "Pageant is not running. Start Pageant with your key, or choose a key file.".to_string())?;
-    #[cfg(not(windows))]
-    let mut agent = AgentClient::connect_env().await.map_err(|_| "No ssh-agent found. Choose a key file or start the ssh-agent with your key.".to_string())?;
-    try_agent(handle, user, &mut agent).await
-}
-
-async fn try_agent<S: AgentStream + Unpin + Send + 'static>(handle: &mut SshHandle, user: &str, agent: &mut AgentClient<S>) -> Result<bool, String> {
-    let identities = agent.request_identities().await.map_err(|e| format!("The key agent did not answer: {e}"))?;
-    for identity in identities {
-        if let AgentIdentity::PublicKey { key, .. } = identity {
-            let hash = handle.best_supported_rsa_hash().await.map_err(|e| e.to_string())?.flatten();
-            if let Ok(result) = handle.authenticate_publickey_with(user, key, hash, agent).await {
-                if result.success() {
-                    return Ok(true);
-                }
-            }
-        }
-    }
-    Ok(false)
 }
 
 async fn auth_password(handle: &mut SshHandle, user: &str, password: &str) -> Result<bool, String> {

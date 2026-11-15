@@ -72,14 +72,11 @@ describe('tunnel row menu', () => {
     await waitFor(() => expect(screen.getAllByRole('img', { name: 'Tunnel inactive' })).toHaveLength(2))
   })
 
-  it('passes the typed password to the backend without echoing it anywhere', async () => {
-    const user = userEvent.setup({ delay: null })
-    const { tunnelCalls } = setup()
-    await user.type(await screen.findByLabelText('Tunnel password'), 'pw-secret')
-    await user.dblClick(screen.getByText('web.svc'))
-    await waitFor(() => expect(tunnelCalls).toHaveLength(1))
-    expect(tunnelCalls[0].hasPassword).toBe(true)
-    expect(document.body.textContent).not.toContain('pw-secret')
+  it('has no key or password inputs (they live in the options)', async () => {
+    setup()
+    await screen.findByText('web.svc')
+    expect(screen.queryByLabelText('Tunnel password')).toBeNull()
+    expect(screen.queryByLabelText('SSH key file')).toBeNull()
   })
 
   it('copy entries write the target address and host:port', async () => {

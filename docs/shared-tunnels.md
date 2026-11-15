@@ -41,7 +41,7 @@ Die Umgebungsvariable `ADITO_TUNNELS_DIR` überschreibt den Ordner (Tests).
 | `pid` | Prozess des Besitzers. Eigene Einträge erkennt ein Programm daran. |
 | `since` | Sekunden seit 1970. Nur zur Anzeige. |
 
-JSON-Namen in camelCase. Unbekannte Felder werden ignoriert (neue Felder sind erlaubt).
+Dazu kommt das Feld `requests` (Bitten an einen Besitzer, siehe unten). JSON-Namen in camelCase. Unbekannte Felder werden ignoriert (neue Felder sind erlaubt).
 
 ## Regeln
 
@@ -52,8 +52,30 @@ JSON-Namen in camelCase. Unbekannte Felder werden ignoriert (neue Felder sind er
 5. **Adressen:** Der Designer nutzt `127.0.200.x` mit dem echten Port des Ziels. Der Hub nutzt `127.0.2.x` aufwärts. Wer eine Adresse wählt, bindet sie wirklich: ist `ip:port` belegt, nimmt er die nächste.
 6. Eine fehlende oder kaputte Datei heißt: keine Einträge.
 
+## Bitten (Trennen von der anderen Seite)
+
+Jedes Programm kann den Tunnel des anderen trennen, indem es den Besitzer bittet. Es schließt fremde Tunnel nie selbst.
+
+```json
+"requests": [
+  { "target": "adito-db.dev.svc.cluster.local:3306", "action": "disconnect", "toPid": 4242, "from": "designer", "at": 1763000000 }
+]
+```
+
+| Feld | Bedeutung |
+|---|---|
+| `target` | Das Ziel, wie im Eintrag. |
+| `action` | Bisher nur `disconnect`. |
+| `toPid` | `pid` des Besitzers (aus seinem Eintrag). |
+| `from` | Wer bittet. |
+| `at` | Sekunden seit 1970. Bitten über 60 s Alter verfallen und werden von jedem Leser entfernt. |
+
+7. **Bitten stellen:** Unter der Sperre eine Bitte an `toPid` eintragen (gleiche Bitte ersetzt die alte). Der Eintrag des Tunnels bleibt, bis der Besitzer ihn austrägt.
+8. **Bitten abarbeiten:** Jedes Programm prüft mindestens jede Sekunde (Datei beobachten oder Zeitgeber), ob Bitten an seine `pid` vorliegen. Es schließt den Listener, trägt den Tunnel aus und löscht die Bitte. Bitten an andere Prozesse bleiben stehen.
+9. **Verbinden** braucht keine Bitte: Wer einen Tunnel will, den es nicht gibt, öffnet ihn selbst. Gibt es ihn schon, nutzt es ihn mit (Regel 3).
+
 ## Umsetzung
 
-- Designer: `crates/ssh-tunnel/src/shared_tunnels.rs`, eingebunden in `tunnels.rs`.
+- Designer: `crates/ssh-tunnel/src/shared_tunnels.rs`, eingebunden in `tunnels.rs` (`disconnect_any` stellt Bitten, `watch_requests` arbeitet sie jede Sekunde ab).
 - Hub: `HillsIT.Ssh/SharedTunnelList.cs`, eingebunden in `TunnelManager.cs` (`StartListener` trägt ein, `RemoveServiceAsync` und `CleanupAsync` tragen aus, `ConnectAsync` und `StartForwardAsync` nutzen fremde Tunnel mit).
 - Grenze im Hub: Er baut seine SSH-Verbindung weiter auf, auch wenn alle Tunnel eines Systems schon von jemand anderem offen sind. Er startet dann nur keinen eigenen Listener.

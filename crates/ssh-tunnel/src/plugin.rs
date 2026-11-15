@@ -51,8 +51,8 @@ impl FeaturePlugin for TunnelPlugin {
             "delete_tunnel_row" => json(tunnel_config::delete_tunnel_row(&a.root()?, &a.string("reference")?, a.get("index")?)?),
             "tunnel_connect" => self.connect(&a),
             "tunnel_disconnect" => {
-                self.tunnels.disconnect(&a.string("targetHost")?, a.get("targetPort")?);
-                json(())
+                // `true`: der Tunnel gehört einem anderen Programm, dessen Besitzer wurde gebeten ihn zu schließen.
+                json(self.tunnels.disconnect_any(&a.string("targetHost")?, a.get("targetPort")?))
             }
             "tunnel_disconnect_all" => {
                 self.tunnels.disconnect_all();

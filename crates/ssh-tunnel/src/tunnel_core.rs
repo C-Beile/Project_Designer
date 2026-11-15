@@ -17,7 +17,7 @@ pub use app_base::scrub::{percent_encode, redact as scrub};
 /// How the SSH tunnel authenticates (Manual appendix E). Passwords and passphrases only live in memory.
 #[derive(Clone)]
 pub enum TunnelAuth<'a> {
-    /// Key file without a passphrase; `None` falls back to a running Pageant or ssh-agent.
+    /// Key file without a passphrase; `None` means no key is set: connecting fails (no Pageant, no ssh-agent).
     Key(Option<&'a Path>),
     Basic { password: &'a str },
     /// Key file whose passphrase is given.
@@ -37,7 +37,8 @@ impl std::fmt::Debug for TunnelAuth<'_> {
 /// Bereinigt die Tunnel-Eingaben der Oberflaeche (leere Strings zaehlen als nicht gesetzt). Hat der
 /// Schluessel noch keine Passphrase bekommen, wird die im Schluesselbund gemerkte benutzt.
 pub fn clean_tunnel_inputs(key_file: Option<String>, tunnel_password: Option<String>) -> (Option<PathBuf>, Option<String>) {
-    let typed = key_file.filter(|k| !k.trim().is_empty());
+    // Ohne mitgeschickten Pfad gilt der aus den Optionen.
+    let typed = key_file.filter(|k| !k.trim().is_empty()).or_else(crate::ssh_session::configured_key_path);
     let key = typed.as_deref().map(|k| key_path(k.trim()));
     let mut password = tunnel_password.filter(|p| !p.is_empty());
     if password.is_none() {
@@ -59,7 +60,7 @@ pub fn key_path(typed: &str) -> PathBuf {
 }
 
 /// Auth-Schema zu den Eingaben aus [`clean_tunnel_inputs`]: Schluesseldatei mit Passwort = Passphrase, nur Passwort = Login,
-/// sonst Schluesseldatei oder ein laufender Pageant.
+/// sonst Schluesseldatei (ohne Schluessel: Fehler).
 pub fn tunnel_auth<'a>(key: &'a Option<PathBuf>, password: &'a Option<String>) -> TunnelAuth<'a> {
     match (password, key) {
         (Some(p), Some(k)) => TunnelAuth::KeyPass { key: k, passphrase: p },

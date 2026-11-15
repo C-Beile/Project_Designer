@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { formatShortcut } from '../core/shortcuts'
 import type { TreeNode } from '../wire/types'
 
@@ -11,6 +12,8 @@ export interface MenuEntry {
   enabled: boolean
   hint?: string
   shortcut?: string
+  /** Kleines Symbol vor dem Text. */
+  icon?: ReactNode
   separator?: boolean
   children?: MenuEntry[]
 }

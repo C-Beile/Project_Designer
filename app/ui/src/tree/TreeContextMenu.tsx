@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { MenuEntry } from './contextMenu'
 import { Button } from '../core/ui/controls'
 
@@ -79,6 +80,7 @@ export function TreeContextMenu({
               onClose()
             }}
           >
+            {e.icon ? <span className="forge-ctx-icon">{e.icon}</span> : null}
             {e.label}
             {e.shortcut ? <span className="forge-ctx-shortcut">{e.shortcut}</span> : null}
             {e.children ? <span aria-hidden="true"> &#9656;</span> : null}
@@ -93,9 +95,11 @@ export function TreeContextMenu({
     )
   }
 
-  return (
+  // In den body gesetzt: ein Vorfahre mit `transform` (Dock-Panel) würde `position: fixed` sonst verschieben.
+  return createPortal(
     <ul ref={ref} role="menu" aria-label="Context menu" className="forge-ctx-menu" style={pos} onContextMenu={(e) => e.preventDefault()}>
       {render(entries)}
-    </ul>
+    </ul>,
+    document.body,
   )
 }

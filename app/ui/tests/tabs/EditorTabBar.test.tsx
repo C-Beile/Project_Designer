@@ -1,8 +1,9 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { EditorTabBar } from '../../src/tabs/EditorTabBar'
 import type { EditorTab } from '../../src/tabs/tabModel'
+import { _resetAppConfigForTests, configSet } from '../../src/settings/appConfig'
 
 function tab(id: string, objectType = 'entity'): EditorTab {
   return { id, project: 'P', sub: 'editor', node: { id, label: `${id}_entity`, object_type: objectType, is_leaf: true, children: [], kind: 'object' } }
@@ -17,6 +18,8 @@ function setup(overrides: Partial<Parameters<typeof EditorTabBar>[0]> = {}) {
 }
 
 describe('EditorTabBar', () => {
+  afterEach(() => _resetAppConfigForTests())
+
   it('renders nothing without tabs', () => {
     const { container } = render(<EditorTabBar tabs={[]} activeId={null} dirtyIds={new Set()} onActivate={() => {}} onClose={() => {}} />)
     expect(container).toBeEmptyDOMElement()
@@ -59,29 +62,46 @@ describe('EditorTabBar', () => {
     expect(screen.getByRole('tab', { name: 'a_entity' }).querySelector('.forge-tab-dirty')).toBeNull()
   })
 
-  it('lists every open tab in the overflow menu, marks the active one and switches from there', async () => {
+  // jsdom has no layout: the strip is 200 wide and tab c reaches out to 300.
+  function overflowLayout() {
+    configSet(['appearance', 'tabOverflow'], 'dropdown')
+    return vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const right = this.classList.contains('forge-tabbar-strip') ? 200 : this.dataset.tabId === 'c' ? 300 : 100
+      return { x: 0, y: 0, left: 0, top: 0, bottom: 0, width: right, height: 0, right, toJSON: () => ({}) }
+    })
+  }
+
+  it('shows no overflow button while every tab fits', () => {
+    configSet(['appearance', 'tabOverflow'], 'dropdown')
+    setup()
+    expect(screen.queryByRole('button', { name: 'Show hidden editors' })).not.toBeInTheDocument()
+  })
+
+  it('lists the tabs that do not fit in the overflow menu and switches from there', async () => {
+    const spy = overflowLayout()
     const user = userEvent.setup({ delay: null })
-    const { onActivate } = setup({ dirtyIds: new Set(['a']) })
+    const { onActivate } = setup({ dirtyIds: new Set(['c']) })
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Show all open editors' }))
-    const menu = screen.getByRole('menu', { name: 'Open editors' })
-    const items = within(menu).getAllByRole('menuitemradio')
-    expect(items.map((i) => i.textContent)).toEqual(['a_entity ●', 'b_entity', 'c_entity'])
-    expect(items[1]).toHaveAttribute('aria-checked', 'true')
-    await user.click(items[2])
+    await user.click(screen.getByRole('button', { name: 'Show hidden editors' }))
+    const items = within(screen.getByRole('menu', { name: 'Open editors' })).getAllByRole('menuitemradio')
+    expect(items.map((i) => i.textContent)).toEqual(['c_entity ●'])
+    await user.click(items[0])
     expect(onActivate).toHaveBeenCalledWith('c')
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    spy.mockRestore()
   })
 
   it('closes the overflow menu with Escape and on an outside click', async () => {
+    const spy = overflowLayout()
     const user = userEvent.setup({ delay: null })
     setup()
-    await user.click(screen.getByRole('button', { name: 'Show all open editors' }))
+    await user.click(screen.getByRole('button', { name: 'Show hidden editors' }))
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Show all open editors' }))
+    await user.click(screen.getByRole('button', { name: 'Show hidden editors' }))
     fireEvent.mouseDown(document.body)
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    spy.mockRestore()
   })
 
   it('moves between tabs with the arrow keys and closes with Delete', async () => {

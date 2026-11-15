@@ -5,7 +5,7 @@
 |---|---|
 | `tabModel.ts` | Reiter-Zustand als reine Funktionen (`openTab`, `subTabsFor`, `isFileNode`, `tunnelTabNode` ...). |
 | `ObjectEditorArea.tsx` | Inhalt des aktiven Reiters: Unter-Reiter (Editor, Users, Source, History) und die passende Ansicht. |
-| `EditorTabBar.tsx` | Reiterleiste mit Überlauf-Menü. |
+| `EditorTabBar.tsx` | Reiterleiste. Zu viele Reiter (Einstellung `[appearance] tabOverflow`): Dropdown rechts mit den verdeckten (der aktive bleibt sichtbar), scrollbare Leiste (Mausrad) oder Reihen untereinander. Bei mehreren offenen Projekten (`projects`) trägt jeder Reiter oben einen Streifen in der Projektfarbe (`core/projectColor.ts`). |
 | `SourceEditor.tsx` | Unter-Reiter Source: rohe `.aod`, Änderungen gehen ans Backend. |
 | `HistoryView.tsx` | Unter-Reiter History: Git-Log einer Datei. |
 | `TextFileEditor.tsx` | Editor einer einfachen Projektdatei (Entwürfe in `drafts`). |
@@ -15,7 +15,7 @@
 | `DbBrowserTab.tsx` | Reiter "Database" eines DB-Alias (Katalog, Tabellen, Spalten). |
 | `dbBrowserSql.ts` | SQL und Texte des DB-Browsers (nur lesend). |
 | `TunnelConfigEditor.tsx` | Tabelle der Tunnel einer Tunnel-Config, Connect je Zeile. |
-| `TunnelPorts.tsx` | Tunnel-Manager: Ziele nach Dienst gruppiert. |
+| `TunnelPorts.tsx` | Tunnel-Manager (kompakt wie der AditoHub): Tabs Connected/Pinned/Extended (Start), Gruppen ADITO/PLUGIN/OTHER, Hub-Marke. Pins `service:port` in `designer.conf` `[tunnels] pinned`, für alle Projekte. |
 <!-- AUTO:END -->
 
 ## Zweck

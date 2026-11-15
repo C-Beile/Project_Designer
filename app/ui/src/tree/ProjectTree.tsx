@@ -7,6 +7,7 @@ import { NodeIcon } from './treeIcons'
 import { TunnelStateIcon } from './TunnelStateIcon'
 import { TunnelGlyph } from './TunnelGlyph'
 import { Button } from '../core/ui/controls'
+import { ConfiguredIcon } from '../core/icons/Icon'
 
 // Projects tree like the original Designer (LAYOUT_SPEC §4.2/§4.4): several project roots, a
 // single click selects (fills Properties/Navigator later), double-click or Enter opens. Keyboard
@@ -356,7 +357,7 @@ export function ProjectTree({
                   }}
                   onDoubleClick={(e) => e.stopPropagation()}
                 >
-                  <TunnelGlyph size={13} />
+                  <TunnelGlyph size="sm" />
                 </Button>
               ) : null}
             </>
@@ -433,9 +434,7 @@ export function ProjectTree({
                 }}
               >
                 {node.is_leaf ? null : (
-                  <svg width="12" height="12" viewBox="0 0 12 12" className="project-tree-arrow" style={{ transform: isExpanded ? 'rotate(90deg)' : 'none' }}>
-                    <path d="M4 2 L8.5 6 L4 10 Z" fill="currentColor" />
-                  </svg>
+                  <ConfiguredIcon id="chevron" area="control" fallback={isExpanded ? 'caret-down' : 'caret-right'} size="sm" className="project-tree-arrow" />
                 )}
               </span>
               <span className="project-tree-icon">
