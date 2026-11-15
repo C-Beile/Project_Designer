@@ -19,9 +19,12 @@ export type ProjectsTab = 'projects' | 'services'
 
 // Kopf des Projects-Panels: Reiter Projects / Services (schwebende Reiter fehlen).
 export function ProjectsPanelHeader({ tab, floating, onTab, servicesVisible = true }: { tab: ProjectsTab; floating: FloatView[]; onTab: (t: ProjectsTab) => void; servicesVisible?: boolean }) {
+  const tabs = (['projects', 'services'] as const).filter((t) => !floating.includes(t as FloatView) && (t === 'projects' || servicesVisible || tab === 'services'))
+  // Ein einzelner Reiter wiederholt nur den Titel des Dock-Reiters darüber: dann kein Kopf.
+  if (tabs.length < 2) return null
   return (
     <div className="forge-panel-tabs" role="tablist" aria-label="Project windows">
-      {(['projects', 'services'] as const).filter((t) => !floating.includes(t as FloatView) && (t === 'projects' || servicesVisible || tab === 'services')).map((t) => (
+      {tabs.map((t) => (
         <Button variant="bare"
           key={t}
 

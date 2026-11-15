@@ -2,15 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { layoutConfig } from '../../../src/config/layoutConfig'
 import { planDock } from '../../../src/shell/dock/dockPlan'
 
-const base = { panels: layoutConfig.panels, areas: layoutConfig.areas, centerId: 'editor', windowWidth: 1920, windowHeight: 1080, uiFactor: 1 }
+const startup = layoutConfig.panels.map((p) => ({ ...p, opens: 'startup' as const }))
+const base = { panels: startup, areas: layoutConfig.areas, centerId: 'editor', windowWidth: 1920, windowHeight: 1080, uiFactor: 1 }
 
 describe('planDock with the default layout.toml', () => {
   const plan = planDock(base)
   const of = (id: string) => plan.find((p) => p.id === id)!
 
-  it('puts Navigator right of the editor, Output below at the window edge and Projects left at the window edge', () => {
+  it('puts Navigator right of the editor, Output below the editor only and Projects left at the window edge', () => {
     expect(of('navigator')).toMatchObject({ direction: 'right', reference: 'editor' })
-    expect(of('output')).toMatchObject({ direction: 'below', reference: undefined })
+    expect(of('output')).toMatchObject({ direction: 'below', reference: 'editor' })
     expect(of('projects')).toMatchObject({ direction: 'left', reference: undefined })
   })
 

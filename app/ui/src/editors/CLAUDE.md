@@ -67,7 +67,7 @@ Ein Editor je Objekttyp (`object_type` aus dem Baum). Die Registry ordnet Typ un
 | Neuer Objekttyp, Schritt 1 | Komponente `src/editors/<Name>Editor.tsx` mit Props `EditorProps` |
 | Schritt 2 | `src/editors/register<Name>Builtins.ts`: `registerEditor('<object_type>', <Name>Editor)` (oder Zeile in ein vorhandenes Modul) |
 | Schritt 3 | `import './editors/register<Name>Builtins'` in `src/App.tsx` |
-| Schritt 4 | Baum-Icon: Fall in `objectIcon` in `src/tree/treeIcons.tsx` (sonst Standard-Blatt), Icon-Farbe als `--icon-<typ>` in `src/theme/tokens.css` |
+| Schritt 4 | Baum-Icon: Fall in `objectIcon` in `src/tree/treeIcons.tsx` (sonst Standard-Blatt), Icon und Farbe in `app/config/style.toml` (`[icon.<typ>]`) |
 | Schritt 5 | Kontextmenü-Regeln des Typs in `src/tree/contextMenu.ts` (`COPY_BLOCKED_TYPES`, `USAGE_TYPES`, `RENAME_TYPES`) |
 | Schritt 6 | Properties-Blatt: kommt aus `sheetModel.generated.ts` (`src/properties/CLAUDE.md`) |
 | Schritt 7 | Test `tests/editors/<Name>Editor.test.tsx` mit `createMockForgeApi` |

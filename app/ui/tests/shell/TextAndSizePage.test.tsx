@@ -17,7 +17,7 @@ describe('Options > Appearance pages', () => {
 
   it('the theme page lists no theme of the user at first and opens the studio from a button', () => {
     render(<UserThemeSection />)
-    expect(screen.getByText('No theme of yours yet.')).toBeInTheDocument()
+    expect(screen.queryAllByRole('radio')).toHaveLength(0)
     expect(screen.getByRole('button', { name: 'Open Theme Studio' })).toBeEnabled()
   })
 })

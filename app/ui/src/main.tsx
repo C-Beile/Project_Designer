@@ -4,6 +4,7 @@ import { syncLogTimezone, tauriForgeApi } from './api/tauriApi'
 import { withSqlLog } from './api/sqlLog'
 import { installZoomControls } from './settings/zoom'
 import { loadAppConfig } from './settings/appConfig'
+import { applyStyleConfig } from './config/styleConfig'
 import { installAppearance } from './theme/appearance'
 import { registerAppearanceSettings } from './theme/appearanceSettings'
 import { installThemeReload, loadUserThemes } from './theme/themeStore'
@@ -39,6 +40,7 @@ async function start() {
   await loadAppConfig(tauriForgeApi, listenBackend).catch(() => {})
   installZoomControls()
   registerAppearanceSettings()
+  applyStyleConfig()
   installAppearance()
   await loadUserThemes(tauriForgeApi).catch(() => {})
   installThemeReload(tauriForgeApi)

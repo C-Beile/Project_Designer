@@ -19,13 +19,15 @@
 | `monacoActions.ts` | Menübefehle auf dem fokussierten Code-Editor. |
 | `monacoUuid.ts` | Menü "Generate": UUID einfügen. |
 | `formatOnSave.ts` | Editoren melden sich an, damit Speichern vorher formatieren kann. |
-| `appearance.ts` | Wendet `[appearance]` aus `designer.conf` an: `fontSize` (setzt die Wurzelgröße, 1rem = 16px bei 12), `fontFamily`, `density`. Aufruf in `main.tsx`. |
+| `appearance.ts` | Wendet `[appearance]` aus `designer.conf` an: `fontSize` (setzt die Wurzelgröße, 1rem = 16px bei 12), `fontFamily`, `identFont` (setzt `--font-ident`), `density`. Aufruf in `main.tsx`. |
 | `builtinThemes.ts` | Eingebaute TOML-Themes aus `app/config/themes/` als Text (`BUILTIN_THEME_TEXTS`) und geparst (`BUILTIN_TOML_THEMES`). |
 | `themeSchema.ts` | Liste aller Theme-Schlüssel (`surface.base` usw.) mit CSS-Variable. Was hier fehlt, ist intern und im Theme nicht setzbar. |
 | `editorTheme.ts` | Code-Farben des aktiven TOML-Themes (, ): Store,  legt sie über ein eingebautes Monaco-Theme.  liest sie. |
 | `themeToml.ts` | `parseTheme`: liest eine `.theme.toml` (Verweise mit `@`, Warnungen, WCAG-Kontrast). `applyThemeTokens` setzt die Farben auf `<html>`. |
 | `themeStore.ts` | Themes des Nutzers: Liste, `loadUserThemes` (liest den Ordner über `ForgeApi`), Neu-Lesen beim Fokus, `subscribeThemes`. |
 | `editorTheme.ts` | Code-Farben des aktiven TOML-Themes (`[editor]`, `[editor.syntax]`): Store und `mergeEditorTheme`, das sie über ein eingebautes Monaco-Theme legt. `monacoTheme.ts` liest sie. |
+| `codeFont.ts` | `codeFontStack(family)`: Schriftfolge der Code-Editoren (leer = Standard aus `style.toml`). `whenFontReady`: wartet auf die Schrift, damit Monaco richtig misst (`editorPrefs.ts` ruft danach `remeasureFonts`). |
+| `fonts.css` | `@font-face` der mitgelieferten Code-Schriften (IBM Plex Mono, JetBrains Mono, Source Code Pro, Fira Code; nur Latin, Dateien in `assets/fonts/`). |
 | `appearanceSettings.ts` | `registerAppearanceSettings()`: Textgröße, Schrift und Dichte als Einstellungen (Seite `appearance.text`) für `SchemaForm`. Aufruf in `main.tsx`. |
 <!-- AUTO:END -->
 

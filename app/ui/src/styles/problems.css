@@ -3,8 +3,8 @@
 .forge-problems-bar input[type="text"] {
   background: var(--bg);
   color: var(--fg);
-  border: 1px solid var(--border-strong);
-  border-radius: 2px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-control);
   height: 20px;
   padding: 0 4px;
 }

@@ -19,7 +19,7 @@
 
 .alias-card {
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: var(--radius-control);
   margin: 12px 0;
   max-width: 900px;
   background: var(--bg-inset);

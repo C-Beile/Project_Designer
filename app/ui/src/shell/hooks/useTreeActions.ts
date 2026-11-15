@@ -25,7 +25,7 @@ export interface TreeActionsDeps {
   activateNode: (node: TreeNode, project: string) => Promise<void>
   handleOpen: (node: TreeNode, top?: TreeNode) => Promise<void>
   projectOf: (top: TreeNode) => string
-  showToolWindow: (id: 'output' | 'properties', focus?: boolean) => void
+  showToolWindow: (id: 'nodejs' | 'properties', focus?: boolean) => void
   setOutputSub: (sub: OutputSubTab) => void
   appendLog: (sub: OutputSubTab, lines: OutputLine[]) => void
   closeProjects: (toClose: string[]) => void
@@ -127,7 +127,7 @@ export function useTreeActions(d: TreeActionsDeps) {
       if (!(await confirmDialog(text, { title: `npm ${action}`, okLabel: `Run npm ${action}` }))) return
     }
     npmBusy.current = true
-    showToolWindow('output', false)
+    showToolWindow('nodejs', false)
     setOutputSub('nodejs')
     appendLog('nodejs', [{ level: 'info', text: `[${timestamp()}] npm ${action} in ${project}` }])
     try {

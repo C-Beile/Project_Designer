@@ -1,5 +1,6 @@
 @import './theme/tokens.css';
 @import './theme/tokens-primitives.css';
+@import './theme/fonts.css';
 @import './core/ui/controls/controls.css';
 @import './studio/ThemeStudio.css';
 @import './styles/base.css';
@@ -13,7 +14,6 @@
 @import './editors/JDitoCodeField.css';
 @import './styles/property-grid.css';
 @import './shell/Toolbar.css';
-@import './tabs/EditorTabBar.css';
 @import './features/git/GitStatusItem.css';
 @import './services/SqlEditor.css';
 @import './shell/WorkspaceDialog.css';
@@ -26,6 +26,7 @@
 @import './core/ui/blocks/SchemaForm.css';
 @import './styles/shell/tab.css';
 @import './styles/shell/tabbar.css';
+@import './tabs/EditorTabBar.css';
 @import './styles/shell/history.css';
 @import './styles/shell/panel.css';
 @import './styles/shell/output.css';
@@ -108,6 +109,7 @@
 @import './shell/TranspileProgress.css';
 @import './tabs/TunnelPorts.css';
 @import './shell/TypeCombo.css';
+@import './shell/OpenModelDialog.css';
 @import './services/ServicesTree.css';
 @import './services/UserPropertiesPanel.css';
 @import './shell/TranspileMatchDialog.css';

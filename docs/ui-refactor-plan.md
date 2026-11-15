@@ -112,7 +112,7 @@ Neue Ordner: `theme/tokens/`, `core/store.ts`, `core/ui/controls/`, `core/ui/blo
 - **Startregel (entschieden):** Alles ist zuerst intern. Nutzer-frei sind nur `surface`, `text`, `border`, `accent`, `state`, `selection`, `button`, `editor`, `type`. Einzelne Schlüssel werden später bei Bedarf freigegeben (Freigeben ist leicht, Sperren bricht fremde Themes).
 - Ein Theme, das einen internen Schlüssel setzt, bekommt eine Warnung und der Wert wird ignoriert.
 - Der Loader erzeugt aus Theme plus internen Tokens die CSS-Variablen und das Monaco-Theme. Eingebaute Themes (`night-owl`, `night-owl-light`, `lion`) sind `.theme.toml` im Programm.
-- Nutzer-Themes: `%APPDATA%\de.threehillsit.dito-designer\themes\*.theme.toml`, Ordner wird beobachtet (Live-Neuladen). Auswahl: `[appearance] theme`. Feinanpassungen: `[appearance.overrides]` mit denselben Namen, nur erlaubte (Theme-)Schlüssel.
+- Nutzer-Themes: `%LOCALAPPDATA%\DitoDesigner\themes\*.theme.toml`, Ordner wird beobachtet (Live-Neuladen). Auswahl: `[appearance] theme`. Feinanpassungen: `[appearance.overrides]` mit denselben Namen, nur erlaubte (Theme-)Schlüssel.
 - VS-Code-Importer: Einweg-Konverter VS-Code-JSON zu `.theme.toml`, mit einer Zuordnungstabelle (ersetzt `TOKEN_SOURCES`). Ergebnis wird danach von Hand gepflegt.
 - Keine Migration alter Daten (`localStorage`, alte Farb-Overrides werden ignoriert).
 - Brand-Farben bleiben feste Konstanten im Code.

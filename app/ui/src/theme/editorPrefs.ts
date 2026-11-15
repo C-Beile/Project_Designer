@@ -1,6 +1,7 @@
 import { configGet, configSet, onConfigChange, touches } from '../settings/appConfig'
 import type * as monaco from 'monaco-editor'
 import { getOptions, subscribeOptions } from '../settings/options'
+import { codeFontStack, whenFontReady } from './codeFont'
 
 // View menu switches that reach every code editor (line numbers, whitespace, guides, hints).
 // Kept per user in designer.conf ([editor]); a missing value means the defaults apply.
@@ -56,9 +57,23 @@ export function subscribeEditorPrefs(listener: () => void): () => void {
   }
 }
 
+let measuredStack = ''
+
+/** Misst die Zeichen neu, sobald die Code-Schrift geladen ist. Sonst steht der Cursor versetzt. */
+function remeasureWhenReady(stack: string): void {
+  if (stack === measuredStack) return
+  measuredStack = stack
+  void whenFontReady(stack)
+    .then(() => import('monaco-editor'))
+    .then((m) => m.editor?.remeasureFonts?.())
+    .catch(() => {})
+}
+
 export function applyEditorPrefs(editor: monaco.editor.IStandaloneCodeEditor): void {
   const p = current
   const o = getOptions().editor
+  const stack = codeFontStack(o.fontFamily)
+  remeasureWhenReady(stack)
   editor.updateOptions?.({
     fontSize: o.fontSize,
     tabSize: o.tabSize,
@@ -69,7 +84,7 @@ export function applyEditorPrefs(editor: monaco.editor.IStandaloneCodeEditor): v
     renderControlCharacters: p.nonPrintable,
     guides: { indentation: p.indentGuides },
     inlayHints: { enabled: p.inlineHints ? 'on' : 'off' },
-    fontFamily: o.fontFamily.trim() || "Consolas, 'Courier New', monospace",
+    fontFamily: stack,
     lineHeight: o.lineHeight,
     fontLigatures: o.fontLigatures,
     cursorBlinking: o.cursorBlinking as monaco.editor.IEditorOptions['cursorBlinking'],

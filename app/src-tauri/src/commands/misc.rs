@@ -3,7 +3,6 @@
 use super::blocking;
 use super::settings::settings_file;
 use project::settings;
-use tauri::Manager;
 
 /// Update access token of the private release repository; it is baked in at build time from the
 /// CI secret and is never part of the source tree.
@@ -59,7 +58,7 @@ pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
 #[specta::specta]
 pub async fn local_data_info(threshold_days: u32, app: tauri::AppHandle) -> Result<project::local_data::LocalDataInfo, String> {
     crate::commands::guard_async("local_data_info", async {
-    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let data_dir = crate::data_dir::app_data_dir(&app)?;
     let settings = settings_file(&app)?;
     let version = app.package_info().version.to_string();
     blocking(move || {

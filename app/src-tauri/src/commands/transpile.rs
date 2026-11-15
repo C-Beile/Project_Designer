@@ -4,7 +4,6 @@ use super::blocking;
 use project::actions::dispatch_action;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tauri::Manager;
 
 /// Ziel A.2 command 4: generic action dispatch by id (architecture.md §2 `Action` extension
 /// point). See `project::actions` doc for why this honestly reports "not registered" this
@@ -23,7 +22,7 @@ pub async fn execute_action(
 ) -> Result<(), String> {
     crate::commands::guard_async("execute_action", async {
     if !params.contains_key("forge_data_dir") {
-        if let Ok(dir) = app.path().app_data_dir() {
+        if let Ok(dir) = crate::data_dir::app_data_dir(&app) {
             params.insert("forge_data_dir".to_string(), dir.to_string_lossy().into_owned());
         }
     }

@@ -16,7 +16,7 @@
 | `coreStatusItems.ts` | `registerCoreStatusItems()`: Statusleisten-Beiträge des Kerns (ohne Plugin). Aufruf in `App.tsx` und `tests/support/setup.ts`. |
 | `ProjectsPanel.tsx` | Kopf und Inhalt des Projects-Panels. |
 | `PropertiesBody.tsx` | Inhalt des Properties-Panels je Auswahl. |
-| `OutputPanel.tsx` | Output-Fenster (Unter-Reiter `database`, `build`, `default`, `nodejs`). |
+| `OutputPanel.tsx` | Output-Fenster: jedes Fenster (Build, Database, Default, NodeJS, IDE Log, Scan Services, Search Results, Notifications, Refactoring, Problems) ist ein eigener, schließbarer Reiter (`OutputTabId`). Das Panel ist beim Start zu (`opens = "on-demand"`); `showToolWindow` in `Shell.tsx` öffnet nur den Reiter der Aktion. |
 | `RefactoringPanel.tsx` | Refactoring-Reiter (Find Usages, Safely Delete, Rename). |
 | `TabSwitcher.tsx` | Ctrl+Tab Liste der offenen Tabs. |
 | `QuickFileSearch.tsx` | Doppel-Ctrl: Dateisuche. |
@@ -33,7 +33,7 @@
 | `NewProjectDialog.tsx` | Neues Projekt oder Klon. |
 | `NewObjectDialog.tsx` | "Create New Model". |
 | `TypeCombo.tsx` | Typ-Auswahl für "Create New Model". |
-| `OpenModelDialog.tsx` | Datei > Open (Ctrl+O). |
+| `OpenModelDialog.tsx` | Datei > Open (Ctrl+O): Popup im Hauptfenster, Suche über alle offenen Projekte, gruppiert nach Projekt (einklappbar), Typ-Filter als `MultiSelect` (`[search] disabledTypes`), Gruppierung nach Projekt oder Typ (`[search] groupBy`). Eigenes CSS: `OpenModelDialog.css`. |
 | `ProjectZipDialog.tsx` | Export/Import Project als Zip. |
 | `ConflictDialog.tsx` | Datei von außen geändert. |
 | `DeployOptionsDialog.tsx` | Deploy, erster Dialog (Projekt, System, Optionen). |
@@ -44,14 +44,15 @@
 | `TranspileProgress.tsx` | Fortschritt eines Builds. |
 | `TranspileMatchDialog.tsx` | Übereinstimmung eigener Transpiler mit offiziellem. |
 | `nativeGuard.tsx` | Sperrt Browser-Tasten und -Menüs im Release. |
-| `icons.tsx` | Eigene Toolbar- und Panel-Icons. |
+| `icons.tsx` | Toolbar- und Panel-Icons (`IconSave` ...) als Phosphor-Icons. Name, Stil und Farbe aus `style.toml` (`[icon.<id>]`). |
 | `optionIcons.tsx` | Icons der Options-Kategorien. |
-| `ThemePicker.tsx` | Options > Appearance > Theme: Galerie der Themes mit Vorschaubild. |
+| `ThemePicker.tsx` | Options > Appearance > General: Galerie der Themes mit Vorschaubild. |
 | `CodeFormattingPage.tsx` | Options > Appearance > Code formatting: Schrift, Größe, Zeilenabstand, Ligaturen der Code-Editoren mit Vorschau. |
 | `shellHelpers.ts` | Kleine reine Helfer (`findNodeByPath`, `baseName`, `samePath`). |
 | `TextAndDensity.tsx` | Options > General > Text and density: Schriftgröße, Schriftart und Dichte. Wirkt sofort über `theme/appearance.ts`. |
+| `AppearanceGeneralPage.tsx` | Options > Appearance > General (erste Seite): Theme (`ThemePicker`, `UserThemeSection`, kompakt) und die Tab-Einstellung (Farbstreifen oder nach Projekt gruppiert). |
 | `TextAndSizePage.tsx` | Options > Appearance > Text & size: Interface size (Zoom) und `TextAndDensity`. |
-| `UserThemeSection.tsx` | Options > Appearance > Theme: eigene Themes wählen, Knopf für das Theme Studio. |
+| `UserThemeSection.tsx` | Options > Appearance > General: eigene Themes wählen, Knopf für das Theme Studio (eine Zeile). |
 | `dock/` | `DockHost.tsx` (dockview: Panels andocken, stapeln, verschieben; Anordnung in `layout.dock`), `dockPlan.ts` (reine Funktion: Standard-Anordnung aus `app/config/layout.toml`), `DockHost.css` (dockview auf unsere Tokens). |
 | `layouts.ts` | Voreinstellungen (`LAYOUT_PRESETS`: Default, Compact, Editor Focus) und gespeicherte Layouts des Nutzers (`[layouts.<name>]` in `designer.conf`: `saveNamedLayout`, `loadNamedLayout`, `deleteNamedLayout`). Menü: Window > Layouts. |
 <!-- AUTO:END -->

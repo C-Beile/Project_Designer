@@ -1,0 +1,185 @@
+# Stil der Oberfläche. Überschreibt die Standards aus theme/tokens-primitives.css.
+# Die Farben der Themes stehen in themes/*.theme.toml.
+
+[radius]
+window  = 6    # Rundung des Fensterrahmens von Dialogen und Panels. Ganzzahl 0 bis 16 (px)
+control = 3    # Rundung von Buttons, Eingabefeldern und Umschaltern. Ganzzahl 0 bis 16 (px)
+tab     = 4    # Rundung der oberen Tab-Ecken. Ganzzahl 0 bis 16 (px)
+box     = 3    # Rundung von Boxen, z. B. der Diagramm-Box. Ganzzahl 0 bis 16 (px)
+badge   = 2    # Rundung kleiner Zähler, z. B. bei Problems. Ganzzahl 0 bis 16 (px)
+
+[font]
+ident = "ibm-plex-mono"   # Standard-Schrift für Bezeichner (Feldnamen, Werte). ibm-plex-mono | jetbrains-mono | source-code-pro | fira-code | consolas
+code  = "ibm-plex-mono"   # Standard-Schrift für Code-Editoren. Gleiche Auswahl wie ident
+
+[size]
+control-h     = 24   # Höhe von Buttons und Eingabefeldern. Ganzzahl 16 bis 40 (px)
+row-h         = 24   # Höhe einer Zeile in Listen und Bäumen. Ganzzahl 16 bis 40 (px)
+tab-h         = 28   # Höhe eines Tabs. Ganzzahl 20 bis 48 (px)
+compact-row-h = 20   # Zeilenhöhe, wenn die Dichte auf compact steht. Ganzzahl 16 bis 40 (px)
+icon-sm       = 12   # Größe kleiner Icons, z. B. Pfeile. Ganzzahl 8 bis 24 (px)
+icon-md       = 16   # Standard-Größe der Icons. Ganzzahl 8 bis 32 (px)
+icon-lg       = 20   # Größe großer Icons. Ganzzahl 12 bis 40 (px)
+
+# Icons. Zuerst die Grundwerte je Bereich, danach Einzel-Icons als [icon.<name>].
+# Ein Einzel-Icon gewinnt gegen den Bereich. Nicht gesetzte Werte erbt es vom Bereich.
+# Alle Werte eines Icons: name, style, thickness, color.
+
+[icons.toolbar]
+style     = "fill"      # Grundstil der Aktionsleiste. line (Linie) | fill (gefüllt) | duotone (zweifarbig)
+thickness = "regular"   # Linienstärke bei line und duotone. thin | light | regular | bold. Bei fill ohne Wirkung
+color     = "text"      # Farbe. text (Textfarbe des Themes) | muted (blasser) | accent (Akzentfarbe des Themes) | Hex wie #4aa8e8
+
+[icons.tree]
+style     = "fill"      # Grundstil der Typ-Icons im Baum. line | fill | duotone
+thickness = "regular"   # Linienstärke. thin | light | regular | bold
+color     = "text"      # Farbe, wenn ein Typ keine eigene hat. text | muted | accent | Hex
+
+[icons.control]
+style     = "line"      # Grundstil von Pfeilen, Plus, Minus und Schließen. line | fill | duotone
+thickness = "bold"      # Linienstärke. thin | light | regular | bold
+color     = "muted"     # Farbe. text | muted | accent | Hex
+
+# Beispiel mit allen Werten eines Icons (zum Ausprobieren die Rauten entfernen):
+# [icon.open-project]
+# name      = "folder-open"   # Icon aus Phosphor (phosphoricons.com). Weglassen = Standard-Icon des Knopfes
+# style     = "line"          # line (Linie) | fill (gefüllt) | duotone (zweifarbig)
+# thickness = "bold"          # thin | light | regular | bold, nur bei line und duotone
+# color     = "#e0b46a"       # text | muted | accent | Hex. Weglassen = Farbe des Bereichs
+
+# Toolbar-Icons. Name = Befehl des Knopfes. Nur diese drei sind bunt, alle anderen folgen [icons.toolbar].
+[icon.run]
+color = "accent"
+
+[icon.save]
+color = "accent"
+
+[icon.save-all]
+color = "accent"
+
+[icon.deploy]
+color = "accent"
+
+# Projektbaum-Icons. Name = Objekttyp, name = Phosphor-Icon, color = feste Akzentfarbe (gilt in allen Themes).
+
+[icon.system]
+name  = "gear-six"
+color = "#4a80c8"
+
+[icon.preferences]
+name  = "sliders-horizontal"
+color = "#d452c8"
+
+[icon.application]
+name  = "app-window"
+color = "#e08a2e"
+
+[icon.context]
+name  = "stack"
+color = "#e6c35c"
+
+[icon.notificationtype]
+name  = "bell"
+color = "#c5de6a"
+
+[icon.entity]
+name  = "database"
+color = "#f25c9c"
+
+[icon.view]
+name  = "browser"
+color = "#3fc3f5"
+
+[icon.dashboard]
+name  = "squares-four"
+color = "#8e8cf0"
+
+[icon.renderer]
+name  = "paint-brush"
+color = "#7e7e7e"
+
+[icon.process]
+name  = "flow-arrow"
+color = "#9cc25c"
+
+[icon.test]
+name  = "flask"
+color = "#2c8cb4"
+
+[icon.service]
+name  = "plugs-connected"
+color = "#3e9a3e"
+
+[icon.report]
+name  = "chart-bar"
+color = "#b49274"
+
+[icon.language]
+name  = "translate"
+color = "#b48fd8"
+
+[icon.role]
+name  = "shield-check"
+color = "#f0c878"
+
+[icon.alias]
+name  = "link"
+color = "#e88aa0"
+
+[icon.others]
+name  = "dots-three-circle"
+color = "#e05a3a"
+
+[icon.plain]
+name  = "folder"
+color = "#c8c8c8"
+
+[icon.libraries]
+name  = "books"
+color = "#4a80c8"
+
+[icon.file-git]
+name  = "git-branch"
+color = "#e05a3a"
+
+[icon.file-config]
+name  = "gear"
+color = "muted"
+
+[icon.file-json]
+name  = "brackets-curly"
+color = "accent"
+
+[icon.file-md]
+name  = "markdown-logo"
+color = "accent"
+
+[icon.file-yaml]
+name  = "file-code"
+color = "#e08a2e"
+
+[icon.file-js]
+name  = "file-js"
+color = "#e0b46a"
+
+[icon.file-ts]
+name  = "file-ts"
+color = "#e0b46a"
+
+[icon.folder]
+name = "folder"
+
+[icon.folder-open]
+name = "folder-open"
+
+[icon.file]
+name = "file-text"
+
+[navigator]
+module-hint = "hover"   # Wo die Herkunft (Modul und Version) steht. hover (beim Darüberfahren) | column (blasse Spalte) | off (nie)
+module-mark = true      # Kleines Zeichen vor Artefakten, die aus einem Modul stammen. true | false
+
+[motion]
+duration-fast   = 100   # Dauer kurzer Übergänge wie Hover. Ganzzahl 0 bis 1000 (ms)
+duration-normal = 200   # Dauer normaler Übergänge wie Einblenden. Ganzzahl 0 bis 1000 (ms)
+focus-width     = 2     # Dicke des Fokus-Rings bei Tastaturbedienung. Ganzzahl 1 bis 4 (px)

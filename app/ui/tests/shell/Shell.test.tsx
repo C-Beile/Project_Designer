@@ -125,7 +125,7 @@ describe('layout persistence', () => {
     const l = sanitizeLayout({ panels: { navigator: 'closed', projects: 'minimized', output: 'weird' }, dock: { grid: 1 } })
     expect(l.panels.navigator).toBe('closed')
     expect(l.panels.projects).toBe('closed')
-    expect(l.panels.output).toBe('open')
+    expect(l.panels.output).toBe('closed')
     expect(l.dock).toEqual({ grid: 1 })
   })
 
@@ -148,13 +148,20 @@ describe('Shell - docking', () => {
     expect(screen.queryByRole('tab', { name: 'Services' })).not.toBeInTheDocument()
     expect(await screen.findByText('<No Properties>')).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Navigator' })).toBeInTheDocument()
-    for (const t of [/^Output - /, 'Search Results', 'Notifications', 'Refactoring', 'Problems']) {
-      expect(await screen.findByRole('tab', { name: t })).toBeInTheDocument()
-    }
-    for (const t of ['Database', 'Build', 'Default', 'NodeJS']) {
-      expect(screen.getByRole('tab', { name: t })).toBeInTheDocument()
-    }
-    expect(screen.getByRole('tab', { name: /^Output - / })).toHaveTextContent('Output - Build')
+    expect(screen.queryByRole('tablist', { name: 'Output windows' })).toBeNull()
+  })
+
+  it('an output window opens alone from the Window menu and closes with its x; the last one takes the panel along', async () => {
+    const user = userEvent.setup({ delay: null })
+    const api = createMockForgeApi({ projectTree: [], documents: {} })
+    render(<Shell api={api} projectRoot="" />)
+    await openMenuItem(user, 'Window', /^Scan Services/)
+    expect(await screen.findByRole('tab', { name: 'Scan Services' })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Problems' })).toBeNull()
+    expect(screen.queryByRole('tab', { name: 'Build' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Close Scan Services' }))
+    expect(screen.queryByRole('tab', { name: 'Scan Services' })).toBeNull()
+    expect(screen.queryByRole('tablist', { name: 'Output windows' })).toBeNull()
   })
 
   it('a closed panel comes back through the Window menu, and Reset Panel Layout restores everything', async () => {
@@ -167,12 +174,10 @@ describe('Shell - docking', () => {
     await openMenuItem(user, 'Window', /^Navigator/)
     expect(screen.getByRole('region', { name: 'Navigator' })).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Close Output' }))
     await user.click(screen.getByRole('button', { name: 'Close Properties' }))
-    expect(screen.queryByRole('region', { name: 'Output' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Properties' })).toBeNull()
     await openMenuItem(user, 'Window', /Reset Panel Layout/)
     expect(screen.getByRole('region', { name: 'Properties' })).toBeInTheDocument()
-    expect(await screen.findByRole('tab', { name: 'Build' })).toBeInTheDocument()
   })
 })
 
@@ -372,7 +377,7 @@ describe('Projects - several projects at once (LAYOUT_SPEC §4.2/§4.5)', () => 
     await waitFor(() => expect(rootLabels()).toEqual(['Pichler', 'Hermes']))
 
     await user.click(rootRow('Hermes'))
-    expect(screen.getAllByText('Hermes - Properties').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Properties - Hermes').length).toBeGreaterThan(0)
 
     await openMenuItem(user, 'File', /^Close Project$/)
     await waitFor(() => expect(rootLabels()).toEqual(['Pichler']))

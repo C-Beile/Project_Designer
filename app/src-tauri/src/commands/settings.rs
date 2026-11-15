@@ -12,7 +12,7 @@ pub fn write_settings(file: &std::path::Path, settings: &ForgeSettings) -> Resul
 /// Die eine Konfigurationsdatei `designer.conf` im App-Datenordner. Gibt es sie noch nicht, werden die alten
 /// Dateien (`settings.json`, `recent-project.json`) einmal übernommen.
 pub fn settings_file(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let dir = crate::data_dir::app_data_dir(app)?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     settings::import_legacy(&dir);
     Ok(dir.join(settings::SETTINGS_FILE_NAME))

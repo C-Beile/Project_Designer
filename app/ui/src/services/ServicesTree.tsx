@@ -5,6 +5,7 @@ import { TunnelGlyph } from '../tree/TunnelGlyph'
 import { useTunnelState, systemNameOf, projectOfPath } from './tunnelState'
 import { closeSystemTunnel } from './useSystemTunnels'
 import { Button, Input } from '../core/ui/controls'
+import { ConfiguredIcon, Icon } from '../core/icons/Icon'
 
 // Services tab: project > system > database alias (System_alias, Data_alias ...) > tables. Every
 // open session of the tunnel state shows up by itself; tables are read when an alias is opened and
@@ -62,20 +63,11 @@ export function groupSessions(bySystem: Record<string, { connected: boolean; tun
 }
 
 function Chevron({ open }: { open: boolean }) {
-  return (
-    <svg className={`svt-chevron${open ? ' is-open' : ''}`} viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">
-      <path d="M2 1l4 3-4 3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <ConfiguredIcon id="chevron" area="control" fallback={open ? 'caret-down' : 'caret-right'} size="sm" className="svt-chevron" />
 }
 
 function DbGlyph({ kind }: { kind: 'system' | 'data' }) {
-  return (
-    <svg className={`svt-db svt-db-${kind}`} viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-      <ellipse cx="8" cy="3.8" rx="5" ry="2.1" fill="currentColor" />
-      <path d="M3 3.8v8.4c0 1.2 2.2 2.1 5 2.1s5-.9 5-2.1V3.8c0 1.2-2.2 2.1-5 2.1S3 5 3 3.8z" fill="currentColor" opacity="0.6" />
-    </svg>
-  )
+  return <Icon name="database" size="md" className={`svt-db svt-db-${kind}`} />
 }
 
 function AliasNode({ api, alias, onOpenSql }: { api: ForgeApi; alias: AliasEntry; onOpenSql: (sql: string) => void }) {
@@ -153,9 +145,7 @@ function AliasNode({ api, alias, onOpenSql }: { api: ForgeApi; alias: AliasEntry
             {shown.map((t) => (
               <li key={`${t.schema}.${t.name}`} role="treeitem" aria-selected="false">
                 <Button variant="bare" className="svt-table" title={`SELECT * FROM ${t.name}`} onClick={() => openTable(t.name)}>
-                  <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
-                    <path d="M2 3h12v10H2zM2 6.5h12M6 6.5V13" fill="none" stroke="currentColor" strokeWidth="1.1" />
-                  </svg>
+                  <Icon name="table" size="sm" />
                   {t.name}
                 </Button>
               </li>
@@ -195,10 +185,7 @@ export function ServicesTree({ api, onOpenSql, projects = [] }: { api: ForgeApi;
     <ul className="svt" role="tree" aria-label="Database connections">
       <li role="treeitem" aria-expanded="true" className="svt-root">
         <div className="svt-row svt-root-row">
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" className="svt-db">
-            <ellipse cx="8" cy="3.8" rx="5" ry="2.1" fill="currentColor" />
-            <path d="M3 3.8v8.4c0 1.2 2.2 2.1 5 2.1s5-.9 5-2.1V3.8c0 1.2-2.2 2.1-5 2.1S3 5 3 3.8z" fill="currentColor" opacity="0.6" />
-          </svg>
+          <Icon name="database" size="md" className="svt-db" />
           <strong className="svt-name">Databases</strong>
           <span className="svt-meta">{tunnelCount} {tunnelCount === 1 ? 'connection' : 'connections'}</span>
         </div>
@@ -250,7 +237,7 @@ export function ServicesTree({ api, onOpenSql, projects = [] }: { api: ForgeApi;
       <li role="treeitem" aria-expanded={tunnelsOpen} className="svt-root">
         <div className="svt-row svt-root-row" title="The tunnels are opened with the tunnel button of a system in the Projects tree" onClick={() => setTunnelsOpen((v) => !v)}>
           <Chevron open={tunnelsOpen} />
-          <TunnelGlyph size={14} />
+          <TunnelGlyph size="md" />
           <strong className="svt-name">Tunnel</strong>
           <span className="svt-meta">{tunnelCount} open</span>
         </div>

@@ -42,8 +42,8 @@
 .report-editor input {
   background: var(--bg);
   color: var(--fg);
-  border: 1px solid var(--border-strong);
-  border-radius: 3px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-control);
   padding: 3px 6px;
   font: inherit;
 }
@@ -137,7 +137,7 @@
   background: var(--button-bg);
   color: var(--button-fg);
   border: none;
-  border-radius: 3px;
+  border-radius: var(--radius-control);
   padding: 2px 10px;
   cursor: pointer;
   font: inherit;

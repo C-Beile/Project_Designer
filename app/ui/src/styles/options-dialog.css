@@ -27,12 +27,12 @@
   background: transparent;
   color: var(--fg);
   border: none;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
 }
 
 .forge-opt-cat.is-active {
   background: var(--bg-panel);
-  border-bottom-color: var(--brand-underline);
+  border-bottom-color: var(--accent);
 }
 
 .forge-opt-glyph {
@@ -59,7 +59,7 @@
 
 .forge-opt-page.is-active {
   color: var(--fg);
-  border-bottom-color: var(--brand-underline);
+  border-bottom-color: var(--accent);
 }
 
 .forge-opt-body {
@@ -87,15 +87,16 @@
 .forge-opt-body input[type="number"],
 .forge-opt-body input[type="password"],
 .forge-opt-body select {
-  background: var(--bg);
+  background: var(--bg-inset);
   color: var(--fg);
-  border: 1px solid var(--border-strong);
-  border-radius: 2px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-control);
   padding: 2px 6px;
 }
 
 .forge-opt-group {
   border: 1px solid var(--border);
+  border-radius: var(--radius-control);
   padding: 6px 10px 8px;
   display: flex;
   flex-direction: column;
@@ -128,6 +129,6 @@
 .forge-opt-table th {
   position: sticky;
   top: 0;
-  background: var(--bg-inset);
+  background: var(--bg-label);
   color: var(--fg-muted);
 }

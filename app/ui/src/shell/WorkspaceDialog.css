@@ -19,7 +19,7 @@
   padding: 3px 8px;
   background: var(--bg-inset);
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: var(--radius-control);
 }
 
 .ws-tools {
@@ -47,7 +47,7 @@
   max-height: 320px;
   overflow: auto;
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: var(--radius-control);
 }
 
 .ws-list label {

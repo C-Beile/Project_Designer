@@ -11,6 +11,7 @@ import {
 } from './tauriWindow'
 import { Button } from '../core/ui/controls'
 import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
+import { Icon } from '../core/icons/Icon'
 
 // The fix for the one hard MUST from ui-reference-car-training.md's photo review: the real ADITO
 // Designer leaves its native titlebar/menubar light while the rest of the app is dark - an
@@ -78,9 +79,7 @@ export function TitleBar({ title = 'Dito Designer' }: { title?: string }) {
       {isTauriRuntime() && (
         <div className="forge-titlebar-controls">
           <Button variant="bare" className="forge-titlebar-btn" aria-label="Minimize window" onClick={handleMinimize}>
-            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
-              <line x1="0" y1="5" x2="10" y2="5" stroke="currentColor" strokeWidth="1" />
-            </svg>
+            <Icon name="minus" size="sm" />
           </Button>
           <Button variant="bare"
 
@@ -88,16 +87,7 @@ export function TitleBar({ title = 'Dito Designer' }: { title?: string }) {
             aria-label={maximized ? 'Restore window' : 'Maximize window'}
             onClick={handleToggleMaximize}
           >
-            {maximized ? (
-              <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
-                <rect x="2" y="0" width="8" height="8" fill="none" stroke="currentColor" strokeWidth="1" />
-                <rect x="0" y="2" width="8" height="8" fill="var(--bg-titlebar)" stroke="currentColor" strokeWidth="1" />
-              </svg>
-            ) : (
-              <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
-                <rect x="0" y="0" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="1" />
-              </svg>
-            )}
+            {maximized ? <Icon name="copy-simple" size="sm" /> : <Icon name="square" size="sm" />}
           </Button>
           <Button variant="bare"
 
@@ -105,10 +95,7 @@ export function TitleBar({ title = 'Dito Designer' }: { title?: string }) {
             aria-label="Close window"
             onClick={handleClose}
           >
-            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
-              <line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" strokeWidth="1" />
-              <line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" strokeWidth="1" />
-            </svg>
+            <Icon name="x" size="sm" />
           </Button>
         </div>
       )}

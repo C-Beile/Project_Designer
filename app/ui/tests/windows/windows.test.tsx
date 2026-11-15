@@ -253,7 +253,7 @@ describe('Designer window with operating-system windows', () => {
     const { backend, calls } = fakeBackend()
     setWindowBackend(backend)
     render(<Shell api={createMockForgeApi({ projectTree: [], documents: {} })} projectRoot="" />)
-    await user.click(screen.getByRole('button', { name: 'Open Properties in a new window' }))
+    await openMenuItem(user, 'Window', /^Float Properties/)
     await waitFor(() => expect(calls.opened).toHaveLength(1))
     expect(screen.queryByRole('region', { name: 'Properties' })).toBeNull()
     await act(async () => {

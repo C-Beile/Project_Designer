@@ -3,6 +3,7 @@ import type { EditorProps } from './registry'
 import { field, textField, type WireValue } from '../wire/types'
 import { useProjectIndex } from './projectIndex'
 import { EditableText } from './EditableText'
+import { Icon } from '../core/icons/Icon'
 import { Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
@@ -183,28 +184,29 @@ export function EntityEditor({ nodeId, tree, api, onTreeChange }: EditorProps) {
         {mode === 'diagram' ? (
           <>
             <Button variant="bare" aria-label="Zoom out" title="Zoom out" onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(1)))}>
-              −
+              <Icon name="minus" weight="bold" size="sm" />
             </Button>
             <Button variant="bare" aria-label="Zoom in" title="Zoom in" onClick={() => setZoom((z) => Math.min(2, +(z + 0.1).toFixed(1)))}>
-              ＋
+              <Icon name="plus" weight="bold" size="sm" />
             </Button>
             <Button variant="bare" aria-pressed={deps} title="Show the entities this entity depends on" onClick={() => setDeps((d) => !d)}>
               Direct dependencies
             </Button>
             <Button variant="bare" isDisabled title="Arrange - not available yet" aria-label="Arrange">
-              ⛶
+              <Icon name="arrows-out-simple" weight="bold" size="sm" />
             </Button>
             <Button variant="bare" isDisabled title="Export as image - not available yet" aria-label="Export">
-              ⇪
+              <Icon name="upload-simple" weight="bold" size="sm" />
             </Button>
             <Button variant="bare" isDisabled title="Print - not available yet" aria-label="Print">
-              🖶
+              <Icon name="printer" weight="bold" size="sm" />
             </Button>
           </>
         ) : null}
         <span className="entity-new">
           <Button variant="bare" aria-haspopup="menu" aria-expanded={newOpen} onClick={() => setNewOpen((o) => !o)}>
-            ＋ New …
+            <Icon name="plus" weight="bold" size="sm" />
+            New …
           </Button>
           {newOpen ? (
             <ul role="menu" aria-label="New">
@@ -248,7 +250,7 @@ export function EntityEditor({ nodeId, tree, api, onTreeChange }: EditorProps) {
                       }}
                     >
                       <span className="entity-box-arrow" aria-hidden="true">
-                        {r.extensionPoint ? '' : r.kind === 'provider' ? '➔' : '⬅'}
+                        {r.extensionPoint ? null : <Icon name={r.kind === 'provider' ? 'arrow-right' : 'arrow-left'} weight="bold" size="sm" />}
                       </span>
                       {r.name}
                     </div>

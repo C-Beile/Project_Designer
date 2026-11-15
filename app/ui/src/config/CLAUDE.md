@@ -6,6 +6,7 @@
 | `configSchema.ts` | Gemeinsame Prüfung für Dev-Config-Dateien (`checkSection`, `ConfigError`). |
 | `layoutConfig.ts` | Liest `app/config/layout.toml`. `defaultLayout()` in `shell/layoutState.ts` nimmt die Größen von dort. |
 | `limitsConfig.ts` | Liest `app/config/limits.toml`. |
+| `styleConfig.ts` | Liest `app/config/style.toml` (Rundung, Schrift, Größen, Icons, Baum-Icons, Navigator, Bewegung). `applyStyleConfig()` legt ein `<style id="style-config">` ans Ende von `<head>` (Aufruf in `main.tsx` vor `installAppearance`). `resolveIcon(id, bereich)` liefert Name, Phosphor-Gewicht und Farbe eines Icons (Einzel-Icon `[icon.<name>]` gewinnt gegen den Bereich `[icons.toolbar|tree|control]`). `styleConfig.navigator` liest die UI später direkt. |
 <!-- AUTO:END -->
 
 ## Zweck

@@ -16,7 +16,8 @@ function Harness({ start, seen }: { start: LayoutState; seen: LayoutState[] }) {
 
 describe('DockHost', () => {
   it('shows the editor and every open panel', async () => {
-    render(<Harness start={defaultLayout()} seen={[]} />)
+    const all = defaultLayout()
+    render(<Harness start={{ ...all, panels: { ...all.panels, output: 'open' } }} seen={[]} />)
     expect(await screen.findByText('editor area')).toBeInTheDocument()
     for (const name of ['Projects', 'Properties', 'Navigator', 'Output']) expect(await screen.findByText(`${name} body`)).toBeInTheDocument()
   })

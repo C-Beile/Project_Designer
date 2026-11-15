@@ -2,7 +2,6 @@
 
 use serde::Serialize;
 use std::path::PathBuf;
-use tauri::Manager;
 
 const SUFFIX: &str = ".theme.toml";
 const MAX_FILE_BYTES: u64 = 256 * 1024;
@@ -14,7 +13,7 @@ pub struct UserTheme {
 }
 
 fn themes_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("themes");
+    let dir = crate::data_dir::app_data_dir(app)?.join("themes");
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     Ok(dir)
 }

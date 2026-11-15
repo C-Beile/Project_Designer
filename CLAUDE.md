@@ -84,7 +84,7 @@ Wichtige Ordner haben eine eigene `CLAUDE.md` (Karte) mit Dateiliste, Regeln, Fa
 - Tests: `cargo test --workspace --no-fail-fast` und `cd app/ui && npm test`
 - UI-Typen prüfen: `cd app/ui && npx tsc -p tsconfig.app.json --noEmit` (ein nacktes `npx tsc --noEmit` prüft nichts, `tsconfig.json` hat nur Verweise).
 - Editor ist **VS Code** (nicht Visual Studio). `.vscode/` ist per `.gitignore` lokal. Dort liegt eine F5-Konfiguration "Dito Designer (Debug)" mit `cppvsdbg` (Erweiterung `ms-vscode.cpptools`).
-- Logs der App: `%APPDATA%\de.threehillsit.dito-designer\logs` (Menü Help > Open Log Folder). Dort landen Abstürze (`PANIC`), UI-Fehler (`UI-ERROR`, auch Fehler-Popups und fehlgeschlagene Tauri-Befehle), Plugin-Fehler (`ERROR plugin_call plugin.befehl (Argumente): Fehler`, Geheimnisse verdeckt) und Zeiten (`PERF`).
+- Logs der App: `%LOCALAPPDATA%\DitoDesigner\logs` (Menü Help > Open Log Folder). Dort landen Abstürze (`PANIC`), UI-Fehler (`UI-ERROR`, auch Fehler-Popups und fehlgeschlagene Tauri-Befehle), Plugin-Fehler (`ERROR plugin_call plugin.befehl (Argumente): Fehler`, Geheimnisse verdeckt) und Zeiten (`PERF`).
 
 ## Stand der Tests (nach Index + File-Watcher, 2026-11-12)
 
@@ -99,10 +99,11 @@ Aufteilung in Crates und Plugins nach `docs/refactoring-plan.md` (dort Stand, Na
 
 ## Konfiguration (`designer.conf`)
 
-- Eine Datei für alle Einstellungen: `%APPDATA%\de.threehillsit.dito-designer\designer.conf`, **TOML**, ein Abschnitt je Art (`[general]`, `[ssh]`, `[projects]`, `[window]`, `[popups.<name>]`, `[appearance]`, `[options]`, `[editor]`, `[toolbar]`, `[layout]`, `[plugins]`, `[deploy]`, `[rest]`, `[tree]`, `[windows]` ...).
+- Eine Datei für alle Einstellungen: `%LOCALAPPDATA%\DitoDesigner\designer.conf`, **TOML**, ein Abschnitt je Art (`[general]`, `[ssh]`, `[projects]`, `[window]`, `[popups.<name>]`, `[appearance]`, `[options]`, `[editor]`, `[toolbar]`, `[layout]`, `[plugins]`, `[deploy]`, `[rest]`, `[tree]`, `[windows]` ...).
 - Regeln (`crates/app-base/src/config.rs`): leere Werte (`null`, leere Listen/Abschnitte) werden nie gespeichert; Pfade (Werte **und** Schlüssel) immer mit `/`; Lesen nachsichtig; Schreiben atomar und unter einem Schloss (`config::update`).
 - Oberfläche: `app/ui/src/settings/appConfig.ts` (`configGet`/`configSet`, Pfad als Liste). Kein `localStorage` mehr. Geladen wird einmal in `main.tsx`, geschrieben gebündelt; andere Fenster folgen über `forge://config-changed` (`onConfigChange`).
 - Fenster: Hauptfenster und Dialog-Fenster merken Lage, Größe, Bildschirm (`app/src-tauri/src/window_state.rs`, Regeln in `app_base::window_state`).
+- Der Ordner `DitoDesigner` (nicht der Tauri-Name) kommt aus `app/src-tauri/src/data_dir.rs`; der alte Ordner `%APPDATA%\de.threehillsit.dito-designer` wird einmal dorthin kopiert.
 - Zugangsdaten stehen nie in der Datei (Windows-Anmeldeinfo bzw. Git Credential Manager).
 - Alte `settings.json` und `recent-project.json` werden einmal übernommen, wenn es noch keine `designer.conf` gibt. Alte `localStorage`-Werte werden ignoriert.
 
@@ -125,3 +126,4 @@ Aufteilung in Crates und Plugins nach `docs/refactoring-plan.md` (dort Stand, Na
 - UI-Umbau: Plan und Entscheidungen stehen in `docs/ui-refactor-plan.md` (React Aria, TOML-Themes, Docking mit dockview, tauri-specta, `app/config/` für Dev-Konfiguration). Vor Arbeit an der UI lesen.
 - Quelldateien nie mit PowerShell 5.1 (`Set-Content`, `Out-File`) schreiben, das speichert ANSI statt UTF-8. Prüfung: `node scripts/check-encoding.mjs`.
 - Lint: `cd app/ui && npm run lint`. Die Basislinie `lint-baseline.json` darf nicht schlechter werden.
+- UI-Regel: Elemente in einer Reihe (Button neben Suchfeld, Input, Select) haben exakt dieselbe Höhe. Immer `--h-control` bzw. die Controls aus `core/ui/controls/` nutzen, keine eigenen Höhen. Gilt auch in Mockups.

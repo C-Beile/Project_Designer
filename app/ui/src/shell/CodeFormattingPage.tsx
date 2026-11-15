@@ -1,5 +1,8 @@
 import type { DesignerOptions } from '../settings/options'
-import { Button, Input } from '../core/ui/controls'
+import { useState } from 'react'
+import { FONT_IDS, FONT_LABELS, styleConfig } from '../config/styleConfig'
+import { Button, Dropdown, Input } from '../core/ui/controls'
+import { codeFontStack } from '../theme/codeFont'
 
 type EditorOptions = DesignerOptions['editor']
 
@@ -9,7 +12,8 @@ export interface CodeFormattingPageProps {
 }
 
 const DEFAULTS: Pick<EditorOptions, 'fontFamily' | 'fontSize' | 'lineHeight' | 'fontLigatures'> = { fontFamily: '', fontSize: 13, lineHeight: 0, fontLigatures: false }
-const FONT_SUGGESTIONS = ['Consolas', 'Cascadia Code', 'Cascadia Mono', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', 'Courier New']
+const CUSTOM = '__custom__'
+const FAMILY_NAMES = FONT_IDS.map((id) => FONT_LABELS[id])
 const SAMPLE = `function total(items) {\n  const sum = items.filter((i) => i.active).length >= 0\n  if (sum != 0 && items[0] !== null) return "ok" // 0123456789\n}`
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value))
@@ -17,6 +21,14 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 /** Options > Appearance > Code formatting: Schrift und Zeilenabstand der Code-Editoren, mit Vorschau. */
 export function CodeFormattingPage({ editor, onChange }: CodeFormattingPageProps) {
   const automaticLine = editor.lineHeight === 0
+  const listed = editor.fontFamily === '' || FAMILY_NAMES.includes(editor.fontFamily)
+  const [customMode, setCustomMode] = useState(!listed)
+  const choice = customMode || !listed ? CUSTOM : editor.fontFamily
+  const fontOptions = [
+    { id: '', label: `Default (${FONT_LABELS[styleConfig.font.code as keyof typeof FONT_LABELS]})` },
+    ...FAMILY_NAMES.map((name) => ({ id: name, label: name })),
+    { id: CUSTOM, label: 'Other installed font…' },
+  ]
   const isDefault = (Object.keys(DEFAULTS) as (keyof typeof DEFAULTS)[]).every((k) => editor[k] === DEFAULTS[k])
   return (
     <>
@@ -25,7 +37,7 @@ export function CodeFormattingPage({ editor, onChange }: CodeFormattingPageProps
       <pre
         className="forge-font-sample forge-font-code"
         aria-label="Code preview"
-        style={{ fontFamily: editor.fontFamily || 'Consolas, monospace', fontSize: editor.fontSize, lineHeight: automaticLine ? undefined : `${editor.lineHeight}px`, fontVariantLigatures: editor.fontLigatures ? 'normal' : 'none' }}
+        style={{ fontFamily: codeFontStack(editor.fontFamily), fontSize: editor.fontSize, lineHeight: automaticLine ? undefined : `${editor.lineHeight}px`, fontVariantLigatures: editor.fontLigatures ? 'normal' : 'none' }}
       >
         {SAMPLE}
       </pre>
@@ -33,15 +45,24 @@ export function CodeFormattingPage({ editor, onChange }: CodeFormattingPageProps
       <fieldset className="forge-opt-group">
         <legend>Font</legend>
         <div className="gen-zoom">
-          <label htmlFor="code-font-family">Family</label>
-          <Input id="code-font-family" list="code-font-suggestions" type="text" value={editor.fontFamily} placeholder="Consolas" onChange={(e) => onChange({ fontFamily: e.target.value })} />
-          <datalist id="code-font-suggestions">
-            {FONT_SUGGESTIONS.map((f) => (
-              <option key={f} value={f} />
-            ))}
-          </datalist>
+          <label>Family</label>
+          <Dropdown
+            aria-label="Code font family"
+            value={choice}
+            options={fontOptions}
+            onChange={(v) => {
+              setCustomMode(v === CUSTOM)
+              if (v !== CUSTOM) onChange({ fontFamily: v })
+            }}
+          />
         </div>
-        <p className="forge-field-hint">Use the name of a font that is installed on this computer. An unknown name falls back to Consolas.</p>
+        {choice === CUSTOM && (
+          <div className="gen-zoom">
+            <label htmlFor="code-font-custom">Font name</label>
+            <Input id="code-font-custom" type="text" value={listed ? '' : editor.fontFamily} placeholder="Cascadia Code" onChange={(e) => onChange({ fontFamily: e.target.value })} />
+          </div>
+        )}
+        <p className="forge-field-hint">The listed fonts come with the designer. Another font must be installed on this computer; an unknown name falls back to Cascadia Mono or Consolas.</p>
         <div className="gen-zoom">
           <label htmlFor="code-font-size">Size</label>
           <Input id="code-font-size" type="range" min={9} max={28} step={1} value={editor.fontSize} onChange={(e) => onChange({ fontSize: clamp(Number(e.target.value) || 13, 9, 28) })} />

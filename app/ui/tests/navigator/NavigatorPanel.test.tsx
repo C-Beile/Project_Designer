@@ -95,6 +95,18 @@ describe('Navigator', () => {
     expect(document.querySelectorAll('.nav-row').length).toBeLessThan(120)
   })
 
+  it('marks an element from a module with a symbol and shows the origin only on hover (style.toml)', async () => {
+    const api = createMockForgeApi({ projectTree: [], documents: {} })
+    const fromModule: NavNode = { ...leaf('CONTACTID', 'f[0]'), with_origin: true }
+    api.getNavigator = async () => [{ label: 'P_entity', path: '$', icon: 'object', children: [{ label: 'Fields', icon: 'folder', children: [fromModule, leaf('OWN_FIELD', 'f[1]')] }] }]
+    render(<NavigatorPanel api={api} nodeId="m.aod" objectType="entity" origin="@aditosoftware/contact:5.2.0" selectedPath={null} onSelect={() => {}} />)
+    const row = (await screen.findByText('CONTACTID')).closest('.nav-row')!
+    expect(row.querySelector('.nav-module')).toHaveAttribute('title', '@aditosoftware/contact:5.2.0')
+    expect(row.querySelector('.nav-origin')).toHaveTextContent('@aditosoftware/contact:5.2.0')
+    expect(screen.getByRole('tree')).toHaveAttribute('data-module-hint', 'hover')
+    expect(screen.getByText('OWN_FIELD').closest('.nav-row')!.querySelector('.nav-module')).toBeNull()
+  })
+
   it('opens only the main group of an entity and remembers what the user opened per object', async () => {
     const user = userEvent.setup({ delay: null })
     const api = createMockForgeApi({ projectTree: [], documents: {} })

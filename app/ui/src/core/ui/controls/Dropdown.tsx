@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { CaretDown } from '../../icons/Icon'
 import { Button, ListBox, ListBoxItem, Popover, Select as AriaSelect, SelectValue } from 'react-aria-components'
 
 export interface DropdownOption {
@@ -40,7 +41,7 @@ export function Dropdown({ options, value, onChange, isDisabled, title, classNam
     >
       <Button className="ui-Select-trigger ui-Dropdown-trigger" render={(dom) => <button {...dom} title={title} data-value={value} data-label={ariaLabel} />}>
         <SelectValue />
-        <span aria-hidden="true">▾</span>
+        <CaretDown />
       </Button>
       <Popover className="ui-Popover">
         <ListBox className="ui-ListBox">

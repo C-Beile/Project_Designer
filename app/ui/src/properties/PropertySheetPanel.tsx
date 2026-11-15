@@ -11,6 +11,7 @@ import type { MenuEntry } from '../tree/contextMenu'
 import { PATH_VARIABLE_PROPERTIES, resolvePathVariables } from './pathVariables'
 import { layoutSheet } from './sheetLayout'
 import { useSheetSplit } from './useSheetSplit'
+import { useDescHeight } from './useDescHeight'
 import { confirmDialog } from '../core/dialogService'
 import { notify } from '../core/notifications'
 import type { CodeTarget, ModificationOutcome, PropertySheet, SheetRow, UndoRedoOutcome, WireValue } from '../wire/types'
@@ -255,6 +256,8 @@ export function PropertySheetPanel({
 
   const rowsRef = useRef<HTMLDivElement>(null)
   const sheetSplit = useSheetSplit('objects', rowsRef, 40)
+  const descRef = useRef<HTMLDivElement>(null)
+  const descHeight = useDescHeight('objects', descRef)
 
   const openLinked = (row: SheetRow) => {
     if (!sheet) return
@@ -287,12 +290,7 @@ export function PropertySheetPanel({
   const selectedRow = (layout?.tabs.flatMap((t) => t.groups) ?? sheet.groups).flatMap((g) => g.rows).find((r) => r.name === selected) ?? null
 
   return (
-    <div className="psheet">
-      {sheet.read_only ? (
-        <div className="psheet-readonly" role="note">
-          Read-only: {sheet.read_only}
-        </div>
-      ) : null}
+    <div className="psheet" title={sheet.read_only ? `Read-only: ${sheet.read_only}` : undefined}>
       {layout && layout.tabs.length > 1 ? (
         <div className="psheet-tabs" role="tablist" aria-label="Property tabs">
           {layout.tabs.map((t) => (
@@ -316,7 +314,19 @@ export function PropertySheetPanel({
         split={sheetSplit}
         rowsRef={rowsRef}
       />
-      <div className="psheet-desc" aria-live="polite">
+      <div className="psheet-desc" ref={descRef} style={descHeight.height ? { height: descHeight.height, maxHeight: 'none' } : undefined}>
+        <div
+          className="psheet-desc-handle"
+          role="separator"
+          aria-orientation="horizontal"
+          aria-label="Description height"
+          tabIndex={0}
+          title="Drag to resize the description, double-click to reset"
+          onPointerDown={descHeight.onPointerDown}
+          onKeyDown={descHeight.onKeyDown}
+          onDoubleClick={descHeight.reset}
+        />
+        <div className="psheet-desc-body" aria-live="polite">
         <strong>{selectedRow ? selectedRow.name : sheet.name}</strong>
         <p>{selectedRow ? (selectedRow.description ?? '') : `${sheet.name} (${sheet.type_label})`}</p>
         {selectedRow && (PATH_VARIABLE_PROPERTIES as readonly string[]).includes(selectedRow.name) && selectedRow.display
@@ -337,6 +347,7 @@ export function PropertySheetPanel({
               )
             })()
           : null}
+        </div>
       </div>
       {rowMenu ? (
         <TreeContextMenu

@@ -4,6 +4,7 @@ import type { Problem } from '../problems/problemStore'
 import { normId } from '../problems/problemStore'
 import { Chevron, SeverityIcon } from './SeverityIcon'
 import { Button, Input } from '../core/ui/controls'
+import { Icon } from '../core/icons/Icon'
 
 // Scan Services window (manual 10.5, screenshot 170): errors and warnings of the whole project as
 // a tree - type, object, file, message - with a button bar on the left: refresh, structure,
@@ -53,39 +54,17 @@ export function groupProblems(problems: Problem[], by: 'type' | 'severity'): Gro
 }
 
 function ToolIcon({ kind }: { kind: 'refresh' | 'structure' | 'ignored' | 'expand' | 'collapse' }) {
-  const p = { width: 16, height: 16, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true } as const
   switch (kind) {
     case 'refresh':
-      return (
-        <svg {...p}>
-          <path d="M13 8a5 5 0 1 1-1.6-3.7M13 2.5v3h-3" />
-        </svg>
-      )
+      return <Icon name="arrows-clockwise" size="md" />
     case 'structure':
-      return (
-        <svg {...p}>
-          <path d="M2.5 3.5h4M5.5 8h4M8.5 12.5h5M2.5 3.5v4.5h3M5.5 8v4.5h3" />
-        </svg>
-      )
+      return <Icon name="tree-structure" size="md" />
     case 'ignored':
-      return (
-        <svg {...p}>
-          <path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z" />
-          <path d="M3 13L13 3" />
-        </svg>
-      )
+      return <Icon name="eye" size="md" />
     case 'expand':
-      return (
-        <svg {...p}>
-          <path d="M4 6l4-3 4 3M4 10l4 3 4-3" />
-        </svg>
-      )
+      return <Icon name="arrows-out-line-vertical" size="md" />
     default:
-      return (
-        <svg {...p}>
-          <path d="M4 3l4 3 4-3M4 13l4-3 4 3" />
-        </svg>
-      )
+      return <Icon name="arrows-in-line-vertical" size="md" />
   }
 }
 

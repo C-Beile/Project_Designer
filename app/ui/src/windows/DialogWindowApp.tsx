@@ -1,7 +1,6 @@
 import { Suspense, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
-import type { ModelEntry } from '../shell/OpenModelDialog'
 import type { KeymapEntry } from '../shell/OptionsDialog'
 import type { DeployOptionsPayload } from '../shell/DeployOptionsDialog'
 import { lazyNamed } from '../core/lazyNamed'
@@ -15,7 +14,6 @@ import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Jeder Dialog lädt erst, wenn sein Fenster ihn zeigt: ein Popup holt nur den Code, den es braucht.
 const NewObjectDialog = lazyNamed(() => import('../shell/NewObjectDialog'), 'NewObjectDialog')
-const OpenModelDialog = lazyNamed(() => import('../shell/OpenModelDialog'), 'OpenModelDialog')
 const OptionsDialog = lazyNamed(() => import('../shell/OptionsDialog'), 'OptionsDialog')
 const DeployOptionsDialog = lazyNamed(() => import('../shell/DeployOptionsDialog'), 'DeployOptionsDialog')
 const AboutDialog = lazyNamed(() => import('../shell/Dialogs'), 'AboutDialog')
@@ -162,9 +160,6 @@ export const DIALOG_WINDOWS: Record<string, DialogSpec> = {
   },
   themestudio: {
     render: (api, _p, done) => <ThemeStudio api={api} inWindow onClose={() => done(null)} />,
-  },
-  open: {
-    render: (_api, p, done) => <OpenModelDialog models={(p.models as ModelEntry[]) ?? []} onClose={() => done(null)} onPick={(m) => done(m)} />,
   },
 }
 

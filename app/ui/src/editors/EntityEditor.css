@@ -6,6 +6,6 @@
 }
 
 .entity-toolbar button:hover:not(:disabled) {
-  background: var(--bg-panel);
-  border-color: var(--border);
+  background: var(--bg-toggle-active);
+  border-color: transparent;
 }

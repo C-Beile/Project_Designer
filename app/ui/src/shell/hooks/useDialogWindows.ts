@@ -1,6 +1,5 @@
 import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react'
 import { errorText } from '../../core/errorText'
-import { findObject } from '../../core/treeIndex'
 import { notify } from '../../core/notifications'
 import { reloadPluginPrefs } from '../../settings/plugins'
 import { reloadOptions } from '../../settings/options'
@@ -8,7 +7,6 @@ import { reloadCustomThemes } from '../../theme/customThemes'
 import { reloadEditorPrefs } from '../../theme/editorPrefs'
 import type { ThemeName } from '../../theme/useTheme'
 import type { TranspilerEngineId } from '../../settings/transpilerEngine'
-import type { TreeNode } from '../../wire/types'
 import type { OptionsWindowResult } from '../../windows/DialogWindowApp'
 import { useOsDialog } from '../../windows/useOsDialog'
 import { openDialogWindow, osPopupsAvailable } from '../../windows/windowService'
@@ -39,18 +37,14 @@ export interface DialogWindowsDeps {
   toggleTheme: (t: ThemeName) => void
   menus: MenuDef[]
   setInstallDir: (dir: string | null) => void
-  openableModels: { type: string; name: string }[]
-  tree: TreeNode[]
-  handleOpen: (node: TreeNode) => Promise<void>
   setStatus: (text: string) => void
 }
 
 // Dialoge des Hauptfensters, die als Fenster des Betriebssystems aufgehen (modal).
-export function useDialogWindows({ dialog, setDialog, hasProject, root, engine, setEngine, theme, toggleTheme, menus, setInstallDir, openableModels, tree, handleOpen, setStatus }: DialogWindowsDeps) {
-  const openWindowOpen = useRef(false)
+export function useDialogWindows({ dialog, setDialog, hasProject, root, engine, setEngine, theme, toggleTheme, menus, setInstallDir, setStatus }: DialogWindowsDeps) {
   const optionsWindowOpen = useRef(false)
 
-  // Options and Open open as windows of their own (modal: the main window is locked meanwhile); in a plain browser the embedded dialogs below are used.
+  // Options opens as a window of its own (modal: the main window is locked meanwhile); in a plain browser the embedded dialog is used. Open (Ctrl+O) is a popup in the main window.
   // Apply in the Options window stores the choices at once; this window reads them without waiting for the window to close.
   // (Änderungen aus dem Options-Fenster erreichen die Module selbst über `onConfigChange`: Optionen, Themes, Farben, Editor-Schalter.)
 
@@ -75,22 +69,6 @@ export function useDialogWindows({ dialog, setDialog, hasProject, root, engine, 
     // Opens once per request; the values it was given are read at that moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dialog])
-  useEffect(() => {
-    if (dialog !== 'openModel' || !hasProject || !osPopupsAvailable() || openWindowOpen.current) return
-    openWindowOpen.current = true
-    void openDialogWindow<{ type: string; name: string }>('open', 'Open', { width: 680, height: 540 }, { models: openableModels }, { modal: true })
-      .then((m) => {
-        if (!m) return
-        const node = findObject(tree, m.type, m.name)
-        if (node) void handleOpen(node)
-      })
-      .catch((e) => notify(errorText(e), { kind: 'error' }))
-      .finally(() => {
-        openWindowOpen.current = false
-        setDialog(null)
-      })
-  }, [dialog, hasProject, openableModels, tree, handleOpen])
-
   // Further dialogs also open as windows of their own (modal); the embedded versions below stay for a plain browser.
   useOsDialog<{ message: string }>(
     dialog === 'deploy' && hasProject,

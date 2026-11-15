@@ -1,4 +1,4 @@
-import { Button, Checkbox, Select, Slider, TextField } from '../controls'
+import { Button, Checkbox, MultiSelect, Select, Slider, TextField } from '../controls'
 import { GalleryRow } from './GalleryRow'
 
 const FONT_OPTIONS = [
@@ -29,6 +29,9 @@ export function ControlsTab() {
       </GalleryRow>
       <GalleryRow title="Select">
         <Select label="Font" options={FONT_OPTIONS} defaultSelectedKey="segoe" />
+      </GalleryRow>
+      <GalleryRow title="MultiSelect">
+        <MultiSelect aria-label="Types" options={FONT_OPTIONS} value={['segoe', 'inter']} onChange={() => {}} summary="2 of 3" active />
       </GalleryRow>
       <GalleryRow title="Slider">
         <Slider label="Text size" unit="px" minValue={10} maxValue={18} defaultValue={12} />

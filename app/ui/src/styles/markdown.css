@@ -26,7 +26,7 @@
 
 .forge-md a { color: var(--accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); }
 
-.forge-md code { font-family: var(--font-mono, 'Cascadia Code', Consolas, monospace); font-size: 0.9em; padding: 0.15em 0.4em; border-radius: 4px; background: var(--bg-inset); color: var(--warm, var(--fg)); }
+.forge-md code { font-family: var(--font-mono, 'Cascadia Code', Consolas, monospace); font-size: 0.9em; padding: 0.15em 0.4em; border-radius: var(--radius-control); background: var(--bg-inset); color: var(--warm, var(--fg)); }
 
 .forge-md pre { padding: 12px 14px; border-radius: 6px; background: var(--bg-inset); border: 1px solid var(--border); overflow: auto; line-height: 1.5; }
 

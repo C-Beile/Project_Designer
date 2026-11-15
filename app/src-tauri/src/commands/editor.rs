@@ -54,7 +54,7 @@ pub async fn get_property_sheet(node_id: String, path: String, app: tauri::AppHa
 pub fn current_catalog(app: &tauri::AppHandle) -> Option<std::sync::Arc<project::catalog::Catalog>> {
     let configured = settings_file(app).ok().and_then(|f| settings::load_settings(&f).designer_install_dir);
     let install_dir = configured.filter(|d| !d.trim().is_empty()).or_else(settings::detect_designer_install);
-    let cache_dir = app.path().app_data_dir().ok();
+    let cache_dir = crate::data_dir::app_data_dir(app).ok();
     app.state::<CatalogCache>().get(install_dir, cache_dir.as_deref())
 }
 

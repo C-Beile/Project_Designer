@@ -6,6 +6,7 @@
 | `useProjects.ts` | Offene Projekte, aktives Projekt, Bäume, Icons, Systeme. Bekommt `{ api, projectRoot, setStatus }`, liefert `projects, trees, tree, root, activeTree, objectsByType, openProjectAt, removeProjects, reloadToken, ...`. |
 | `useSelection.ts` | Was Properties, Navigator und Speichern gerade betrifft. Bekommt `tree`, liefert `selected, treeSelection, navSel, inspected, editNode, ...`. |
 | `useTabs.ts` | Offene Editor-Tabs, Entwürfe, Flusher, Ungespeichert-Zustand. Liefert `tabState, handleOpen, activateNode, activateNodeRef, closeTabNow, unsaved, markUnsaved, drafts, flushers, ...`. |
+| `useTabMemory.ts` | Merkt offene Editor-Tabs und den aktiven je Projekt (`[tabs."<Projektordner>"]` in `designer.conf`) und öffnet sie wieder, sobald der Baum geladen ist. SQL-, REST-, Alias- und Tunnel-Tabs kommen nicht wieder. Braucht `useProjects` und `useTabs`. |
 | `useSave.ts` | Speichern, Undo/Redo-Ergebnis übernehmen. Liefert `applyOutcome, saveIds, registerFlush`. Setzt `saveIdsRef.current`. |
 | `useNavElements.ts` | Navigator: Element zurücksetzen/aktivieren. Liefert `resetNavElement, activateNavElement, resetNavRef, activateNavRef`. Setzt `removeElementRef.current`. |
 | `useExternalChanges.ts` | Änderungen von außen: hört `forge://project-changed` (kein Polling, geht auch ohne Fenster-Fokus), gleicht beim Fokus per `api.indexVerify` ab (entprellt), lädt Baum, Probleme und offene Tabs nach; Konflikt-Dialog. Liefert `resolveConflict`. |

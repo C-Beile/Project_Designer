@@ -8,13 +8,13 @@
 
 .forge-commit-main { min-height: 0; }
 
-.forge-commit-treebox { flex: 1 1 auto; min-height: 120px; background: var(--bg-inset); border-color: var(--border); border-radius: 3px; }
+.forge-commit-treebox { flex: 1 1 auto; min-height: 120px; background: var(--bg-inset); border-color: var(--border); border-radius: var(--radius-control); }
 
-.forge-commit-message { flex: 0 0 auto; height: 120px; min-height: 70px; border-radius: 3px; border-color: var(--border); background: var(--bg-inset); }
+.forge-commit-message { flex: 0 0 auto; height: 120px; min-height: 70px; border-radius: var(--radius-control); border-color: var(--border); background: var(--bg-inset); }
 
-.forge-commit-author input { border-radius: 3px; border-color: var(--border); background: var(--bg-inset); }
+.forge-commit-author input { border-radius: var(--radius-control); border-color: var(--border); background: var(--bg-inset); }
 
-.forge-commit-toolbar button { border-radius: 3px; cursor: pointer; }
+.forge-commit-toolbar button { border-radius: var(--radius-control); cursor: pointer; }
 
 .forge-commit-row { min-height: 26px; }
 

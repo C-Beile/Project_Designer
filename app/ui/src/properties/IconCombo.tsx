@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ForgeApi, IconDto } from '../api/ForgeApi'
 import { matchesPattern } from './WildcardPicker'
 import { Button, Input } from '../core/ui/controls'
+import { CaretDown } from '../core/icons/Icon'
 
 // Business background: like the original Designer, an icon property is a drop-down list that shows each
 // icon next to its id. The value can still be typed (filters the list) and is stored exactly as typed or picked.
@@ -77,7 +78,7 @@ export function IconCombo({ api, value, disabled, onCommit }: { api: ForgeApi; v
         }}
       />
       <Button variant="bare" className="icon-combo-arrow" aria-label="Show icons" isDisabled={disabled} tabIndex={-1} onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen((o) => !o)}>
-        {'▾'}
+        <CaretDown />
       </Button>
       {open && hits.length > 0 ? (
         <ul className="icon-combo-list" role="listbox" aria-label="Icons">

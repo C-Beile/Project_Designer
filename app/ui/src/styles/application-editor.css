@@ -93,7 +93,7 @@
   display: inline-block;
   width: 10px;
   height: 10px;
-  border-radius: 2px;
+  border-radius: var(--radius-control);
   flex: 0 0 auto;
   background: var(--fg-muted);
 }

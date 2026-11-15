@@ -26,7 +26,7 @@
 
 .gen-folders { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 
-.gen-folders li { display: grid; grid-template-columns: minmax(80px, 160px) 1fr auto; align-items: center; gap: 10px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-inset); }
+.gen-folders li { display: grid; grid-template-columns: minmax(80px, 160px) 1fr auto; align-items: center; gap: 10px; padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--bg-inset); }
 
 .gen-folder-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

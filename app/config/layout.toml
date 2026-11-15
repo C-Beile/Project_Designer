@@ -39,7 +39,7 @@ closable = true                # true | false
 title    = "Properties"
 area     = "left"              # top-left | top | top-right | left | center | right | bottom-left | bottom | bottom-right
 group    = "left-bottom"       # gleiche Gruppe = Tabs
-opens    = "startup"           # startup | on-demand
+opens    = "on-demand"           # startup | on-demand
 closable = true                # true | false
 
 [panel.navigator]
@@ -53,5 +53,5 @@ closable = true                # true | false
 title    = "Output"
 area     = "bottom"            # top-left | top | top-right | left | center | right | bottom-left | bottom | bottom-right
 group    = "bottom-main"       # gleiche Gruppe = Tabs
-opens    = "startup"           # startup | on-demand
+opens    = "on-demand"           # startup | on-demand
 closable = true                # true | false

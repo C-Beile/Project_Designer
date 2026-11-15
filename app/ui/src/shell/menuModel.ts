@@ -43,7 +43,10 @@ export type ToolWindowId =
   | 'services'
   | 'properties'
   | 'navigator'
-  | 'output'
+  | 'database'
+  | 'build'
+  | 'default'
+  | 'nodejs'
   | 'idelog'
   | 'scanservices'
   | 'editor'
@@ -58,7 +61,10 @@ export const TOOL_WINDOWS: { id: ToolWindowId; label: string; panel: PanelId | n
   { id: 'services', label: 'Services', panel: 'projects' },
   { id: 'properties', label: 'Properties', panel: 'properties' },
   { id: 'navigator', label: 'Navigator', panel: 'navigator' },
-  { id: 'output', label: 'Output', panel: 'output' },
+  { id: 'build', label: 'Build', panel: 'output' },
+  { id: 'database', label: 'Database', panel: 'output' },
+  { id: 'default', label: 'Default', panel: 'output' },
+  { id: 'nodejs', label: 'NodeJS', panel: 'output' },
   { id: 'idelog', label: 'IDE Log', panel: 'output' },
   { id: 'scanservices', label: 'Scan Services', panel: 'output' },
   { id: 'editor', label: 'Editor', panel: null },
@@ -471,7 +477,21 @@ const CORE_MENUS: Omit<MainMenuSpec, 'order'>[] = [
       windowItem('projects', 'Projects', 'Mod+1'),
       later('window.files', 'Files', { shortcut: 'Mod+2' }),
       later('window.favorites', 'Favorites', { shortcut: 'Mod+3' }),
-      windowItem('output', 'Output', 'Mod+4'),
+      {
+        id: 'window.output',
+        kind: 'submenu',
+        label: 'Output',
+        enabled: true,
+        children: [
+          windowItem('build', 'Build', 'Mod+4'),
+          windowItem('database', 'Database'),
+          windowItem('default', 'Default'),
+          windowItem('nodejs', 'NodeJS'),
+          sep(),
+          windowItem('search', 'Search Results'),
+          windowItem('refactoring', 'Refactoring'),
+        ],
+      },
       windowItem('services', 'Services', 'Mod+5'),
       windowItem('scanservices', 'Scan Services'),
       windowItem('navigator', 'Navigator', 'Mod+7'),

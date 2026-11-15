@@ -38,7 +38,7 @@ function sizeOf(area: AreaConfig | undefined, panel: PanelConfig, axis: 'width' 
 
 /**
  * Reihenfolge und Lage der Panels beim Start. Mitte zuerst, dann rechts, oben, unten, links:
- * der linke Rand läuft so über die volle Höhe, Unten über den Rest der Breite (wie im ADITO Designer).
+ * der linke Rand läuft so über die volle Höhe. Rechts, oben und unten hängen am Editor und nehmen nur dessen Breite bzw. Höhe.
  * Gleiche `group` = Tabs. Mehrere Gruppen am selben Rand stapeln sich untereinander bzw. nebeneinander.
  */
 export function planDock(input: PlanInput): Placement[] {
@@ -62,7 +62,7 @@ export function planDock(input: PlanInput): Placement[] {
       const sameGroup = groupLead.get(panel.group)
       if (sameGroup) place(panel, 'within', sameGroup)
       else if (areaLead.has(area)) place(panel, stackDirection(area), areaLead.get(area))
-      else if (area === 'right' || area === 'top') place(panel, edgeDirection[area]!, centerId)
+      else if (area === 'right' || area === 'top' || area === 'bottom') place(panel, edgeDirection[area]!, centerId)
       else place(panel, edgeDirection[area]!)
     }
   }

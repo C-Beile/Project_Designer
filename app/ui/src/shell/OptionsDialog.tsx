@@ -10,10 +10,9 @@ import { formatShortcut, isMacPlatform } from '../core/shortcuts'
 import { OptionIcon } from './optionIcons'
 import { customThemes, removeCustomTheme, saveCustomTheme, subscribeCustomThemes } from '../theme/customThemes'
 import { parseThemePack } from '../theme/vscodeTheme'
-import { ThemePicker } from './ThemePicker'
 import { TextAndSizePage } from './TextAndSizePage'
+import { AppearanceGeneralPage } from './AppearanceGeneralPage'
 import { CodeFormattingPage } from './CodeFormattingPage'
-import { UserThemeSection } from './UserThemeSection'
 import { GeneralOptions } from './GeneralOptions'
 import { configSet } from '../settings/appConfig'
 import { isPluginActive } from '../settings/plugins'
@@ -49,7 +48,7 @@ const PAGES: Partial<Record<Category, { id: string; label: string }[]>> = {
     { id: 'save', label: 'On Save' },
   ],
   appearance: [
-    { id: 'theme', label: 'Theme' },
+    { id: 'general', label: 'General' },
     { id: 'text', label: 'Text & size' },
     { id: 'code', label: 'Code formatting' },
   ],
@@ -136,7 +135,7 @@ export function OptionsDialog({
   const registeredPages = useOptionsPages()
   const categories = [...CATEGORIES, ...registeredPages.map((p) => ({ id: p.category, label: p.title, order: p.order }))].sort((a, b) => a.order - b.order)
   const [category, setCategory] = useState<string>('adito')
-  const [page, setPage] = useState<Record<string, string>>({ misc: 'csv', adito: 'general', ireport: 'general', editor: 'general', appearance: 'theme' })
+  const [page, setPage] = useState<Record<string, string>>({ misc: 'csv', adito: 'general', ireport: 'general', editor: 'general', appearance: 'general' })
   const [opts, setOpts] = useState<DesignerOptions>(() => getOptions())
   const [prefs, setPrefs] = useState<EditorPrefs>(() => getEditorPrefs())
   const [engineChoice, setEngineChoice] = useState<TranspilerEngineId>(engine)
@@ -309,33 +308,19 @@ export function OptionsDialog({
       ) : sub === 'code' ? (
         <CodeFormattingPage editor={opts.editor} onChange={(values) => patch('editor', values)} />
       ) : (
-        <>
-          <h3>Theme</h3>
-          <p className="forge-field-hint">The look of the whole Designer: window, trees, dialogs and the code editor.</p>
-          <ThemePicker
-            selected={activeCustom || themeChoice}
-            themes={importOn ? themes : []}
-            canImport={importOn}
-            onSelect={(id) => (themes.some((x) => x.id === id) ? choose(null, id) : choose(id as ThemeName, ''))}
-            onRemove={(id) => {
-              removeCustomTheme(id)
-              if (id === opts.editor.colorTheme) patch('editor', { colorTheme: '' })
-            }}
-            onInstallFile={() => void importTheme()}
-            onInstallFolder={() => void importTheme(true)}
-          />
-          {themeMessage ? (
-            <p className={themeMessage.ok ? 'forge-field-hint' : 'forge-field-error'} role={themeMessage.ok ? 'status' : 'alert'}>
-              {themeMessage.text}
-            </p>
-          ) : null}
-          <UserThemeSection />
-          <p className="forge-field-hint">
-            {importOn
-              ? 'A VS Code theme colours the whole window and the editor. Use Apply to see it right away.'
-              : 'VS Code themes can be installed with the plugin “VS Code Theme Import” (Tools > Plugins). Colours and fonts can always be changed on the other pages.'}
-          </p>
-        </>
+        <AppearanceGeneralPage
+          selected={activeCustom || themeChoice}
+          themes={importOn ? themes : []}
+          canImport={importOn}
+          onSelect={(id) => (themes.some((x) => x.id === id) ? choose(null, id) : choose(id as ThemeName, ''))}
+          onRemove={(id) => {
+            removeCustomTheme(id)
+            if (id === opts.editor.colorTheme) patch('editor', { colorTheme: '' })
+          }}
+          onInstallFile={() => void importTheme()}
+          onInstallFolder={() => void importTheme(true)}
+          message={themeMessage}
+        />
       )
   } else if (category === 'misc') {
     if (subPage === 'csv') {

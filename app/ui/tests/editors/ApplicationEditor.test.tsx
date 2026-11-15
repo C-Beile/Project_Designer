@@ -233,7 +233,7 @@ describe('ApplicationEditor Executables Only', () => {
     await user.click(screen.getByRole('checkbox', { name: 'Process' }))
     const list = screen.getByLabelText('Available entries')
     expect(within(list).getByText('Util_lib')).toBeInTheDocument()
-    expect(within(list).getByText('All_test').closest('li')!.querySelector('svg')).toHaveAttribute('data-kind', 'test')
+    expect(within(list).getByText('All_test').closest('li')!.querySelector('[data-kind]')).toHaveAttribute('data-kind', 'test')
     await user.click(screen.getByRole('checkbox', { name: 'Executables Only' }))
     expect(within(list).queryByText('Util_lib')).toBeNull()
     expect(within(list).getByText('Run_serverProcess')).toBeInTheDocument()

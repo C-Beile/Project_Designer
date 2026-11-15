@@ -121,12 +121,9 @@ export function ThemePicker({
       <div className="forge-theme-grid" role="radiogroup" aria-label="Theme">
         {shown.map((card) => (
           <div key={card.id} className={`forge-theme-card${selected === card.id ? ' is-selected' : ''}`}>
-            <Button variant="bare" role="radio" aria-checked={selected === card.id} className="forge-theme-card-main" onClick={() => onSelect(card.id)}>
+            <Button variant="bare" role="radio" aria-checked={selected === card.id} className="forge-theme-card-main" title={`${card.kind === 'dark' ? 'Dark' : 'Light'} · ${card.source}`} onClick={() => onSelect(card.id)}>
               <Picture preview={card.preview} />
               <span className="forge-theme-name">{card.name}</span>
-              <span className="forge-theme-meta">
-                {card.kind === 'dark' ? 'Dark' : 'Light'} · {card.source}
-              </span>
               {selected === card.id ? <span className="forge-theme-check" aria-hidden="true">✓</span> : null}
             </Button>
             {card.source === 'VS Code' ? (
@@ -138,7 +135,6 @@ export function ThemePicker({
         ))}
         {shown.length === 0 ? <p className="forge-field-hint">No theme matches.</p> : null}
       </div>
-      {canImport && themes.length === 0 ? <p className="forge-field-hint">No VS Code theme installed yet. Choose “Install theme…” or “From folder…” and pick a theme from your VS Code (C:\Users\you\.vscode\extensions).</p> : null}
     </div>
   )
 }

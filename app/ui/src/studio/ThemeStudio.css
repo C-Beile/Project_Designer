@@ -22,7 +22,7 @@
 .ui-ColorEditor-group { margin: 0 0 var(--space-3); padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius-md); }
 .ui-ColorEditor-group legend { padding: 0 var(--space-1); color: var(--fg-muted); font-size: var(--text-sm); }
 .ui-ColorEditor-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-2); padding: var(--space-0-5) 0; }
-.ui-ColorEditor-row input[type='color'] { width: var(--space-8); height: var(--control-h); padding: 0; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: none; cursor: pointer; }
+.ui-ColorEditor-row input[type='color'] { width: var(--space-8); height: var(--control-h); padding: 0; border: 1px solid var(--border-input); border-radius: var(--radius-sm); background: none; cursor: pointer; }
 .ui-ColorEditor-name { display: flex; flex-direction: column; min-width: 0; }
 .ui-ColorEditor-name small, .ui-ColorEditor-value { color: var(--fg-muted); font-size: var(--text-sm); }
 
@@ -30,5 +30,5 @@
 
 .ui-CodePreview { display: flex; flex-direction: column; gap: var(--space-4); }
 .ui-CodePreview-sample h4 { margin: 0 0 var(--space-1); color: var(--fg-muted); font-size: var(--text-xl); }
-.ui-CodePreview-editor { height: 14rem; border: 1px solid var(--border-strong); border-radius: var(--radius-md); overflow: hidden; }
+.ui-CodePreview-editor { height: 14rem; border: 1px solid var(--border-input); border-radius: var(--radius-md); overflow: hidden; }
 .ui-CodePreview-editor .forge-monaco-host { height: 100%; }

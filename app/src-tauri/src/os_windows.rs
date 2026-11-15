@@ -121,6 +121,9 @@ pub async fn window_open(app: AppHandle, payloads: State<'_, WindowPayloads>, mo
     #[cfg(windows)]
     {
         builder = builder.disable_drag_drop_handler();
+        if let Ok(dir) = crate::data_dir::webview_dir(&app) {
+            builder = builder.data_directory(dir);
+        }
     }
     if let (Some(x), Some(y)) = (req.x, req.y) {
         builder = builder.position(x, y);

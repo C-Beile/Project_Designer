@@ -11,6 +11,7 @@
 
 pub mod bindings;
 pub mod commands;
+pub mod data_dir;
 pub mod lsp_bridge;
 pub mod os_windows;
 pub mod window_state;
@@ -103,6 +104,20 @@ fn build_transpiler_registry() -> std::sync::Arc<plugin_api::TranspilerRegistry>
     std::sync::Arc::new(registry)
 }
 
+/// Das Hauptfenster mit den Maßen aus `tauri.conf.json` (`create: false`), mit dem WebView-Speicher im Datenordner.
+fn create_main_window(app: &mut tauri::App) -> tauri::Result<()> {
+    use tauri::WebviewWindowBuilder;
+    let config = app.config().app.windows.first().cloned();
+    let Some(config) = config else { return Ok(()) };
+    let mut builder = WebviewWindowBuilder::from_config(app.handle(), &config)?;
+    #[cfg(windows)]
+    if let Ok(dir) = data_dir::webview_dir(app.handle()) {
+        builder = builder.data_directory(dir);
+    }
+    builder.build()?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let transpilers = build_transpiler_registry();
@@ -125,6 +140,9 @@ pub fn run() {
         .manage(LspProcess::default())
         .manage(CatalogCache::default())
         .setup(|app| {
+            // Das Hauptfenster entsteht hier (nicht aus tauri.conf.json), damit der Browser-Speicher von WebView2 im
+            // Datenordner `DitoDesigner` liegt und nichts in einem zweiten Ordner landet. Die Maße stehen in tauri.conf.json.
+            create_main_window(app)?;
             // Fenster an die gemerkte Stelle und zeigen (das Hauptfenster startet unsichtbar).
             window_state::init_main(app.handle());
             app.manage(std::sync::Arc::new(build_feature_registry(app.handle())));
@@ -142,7 +160,7 @@ pub fn run() {
             }
             #[cfg(target_os = "macos")]
             build_native_menu(app.handle())?;
-            if let Ok(dir) = app.path().app_data_dir() {
+            if let Ok(dir) = data_dir::app_data_dir(app.handle()) {
                 app_base::crashlog::set_log_dir(dir.join("logs"));
                 app_base::crashlog::set_app_version(&app.package_info().version.to_string());
                 app_base::backup::set_backup_dir(dir.join("backups"));

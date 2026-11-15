@@ -1,3 +1,4 @@
+import { CaretDown } from '../../icons/Icon'
 import { Button, Label, ListBox, ListBoxItem, Popover, Select as AriaSelect, SelectValue, type SelectProps as AriaSelectProps } from 'react-aria-components'
 
 export interface SelectOption {
@@ -16,7 +17,7 @@ export function Select({ label, options, ...props }: SelectProps) {
       <Label>{label}</Label>
       <Button className="ui-Select-trigger">
         <SelectValue />
-        <span aria-hidden="true">▾</span>
+        <CaretDown />
       </Button>
       <Popover className="ui-Popover">
         <ListBox className="ui-ListBox">

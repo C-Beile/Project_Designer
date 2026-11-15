@@ -1,3 +1,4 @@
+import { Chevron } from '../../icons/Icon'
 import { useState, type CSSProperties, type MouseEvent, type PointerEvent, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
 
 export interface GridGroup<R> {
@@ -56,7 +57,7 @@ export function PropertyGrid<R>({ ariaLabel, groups, rowKey, rowLabel, rowTitle,
                   aria-label={group.label ? `${isCollapsed ? 'Expand' : 'Collapse'} ${group.label}` : isCollapsed ? 'Expand' : 'Collapse'}
                   onClick={() => toggle(group.key)}
                 >
-                  {isCollapsed ? '▸' : '▾'}
+                  <Chevron open={!isCollapsed} />
                 </button>
                 <span className="psheet-group-label">{group.label}</span>
               </div>

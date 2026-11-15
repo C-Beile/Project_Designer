@@ -4,7 +4,7 @@
 
 .forge-deploy-box li { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; }
 
-.forge-deploy-op { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 16px; border-radius: 3px; font-size: 10px; font-weight: 700; color: #fff; }
+.forge-deploy-op { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 16px; border-radius: var(--radius-control); font-size: 10px; font-weight: 700; color: #fff; }
 
 .forge-deploy-op.forge-deploy-op-I { background: #2f8f46; color: #fff; }
 

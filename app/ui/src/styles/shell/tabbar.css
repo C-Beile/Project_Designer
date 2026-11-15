@@ -15,7 +15,8 @@
   max-height: 320px;
   overflow-y: auto;
   background: var(--bg-elevated);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-control);
 }
 
 .forge-tabbar-menuitem {
@@ -47,15 +48,17 @@
 .forge-subtabs {
   display: flex;
   flex: 0 0 auto;
-  align-items: stretch;
-  background: var(--bg-inset);
-  border-bottom: 1px solid var(--border);
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-panel);
 }
 
 .forge-subtab {
-  padding: 2px 12px;
+  padding: 3px 14px;
   border: none;
-  border-right: 1px solid var(--border);
+  border-radius: var(--radius-control);
   background: transparent;
   color: var(--fg-muted);
   font: inherit;
@@ -64,7 +67,6 @@
 }
 
 .forge-subtab.is-active {
-  background: var(--bg-panel);
+  background: var(--bg-toggle-active);
   color: var(--fg);
-  box-shadow: inset 0 -2px 0 var(--brand-underline);
 }

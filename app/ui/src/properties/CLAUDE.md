@@ -15,6 +15,7 @@
 | `objectRoot.ts` | `%aditoprj%` einer Objektdatei, Pfad einer verknüpften Datei. |
 | `pathVariables.ts` | `$PROJECTHOME` und Co. in `aditoHomePath`/`aditoDataPath` auflösen. |
 | `useSheetSplit.ts` | Position des Teilers zwischen Name und Wert, pro Ort gemerkt. |
+| `useDescHeight.ts` | Höhe des Doku-Felds unter dem Sheet (ziehbar), gemerkt in `[layout.sheet_desc_height]`. |
 | `fieldEditors.tsx` | Die eingebauten Wertdarstellungen (Text, Ja/Nein, Auswahl, Verweis, verknüpfter Code, Liste, Icon) und Knöpfe (Bild, Icon, Config-Datei). `registerBuiltinFieldEditors()` meldet sie im Register an. |
 | `rowValues.ts` | Kleine Helfer für Zeilen: `textOf`, `listItems`, `isIconRow`, `isImageRow`, `isDefaultRow`. |
 <!-- AUTO:END -->

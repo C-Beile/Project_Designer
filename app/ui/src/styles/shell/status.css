@@ -13,9 +13,9 @@
   gap: 12px;
   height: 22px;
   padding: 0 8px;
-  background: var(--bg-titlebar);
-  border-top: 1px solid var(--border);
-  color: var(--fg-muted);
+  background: var(--bg-statusbar);
+  border-top: 1px solid var(--border-panel);
+  color: var(--fg-statusbar);
   white-space: nowrap;
 }
 
@@ -41,8 +41,8 @@
   width: 120px;
   height: 8px;
   overflow: hidden;
-  border: 1px solid var(--border-strong);
-  border-radius: 2px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-control);
 }
 
 .forge-progressbar-fill {

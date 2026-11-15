@@ -88,11 +88,11 @@ describe('Output window (manual chapter 7)', () => {
   const lines = (n: number): OutputLine[] => Array.from({ length: n }, (_, i) => ({ text: `line ${i}`, level: i === 1 ? 'error' : 'info' }))
   const base = { sub: 'build' as const, onSelectSub: () => {}, problems: [], scanning: false, onOpenProblem: () => {}, onClear: vi.fn(), onRefreshScan: () => {}, refactoring: null, onOpenUsage: () => {}, onDoRefactoring: () => {}, onCloseRefactoring: () => {} }
 
-  it('has the four server buttons dimmed and clears and filters the log', async () => {
+  it('clears and filters the log', async () => {
     const user = userEvent.setup({ delay: null })
     const onClear = vi.fn()
     render(<OutputBody active="output" {...base} onClear={onClear} logs={{ ...EMPTY, build: lines(3) }} />)
-    for (const name of ['Start', 'Stop', 'Exit', 'Clear cache']) expect(screen.getByRole('button', { name })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Start' })).toBeNull()
     expect(screen.getByText('line 0')).toBeInTheDocument()
     await choose(user, 'Show lines', 'error')
     expect(screen.queryByText('line 0')).toBeNull()

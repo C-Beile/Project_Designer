@@ -1,4 +1,4 @@
-import { DockviewReact, type DockviewApi, type DockviewReadyEvent, type IDockviewHeaderActionsProps, type IDockviewPanelHeaderProps, type IDockviewPanelProps } from 'dockview-react'
+import { DockviewReact, type DockviewApi, type DockviewReadyEvent, type DockviewWillShowOverlayLocationEvent, type IDockviewPanelHeaderProps, type IDockviewPanelProps } from 'dockview-react'
 import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from 'react'
 import { layoutConfig, type PanelConfig } from '../../config/layoutConfig'
 import { registerCommand } from '../../core/plugins/registry'
@@ -10,6 +10,8 @@ import { planDock, type Placement } from './dockPlan'
 export interface PanelContent {
   /** Kopfzeile über dem Inhalt (z. B. die Reiter von Projects/Services); der Titel steht im Dock-Reiter. */
   header: ReactNode
+  /** Die Kopfzeile ersetzt den Titel im Dock-Reiter (eine Zeile statt zwei, z. B. Output). */
+  headerInTab?: boolean
   /** Text des Dock-Reiters, wenn er sich mit der Auswahl ändert (z. B. "A_entity - Properties"); sonst der Titel aus layout.toml. */
   tabTitle?: string
   body: ReactNode
@@ -28,6 +30,11 @@ const ContentContext = createContext<DockContent | null>(null)
 const EDITOR_ID = 'editor'
 const SAVE_DELAY_MS = 400
 const RESIZE_STEP_PX = 40
+/** Ein Panel, das als Leiste unter oder über den Editor gelegt wird, bekommt so viel der Fensterhöhe (sonst die zuletzt gemerkte Höhe). */
+const BAND_SHARE = 0.15
+const BAND_SPAN = 0.9
+/** Ablegen am Fensterrand: auch ohne Panel an dieser Seite lässt sich dort ein neues andocken (breites Band, große Vorschau). */
+const EDGE_DROP = { activationSize: { type: 'pixels', value: 48 }, size: { type: 'percentage', value: 25 } } as const
 
 function PanelView({ api }: IDockviewPanelProps) {
   const content = useContext(ContentContext)!
@@ -55,7 +62,7 @@ function PanelView({ api }: IDockviewPanelProps) {
   if (!panel) return null // Panel eines Plugins, das sich abgemeldet hat
   return (
     <div className="forge-panel" role="group" data-panel={api.id} aria-label={panel.title} tabIndex={-1}>
-      {panel.header ? (
+      {panel.header && !panel.headerInTab ? (
         <div className="forge-panel-header">
           <ErrorBoundary compact label={`${api.title} header`}>
             {panel.header}
@@ -73,30 +80,65 @@ function PanelView({ api }: IDockviewPanelProps) {
 
 function PanelTab({ api }: IDockviewPanelHeaderProps) {
   const content = useContext(ContentContext)!
-  const title = content.panels[api.id as PanelId]?.tabTitle ?? api.title ?? api.id
+  const panel = content.panels[api.id as PanelId]
+  const title = panel?.tabTitle ?? api.title ?? api.id
+  // Output: die Reiter im Dock-Reiter haben je ein eigenes x, der letzte nimmt das Panel mit.
+  const inTab = !!(panel?.headerInTab && panel.header)
   return (
-    <div className="forge-dock-tab">
-      <span className="forge-dock-tab-title">{title}</span>
-      <button type="button" className="forge-panel-btn" aria-label={`Close ${title}`} title={`Close ${title}`} onClick={() => api.close()}>
-        {'×'}
-      </button>
+    <div
+      className={`forge-dock-tab${inTab ? ' forge-dock-tab-multi' : ''}`}
+      onMouseDown={(e) => {
+        if (e.button === 1) e.preventDefault()
+      }}
+      onAuxClick={(e) => {
+        if (e.button === 1 && !inTab) api.close()
+      }}
+    >
+      {inTab ? (
+        <ErrorBoundary compact label={`${title} header`}>
+          {panel.header}
+        </ErrorBoundary>
+      ) : (
+        <span className="forge-dock-tab-title">{title}</span>
+      )}
+      {inTab ? null : (
+        <button type="button" className="forge-panel-btn" aria-label={`Close ${title}`} title={`Close ${title}`} onClick={() => api.close()}>
+          {'×'}
+        </button>
+      )}
     </div>
   )
 }
 
-function FloatAction({ activePanel }: IDockviewHeaderActionsProps) {
-  const content = useContext(ContentContext)!
-  const id = activePanel?.id as PanelId | undefined
-  if (!id || id === (EDITOR_ID as string) || !content.canFloat(id)) return null
-  const title = activePanel?.title ?? id
-  return (
-    <button type="button" className="forge-panel-btn" aria-label={`Open ${title} in a new window`} title={`Open ${title} in a new window`} onClick={() => content.float(id)}>
-      {'⧉'}
-    </button>
-  )
-}
-
 const COMPONENTS = { panel: PanelView }
+
+/** Vorschau-Reiter: zeigt beim Ziehen über die Mitte eines Panels oben, dass es als neuer Reiter andockt. */
+let ghostTab: HTMLElement | null = null
+function clearTabPreview() {
+  ghostTab?.remove()
+  ghostTab = null
+}
+function showTabPreview(api: DockviewApi, e: DockviewWillShowOverlayLocationEvent) {
+  const dragged = e.getData()
+  const title = dragged ? api.getPanel(dragged.panelId ?? '')?.title : undefined
+  const bar = e.group?.element.querySelector('.dv-tabs-container')
+  const toOtherGroup = !!dragged && dragged.groupId !== e.group?.id
+  if (e.position !== 'center' || e.edge || !bar || !title || !toOtherGroup) return clearTabPreview()
+  if (ghostTab?.parentElement !== bar) {
+    clearTabPreview()
+    ghostTab = document.createElement('div')
+    ghostTab.className = 'forge-dock-tab forge-dock-tab-ghost'
+    ghostTab.setAttribute('aria-hidden', 'true')
+    const label = document.createElement('span')
+    label.className = 'forge-dock-tab-title'
+    ghostTab.append(label)
+    bar.append(ghostTab)
+  }
+  ghostTab.firstElementChild!.textContent = title
+}
+if (typeof window !== 'undefined') {
+  for (const ev of ['dragend', 'drop', 'pointerup', 'pointercancel']) window.addEventListener(ev, () => window.setTimeout(clearTabPreview, 0), true)
+}
 
 function configOf(id: string) {
   return allPanels().find((p) => p.id === id)
@@ -128,13 +170,15 @@ function addPanel(api: DockviewApi, id: string, place?: Placement) {
   const panel = api.addPanel({ id, component: 'panel', title, renderer: 'always', ...(place ? placementOptions(api, place) : {}) })
   if (id === EDITOR_ID) {
     panel.group.header.hidden = true
-    panel.group.locked = 'no-drop-target'
+    panel.group.locked = true // kein Tab in den Editor, aber Panels lassen sich an seinen Rändern andocken
   }
 }
 
-function planFor(api: DockviewApi, uiFactor: number): Placement[] {
+function planFor(api: DockviewApi, uiFactor: number, includeOnDemand = false): Placement[] {
   // uiFactor enthält schon den Größenfaktor der Voreinstellung (siehe DockHost).
-  return planDock({ panels: allPanels(), areas: layoutConfig.areas, centerId: EDITOR_ID, windowWidth: api.width, windowHeight: api.height, uiFactor })
+  // `includeOnDemand`: Platz für ein Panel, das erst später aufgeht (Output): so, als würde es beim Start offen sein.
+  const panels = includeOnDemand ? allPanels().map((p) => ({ ...p, opens: 'startup' as const })) : allPanels()
+  return planDock({ panels, areas: layoutConfig.areas, centerId: EDITOR_ID, windowWidth: api.width, windowHeight: api.height, uiFactor })
 }
 
 function buildDefault(api: DockviewApi, uiFactor: number) {
@@ -147,10 +191,33 @@ function tryRestore(api: DockviewApi, dock: unknown): boolean {
   if (!dock || typeof dock !== 'object') return false
   try {
     api.fromJSON(dock as never)
-    return !!api.getPanel(EDITOR_ID)
+    const editor = api.getPanel(EDITOR_ID)
+    // Ein älter gespeichertes Layout kann den Editor noch als 'no-drop-target' führen.
+    if (editor) editor.group.locked = true
+    return !!editor
   } catch {
     return false
   }
+}
+
+/** Zuletzt bekannte Größe der Gruppe eines einzelnen Panels (je Panel-Id). */
+type PanelSizes = Map<string, { width: number; height: number }>
+
+function rememberSizes(api: DockviewApi, sizes: PanelSizes) {
+  for (const group of api.groups) {
+    if (group.panels.length !== 1 || group.panels[0].id === EDITOR_ID) continue
+    const { width, height } = group.api
+    if (width > 0 && height > 0) sizes.set(group.panels[0].id, { width, height })
+  }
+}
+
+/** Panel kam allein in eine neue Gruppe: Leisten über die ganze Breite werden 15 % hoch (oder wie zuletzt), Spalten über die ganze Höhe wieder so breit wie zuletzt. */
+function sizeMovedPanel(api: DockviewApi, panelId: string, sizes: PanelSizes) {
+  const group = api.getPanel(panelId)?.group
+  if (!group || group.panels.length !== 1) return
+  const last = sizes.get(panelId)
+  if (group.api.width >= api.width * BAND_SPAN) group.api.setSize({ height: Math.round(last?.height ?? api.height * BAND_SHARE) })
+  else if (group.api.height >= api.height * BAND_SPAN && last) group.api.setSize({ width: Math.round(last.width) })
 }
 
 export interface DockHostProps {
@@ -171,6 +238,7 @@ export function DockHost({ layout, onLayoutChange, panels, editor, onFloat, uiFa
   const saveTimer = useRef<number | undefined>(undefined)
   // `reopen = "last-position"`: ein Panel, das mit anderen im selben Reiterstapel lag, kommt dort wieder hin (solange das Fenster läuft).
   const lastNeighbor = useRef(new Map<string, string>())
+  const lastSizes = useRef<PanelSizes>(new Map())
   const latest = useRef({ layout, onLayoutChange })
   latest.current = { layout, onLayoutChange }
 
@@ -184,7 +252,7 @@ export function DockHost({ layout, onLayoutChange, panels, editor, onFloat, uiFa
         const existing = api.getPanel(cfg.id)
         if (open && !existing) {
           const neighbor = layoutConfig.reopen === 'last-position' ? lastNeighbor.current.get(cfg.id) : undefined
-          const place: Placement = neighbor && api.getPanel(neighbor) ? { id: cfg.id, direction: 'within', reference: neighbor } : (planFor(api, uiFactor).find((p) => p.id === cfg.id) ?? { id: cfg.id, direction: 'right' })
+          const place: Placement = neighbor && api.getPanel(neighbor) ? { id: cfg.id, direction: 'within', reference: neighbor } : (planFor(api, uiFactor, true).find((p) => p.id === cfg.id) ?? { id: cfg.id, direction: 'right' })
           addPanel(api, cfg.id, place)
         }
         else if (!open && existing) api.removePanel(existing)
@@ -207,9 +275,19 @@ export function DockHost({ layout, onLayoutChange, panels, editor, onFloat, uiFa
         else lastNeighbor.current.delete(panel.id)
         latest.current.onLayoutChange((prev) => ({ ...prev, panels: { ...prev.panels, [panel.id]: 'closed' } }))
       })
+      rememberSizes(api, lastSizes.current)
+      api.onWillShowOverlay((e) => showTabPreview(api, e))
+      api.onDidMovePanel((e) => {
+        if (e.panel.id === EDITOR_ID || e.to === e.from) return
+        window.requestAnimationFrame(() => sizeMovedPanel(api, e.panel.id, lastSizes.current))
+      })
       api.onDidLayoutChange(() => {
         window.clearTimeout(saveTimer.current)
-        saveTimer.current = window.setTimeout(() => latest.current.onLayoutChange((prev) => ({ ...prev, dock: api.toJSON() })), SAVE_DELAY_MS)
+        // Erst nach der Pause merken: die 50 % direkt nach dem Andocken sollen die gemerkte Größe nicht überschreiben.
+        saveTimer.current = window.setTimeout(() => {
+          rememberSizes(api, lastSizes.current)
+          latest.current.onLayoutChange((prev) => ({ ...prev, dock: api.toJSON() }))
+        }, SAVE_DELAY_MS)
       })
     },
     [reconcile, uiFactor],
@@ -261,7 +339,7 @@ export function DockHost({ layout, onLayoutChange, panels, editor, onFloat, uiFa
   return (
     <ContentContext.Provider value={{ panels, editor, canFloat: onFloat?.canFloat ?? (() => false), float: onFloat?.float ?? (() => {}) }}>
       <div className="forge-dock">
-        <DockviewReact className="forge-dockview" components={COMPONENTS} defaultTabComponent={PanelTab} rightHeaderActionsComponent={FloatAction} disableFloatingGroups onReady={onReady} />
+        <DockviewReact className="forge-dockview" components={COMPONENTS} defaultTabComponent={PanelTab} disableFloatingGroups dndEdges={EDGE_DROP} onReady={onReady} />
       </div>
     </ContentContext.Provider>
   )

@@ -13,11 +13,13 @@
 | `clipboard.ts` | `copyText(text)`: kopiert in die Zwischenablage (mit Rückfall). Für alles, was kopiert. |
 | `errorLog.ts` | `logError(text)` schreibt ins Protokoll; `main.tsx` setzt die Senke. `notify(kind:'error')` ruft es auf. |
 | `errorHandling.tsx` | `ErrorBoundary` (Absturz eines Editors), `CrashListener` (schreibt ins Logfile). |
+| `projectColor.ts` | `projectColor(root, projects)`: CSS-Farbe (`--project-1..8` aus `theme/tokens.css`) eines Projekts nach seiner Stelle in der Liste der offenen. Für Tabs und Suche. |
 | `treeIndex.ts` | Suchen im Projektbaum: `collectByType`, `findObject`, `entityOfView`, `collectIcons`. |
 | `revealApp.ts` | `revealApp()`: blendet die Seite erst nach zwei Frames ein (setzt `data-ready` auf `<html>`), damit kein ungestyltes Zwischenbild aufblitzt. |
 | `uuid.ts` | `newUuid`, `copyNewUuid`. |
 | `indexStatus.ts` | Store für den Stand des Projekt-Index je Projekt (`useIndexStatus`, `applyIndexProgress`, `summarizeIndex`). Ignoriert alte Generationen. Nicht `projectIndex` nennen: `editors/projectIndex.ts` meint etwas anderes. |
 | `scm.ts` | Neutraler Store für den Source-Control-Stand: `useScm`, `refreshScm`, `decorationFor`, `indexOf`, `setScmProvider`. Ohne Plugin leer. |
+| `icons/` | Phosphor-Icons: `Icon`, `ConfiguredIcon`, Liste `ICONS`. Siehe `icons/CLAUDE.md`. |
 | `plugins/` | `registry.ts`: UI-Register für Plugins. `ShellExtensions.tsx` rendert die Shell-Beiträge. |
 | `ui/` | `blocks/` (`SchemaForm`, `PropertyGrid`), `controls/` (Basis-Bausteine auf React Aria), `gallery/` (Vorschau-Tabs des Theme Studios), Masken-Baukasten: FormDialog, ListDialog, DataTable, ProgressBar, `CopyButton` (Kopieren-Knopf mit grünem Haken), `uiDialogs`. |
 | `contrib/` | Einstiegspunkte des Umbaus: `contextKeys.ts` (Kontext-Schlüssel mit `when`), `keybindings.ts` (`registerKeybinding`, `commandForKey`), `settings.ts` (`registerSetting`, `useSettingValue`, `readSetting`, `writeSetting`), `fieldEditors.ts` (`registerFieldEditor`, `registerFieldAction` für das Properties-Panel), `panels.ts` (`registerPanel`: Plugin-Panels im Docking-Gitter mit Menüpunkt in Window). |

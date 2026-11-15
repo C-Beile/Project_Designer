@@ -1,3 +1,4 @@
+import { FONT_IDS, FONT_STACKS } from '../config/styleConfig'
 import { configGet, onConfigChange, touches } from '../settings/appConfig'
 
 export type Density = 'normal' | 'compact'
@@ -5,6 +6,8 @@ export type Density = 'normal' | 'compact'
 export interface Appearance {
   fontSize: number
   fontFamily: string
+  /** Schrift für Bezeichner (`--font-ident`): Id aus `FONT_IDS`, leer = Standard aus `style.toml`. */
+  identFont: string
   density: Density
 }
 
@@ -26,10 +29,12 @@ export function rootPixelSize(fontSize: number): number {
 
 export function readAppearance(): Appearance {
   const family = configGet<string>(...PATH, 'fontFamily')
+  const ident = configGet<string>(...PATH, 'identFont')
   const density = configGet<string>(...PATH, 'density')
   return {
     fontSize: clampFontSize(configGet<number>(...PATH, 'fontSize')),
     fontFamily: typeof family === 'string' ? family.trim() : '',
+    identFont: typeof ident === 'string' && (FONT_IDS as readonly string[]).includes(ident) ? ident : '',
     density: density === 'compact' ? 'compact' : 'normal',
   }
 }
@@ -39,6 +44,8 @@ export function applyAppearance(a: Appearance = readAppearance(), root: HTMLElem
   root.style.fontSize = `${rootPixelSize(a.fontSize)}px`
   if (a.fontFamily) root.style.setProperty('--font-ui', a.fontFamily)
   else root.style.removeProperty('--font-ui')
+  if (a.identFont) root.style.setProperty('--font-ident', FONT_STACKS[a.identFont as keyof typeof FONT_STACKS])
+  else root.style.removeProperty('--font-ident')
   if (a.density === 'compact') root.setAttribute('data-density', 'compact')
   else root.removeAttribute('data-density')
 }

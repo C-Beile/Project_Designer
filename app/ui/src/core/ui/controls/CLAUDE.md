@@ -6,6 +6,7 @@
 | `Button.tsx` | `Button` mit `variant` default, primary, quiet oder bare (bare: nur die eigene `className`). Reicht `title`, `role`, `aria-*` durch und lässt Klicks nach oben weiterlaufen wie `<button>`. |
 | `Checkbox.tsx` | `Checkbox` mit eigenem Kästchen. |
 | `Dropdown.tsx` | `Dropdown`: Auswahlliste ohne sichtbares Label (Ersatz für `<select>`), Optionen als `{ id, label }`, `onChange(value)`. |
+| `MultiSelect.tsx` | `MultiSelect`: Auswahlliste mit Mehrfachauswahl (Haken je Eintrag, "All"/"None"), gleiche Höhe wie `Input`. `value` ist die Liste der gewählten Ids. |
 | `Input.tsx` | `Input`: Eingabefeld ohne Label (Text, Zahl, Kästchen), nimmt alle `<input>`-Eigenschaften. |
 | `TextArea.tsx` | `TextArea`: mehrzeiliges Eingabefeld. |
 | `Table.tsx` | `Table`, `TableHeader`, `TableColumn`, `TableBody`, `TableRow`, `TableCell`: Tabelle auf React Aria (echte `<table>`-Elemente, Rolle `grid`). Genau eine Spalte je Tabelle ist `isRowHeader`. |

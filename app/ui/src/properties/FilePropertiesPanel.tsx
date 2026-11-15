@@ -2,6 +2,7 @@ import { useResource } from '../core/hooks/useResource'
 import { useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { Input } from '../core/ui/controls'
+import { Chevron } from '../core/icons/Icon'
 
 // Properties of a plain file in the Projects tree (original Designer, reference shot 94): group
 // "Properties" with Name, Extension, File Size, Modification Time and All Files (the full path).
@@ -37,7 +38,7 @@ export function FilePropertiesPanel({ api, path }: { api: ForgeApi; path: string
         <div role="rowgroup" className="psheet-group">
           <div role="row" className="psheet-group-head">
             <span className="psheet-toggle" aria-hidden="true">
-              ▾
+              <Chevron open />
             </span>
             <span className="psheet-group-label">Properties</span>
           </div>

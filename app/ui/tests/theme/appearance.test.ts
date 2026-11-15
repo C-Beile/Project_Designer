@@ -17,12 +17,14 @@ describe('appearance', () => {
 
   it('writes size, family and density onto the root element', () => {
     const el = document.createElement('html')
-    applyAppearance({ fontSize: 14, fontFamily: 'Inter', density: 'compact' }, el)
+    applyAppearance({ fontSize: 14, fontFamily: 'Inter', identFont: 'fira-code', density: 'compact' }, el)
     expect(el.style.fontSize).toBe('18.666666666666668px')
     expect(el.style.getPropertyValue('--font-ui')).toBe('Inter')
+    expect(el.style.getPropertyValue('--font-ident')).toContain("'Fira Code'")
     expect(el.getAttribute('data-density')).toBe('compact')
-    applyAppearance({ fontSize: 12, fontFamily: '', density: 'normal' }, el)
+    applyAppearance({ fontSize: 12, fontFamily: '', identFont: '', density: 'normal' }, el)
     expect(el.style.getPropertyValue('--font-ui')).toBe('')
+    expect(el.style.getPropertyValue('--font-ident')).toBe('')
     expect(el.hasAttribute('data-density')).toBe(false)
   })
 })

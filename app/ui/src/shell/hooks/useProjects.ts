@@ -79,12 +79,17 @@ export function useProjects({ api, projectRoot, setStatus }: ProjectsDeps) {
   const treeRef = useRef(tree)
   treeRef.current = tree
   const objectsByType = useMemo(() => collectByType(tree), [tree])
+  // Alle Objekte aller offenen Projekte, je Eintrag mit seinem Projekt (Suche Strg+O).
   const openableModels = useMemo(
     () =>
-      [...objectsByType.entries()]
-        .flatMap(([type, names]) => [...names].map((name) => ({ type, name })))
+      projects
+        .flatMap((projectRoot) =>
+          [...collectByType(trees[projectRoot] ?? []).entries()]
+            .filter(([type]) => !type.includes(':'))
+            .flatMap(([type, names]) => [...names].map((name) => ({ type, name, projectRoot }))),
+        )
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })),
-    [objectsByType],
+    [projects, trees],
   )
   const activeTree = useMemo(() => trees[root] ?? [], [trees, root])
 

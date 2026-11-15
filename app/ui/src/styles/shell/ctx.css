@@ -30,7 +30,7 @@
   padding: 2px 0;
   min-width: 200px;
   background: var(--bg-elevated);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-input);
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.4);
   font-size: 12px;
 }
