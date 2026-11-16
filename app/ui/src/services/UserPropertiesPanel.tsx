@@ -148,22 +148,22 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
           <span className="up-value">
             {isSet ? '***' : ''}
             {lower === 'password' ? (
-              <button type="button" className="up-pw-button" disabled={saving} onClick={() => setPwOpen((o) => !o)}>
+              <Button variant="bare" className="up-pw-button" isDisabled={saving} onClick={() => setPwOpen((o) => !o)}>
                 Change password...
-              </button>
+              </Button>
             ) : null}
           </span>
           {lower === 'password' && pwOpen ? (
             <div className="up-pw-form">
-              <input type="password" autoComplete="off" aria-label="New password" placeholder="New password" value={pw1} onChange={(e) => setPw1(e.target.value)} />
-              <input type="password" autoComplete="off" aria-label="Repeat new password" placeholder="Repeat new password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+              <Input type="password" autoComplete="off" aria-label="New password" placeholder="New password" value={pw1} onChange={(e) => setPw1(e.target.value)} />
+              <Input type="password" autoComplete="off" aria-label="Repeat new password" placeholder="Repeat new password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
               <div className="up-pw-actions">
-                <button type="button" disabled={saving || pw1 === ''} onClick={() => void changePassword()}>
+                <Button isDisabled={saving || pw1 === ''} onClick={() => void changePassword()}>
                   Save password
-                </button>
-                <button type="button" onClick={() => { setPwOpen(false); setPw1(''); setPw2('') }}>
+                </Button>
+                <Button onClick={() => { setPwOpen(false); setPw1(''); setPw2('') }}>
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           ) : null}
