@@ -8,6 +8,7 @@
 | `src/lib.rs` | Modulliste und Re-Exports. |
 | `src/feature.rs` | `FeaturePlugin`, `FeatureRegistry`, `EventSink`, `Args`, `to_json`, `unknown_command`. Die abschaltbaren Plugins (git, database ...). |
 | `src/transpiler.rs` | `Transpiler`, `TranspilerRegistry`, `TranspileOptions`, `Progress`, `ProgressSink`, `TranspileOutcome`. |
+| `src/artifact.rs` | `BuildArtifact` (Ordner, Name, Bytes eines fertigen Modells) und `ArtifactStore` (der letzte Satz im Speicher). Brücke zwischen Transpiler und Deploy. |
 | `src/registry.rs` | `PluginRegistry`: Prüfer, Aktionen, Editor-Anbieter, Datei-Compiler (alte Erweiterungspunkte). |
 | `src/validator.rs` | Trait `Validator` (prüft ein `ProjectModel`). |
 | `src/action.rs` | Trait `Action` (gibt eine `Transaction` zurück), `ActionError`. |

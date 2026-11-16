@@ -20,6 +20,8 @@ use plugin_api::types::{ActionContext, Transaction};
 pub const NATIVE_ID: &str = "native";
 /// ID des offiziellen ADITO-Transpilers in der Registry.
 pub const OFFICIAL_ID: &str = "adito";
+/// ID des neuen Transpilers (V2-Format, im Speicher) in der Registry.
+pub const DITO_V2_ID: &str = "dito-v2";
 
 /// Welche Engine ein `"transpile"`-Aufruf nutzt. Standard ist `Official` (der ADITO-Transpiler).
 /// Nur der Wert `"experimental"` wählt die eigene Engine. Fehlt der Param oder ist er unbekannt,
@@ -28,6 +30,8 @@ pub const OFFICIAL_ID: &str = "adito";
 pub enum TranspilerEngine {
     Official,
     ExperimentalForge,
+    /// Der neue Transpiler `dito-transpiler` (V2-Format, im Speicher, mit Cache).
+    DitoV2,
 }
 
 impl Default for TranspilerEngine {
@@ -42,6 +46,7 @@ impl TranspilerEngine {
     pub fn from_param(value: Option<&str>) -> Self {
         match value {
             Some("experimental") => TranspilerEngine::ExperimentalForge,
+            Some("dito-v2") => TranspilerEngine::DitoV2,
             _ => TranspilerEngine::Official,
         }
     }
@@ -53,6 +58,14 @@ impl TranspilerEngine {
 /// same project copy.
 fn experimental_output_dir(project_home: &Path) -> PathBuf {
     project_home.join("dist")
+}
+
+/// Wohin ein Transpile-Lauf seine fertigen Modelle legt (Deploy aus dem Speicher). Die App setzt es beim Start.
+type ArtifactSink = Arc<dyn Fn(&Path, Option<Arc<Vec<plugin_api::BuildArtifact>>>) + Send + Sync>;
+static ARTIFACT_SINK: OnceLock<ArtifactSink> = OnceLock::new();
+
+pub fn set_artifact_sink(sink: ArtifactSink) {
+    let _ = ARTIFACT_SINK.set(sink);
 }
 
 type BuildLogSink = Arc<dyn Fn(bool, &str) + Send + Sync>;
@@ -206,7 +219,7 @@ impl Transpiler for NativeTranspiler {
         })));
         let result = IncrementalEngine.run(&source, &output_dir).map_err(|e| e.to_string());
         native_transpiler::own_engine::progress::set_reporter(None);
-        result.map(|()| TranspileOutcome { output_dir })
+        result.map(|()| TranspileOutcome::new(output_dir))
     }
 }
 
@@ -218,6 +231,7 @@ pub fn run_transpile(project_home: &Path, engine: TranspilerEngine, options: &Tr
     let id = match engine {
         TranspilerEngine::Official => OFFICIAL_ID,
         TranspilerEngine::ExperimentalForge => NATIVE_ID,
+        TranspilerEngine::DitoV2 => DITO_V2_ID,
     };
     let transpiler = registry.select(id).ok_or_else(|| "Kein Transpiler installiert".to_string())?;
     let sink: ProgressSink = Arc::new(|event| match event {
@@ -233,7 +247,111 @@ pub fn run_transpile(project_home: &Path, engine: TranspilerEngine, options: &Tr
             }
         }
     });
-    transpiler.transpile(project_home, options, &sink).map(|_| ())
+    let outcome = transpiler.transpile(project_home, options, &sink)?;
+    // Auch eine Engine ohne Artefakte meldet sich (mit `None`), damit ein alter Satz im Speicher nicht stehen bleibt.
+    if let Some(store) = ARTIFACT_SINK.get() {
+        store(project_home, outcome.artifacts);
+    }
+    Ok(())
+}
+
+/// Welche Transpile-Version das Projekt wählt: der Wert `version` aus `.aditoprj/transpile.version` (`V1` oder `V2`), wenn die Datei da ist.
+/// Die Datei gehört dem ADITO-Plugin; wir lesen sie nur.
+pub fn project_transpile_version(project_home: &Path) -> Option<String> {
+    let text = std::fs::read_to_string(project_home.join(".aditoprj").join("transpile.version")).ok()?;
+    text.lines().find_map(|line| line.trim().strip_prefix("version=").map(|v| v.trim().to_string())).filter(|v| !v.is_empty())
+}
+
+/// Der neue Transpiler als Plugin (ID `dito-v2`). Optionen: `write_dist` (`true`: `dist` schreiben, Vorgabe aus, wegen Virenscanner).
+/// Die Modelle bleiben im Speicher und gehen an das Deploy.
+pub struct DitoTranspiler {
+    cancel: Mutex<Option<dito_transpiler::CancelToken>>,
+}
+
+impl DitoTranspiler {
+    pub fn new() -> Self {
+        Self { cancel: Mutex::new(None) }
+    }
+}
+
+impl Default for DitoTranspiler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Aus dem Ergebnis des Transpilers die Modelle fürs Deploy: `<ordner>/<name>/<name>.aod` mit Inhalt im Speicher.
+fn artifacts_of(files: &[dito_transpiler::pipeline::OutputFile]) -> Vec<plugin_api::BuildArtifact> {
+    use dito_transpiler::pipeline::{Content, MODEL_FOLDERS};
+    files
+        .iter()
+        .filter_map(|f| {
+            let Content::Bytes(bytes) = &f.content else { return None };
+            let mut parts = f.path.split('/');
+            let (folder, name, file) = (parts.next()?, parts.next()?, parts.next()?);
+            if parts.next().is_some() || !MODEL_FOLDERS.contains(&folder) || file != format!("{name}.aod") {
+                return None;
+            }
+            Some(plugin_api::BuildArtifact { folder: folder.to_string(), name: name.to_string(), content: bytes.clone() })
+        })
+        .collect()
+}
+
+impl Transpiler for DitoTranspiler {
+    fn id(&self) -> &'static str {
+        DITO_V2_ID
+    }
+
+    fn name(&self) -> &'static str {
+        "Dito Transpiler V2"
+    }
+
+    fn transpile(&self, project_root: &Path, options: &TranspileOptions, progress: &ProgressSink) -> Result<TranspileOutcome, String> {
+        let write_dist = options.values.get("write_dist").is_some_and(|v| v == "true");
+        let dist = project_root.join("dist");
+        let mut config = dito_transpiler::BuildConfig::with_default_cache(project_root);
+        if write_dist {
+            config.materialize_dist = Some(dist.clone());
+        }
+        let token = dito_transpiler::CancelToken::new();
+        *self.cancel.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(token.clone());
+        let stages = Arc::clone(progress);
+        let result = dito_transpiler::Builder::new(config).build_with_progress(&token, &move |percent, stage| {
+            stages(Progress::Stage { percent, stage: stage.to_string() });
+        });
+        *self.cancel.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+        let mut result = result.map_err(|e| e.to_string())?;
+        result.wait_for_cache();
+
+        // Meldungen ins Build-Log: Konflikte und nicht angewendete Modifikationen sind Warnungen, reine Hinweise (Info) bleiben weg.
+        let s = &result.stats;
+        let mode = if s.cache_hit { "from the cache" } else { "built" };
+        progress(Progress::Log { error: false, line: format!("{} models and files {mode} in {:.1} s ({} modules, {} source files)", s.output_files, s.total_time.as_secs_f64(), s.modules, s.overlay_files) });
+        let mut warnings = 0;
+        for d in result.diagnostics.iter().filter(|d| d.severity != dito_transpiler::Severity::Info) {
+            warnings += 1;
+            if warnings <= 200 {
+                progress(Progress::Log { error: true, line: d.message.clone() });
+            }
+        }
+        if warnings > 200 {
+            progress(Progress::Log { error: true, line: format!("... and {} more warnings", warnings - 200) });
+        }
+        if write_dist {
+            progress(Progress::Log { error: false, line: format!("dist: {} written, {} unchanged", s.written, s.unchanged) });
+        }
+        Ok(TranspileOutcome { output_dir: dist, artifacts: Some(Arc::new(artifacts_of(&result.files))) })
+    }
+
+    fn cancel(&self) -> bool {
+        match self.cancel.lock().unwrap_or_else(std::sync::PoisonError::into_inner).as_ref() {
+            Some(token) => {
+                token.cancel();
+                true
+            }
+            None => false,
+        }
+    }
 }
 
 /// `Action` wrapper (id `"transpile"`) around [`run_transpile`]. Always returns an empty
@@ -261,6 +379,70 @@ impl Action for TranspileAction {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn mini_project(label: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!("dito-v2-engine-{label}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("node_modules")).unwrap();
+        std::fs::create_dir_all(root.join("entity/A_entity")).unwrap();
+        std::fs::write(root.join("package.json"), r#"{"name":"mini","version":"1.0.0","adito":{"type":"project"}}"#).unwrap();
+        std::fs::write(
+            root.join("entity/A_entity/A_entity.aod"),
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<entity>\r\n  <name>A_entity</name>\r\n  <majorModelMode>DISTRIBUTED</majorModelMode>\r\n</entity>\r\n",
+        )
+        .unwrap();
+        root
+    }
+
+    #[test]
+    fn engine_from_param_knows_the_new_transpiler() {
+        assert_eq!(TranspilerEngine::from_param(Some("dito-v2")), TranspilerEngine::DitoV2);
+    }
+
+    #[test]
+    fn transpile_version_is_read_from_the_project_file() {
+        let root = std::env::temp_dir().join(format!("dito-v2-version-{}", std::process::id()));
+        std::fs::create_dir_all(root.join(".aditoprj")).unwrap();
+        assert_eq!(project_transpile_version(&root), None);
+        std::fs::write(root.join(".aditoprj/transpile.version"), "#generated
+transpileToolChecksum=abc
+version=V2
+").unwrap();
+        assert_eq!(project_transpile_version(&root).as_deref(), Some("V2"));
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn the_new_transpiler_returns_the_models_in_memory_and_writes_no_dist_by_default() {
+        let root = mini_project("memory");
+        let events = Arc::new(Mutex::new(Vec::<Progress>::new()));
+        let log = Arc::clone(&events);
+        let sink: ProgressSink = Arc::new(move |p| log.lock().unwrap().push(p));
+        let outcome = DitoTranspiler::new().transpile(&root, &TranspileOptions::new(), &sink).unwrap();
+        let artifacts = outcome.artifacts.expect("artifacts");
+        assert_eq!(artifacts.len(), 1);
+        assert_eq!((artifacts[0].folder.as_str(), artifacts[0].name.as_str()), ("entity", "A_entity"));
+        let text = String::from_utf8(artifacts[0].content.clone()).unwrap();
+        assert!(text.contains("<majorModelMode>COMPACT</majorModelMode>") && !text.contains('\r'));
+        assert!(!root.join("dist").exists(), "dist is only written on request");
+        assert!(events.lock().unwrap().iter().any(|e| matches!(e, Progress::Stage { percent: 100, .. })));
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn the_new_transpiler_writes_dist_when_asked() {
+        let root = mini_project("dist");
+        let sink: ProgressSink = Arc::new(|_| {});
+        let options = TranspileOptions::new().with("write_dist", "true");
+        DitoTranspiler::new().transpile(&root, &options, &sink).unwrap();
+        assert!(root.join("dist/entity/A_entity/A_entity.aod").is_file());
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn cancel_without_a_running_build_is_false() {
+        assert!(!DitoTranspiler::new().cancel());
+    }
 
     #[test]
     fn engine_from_param_defaults_to_the_adito_transpiler_for_missing_or_unknown_values() {

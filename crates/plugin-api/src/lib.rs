@@ -18,6 +18,7 @@ macro_rules! at {
 }
 
 pub mod action;
+pub mod artifact;
 pub mod builtin;
 pub mod editor_provider;
 pub mod feature;
@@ -28,6 +29,7 @@ pub mod types;
 pub mod validator;
 
 pub use action::{Action, ActionError};
+pub use artifact::{ArtifactStore, BuildArtifact};
 pub use editor_provider::EditorProvider;
 pub use feature::{Args, EventSink, FeaturePlugin, FeatureRegistry};
 pub use linked_file_compiler::{CompileError, JsInlineCompiler, LinkedFileCompiler, UnverifiedTsCompiler};

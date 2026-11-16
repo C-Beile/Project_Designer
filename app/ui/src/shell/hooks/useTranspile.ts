@@ -76,7 +76,7 @@ export function useTranspile({ api, root, trees, installDir, appendLog, showTool
         { level: 'info', text: `[${timestamp()}] Transpile (${mode}) started - ${ENGINE_LABELS[engine]} - ${project}` },
       ])
       try {
-        await api.executeAction('transpile', project, transpileParams(engine, mode, installDir))
+        await api.executeAction('transpile', project, transpileParams(engine, mode, installDir, configGet<boolean>('transpile', 'writeDist') === true))
         const secs = ((Date.now() - started) / 1000).toFixed(1)
         appendLog('build', [{ level: 'success', text: `[${timestamp()}] BUILD SUCCESS (${secs} s)` }])
         setStatus('Transpile finished.')

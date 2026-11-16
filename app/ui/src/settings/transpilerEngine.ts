@@ -8,13 +8,14 @@
 // The choice is deliberately never persisted (no localStorage, no backend setting): every app
 // start is back on "official", so nobody transpiles with the experimental engine without
 // consciously choosing it in the current session.
-export type TranspilerEngineId = 'official' | 'experimental'
+export type TranspilerEngineId = 'official' | 'experimental' | 'dito-v2'
 
 export const DEFAULT_ENGINE: TranspilerEngineId = 'official'
 
 export const ENGINE_LABELS: Record<TranspilerEngineId, string> = {
   official: 'ADITO transpiler (default, uses the installed ADITO Designer)',
   experimental: 'Dito_Transpiler (built in, no ADITO Designer needed)',
+  'dito-v2': 'Dito Transpiler V2 (new, built in, V2 format, very fast; still being verified)',
 }
 
 export const EXPERIMENTAL_WARNING =
@@ -33,8 +34,11 @@ export function transpileParams(
   engine: TranspilerEngineId,
   mode: TranspileMode,
   installDir: string | null,
+  writeDist = false,
 ): Record<string, string> {
   const params: Record<string, string> = { engine, mode }
   if (installDir && installDir.trim()) params.install_dir = installDir.trim()
+  // Only the new engine keeps its result in memory; `dist` is written on request (the virus scanner slows many small files).
+  if (engine === 'dito-v2' && writeDist) params.write_dist = 'true'
   return params
 }

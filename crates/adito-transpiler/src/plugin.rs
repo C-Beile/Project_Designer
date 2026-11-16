@@ -50,7 +50,7 @@ impl Transpiler for AditoTranspiler {
             return Err("Build cancelled.".to_string());
         }
         if outcome.is_success() {
-            Ok(TranspileOutcome { output_dir: project_root.join("dist") })
+            Ok(TranspileOutcome::new(project_root.join("dist")))
         } else {
             Err(format!("official transpiler run did not succeed: {:?}", outcome.outcome))
         }

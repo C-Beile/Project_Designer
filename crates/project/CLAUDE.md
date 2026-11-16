@@ -24,7 +24,7 @@
 | `src/history.rs` | Undo/Redo-Verlauf je Objekt. |
 | `src/linked_file.rs` | Lesen/Schreiben verknüpfter Dateien (`%aditoprj%`). |
 | `src/modification_write.rs` | Modifikationen für Modul-Objekte (`modification/<id>`). |
-| `src/transpile_action.rs` | Transpile-Aktion, Engine-Wahl, `set_transpilers`. |
+| `src/transpile_action.rs` | Transpile-Aktion, Engine-Wahl, `set_transpilers`; Engine `dito-v2` (`DitoTranspiler`, Artefakte im Speicher, `set_artifact_sink`), `project_transpile_version`. |
 | `src/transpile_compare.rs` | Vergleich eigener `dist` mit der Referenz. |
 | `src/actions.rs` | `dispatch_action` (Action-Id zu `Action`). |
 | `src/project_zip.rs` | Export/Import ausgewählter Modelle als Zip. |

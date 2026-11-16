@@ -1,5 +1,6 @@
 //! Deploy nach ASYS_SYSTEM: Kodierung der Zeilen und Abgleich/Schreiben über `database`.
 
+pub mod artifact_deploy;
 pub mod deploy_encode;
 pub mod plugin;
 pub use plugin::DeployPlugin;

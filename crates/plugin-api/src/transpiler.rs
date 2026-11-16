@@ -43,8 +43,17 @@ pub type ProgressSink = Arc<dyn Fn(Progress) + Send + Sync>;
 /// Ergebnis eines erfolgreichen Laufs.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TranspileOutcome {
-    /// Ordner mit dem Ergebnis (`dist`).
+    /// Ordner mit dem Ergebnis (`dist`). Bei Engines, die nichts auf die Platte schreiben, der Ort, an den es ginge.
     pub output_dir: PathBuf,
+    /// Die fertigen Modelle im Speicher (Engines, die sie liefern). Das Deploy nimmt sie von hier statt aus `dist`.
+    pub artifacts: Option<Arc<Vec<crate::artifact::BuildArtifact>>>,
+}
+
+impl TranspileOutcome {
+    /// Ergebnis nur mit Ordner, ohne Artefakte im Speicher.
+    pub fn new(output_dir: PathBuf) -> Self {
+        Self { output_dir, artifacts: None }
+    }
 }
 
 /// Eine Transpiler-Engine. Fehler (auch Abbruch und ein fehlgeschlagener Lauf) sind Fehlertexte.
@@ -137,7 +146,7 @@ mod tests {
             if options.path("fail").is_some() {
                 return Err("failed".into());
             }
-            Ok(TranspileOutcome { output_dir: root.join("dist") })
+            Ok(TranspileOutcome::new(root.join("dist")))
         }
         fn cancel(&self) -> bool {
             self.running.swap(false, Ordering::SeqCst)

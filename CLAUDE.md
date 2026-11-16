@@ -30,6 +30,7 @@ Plugin-Befehle laufen über den einen Tauri-Befehl `plugin_call(plugin, command,
 | Kern | `file-watcher` | Beobachtet einen Ordner, liefert gebündelte Pakete (`Batch`) |
 | Kern | `project-index` | Index über das Projekt: Dateien, Verweise, Probleme; hält sich per Watcher aktuell |
 | Kern | `native-transpiler` | Eigener Rust-Transpiler (`own_engine/`) plus Vergleichswerkzeug (Feature `harness`) |
+| Kern | `dito-transpiler` | Neuer Transpiler, V2-Format, im Speicher (im Aufbau, Plan `docs/transpiler-v2-plan.md`) |
 | Kern | `project` | Das offene Projekt: Actor, Baum, Umbenennen, Zip, Katalog, Transpile-Aktionen |
 | Schnittstelle | `plugin-api` | `FeaturePlugin`/`FeatureRegistry`, `EventSink`, `Transpiler`/`TranspilerRegistry`, Validator, Action |
 | Plugin | `git` | Git (`GitPlugin`, id `git`) |
@@ -62,7 +63,7 @@ Rust lädt keine Plugin-DLLs zur Laufzeit. "Abschaltbar" heißt: beim Bauen wegl
 
 ## Karten pro Ordner (für Agenten)
 
-Wichtige Ordner haben eine eigene `CLAUDE.md` (Karte) mit Dateiliste, Regeln, Fallen und "Wenn du X ändern willst". Claude Code lädt sie, sobald man dort eine Datei liest. Einstieg: `crates/CLAUDE.md` (Rust), `app/ui/CLAUDE.md` (UI). Vorhanden (24): Rust: `crates`, `crates/{project,aod,native-transpiler,plugin-api,database,validators,designer-core,platform,file-watcher,project-index}`, `app/src-tauri`. UI: `app/ui`, `app/ui/src/{shell,shell/hooks,editors,core,features/git,properties,tabs,tree,windows,theme,styles}`. Kleine Crates und kleine UI-Ordner stehen in `crates/CLAUDE.md` und `app/ui/CLAUDE.md`.
+Wichtige Ordner haben eine eigene `CLAUDE.md` (Karte) mit Dateiliste, Regeln, Fallen und "Wenn du X ändern willst". Claude Code lädt sie, sobald man dort eine Datei liest. Einstieg: `crates/CLAUDE.md` (Rust), `app/ui/CLAUDE.md` (UI). Vorhanden (25): Rust: `crates`, `crates/{project,aod,native-transpiler,dito-transpiler,plugin-api,database,validators,designer-core,platform,file-watcher,project-index}`, `app/src-tauri`. UI: `app/ui`, `app/ui/src/{shell,shell/hooks,editors,core,features/git,properties,tabs,tree,windows,theme,styles}`. Kleine Crates und kleine UI-Ordner stehen in `crates/CLAUDE.md` und `app/ui/CLAUDE.md`.
 
 - Wer Dateien anlegt, verschiebt oder löscht, passt die Karte des Ordners an (Tabelle zwischen `AUTO:START` und `AUTO:END`).
 - Prüfen: `powershell -File scripts/check-maps.ps1` (Exit-Code = Anzahl Fehler). `-Fix` ergänzt neue Dateien mit `TODO`; den Satz dazu von Hand schreiben.

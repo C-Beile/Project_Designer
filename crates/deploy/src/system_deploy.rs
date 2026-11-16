@@ -222,6 +222,11 @@ const BATCH_BYTES: usize = 4_000_000;
 /// through the tunnel, so thousands of single-row statements take minutes. A row is written with
 /// `INSERT ... ON DUPLICATE KEY UPDATE` on the unique `ID` (the deploy meta row relies on that too).
 pub fn batched_system_statements(items: &[PlanItem], local: &[LocalModel]) -> Result<Vec<TxStatement>, String> {
+    batched_system_statements_as(items, local, DESIGNER_USER)
+}
+
+/// Wie `batched_system_statements`, mit eigenem Benutzer in `USER_NEW` und `USER_EDIT` (V2: der Windows-Benutzer).
+pub fn batched_system_statements_as(items: &[PlanItem], local: &[LocalModel], user: &str) -> Result<Vec<TxStatement>, String> {
     let by_key: std::collections::HashMap<&str, &LocalModel> = local.iter().map(|m| (m.key.as_str(), m)).collect();
     let mut statements = Vec::new();
     let mut rows: Vec<&LocalModel> = Vec::new();
@@ -238,8 +243,8 @@ pub fn batched_system_statements(items: &[PlanItem], local: &[LocalModel]) -> Re
             params.push(DbValue::Text(name));
             params.push(DbValue::Int(m.kind));
             params.push(m.title.clone().map(DbValue::Text).unwrap_or(DbValue::Null));
-            params.push(DbValue::Text(DESIGNER_USER.into()));
-            params.push(DbValue::Text(DESIGNER_USER.into()));
+            params.push(DbValue::Text(user.to_string()));
+            params.push(DbValue::Text(user.to_string()));
             params.push(DbValue::Bytes(m.content.clone().into_bytes()));
         }
         statements.push(TxStatement {
@@ -322,6 +327,11 @@ fn system_table_statements(items: &[PlanItem], local: &[LocalModel]) -> Result<V
 
 /// The bookkeeping row of a deploy (who, when, which project version), as the Designer writes it.
 fn deploy_meta_statement(author: &str, time_ms: i64, project_version: &str) -> TxStatement {
+    deploy_meta_statement_as(DESIGNER_USER, author, time_ms, project_version)
+}
+
+/// Mit eigenem Benutzer in `USER_NEW`/`USER_EDIT`.
+fn deploy_meta_statement_as(user: &str, author: &str, time_ms: i64, project_version: &str) -> TxStatement {
     let xml = format!(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<deployMetaInfo xmlns=\"http://www.adito.de/2018/ao/Model\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" VERSION=\"1.0.0\" xsi:schemaLocation=\"http://www.adito.de/2018/ao/Model adito://models/xsd/deployMetaInfo/1.0.0\">\r\n  <name>{DEPLOY_META_ID}</name>\r\n  <majorModelMode>COMPACT</majorModelMode>\r\n  <infos>\r\n    <entry>\r\n      <key>DefaultDeployMetaInfoProvider.deployAuthor</key>\r\n      <value>{author}</value>\r\n    </entry>\r\n    <entry>\r\n      <key>de.adito.aditoweb.nbm.deploy.metainfo.ProjectVersionDeployMetaInfoProvider.designer.project.version</key>\r\n      <value>{project_version}</value>\r\n    </entry>\r\n    <entry>\r\n      <key>DefaultDeployMetaInfoProvider.deployTime</key>\r\n      <value>{time_ms}</value>\r\n    </entry>\r\n  </infos>\r\n</deployMetaInfo>\r\n"
     );
@@ -331,8 +341,8 @@ fn deploy_meta_statement(author: &str, time_ms: i64, project_version: &str) -> T
             DbValue::Text(DEPLOY_META_ID.into()),
             DbValue::Text(DEPLOY_META_ID.into()),
             DbValue::Int(DEPLOY_META_KIND),
-            DbValue::Text(DESIGNER_USER.into()),
-            DbValue::Text(DESIGNER_USER.into()),
+            DbValue::Text(user.to_string()),
+            DbValue::Text(user.to_string()),
             DbValue::Bytes(xml.into_bytes()),
         ],
     }
@@ -390,6 +400,20 @@ pub fn plan(manager: &DbManager, project_root: &Path, force: bool, mapping: Opti
     plan_for(manager, target, mapping, &local, force)
 }
 
+/// Dasselbe ohne `dist`: die Modelle kommen aus dem Speicher (`artifact_deploy::local_models`).
+pub fn plan_models(manager: &DbManager, local: &[LocalModel], force: bool, mapping: Option<DeployMapping>) -> Result<DeployPlan, String> {
+    let mapping = mapping.unwrap_or_default();
+    mapping.validate()?;
+    let target = manager.database_label().ok_or("Not connected. Open the tunnel in the Services tab first.")?;
+    mapping.verify_columns(&live_columns(manager, &mapping)?)?;
+    plan_for(manager, target, mapping, local, force)
+}
+
+/// MD5 eines Textes in kleinen Hex-Ziffern, wie `MD5()` der Datenbank.
+pub fn md5_of(text: &str) -> String {
+    md5_hex(text)
+}
+
 fn md5_hex(text: &str) -> String {
     use md5::{Digest, Md5};
     Md5::digest(text.as_bytes()).iter().map(|b| format!("{b:02x}")).collect()
@@ -413,6 +437,11 @@ fn remote_fingerprints(manager: &DbManager) -> Option<BTreeMap<String, String>> 
         }
     }
     Some(out)
+}
+
+/// MD5 je Modell des Systems (Schlüssel `ordner/name`). Nur Lesen. Fehler, wenn die Datenbank das nicht kann.
+pub fn remote_hashes(manager: &DbManager) -> Result<BTreeMap<String, String>, String> {
+    remote_fingerprints(manager).ok_or_else(|| "The database could not return fingerprints of the system table.".to_string())
 }
 
 fn plan_for(manager: &DbManager, target: String, mapping: DeployMapping, local: &[LocalModel], force: bool) -> Result<DeployPlan, String> {
@@ -464,24 +493,34 @@ pub fn execute(manager: &DbManager, project_root: &Path, keys: &[String], force:
     if !confirmed {
         return Err("Deploy was not confirmed.".into());
     }
+    let local = collect_local_models(project_root)?;
+    let version = std::fs::read_to_string(project_root.join(".aditoprj").join("project.version")).unwrap_or_default();
+    let author = std::env::var("USERNAME").or_else(|_| std::env::var("USER")).unwrap_or_default();
+    execute_models(manager, &local, keys, force, mapping, confirmed, DESIGNER_USER, author.trim(), version.trim())
+}
+
+/// Der Schreibweg für Modelle aus dem Speicher. `user` steht in `USER_NEW`/`USER_EDIT` (V2: Windows-Benutzer),
+/// `author` und `project_version` in der Deploy-Zeile. Bestätigung und Transaktion wie bei `execute`.
+#[allow(clippy::too_many_arguments)]
+pub fn execute_models(manager: &DbManager, local: &[LocalModel], keys: &[String], force: bool, mapping: Option<DeployMapping>, confirmed: bool, user: &str, author: &str, project_version: &str) -> Result<DeployOutcome, String> {
+    if !confirmed {
+        return Err("Deploy was not confirmed.".into());
+    }
     let mapping = mapping.unwrap_or_default();
     mapping.validate()?;
     let target = manager.database_label().ok_or("Not connected. Open the tunnel in the Services tab first.")?;
     mapping.verify_columns(&live_columns(manager, &mapping)?)?;
-    let local = collect_local_models(project_root)?;
-    let current = plan_for(manager, target, mapping, &local, force)?;
+    let current = plan_for(manager, target, mapping, local, force)?;
     let wanted: std::collections::HashSet<&str> = keys.iter().map(|k| k.as_str()).collect();
     let chosen: Vec<PlanItem> = current.items.iter().filter(|i| wanted.contains(i.key.as_str())).cloned().collect();
     if chosen.is_empty() {
         return Err("Nothing selected, or the selection is no longer part of the plan.".into());
     }
-    let mut statements = if current.mapping.is_system_table() { batched_system_statements(&chosen, &local)? } else { build_statements(&current.mapping, &chosen, &local)? };
+    let mut statements = if current.mapping.is_system_table() { batched_system_statements_as(&chosen, local, user)? } else { build_statements(&current.mapping, &chosen, local)? };
     let rows = chosen.len();
     if current.mapping.is_system_table() {
-        let author = std::env::var("USERNAME").or_else(|_| std::env::var("USER")).unwrap_or_default();
         let time_ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0);
-        let version = std::fs::read_to_string(project_root.join(".aditoprj").join("project.version")).unwrap_or_default();
-        statements.push(deploy_meta_statement(&xml_text(author.trim()), time_ms, &xml_text(version.trim())));
+        statements.push(deploy_meta_statement_as(user, &xml_text(author.trim()), time_ms, &xml_text(project_version.trim())));
     }
     manager.transaction(&statements)?;
     Ok(DeployOutcome { executed: rows, target: current.target })

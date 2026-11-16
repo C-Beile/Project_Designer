@@ -54,3 +54,11 @@ describe('transpileParams', () => {
     })
   })
 })
+
+describe('transpileParams for the new engine', () => {
+  it('asks for dist only from the new engine and only when switched on', () => {
+    expect(transpileParams('dito-v2', 'full', null)).toEqual({ engine: 'dito-v2', mode: 'full' })
+    expect(transpileParams('dito-v2', 'full', null, true)).toEqual({ engine: 'dito-v2', mode: 'full', write_dist: 'true' })
+    expect(transpileParams('official', 'full', null, true)).toEqual({ engine: 'official', mode: 'full' })
+  })
+})

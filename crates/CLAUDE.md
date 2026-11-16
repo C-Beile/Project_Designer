@@ -12,12 +12,13 @@
 | `designer-core/` | Fassade ohne UI (`ProjectHandle`, Plugin-Brücke). | aod, npm-modules, plugin-api, platform |
 | `validators/` | Prüfer für Objekte, `validator_table` (object_type zu Prüfern). | aod, designer-core, plugin-api |
 | `native-transpiler/` | Eigener Rust-Transpiler (`own_engine/`) und Vergleichswerkzeug (Feature `harness`). | aod, npm-modules, platform, adito-transpiler (nur Feature `harness`) |
+| `dito-transpiler/` | Neuer Transpiler (V2-Format, im Speicher): Module finden, Overlay, Reihenfolge-Regeln, später Merge, Writer, Cache. Siehe `dito-transpiler/CLAUDE.md` und `docs/transpiler-v2-plan.md`. Als Engine `dito-v2` an die App angeschlossen (`project/src/transpile_action.rs`), nicht die Vorgabe. | npm-modules |
 | `project/` | Das offene Projekt: Actor, Baum, Katalog, Umbenennen, Zip, Transpile-Aktion. Siehe `project/CLAUDE.md`. | designer-core, app-base, aod, validators, plugin-api, native-transpiler, npm-modules, platform, project-index |
 | `project-index/` | Index über das offene Projekt (Dateien, Verweise, Probleme), hält sich per File-Watcher aktuell, sendet `forge://index-progress` und `forge://project-changed`. Siehe `project-index/CLAUDE.md`. | aod, designer-core, validators, platform, app-base, plugin-api, file-watcher |
 | `git/` | Plugin `git` (`GitPlugin`). Befehle in `src/plugin.rs`, Logik in `git_actions.rs`, `git_scm.rs`, `clone.rs`, `connect.rs` (Verknüpfung mit dem Remote). | platform, app-base, plugin-api |
 | `ssh-tunnel/` | Plugin `ssh-tunnel` (`TunnelPlugin`): SSH in diesem Prozess über `russh`. `ssh_session` (Anmeldung, Host-Keys), `ssh_keys` (Schlüssel prüfen, Passphrase im Schlüsselbund), `tunnels` (eine Sitzung je Host, Weiterleitung je Ziel, lokale Adresse 127.0.200.x), `shared_tunnels` (gemeinsame `tunnels.json` mit dem AditoHub, Format in `docs/shared-tunnels.md`), `loopback` (macOS-Einrichtung der Zusatzadressen). | platform, app-base, plugin-api |
 | `database/` | Plugin `database`: Treiber, Sitzungen, SQL, Users/Aliase. | ssh-tunnel, app-base, platform, plugin-api |
-| `deploy/` | Plugin `deploy`: Deploy-Zeilen nach ASYS_SYSTEM. | database, plugin-api |
+| `deploy/` | Plugin `deploy`: Deploy-Zeilen nach ASYS_SYSTEM, aus `dist` (`system_deploy`) oder aus dem Speicher (`artifact_deploy`, `BuildArtifact`). | database, plugin-api |
 | `liquibase/` | Plugin `liquibase`: Update der Changelogs eines Alias. | database, ssh-tunnel, plugin-api, app-base, platform |
 | `adito-transpiler/` | Plugin `adito` (Transpiler-Id `adito`): ruft den offiziellen ADITO-Transpiler. | platform, app-base, plugin-api |
 <!-- AUTO:END -->

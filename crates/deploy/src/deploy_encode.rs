@@ -27,6 +27,9 @@ pub const MODEL_KINDS: &[(&str, i64)] = &[
     ("neonView", 10078),
     ("neonDashboard", 10090),
     ("serviceDefinition", 10309),
+    // Fehlten bisher; Nummern aus dem V2-Index (`adito-model-index.json`) des Orakels.
+    ("entityWebservice", 10250),
+    ("rendererDefinition", 10267),
 ];
 
 /// Not deployed: the system table holds the rendered HTML of a help page (`userhelp`, kind 10217),

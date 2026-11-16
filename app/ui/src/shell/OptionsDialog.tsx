@@ -14,7 +14,7 @@ import { TextAndSizePage } from './TextAndSizePage'
 import { AppearanceGeneralPage } from './AppearanceGeneralPage'
 import { CodeFormattingPage } from './CodeFormattingPage'
 import { GeneralOptions } from './GeneralOptions'
-import { configSet } from '../settings/appConfig'
+import { configGet, configSet } from '../settings/appConfig'
 import { isPluginActive } from '../settings/plugins'
 import { errorText } from '../core/errorText'
 import { SshKeyPassphrase } from './SshKeyPassphrase'
@@ -139,6 +139,7 @@ export function OptionsDialog({
   const [opts, setOpts] = useState<DesignerOptions>(() => getOptions())
   const [prefs, setPrefs] = useState<EditorPrefs>(() => getEditorPrefs())
   const [engineChoice, setEngineChoice] = useState<TranspilerEngineId>(engine)
+  const [writeDist, setWriteDist] = useState(() => configGet<boolean>('transpile', 'writeDist') === true)
   const [themeChoice, setThemeChoice] = useState<ThemeName>(theme)
   const [installDir, setInstallDir] = useState('')
   const [sshKey, setSshKey] = useState('')
@@ -403,12 +404,21 @@ export function OptionsDialog({
           <p className="forge-field-hint">Leave empty to use the automatically detected installation for each transpile.</p>
           <fieldset className="forge-opt-group">
             <legend>Transpiler</legend>
-            {(['official', 'experimental'] as const).map((id) => (
+            {(['official', 'experimental', 'dito-v2'] as const).map((id) => (
               <label key={id} className="forge-check">
                 <Input type="radio" name="engine" checked={engineChoice === id} onChange={() => setEngineChoice(id)} />
                 <span>{ENGINE_LABELS[id]}</span>
               </label>
             ))}
+            <Check
+              label="Dito Transpiler V2: write the dist folder"
+              checked={writeDist}
+              onChange={(v) => {
+                setWriteDist(v)
+                configSet(['transpile', 'writeDist'], v ? true : undefined)
+              }}
+              hint="Off by default: the new transpiler keeps its result in memory and the deploy uses it directly. Many small files are slow with a virus scanner. Turn it on if another tool reads dist."
+            />
             <p className="forge-field-hint">The ADITO transpiler is the default and uses the installed ADITO Designer. The Dito_Transpiler works without it. The choice applies to this session only; every start begins with the ADITO transpiler.</p>
           </fieldset>
           <fieldset className="forge-opt-group">

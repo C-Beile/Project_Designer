@@ -2,7 +2,8 @@
 // SCRATCH COPY of a project (no reference run, the original Designer is not needed here). Prints the
 // match rate per top-level folder and per file type, and the first differing files of each folder.
 //
-// Usage: cargo run --release --example own_vs_dist -p native-transpiler -- <project_copy> <own_output_dir>
+// Usage: cargo run --release --example own_vs_dist -p native-transpiler -- <project_copy> <own_output_dir> [<dist_dir>]
+// <dist_dir> defaults to <project_copy>/dist.
 
 use native_transpiler::{compare_trees, FileVerdict, IncrementalEngine, OwnEngine};
 use std::collections::BTreeMap;
@@ -14,7 +15,7 @@ fn main() {
     let mut args = env::args().skip(1);
     let project = PathBuf::from(args.next().expect("usage: own_vs_dist <project_copy> <own_output_dir>"));
     let out = PathBuf::from(args.next().expect("usage: own_vs_dist <project_copy> <own_output_dir>"));
-    let dist = project.join("dist");
+    let dist = args.next().map(PathBuf::from).unwrap_or_else(|| project.join("dist"));
 
     let started = Instant::now();
     if let Err(e) = IncrementalEngine.run(&project, &out) {

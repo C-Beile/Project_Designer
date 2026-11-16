@@ -82,7 +82,13 @@ fn build_feature_registry(app: &tauri::AppHandle) -> plugin_api::FeatureRegistry
     #[cfg(feature = "database")]
     registry.register(Box::new(::database::DatabasePlugin::new(db.clone(), events.clone())));
     #[cfg(feature = "deploy")]
-    registry.register(Box::new(::deploy::DeployPlugin::new(db.clone())));
+    {
+        let deploy = ::deploy::DeployPlugin::new(db.clone());
+        // Der letzte Lauf des neuen Transpilers geht in den Speicher des Deploy-Plugins (Deploy ohne `dist`).
+        let store = deploy.artifact_store();
+        project::transpile_action::set_artifact_sink(std::sync::Arc::new(move |root, artifacts| store.set_for_root(&root.to_string_lossy(), artifacts)));
+        registry.register(Box::new(deploy));
+    }
     #[cfg(feature = "liquibase")]
     {
         let handle = app.clone();
@@ -98,6 +104,7 @@ fn build_feature_registry(app: &tauri::AppHandle) -> plugin_api::FeatureRegistry
 fn build_transpiler_registry() -> std::sync::Arc<plugin_api::TranspilerRegistry> {
     let mut registry = plugin_api::TranspilerRegistry::new();
     registry.register(std::sync::Arc::new(project::transpile_action::NativeTranspiler));
+    registry.register(std::sync::Arc::new(project::transpile_action::DitoTranspiler::new()));
     #[cfg(feature = "adito-transpiler")]
     registry.register(std::sync::Arc::new(::adito_transpiler::plugin::AditoTranspiler));
     registry.set_default(project::transpile_action::NATIVE_ID);

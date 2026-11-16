@@ -26,6 +26,7 @@ export function TranspilerEngineSelector({
       options={[
         { id: 'official', label: 'ADITO Transpiler' },
         { id: 'experimental', label: 'Dito_Transpiler' },
+        { id: 'dito-v2', label: 'Dito Transpiler V2' },
       ]}
     />
   )

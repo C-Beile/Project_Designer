@@ -141,6 +141,12 @@ pub async fn connect(entry: &TunnelEntry, auth: &OwnedAuth) -> Result<SshHandle,
         keepalive_interval: Some(Duration::from_secs(15)),
         keepalive_max: 3,
         nodelay: true,
+        // Komprimierung bevorzugen: durch den Tunnel laufen große XML-Texte (Deploy), die sich gut packen lassen.
+        // Unterstützt der Server sie nicht, fällt es auf `none` zurück.
+        preferred: russh::Preferred {
+            compression: std::borrow::Cow::Borrowed(&[russh::compression::ZLIB_LEGACY, russh::compression::ZLIB, russh::compression::NONE]),
+            ..Default::default()
+        },
         ..Default::default()
     };
     let handler = ClientHandler { host_id: id, problem: problem.clone() };

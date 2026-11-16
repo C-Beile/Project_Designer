@@ -14,6 +14,8 @@ validators = { path = "../../crates/validators" }
 plugin-api = { path = "../../crates/plugin-api" }
 # Eigene Engine (immer da). Der offizielle Transpiler kommt nur ueber die plugin-api-Registry in die App.
 native-transpiler = { path = "../../crates/native-transpiler", default-features = false }
+# Neuer Transpiler (V2-Format, im Speicher), Engine `dito-v2`.
+dito-transpiler = { path = "../../crates/dito-transpiler" }
 # P8 step 2: resolves the modules whose objects the project tree merges in.
 npm-modules = { path = "../../crates/npm-modules" }
 # Problems window: dangling references of the project objects (refs::extract).
