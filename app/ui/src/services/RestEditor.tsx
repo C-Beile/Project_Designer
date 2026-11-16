@@ -206,7 +206,7 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
     api
       .restListServers(projectRoot)
       .then(async (list) => {
-        if (cancelled) return
+        if (signal.aborted) return
         setServers(list)
         if (read(BASE_KEY) !== '' || list.length === 0) return
         const active = (await api.dbSystems().catch(() => [])).find((e) => e.active)?.system ?? ''
@@ -216,13 +216,9 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
         setBase((cur) => (cur === '' ? url : cur))
       })
       .catch(() => setServers([]))
-    return () => {
-      cancelled = true
-    }
   }, [api, projectRoot])
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     api
       .restUsers()
       .then((list) => {
