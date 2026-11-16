@@ -1,4 +1,4 @@
-import { markPerf } from './perf/marks'
+import { markPerf, perfMarksText } from './perf/marks'
 
 /**
  * Zeigt die Seite erst nach zwei Frames und geladenen Schriften, damit man kein ungestyltes Zwischenbild sieht.
@@ -12,7 +12,8 @@ export function revealApp(showWindow = false): void {
     if (!showWindow) return
     // Ein Frame warten, damit der Inhalt schon gemalt ist, wenn das Fenster erscheint.
     requestAnimationFrame(() => {
-      void import('../api/bindings').then(({ commands }) => commands.windowShow()).catch(() => {})
+      markPerf('shown')
+      void import('../api/bindings').then(({ commands }) => commands.windowShow(perfMarksText())).catch(() => {})
     })
   }
   const show = () => requestAnimationFrame(() => requestAnimationFrame(done))

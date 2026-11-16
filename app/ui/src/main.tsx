@@ -30,6 +30,12 @@ const windowName = new URLSearchParams(window.location.search).get('name') ?? ''
 
 const root = createRoot(document.getElementById('root')!)
 
+// Ein Dialog-Fenster holt seinen Code und den Fenster-Einstieg sofort, parallel zu Konfiguration und Themes.
+if (windowKind === 'dialog') {
+  void import('./windows/dialogPreload').then((m) => m.preloadDialog(windowName))
+  void import('./windows/WindowRoot')
+}
+
 // A dialog window only loads what the dialog needs: the whole application (editors, Monaco, the
 // project tree) is fetched by the main window alone, so Commit, Options and the other dialog
 // windows open quickly.
@@ -38,14 +44,17 @@ const root = createRoot(document.getElementById('root')!)
 async function start() {
   markPerf('start')
   await loadAppConfig(tauriForgeApi, listenBackend).catch(() => {})
+  markPerf('config-loaded')
   installZoomControls()
   registerAppearanceSettings()
   applyStyleConfig()
   installAppearance()
   await loadUserThemes(tauriForgeApi).catch(() => {})
   installThemeReload(tauriForgeApi)
+  markPerf('themes-loaded')
   if (windowKind) {
     void import('./windows/WindowRoot').then(({ WindowRoot }) => {
+      markPerf('window-root-loaded')
       root.render(
         <StrictMode>
           <WindowRoot api={withSqlLog(tauriForgeApi)} kind={windowKind} name={windowName} />

@@ -2,13 +2,15 @@ import { Suspense, lazy, useEffect, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { registerFeaturePlugins } from '../features/registerFeatures'
 import { revealApp } from '../core/revealApp'
+import { markPerf } from '../core/perf/marks'
 import { CrashListener, ErrorBoundary } from '../core/errorHandling'
 import { useTheme } from '../theme/useTheme'
 import { lazyNamed } from '../core/lazyNamed'
+// Dialog-Fenster ohne Suspense (kein Ersatzbild, keine 300 ms Wartezeit von React): der Einstieg ist fest eingebunden.
+import { DialogWindowApp } from './DialogWindowApp'
 import { isFloatView } from './protocol'
 
 // Jede Fensterart lädt erst, wenn sie gebraucht wird: ein Popup holt nicht die ganze Oberfläche.
-const DialogWindowApp = lazyNamed(() => import('./DialogWindowApp'), 'DialogWindowApp')
 const FloatApp = lazyNamed(() => import('./FloatApp'), 'FloatApp')
 const EditorWindowApp = lazy(async () => {
   await import('../editors/registerAllBuiltins')
@@ -26,14 +28,18 @@ export function WindowRoot({ api, kind, name }: { api: ForgeApi; kind: string; n
   useEffect(() => {
     if (!api.pluginList) return
     let alive = true
-    void registerFeaturePlugins(api).finally(() => alive && setReady(true))
+    void registerFeaturePlugins(api).finally(() => {
+      markPerf('plugins-ready')
+      if (alive) setReady(true)
+    })
     return () => {
       alive = false
     }
   }, [api])
   useEffect(() => {
-    if (ready) revealApp(true)
-  }, [ready])
+    // Dialog-Fenster zeigen sich selbst, sobald ihr Inhalt da ist (DialogWindowApp).
+    if (ready && kind !== 'dialog') revealApp(true)
+  }, [ready, kind])
   if (!ready) return null
   return (
     <>

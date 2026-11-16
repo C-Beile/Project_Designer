@@ -283,7 +283,7 @@ export const commands = {
 	 */
 	mainWindowContains: (x: number | null, y: number | null, options?: InvokeOptions) => __TAURI_INVOKE<boolean>("main_window_contains", { x, y }, options),
 	/**  Das Fenster zeigt sich, sobald seine Seite fertig gezeichnet ist. */
-	windowShow: (options?: InvokeOptions) => __TAURI_INVOKE<null>("window_show", undefined, options),
+	windowShow: (timings: string | null, options?: InvokeOptions) => __TAURI_INVOKE<null>("window_show", { timings }, options),
 	startLsp: (workspaceRoot: string, nodePath: string, serverEntry: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("start_lsp", { workspaceRoot, nodePath, serverEntry }, options),
 	sendLspMessage: (message: string, options?: InvokeOptions) => __TAURI_INVOKE<null>("send_lsp_message", { message }, options),
 };

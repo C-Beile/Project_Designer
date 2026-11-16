@@ -15,12 +15,11 @@
     <script>
       // Theme sofort setzen, noch vor dem ersten Zeichnen. Sonst sieht man kurz das falsche Theme,
       // bis React läuft. Die Farben müssen zu --bg in theme/tokens.css passen.
-      try {
-        var t = localStorage.getItem('forge.theme')
-        if (t !== 'light' && t !== 'lion') t = 'dark'
-        document.documentElement.setAttribute('data-theme', t)
-        document.documentElement.style.background = { dark: '#011627', light: '#fbfbfb', lion: '#2b2b2b' }[t]
-      } catch (e) {}
+      // Theme und Farbe kommen aus designer.conf: Rust legt sie als window.__BOOT__ vor das Laden der Seite (window_state.rs).
+      // Ohne Rust (Browser, Tests) gilt der Standard Lion.
+      var b = window.__BOOT__ || { theme: 'lion', bg: '#2b2b2b' }
+      document.documentElement.setAttribute('data-theme', b.theme)
+      document.documentElement.style.background = b.bg
     </script>
   </head>
   <body>

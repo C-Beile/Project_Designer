@@ -52,7 +52,10 @@ pub struct OpenRequest {
     pub max_editors: Option<u32>,
 }
 
-fn parse_hex_color(s: &str) -> Option<tauri::window::Color> {
+/// Wann `window_open` je Fenster begann (nur für die Zeitmessung im Log).
+static OPEN_STARTED: std::sync::LazyLock<std::sync::Mutex<std::collections::HashMap<String, std::time::Instant>>> = std::sync::LazyLock::new(Default::default);
+
+pub fn parse_hex_color(s: &str) -> Option<tauri::window::Color> {
     let h = s.trim().strip_prefix('#')?;
     if h.len() != 6 {
         return None;
@@ -86,7 +89,7 @@ fn geometry_of(window: &Window) -> Option<Geometry> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn window_open(app: AppHandle, payloads: State<'_, WindowPayloads>, modals: State<'_, ModalWindows>, req: OpenRequest) -> Result<(), String> {
+pub async fn window_open(app: AppHandle, _payloads: State<'_, WindowPayloads>, modals: State<'_, ModalWindows>, req: OpenRequest) -> Result<(), String> {
     crate::commands::guard_async("window_open", async {
     let label = label_of(&req.kind, &req.name)?;
     if let Some(existing) = app.get_webview_window(&label) {
@@ -100,8 +103,11 @@ pub async fn window_open(app: AppHandle, payloads: State<'_, WindowPayloads>, mo
             return Err("window-limit".to_string());
         }
     }
-    if let Some(payload) = req.payload {
-        payloads.0.lock().map_err(|_| "window payloads poisoned".to_string())?.insert(label.clone(), payload);
+    // Die Nutzlast reist mit der Seite (`window.__PAYLOAD__`), kein zweiter Weg über `window_payload` nötig.
+    let payload_js = serde_json::to_string(&req.payload).map_err(|e| e.to_string())?;
+    let opened = std::time::Instant::now();
+    if let Ok(mut m) = OPEN_STARTED.lock() {
+        m.insert(label.clone(), opened);
     }
     let url = WebviewUrl::App(format!("index.html?window={}&name={}", req.kind, req.name).into());
     let mut builder = WebviewWindowBuilder::new(&app, &label, url)
@@ -112,8 +118,10 @@ pub async fn window_open(app: AppHandle, payloads: State<'_, WindowPayloads>, mo
         .decorations(true)
         // Das Fenster startet unsichtbar und zeigt sich selbst (`window_show`), sobald die Seite gezeichnet ist.
         .visible(false)
-        .focused(true);
-    if let Some(color) = req.background.as_deref().and_then(parse_hex_color) {
+        .focused(true)
+        .initialization_script(format!("{}window.__PAYLOAD__={payload_js};", crate::window_state::boot_script()));
+    let fallback_bg = crate::window_state::boot_theme().1;
+    if let Some(color) = req.background.as_deref().and_then(parse_hex_color).or_else(|| parse_hex_color(&fallback_bg)) {
         builder = builder.background_color(color);
     }
     // Drag and drop inside the page (tabs, tree entries, view fields) needs the webview's own
@@ -139,36 +147,56 @@ pub async fn window_open(app: AppHandle, payloads: State<'_, WindowPayloads>, mo
         builder = builder.parent(&main).map_err(|e| e.to_string())?;
     }
     let window = builder.build().map_err(|e| e.to_string())?;
+    let _ = app_base::crashlog::write_entry("PERF", &format!("window {label}: created in {} ms", opened.elapsed().as_millis()));
     // Gemerkte Stelle (und Größe, wenn das Fenster veränderbar ist), solange es noch unsichtbar ist.
     if req.kind == "dialog" {
         crate::window_state::restore(&window, &format!("popups.{}", req.name), req.resizable.unwrap_or(true));
     }
     // Notausgang: zeigt sich die Seite nicht von selbst (Fehler im Frontend), erscheint das Fenster nach 3 s trotzdem.
+    // Nur wenn es noch nicht gezeigt wurde: ein spätes `show()` würde sonst ein längst sichtbares Fenster wieder nach vorn holen.
     {
         let late = window.clone();
         std::thread::spawn(move || {
             std::thread::sleep(std::time::Duration::from_secs(3));
-            let _ = late.show();
+            let pending = OPEN_STARTED.lock().ok().and_then(|mut m| m.remove(late.label())).is_some();
+            if pending {
+                reveal(&late);
+            }
         });
     }
-    if req.modal {
-        if let Some(main) = app.get_webview_window("main") {
-            main.set_enabled(false).map_err(|e| e.to_string())?;
-            modals.0.lock().map_err(|_| "modal list poisoned".to_string())?.push(label.clone());
-        }
-        window.set_focus().map_err(|e| e.to_string())?;
+    // Modal: Das Hauptfenster wird erst gesperrt, wenn das Popup sichtbar ist (`reveal`). Wäre es schon beim Öffnen gesperrt,
+    // gäbe Windows den Fokus an irgendein anderes Fenster ab und würde es nach vorn holen.
+    if req.modal && app.get_webview_window("main").is_some() {
+        modals.0.lock().map_err(|_| "modal list poisoned".to_string())?.push(label.clone());
     }
     Ok(())
 }).await
 }
 
+/// Zeigt das Fenster, gibt ihm den Fokus und sperrt bei einem modalen Popup das Hauptfenster.
+fn reveal(window: &tauri::WebviewWindow) {
+    let _ = window.show();
+    let _ = window.set_focus();
+    let app = window.app_handle();
+    let modal = app.try_state::<ModalWindows>().is_some_and(|m| m.0.lock().is_ok_and(|list| list.iter().any(|l| l == window.label())));
+    if modal {
+        if let Some(main) = app.get_webview_window("main") {
+            let _ = main.set_enabled(false);
+        }
+    }
+}
+
 /// Das Fenster zeigt sich, sobald seine Seite fertig gezeichnet ist.
 #[tauri::command]
 #[specta::specta]
-pub fn window_show(window: tauri::WebviewWindow) -> Result<(), String> {
+pub fn window_show(window: tauri::WebviewWindow, timings: Option<String>) -> Result<(), String> {
     crate::commands::guard("window_show", || {
-        window.show().map_err(|e| e.to_string())?;
-        let _ = window.set_focus();
+        reveal(&window);
+        // Messung: Zeit seit `window_open` und die Marken der Seite (ms seit Navigationsbeginn der Seite).
+        let since_open = OPEN_STARTED.lock().ok().and_then(|mut m| m.remove(window.label())).map(|t| t.elapsed().as_millis());
+        if let Some(ms) = since_open {
+            let _ = app_base::crashlog::write_entry("PERF", &format!("window {}: shown {ms} ms after open; page marks: {}", window.label(), timings.as_deref().unwrap_or("-")));
+        }
         Ok(())
     })
 }
@@ -192,6 +220,7 @@ pub fn window_result(app: AppHandle, kind: String, name: String, result: Option<
     let geometry = app.get_webview_window(&label).and_then(|w| geometry_of(&w.as_ref().window()));
     app.emit("forge://window-result", WindowResult { kind, name, result, geometry }).map_err(|e| e.to_string())?;
     if let Some(w) = app.get_webview_window(&label) {
+        release_modal(&app, &label);
         w.destroy().map_err(|e| e.to_string())?;
     }
     Ok(())
@@ -205,10 +234,26 @@ pub fn window_close(app: AppHandle, kind: String, name: String) -> Result<(), St
     crate::commands::guard("window_close", || {
     let label = label_of(&kind, &name)?;
     if let Some(w) = app.get_webview_window(&label) {
+        release_modal(&app, &label);
         w.destroy().map_err(|e| e.to_string())?;
     }
     Ok(())
 })
+}
+
+/// Gibt das Hauptfenster frei, BEVOR ein modales Popup verschwindet. Ist das Hauptfenster beim Schließen noch gesperrt,
+/// aktiviert Windows kurz irgendein anderes Fenster (es blitzt durch), bevor der Fokus zurückkommt.
+fn release_modal(app: &AppHandle, label: &str) {
+    let Some(modals) = app.try_state::<ModalWindows>() else { return };
+    let Ok(mut list) = modals.0.lock() else { return };
+    let was_modal = list.iter().any(|l| l == label);
+    list.retain(|l| l != label);
+    if was_modal && list.is_empty() {
+        if let Some(main) = app.get_webview_window("main") {
+            let _ = main.set_enabled(true);
+            let _ = main.set_focus();
+        }
+    }
 }
 
 /// Switches the "ask before closing" behaviour of one window on or off. `kind` is `main`,
@@ -306,6 +351,7 @@ pub fn on_window_event(window: &Window, event: &WindowEvent) {
                 let _ = app.emit("forge://close-requested", serde_json::json!({ "kind": kind, "name": name }));
                 return;
             }
+            release_modal(app, label);
             let _ = app.emit("forge://window-result", WindowResult { kind: kind.to_string(), name: name.to_string(), result: None, geometry: geometry_of(window) });
         }
         WindowEvent::Moved(_) | WindowEvent::Resized(_) if kind == "float" || kind == "editor" => {

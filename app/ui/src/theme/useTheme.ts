@@ -71,6 +71,9 @@ export function useTheme(): [ThemeName, (next?: ThemeName) => void] {
     const toml = chosen ? undefined : (user ?? BUILTIN_TOML_THEMES[theme])
     applyThemeTokens(toml?.tokens)
     setActiveEditorTheme(toml ?? null)
+    // Die Hintergrundfarbe merkt sich Rust für den nächsten Start (window_state::boot_theme), damit kein Farbsprung entsteht.
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
+    if (/^#[0-9a-f]{6}$/i.test(bg) && configGet<string>('appearance', 'bootBg') !== bg) configSet(['appearance', 'bootBg'], bg)
   }, [chosen, theme, themeStamp])
 
   const toggle = useCallback((next?: ThemeName) => setTheme((t) => next ?? (t === 'dark' ? 'light' : 'dark')), [])

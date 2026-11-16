@@ -1,4 +1,6 @@
-import { Suspense, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { revealApp } from '../core/revealApp'
+import { markPerf } from '../core/perf/marks'
 import type { ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { KeymapEntry } from '../shell/OptionsDialog'
@@ -163,15 +165,49 @@ export const DIALOG_WINDOWS: Record<string, DialogSpec> = {
   },
 }
 
+// Sitzt neben dem Inhalt: läuft erst, wenn der ganze Inhalt gezeichnet werden kann, und zeigt dann das Fenster.
+function RevealOnMount() {
+  useEffect(() => {
+    markPerf('content-ready')
+    revealApp(true)
+  }, [])
+  return null
+}
+
+// Der Code jedes Dialogs je Fenstername: das Fenster wartet darauf, bevor es zeichnet (kein Suspense, kein Ersatzbild).
+const DIALOG_CODE: Record<string, { preload: () => Promise<unknown> }> = {
+  new: NewObjectDialog,
+  options: OptionsDialog,
+  deploy: DeployOptionsDialog,
+  rename: RenameDialog,
+  plugins: PluginsDialog,
+  updates: UpdatesDialog,
+  localdata: LocalDataDialog,
+  zip: ProjectZipDialog,
+  about: AboutDialog,
+  deployplan: DeployDialog,
+  themestudio: ThemeStudio,
+}
+
 export function DialogWindowApp({ name, api }: { name: string; api: ForgeApi }) {
   const [payload, setPayload] = useState<Record<string, unknown> | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
+  const [codeReady, setCodeReady] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    void (DIALOG_CODE[name]?.preload() ?? Promise.resolve()).catch(() => {}).then(() => alive && setCodeReady(true))
+    return () => {
+      alive = false
+    }
+  }, [name])
 
   useAbortableEffect((signal) => {
     getWindowBackend()
       .payload('dialog', name)
       .then((text) => {
         if (signal.aborted) return
+        markPerf('payload')
         try {
           setPayload(text ? (JSON.parse(text) as Record<string, unknown>) : {})
         } catch {
@@ -184,11 +220,18 @@ export function DialogWindowApp({ name, api }: { name: string; api: ForgeApi }) 
   const done: Done = (result) => void getWindowBackend().result('dialog', name, result === null ? null : JSON.stringify(result))
   const spec = DIALOG_WINDOWS[name]
 
-  let body: ReactNode
-  if (!spec) body = <p className="forge-field-error">Unknown dialog {name}.</p>
-  else if (failed) body = <p className="forge-field-error">{failed}</p>
-  else if (!payload) body = <p className="forge-field-hint">Please Wait…</p>
-  else body = <Suspense fallback={<p className="forge-field-hint">Please Wait…</p>}>{spec.render(api, payload, done)}</Suspense>
+  // Das Fenster bleibt unsichtbar, bis der Inhalt wirklich da ist (Nutzlast und Code geladen): kein "Please Wait".
+  let body: ReactNode = null
+  if (!spec) body = <><p className="forge-field-error">Unknown dialog {name}.</p><RevealOnMount /></>
+  else if (failed) body = <><p className="forge-field-error">{failed}</p><RevealOnMount /></>
+  else if (payload && codeReady) {
+    body = (
+      <Suspense fallback={null}>
+        {spec.render(api, payload, done)}
+        <RevealOnMount />
+      </Suspense>
+    )
+  }
 
   return (
     <OsWindowContext.Provider value={true}>

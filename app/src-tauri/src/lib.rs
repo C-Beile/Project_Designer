@@ -109,7 +109,11 @@ fn create_main_window(app: &mut tauri::App) -> tauri::Result<()> {
     use tauri::WebviewWindowBuilder;
     let config = app.config().app.windows.first().cloned();
     let Some(config) = config else { return Ok(()) };
-    let mut builder = WebviewWindowBuilder::from_config(app.handle(), &config)?;
+    window_state::init_file(app.handle());
+    let mut builder = WebviewWindowBuilder::from_config(app.handle(), &config)?.initialization_script(window_state::boot_script());
+    if let Some(color) = os_windows::parse_hex_color(&window_state::boot_theme().1) {
+        builder = builder.background_color(color);
+    }
     #[cfg(windows)]
     if let Ok(dir) = data_dir::webview_dir(app.handle()) {
         builder = builder.data_directory(dir);

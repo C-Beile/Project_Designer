@@ -20,13 +20,49 @@ static SCHEDULED: AtomicBool = AtomicBool::new(false);
 /// startet unsichtbar (`visible: false` in `tauri.conf.json`) und wird hier gezeigt, damit es nie an der
 /// falschen Stelle aufblitzt. Das Zeigen hängt nicht vom Frontend ab.
 pub fn init_main(app: &tauri::AppHandle) {
-    if let Ok(file) = crate::commands::settings::settings_file(app) {
-        let _ = FILE.set(file);
-    }
+    init_file(app);
     if let Some(window) = app.get_webview_window("main") {
         restore(&window, "window", true);
         let _ = window.show();
     }
+}
+
+/// Merkt den Pfad von `designer.conf`. Muss vor dem Bau des ersten Fensters laufen (für `boot_theme`).
+pub fn init_file(app: &tauri::AppHandle) {
+    if let Ok(file) = crate::commands::settings::settings_file(app) {
+        let _ = FILE.set(file);
+    }
+}
+
+/// Theme und Hintergrundfarbe fürs Starten: aus `[appearance]` (`theme`, `bootBg`), sonst die Farbe des Standard-Themes.
+/// So malt schon der erste Frame die richtige Farbe, noch bevor die UI die Konfiguration geladen hat.
+pub fn boot_theme() -> (String, String) {
+    let conf = FILE.get().map(|f| app_base::config::load(f));
+    let text = |key: &str| {
+        let conf = conf.as_ref()?;
+        match app_base::config::get_path(conf, &["appearance", key])? {
+            serde_json::Value::String(s) => Some(s),
+            _ => None,
+        }
+    };
+    let theme = match text("theme").as_deref() {
+        Some("dark") => "dark",
+        Some("light") => "light",
+        _ => "lion",
+    };
+    let default_bg = match theme {
+        "dark" => "#011627",
+        "light" => "#fbfbfb",
+        _ => "#2b2b2b",
+    };
+    let bg = text("bootBg").filter(|c| c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|ch| ch.is_ascii_hexdigit())).unwrap_or_else(|| default_bg.to_string());
+    (theme.to_string(), bg)
+}
+
+/// Skript, das vor allem anderen in der Seite läuft und `index.html` Theme und Farbe gibt.
+pub fn boot_script() -> String {
+    let (theme, bg) = boot_theme();
+    format!("window.__BOOT__={{theme:'{theme}',bg:'{bg}'}};")
 }
 
 fn screens(window: &WebviewWindow) -> Vec<Screen> {

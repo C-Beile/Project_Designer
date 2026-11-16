@@ -64,6 +64,9 @@ const tauriBackend: WindowBackend = {
   // Darum wird die Antwort je Fenster gemerkt: ein Fenster hat genau eine Nutzlast.
   payload(kind, name) {
     const key = `${kind}:${name}`
+    // Rust legt die Nutzlast beim Öffnen in die Seite (`window.__PAYLOAD__`; null = keine): kein Weg über das Backend nötig.
+    const injected = (window as unknown as { __PAYLOAD__?: string | null }).__PAYLOAD__
+    if (injected !== undefined) return Promise.resolve(injected)
     let cached = payloadCache.get(key)
     if (!cached) {
       cached = import('../api/bindings').then(({ commands }) => commands.windowPayload(kind, name))
