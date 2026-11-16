@@ -8,16 +8,18 @@ const MAX_BODY: usize = 8 * 1024 * 1024;
 const PASSWORD_REQUIRED: &str = "PASSWORD_REQUIRED";
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn rest_list_webservices(project_root: String) -> Vec<project::webservices::WebserviceDto> {
     crate::commands::guard("rest_list_webservices", || project::webservices::list_webservices(&PathBuf::from(project_root)))
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn rest_list_servers(project_root: String) -> Vec<project::webservices::ServerDto> {
     crate::commands::guard("rest_list_servers", || project::webservices::list_servers(&PathBuf::from(project_root)))
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RestAuth {
     pub kind: String,
@@ -27,7 +29,7 @@ pub struct RestAuth {
     pub token_id: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RestCallRequest {
     pub url: String,
@@ -40,17 +42,20 @@ pub struct RestCallRequest {
     #[serde(default)]
     pub insecure: bool,
     #[serde(default)]
+    #[specta(type = Option<u32>)]
     pub timeout_secs: Option<u64>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct RestCallResponse {
     pub status: u16,
     pub reason: String,
     pub headers: Vec<(String, String)>,
     pub body: String,
+    #[specta(type = u32)]
     pub elapsed_ms: u64,
+    #[specta(type = u32)]
     pub size: usize,
     pub sent: String,
 }
@@ -69,11 +74,13 @@ fn store() -> platform::native::NativeCredentialStore {
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn rest_has_password(url: String, user: String) -> bool {
     crate::commands::guard("rest_has_password", || store().get(&credential_key(&url, &user)).ok().flatten().is_some())
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn rest_save_password(url: String, user: String, password: String) -> Result<(), String> {
     crate::commands::guard("rest_save_password", || {
         store().set(&credential_key(&url, &user), &Credential { username: user.clone(), secret: password.clone() }).map_err(|e| e.to_string())
@@ -81,6 +88,7 @@ pub fn rest_save_password(url: String, user: String, password: String) -> Result
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn rest_forget_password(url: String, user: String) -> Result<(), String> {
     crate::commands::guard("rest_forget_password", || store().delete(&credential_key(&url, &user)).map_err(|e| e.to_string()))
 }
@@ -157,6 +165,7 @@ async fn exchange<S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin>(mut s
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn rest_send(request: RestCallRequest) -> Result<RestCallResponse, String> {
     crate::commands::guard_async("rest_send", async move {
         valid_url(&request.url)?;

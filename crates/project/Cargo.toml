@@ -28,6 +28,7 @@ regex = "1"
 platform = { path = "../../crates/platform" }
 # Index ueber das Projekt (Dateien, Verweise, Probleme); `problems.rs` nutzt seine Analyse, `layout` stammt von dort.
 project-index = { path = "../../crates/project-index" }
+specta = { version = "=2.0.0-rc.28", features = ["derive"] }
 
 # Nur Beispiele (examples/db_live, deploy_*) nutzen die Plugin-Crates; der Kern selbst haengt nicht von ihnen ab.
 [dev-dependencies]

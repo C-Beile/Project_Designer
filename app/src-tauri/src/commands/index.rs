@@ -8,12 +8,14 @@ use tauri::State;
 
 /// Current state of the index of a project (after a window reload the UI asks for it). `None` = no index.
 #[tauri::command(async)]
+#[specta::specta]
 pub fn index_status(project_root: String, registry: State<'_, Arc<IndexRegistry>>) -> Option<IndexStatus> {
     crate::commands::guard("index_status", || registry.get(&PathBuf::from(project_root)).map(|h| h.status()))
 }
 
 /// Compares the project with the disk (stat only). Changes come back as the event `forge://project-changed`.
 #[tauri::command]
+#[specta::specta]
 pub async fn index_verify(project_root: String, registry: State<'_, Arc<IndexRegistry>>) -> Result<VerifyOutcome, String> {
     let registry = registry.inner().clone();
     crate::commands::guard_async("index_verify", async {
@@ -28,6 +30,7 @@ pub async fn index_verify(project_root: String, registry: State<'_, Arc<IndexReg
 
 /// Throws the index away and builds it again.
 #[tauri::command(async)]
+#[specta::specta]
 pub fn index_rebuild(project_root: String, registry: State<'_, Arc<IndexRegistry>>) -> Result<(), String> {
     crate::commands::guard("index_rebuild", || {
         registry.rebuild(&PathBuf::from(project_root));
@@ -37,6 +40,7 @@ pub fn index_rebuild(project_root: String, registry: State<'_, Arc<IndexRegistry
 
 /// Debug menu: writes everything the index holds as JSON into the log folder and returns the file path.
 #[tauri::command]
+#[specta::specta]
 pub async fn index_dump(project_root: String, registry: State<'_, Arc<IndexRegistry>>) -> Result<String, String> {
     let registry = registry.inner().clone();
     crate::commands::guard_async("index_dump", async {

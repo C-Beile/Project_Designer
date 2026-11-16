@@ -56,6 +56,9 @@ database = { path = "../../crates/database", optional = true }
 deploy = { path = "../../crates/deploy", optional = true }
 liquibase = { path = "../../crates/liquibase", optional = true }
 adito-transpiler = { path = "../../crates/adito-transpiler", optional = true }
+tauri-specta = { version = "=2.0.0-rc.29", features = ["derive", "typescript"] }
+specta = { version = "=2.0.0-rc.28", features = ["derive", "serde_json"] }
+specta-typescript = "=0.0.15"
 
 [lints]
 workspace = true

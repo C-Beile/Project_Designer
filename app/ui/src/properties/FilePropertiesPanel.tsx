@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useResource } from '../core/hooks/useResource'
+import { useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
-import type { FileInfoDto } from '../wire/types'
-import { errorText } from '../core/errorText'
+import { Input } from '../core/ui/controls'
+import { Chevron } from '../core/icons/Icon'
 
 // Properties of a plain file in the Projects tree (original Designer, reference shot 94): group
 // "Properties" with Name, Extension, File Size, Modification Time and All Files (the full path).
@@ -16,22 +17,11 @@ export function formatModified(ms: number | null): string {
 }
 
 export function FilePropertiesPanel({ api, path }: { api: ForgeApi; path: string }) {
-  const [info, setInfo] = useState<FileInfoDto | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
-    setInfo(null)
-    setError(null)
-    api
-      .fileInfo(path)
-      .then((i) => !cancelled && setInfo(i))
-      .catch((e) => !cancelled && setError(errorText(e)))
-    return () => {
-      cancelled = true
-    }
-  }, [api, path])
+  const loaded = useResource(() => api.fileInfo(path), [api, path])
+  const info = loaded.data ?? null
+  const error = loaded.error ?? null
 
   if (error) return <div className="forge-panel-empty">{error}</div>
   if (!info) return <div className="forge-panel-empty">Please Wait…</div>
@@ -48,7 +38,7 @@ export function FilePropertiesPanel({ api, path }: { api: ForgeApi; path: string
         <div role="rowgroup" className="psheet-group">
           <div role="row" className="psheet-group-head">
             <span className="psheet-toggle" aria-hidden="true">
-              ▾
+              <Chevron open />
             </span>
             <span className="psheet-group-label">Properties</span>
           </div>
@@ -58,7 +48,7 @@ export function FilePropertiesPanel({ api, path }: { api: ForgeApi; path: string
                 {label}
               </span>
               <span role="gridcell" className="psheet-value">
-                <input type="text" className="psheet-input" aria-label={label} value={value} readOnly title={value} />
+                <Input type="text" className="psheet-input" aria-label={label} value={value} readOnly title={value} />
               </span>
             </div>
           ))}

@@ -54,7 +54,7 @@
   justify-content: center;
   color: var(--fg);
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: var(--radius-control);
 }
 
 .project-tree-toggle:hover { background: color-mix(in srgb, var(--fg) 18%, transparent); }

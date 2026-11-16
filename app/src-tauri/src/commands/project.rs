@@ -19,6 +19,7 @@ use tauri::{Manager, State};
 /// P8 step 2: returns the one project root node of the merged Projects tree; scanning a project
 /// with its ~130 modules takes a few hundred ms, so it runs off the UI thread.
 #[tauri::command]
+#[specta::specta]
 pub async fn open_project(path: String, registry: State<'_, Arc<IndexRegistry>>) -> Result<Vec<TreeNode>, String> {
     let registry = registry.inner().clone();
     crate::commands::guard_async("open_project", async {
@@ -40,6 +41,7 @@ pub async fn open_project(path: String, registry: State<'_, Arc<IndexRegistry>>)
 
 /// P8 step 2: children of a lazily loaded tree node (module file trees, `others`).
 #[tauri::command]
+#[specta::specta]
 pub async fn list_tree_children(node_id: String, actor: State<'_, ProjectActorHandle>) -> Result<Vec<TreeNode>, String> {
     crate::commands::guard_async("list_tree_children", async {
     let actor = actor.inner().clone();
@@ -49,6 +51,7 @@ pub async fn list_tree_children(node_id: String, actor: State<'_, ProjectActorHa
 
 /// P8 step 2: the projects to reopen at start - only folders that still exist (R41).
 #[tauri::command(async)]
+#[specta::specta]
 pub fn restore_open_projects(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     crate::commands::guard("restore_open_projects", || {
     let file = settings_file(&app)?;
@@ -64,6 +67,7 @@ pub fn restore_open_projects(app: tauri::AppHandle) -> Result<Vec<String>, Strin
 
 /// The icons the icon chooser offers (shipped with the app).
 #[tauri::command(async)]
+#[specta::specta]
 pub fn list_icons() -> Vec<project::icons::IconDto> {
     crate::commands::guard("list_icons", || {
     project::icons::bundled_icons()
@@ -72,6 +76,7 @@ pub fn list_icons() -> Vec<project::icons::IconDto> {
 
 /// File > Open Project adds, Close Project removes; returns the new list.
 #[tauri::command(async)]
+#[specta::specta]
 pub fn add_open_project(path: String, app: tauri::AppHandle) -> Result<Vec<String>, String> {
     crate::commands::guard("add_open_project", || {
     update_open_projects(&app, |list| {
@@ -81,6 +86,7 @@ pub fn add_open_project(path: String, app: tauri::AppHandle) -> Result<Vec<Strin
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn remove_open_project(path: String, app: tauri::AppHandle, registry: State<'_, Arc<IndexRegistry>>) -> Result<Vec<String>, String> {
     crate::commands::guard("remove_open_project", || {
     registry.stop(&PathBuf::from(&path));
@@ -99,6 +105,7 @@ pub fn update_open_projects(app: &tauri::AppHandle, change: impl FnOnce(&mut Vec
 /// Find Usages / Safely Delete: where the project's own objects point to one object (read-only).
 /// Uses the index when it is ready; while it is still being built the old scan answers at once.
 #[tauri::command]
+#[specta::specta]
 pub async fn find_usages(project_root: String, object_type: String, name: String, registry: State<'_, Arc<IndexRegistry>>) -> Result<Vec<project::problems::UsageDto>, String> {
     let registry = registry.inner().clone();
     crate::commands::guard_async("find_usages", async {
@@ -119,6 +126,7 @@ pub async fn find_usages(project_root: String, object_type: String, name: String
 /// Problems tab / error badges: parse errors with line, validator findings, dangling references.
 /// Waits for the index (up to 60 s) instead of scanning the whole project a second time.
 #[tauri::command]
+#[specta::specta]
 pub async fn scan_problems(project_root: String, registry: State<'_, Arc<IndexRegistry>>) -> Result<Vec<project::problems::ProblemDto>, String> {
     let registry = registry.inner().clone();
     crate::commands::guard_async("scan_problems", async {
@@ -138,6 +146,7 @@ pub async fn scan_problems(project_root: String, registry: State<'_, Arc<IndexRe
 
 /// Quick file search (double Ctrl): the file names of a project.
 #[tauri::command]
+#[specta::specta]
 pub async fn list_project_files(project_root: String, app: tauri::AppHandle) -> Vec<String> {
     let registry = app.state::<Arc<IndexRegistry>>().inner().clone();
     crate::commands::guard_async("list_project_files", async {
@@ -156,6 +165,7 @@ pub async fn list_project_files(project_root: String, app: tauri::AppHandle) -> 
 
 /// Ctrl+click on an import: the file the module name points to, or nothing.
 #[tauri::command]
+#[specta::specta]
 pub fn resolve_import(project_root: String, spec: String, from_file: String) -> Option<String> {
     crate::commands::guard("resolve_import", || {
     project::import_resolve::resolve_import(&PathBuf::from(project_root), &spec, &from_file)
@@ -167,12 +177,14 @@ pub fn resolve_import(project_root: String, spec: String, from_file: String) -> 
 /// auto-load behaviour was the disproven root-cause hypothesis from the P7 bugfix round, see
 /// `p7-bugfix-empty-project-root-notes.md`). Die Liste steht in `designer.conf` unter `[projects] recent`.
 #[tauri::command(async)]
+#[specta::specta]
 pub fn get_recent_project(app: tauri::AppHandle) -> Result<Option<String>, String> {
     crate::commands::guard("get_recent_project", || Ok(read_recent_paths(&settings_file(&app)?).into_iter().next()))
 }
 
 /// P7 command 3: records the just-opened project path as the new "recently opened" suggestion.
 #[tauri::command(async)]
+#[specta::specta]
 pub fn set_recent_project(path: String, app: tauri::AppHandle) -> Result<(), String> {
     crate::commands::guard("set_recent_project", || {
         let file = settings_file(&app)?;
@@ -196,11 +208,13 @@ fn read_recent_paths(file: &std::path::Path) -> Vec<String> {
 
 /// All recently opened projects for the "Open recent" list.
 #[tauri::command(async)]
+#[specta::specta]
 pub fn get_recent_projects(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     crate::commands::guard("get_recent_projects", || Ok(read_recent_paths(&settings_file(&app)?)))
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn search_in_projects(roots: Vec<String>, query: String, options: project::content_search::SearchOptions) -> Result<project::content_search::SearchResult, String> {
     crate::commands::guard("search_in_projects", || {
         let roots: Vec<PathBuf> = roots.into_iter().map(PathBuf::from).collect();
@@ -209,6 +223,7 @@ pub fn search_in_projects(roots: Vec<String>, query: String, options: project::c
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn replace_in_projects(roots: Vec<String>, files: Vec<String>, query: String, options: project::content_search::SearchOptions, replacement: String) -> Result<project::content_search::ReplaceResult, String> {
     crate::commands::guard("replace_in_projects", || {
         let roots: Vec<PathBuf> = roots.into_iter().map(PathBuf::from).collect();
@@ -219,12 +234,14 @@ pub fn replace_in_projects(roots: Vec<String>, files: Vec<String>, query: String
 
 /// "Open Projects from Folder": the ADITO projects inside one folder (read-only, direct subfolders only).
 #[tauri::command(async)]
+#[specta::specta]
 pub fn find_projects_in_folder(folder: String) -> Result<Vec<project::discover::FoundProject>, String> {
     crate::commands::guard("find_projects_in_folder", || project::discover::find_projects(&PathBuf::from(folder)))
 }
 
 /// Export/Import Project: the data models of the project (read-only).
 #[tauri::command(async)]
+#[specta::specta]
 pub fn list_project_models(project_root: String) -> Vec<project::project_zip::ModelEntry> {
     crate::commands::guard("list_project_models", || {
     project::project_zip::list_models(&PathBuf::from(project_root))
@@ -233,15 +250,18 @@ pub fn list_project_models(project_root: String) -> Vec<project::project_zip::Mo
 
 /// Export Project: writes the chosen models into a new zip file; returns the number of files.
 #[tauri::command]
-pub async fn export_project_zip(project_root: String, models: Vec<(String, String)>, target: String) -> Result<usize, String> {
+#[specta::specta]
+pub async fn export_project_zip(project_root: String, models: Vec<(String, String)>, target: String) -> Result<u32, String> {
     crate::commands::guard_async("export_project_zip", async {
     blocking(move || project::project_zip::export_zip(&PathBuf::from(project_root), &models, &PathBuf::from(target)))
         .await?
+        .map(|count| count as u32)
 }).await
 }
 
 /// Import Project: the models inside a zip file and which of them exist already (read-only).
 #[tauri::command]
+#[specta::specta]
 pub async fn inspect_project_zip(project_root: String, zip_path: String) -> Result<Vec<project::project_zip::ModelEntry>, String> {
     crate::commands::guard_async("inspect_project_zip", async {
     blocking(move || project::project_zip::inspect_zip(&PathBuf::from(project_root), &PathBuf::from(zip_path)))
@@ -251,6 +271,7 @@ pub async fn inspect_project_zip(project_root: String, zip_path: String) -> Resu
 
 /// Import Project: unpacks the chosen models; existing ones only when listed in `overwrite`.
 #[tauri::command]
+#[specta::specta]
 pub async fn import_project_zip(project_root: String, zip_path: String, selected: Vec<(String, String)>, overwrite: Vec<(String, String)>) -> Result<project::project_zip::ImportOutcome, String> {
     crate::commands::guard_async("import_project_zip", async {
     blocking(move || project::project_zip::import_zip(&PathBuf::from(project_root), &PathBuf::from(zip_path), &selected, &overwrite))
@@ -259,6 +280,7 @@ pub async fn import_project_zip(project_root: String, zip_path: String, selected
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn project_create_empty(location: String, name: String) -> Result<String, String> {
     crate::commands::guard_async("project_create_empty", async {
     blocking(move || project::project_create::create_empty_project(&location, &name).map(|p| p.to_string_lossy().into_owned()))

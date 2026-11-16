@@ -1,12 +1,27 @@
 .nav-toggle {
-  flex: 0 0 12px;
-  text-align: center;
+  flex: 0 0 var(--icon-sm);
+  display: inline-flex;
+  justify-content: center;
   color: var(--fg-muted);
+}
+
+.nav-module {
+  display: inline-flex;
+  margin-left: 2px;
 }
 
 .nav-origin {
   margin-left: 6px;
   color: var(--fg-muted);
+}
+
+/* Herkunft (Modul und Version): beim Darüberfahren oder als Spalte, je nach style.toml [navigator] module-hint. */
+.nav-tree[data-module-hint='hover'] .nav-origin {
+  display: none;
+}
+
+.nav-tree[data-module-hint='hover'] .nav-row:hover .nav-origin {
+  display: inline;
 }
 
 .nav-filter-row {

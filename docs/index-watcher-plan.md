@@ -328,7 +328,7 @@ Hinweis: Die alten DTOs sind snake_case (`TreeNode.object_type`, `ProblemDto.nod
 - Panic im Parser: wird abgefangen, Problem "internal error while reading", ERROR mit Pfad.
 
 ### C5. Logging (IDE-Log)
-**"IDE-Log" ist `crashlog::write_entry`:** Datei unter `%APPDATA%\de.threehillsit.dito-designer\logs` plus `forge://log-entry` in den Reiter "IDE Log". Die Maskierung mit `scrub` passiert dort automatisch.
+**"IDE-Log" ist `crashlog::write_entry`:** Datei unter `%LOCALAPPDATA%\DitoDesigner\logs` plus `forge://log-entry` in den Reiter "IDE Log". Die Maskierung mit `scrub` passiert dort automatisch.
 
 | Stufe (kind) | Wann | Inhalt |
 |---|---|---|

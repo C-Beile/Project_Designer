@@ -6,6 +6,8 @@ import { isOpenable, type TreeNode } from '../wire/types'
 import { NodeIcon } from './treeIcons'
 import { TunnelStateIcon } from './TunnelStateIcon'
 import { TunnelGlyph } from './TunnelGlyph'
+import { Button } from '../core/ui/controls'
+import { ConfiguredIcon } from '../core/icons/Icon'
 
 // Projects tree like the original Designer (LAYOUT_SPEC §4.2/§4.4): several project roots, a
 // single click selects (fills Properties/Navigator later), double-click or Enter opens. Keyboard
@@ -344,8 +346,8 @@ export function ProjectTree({
                 return badge ? <TunnelStateIcon state={badge.state} title={badge.title} /> : null
               })()}
               {onSystemTunnel && node.object_type === 'system' && !node.id.startsWith('missing:') ? (
-                <button
-                  type="button"
+                <Button variant="bare"
+
                   className="project-tree-tunnel-btn"
                   aria-label={`Tunnel manager of ${node.label}`}
                   title="Open the tunnel manager"
@@ -355,8 +357,8 @@ export function ProjectTree({
                   }}
                   onDoubleClick={(e) => e.stopPropagation()}
                 >
-                  <TunnelGlyph size={13} />
-                </button>
+                  <TunnelGlyph size="sm" />
+                </Button>
               ) : null}
             </>
           )
@@ -432,9 +434,7 @@ export function ProjectTree({
                 }}
               >
                 {node.is_leaf ? null : (
-                  <svg width="12" height="12" viewBox="0 0 12 12" className="project-tree-arrow" style={{ transform: isExpanded ? 'rotate(90deg)' : 'none' }}>
-                    <path d="M4 2 L8.5 6 L4 10 Z" fill="currentColor" />
-                  </svg>
+                  <ConfiguredIcon id="chevron" area="control" fallback={isExpanded ? 'caret-down' : 'caret-right'} size="sm" className="project-tree-arrow" />
                 )}
               </span>
               <span className="project-tree-icon">
@@ -447,7 +447,6 @@ export function ProjectTree({
               <span className={`project-tree-label${node.bold ? ' is-bold' : ''}`}>{node.label}</span>
               {onRight ? null : statusIcons}
               {node.type_label ? <span className="project-tree-type is-bold">[{node.type_label}]</span> : null}
-              {node.path ? <span className="project-tree-dim">{node.path}</span> : null}
               {node.origin && node.kind !== 'module' ? <span className="project-tree-dim project-tree-origin">{node.origin}</span> : null}
               {node.overrides?.length ? <span className="project-tree-dim">({node.overrides.join(', ')})</span> : null}
               {onRight ? <span className="project-tree-tail">{statusIcons}{trailIcons}</span> : trailIcons}

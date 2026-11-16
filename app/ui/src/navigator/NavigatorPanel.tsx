@@ -5,6 +5,11 @@ import type { NavNode } from '../wire/types'
 import { setApplicationFilter, useApplicationFilter } from '../editors/applicationFilter'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
+import { Button } from '../core/ui/controls'
+import { copyText } from '../core/clipboard'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
+import { Chevron, Icon } from '../core/icons/Icon'
+import { styleConfig } from '../config/styleConfig'
 
 // Navigator (LAYOUT_SPEC §7): the structure of the selected object. Selecting an element shows
 // its properties in the Properties panel. Entities: RecordContainers with field bindings, Fields,
@@ -12,74 +17,29 @@ import type { MenuEntry } from '../tree/contextMenu'
 // views; processes: the functions of the JDito code; application: the object-type filter.
 
 function NavIcon({ icon }: { icon: string }) {
-  const common = { width: 14, height: 14, viewBox: '0 0 14 14', 'aria-hidden': true }
   switch (icon) {
     case 'folder':
-      return (
-        <svg {...common}>
-          <path d="M1 3.5h4l1 1h7v7.5H1z" fill="var(--icon-folder)" />
-        </svg>
-      )
+      return <Icon name="folder" weight="fill" size="sm" color="var(--icon-folder)" />
     case 'container':
-      return (
-        <svg {...common}>
-          <ellipse cx="7" cy="3.5" rx="5" ry="2" fill="none" stroke="var(--fg-muted)" />
-          <path d="M2 3.5v7c0 1.1 2.2 2 5 2s5-.9 5-2v-7" fill="none" stroke="var(--fg-muted)" />
-        </svg>
-      )
+      return <Icon name="database" size="sm" color="muted" />
     case 'consumer':
-      return (
-        <svg {...common}>
-          <path d="M12 7H3M6 4 3 7l3 3" fill="none" stroke="var(--fg)" strokeWidth="1.4" />
-        </svg>
-      )
+      return <Icon name="arrow-left" weight="bold" size="sm" />
     case 'provider':
-      return (
-        <svg {...common}>
-          <path d="M2 7h9M8 4l3 3-3 3" fill="none" stroke="var(--fg)" strokeWidth="1.4" />
-        </svg>
-      )
+      return <Icon name="arrow-right" weight="bold" size="sm" />
     case 'function':
-      return (
-        <svg {...common}>
-          <circle cx="7" cy="7" r="4" fill="var(--error)" />
-        </svg>
-      )
+      return <Icon name="circle" weight="fill" size="sm" color="var(--error)" />
     case 'table':
-      return (
-        <svg {...common}>
-          <rect x="1.5" y="2.5" width="11" height="9" fill="none" stroke="var(--fg-muted)" />
-          <path d="M1.5 5.5h11M5.5 2.5v9" stroke="var(--fg-muted)" />
-        </svg>
-      )
+      return <Icon name="table" size="sm" color="muted" />
     case 'key':
-      return (
-        <svg {...common}>
-          <circle cx="4.5" cy="8" r="2.3" fill="none" stroke="var(--icon-folder)" strokeWidth="1.3" />
-          <path d="M6.6 7 12 2M10 4l1.5 1.5" stroke="var(--icon-folder)" strokeWidth="1.3" fill="none" />
-        </svg>
-      )
+      return <Icon name="key" size="sm" color="var(--icon-folder)" />
     case 'object':
     case 'entity':
-      return (
-        <svg {...common}>
-          <rect x="2" y="1.5" width="10" height="11" fill="none" stroke="var(--icon-entity)" />
-        </svg>
-      )
+      return <Icon name="square" size="sm" color="var(--icon-entity)" />
     case 'view':
     case 'template':
-      return (
-        <svg {...common}>
-          <rect x="1.5" y="2" width="11" height="10" fill="none" stroke="var(--icon-neonView)" />
-          <path d="M1.5 5h11" stroke="var(--icon-neonView)" />
-        </svg>
-      )
+      return <Icon name="browser" size="sm" color="var(--icon-neonView)" />
     default:
-      return (
-        <svg {...common}>
-          <rect x="3" y="3" width="8" height="8" fill="none" stroke="var(--fg-muted)" />
-        </svg>
-      )
+      return <Icon name="square" size="sm" color="muted" />
   }
 }
 
@@ -150,7 +110,7 @@ export function NavigatorPanel({
   const treeRef = useRef<HTMLDivElement | null>(null)
   const scrollFrame = useRef<number | null>(null)
 
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (lastNode.current !== nodeId) {
       setCollapsed(new Set(nodeId ? (collapsedMemory.get(nodeId) ?? []) : []))
       setNodes(null)
@@ -160,22 +120,18 @@ export function NavigatorPanel({
       setNodes(null)
       return
     }
-    let cancelled = false
     setLoading(true)
     api
       .getNavigator(nodeId)
       .then((n) => {
-        if (!cancelled) setNodes(n)
+        if (!signal.aborted) setNodes(n)
       })
       .catch(() => {
-        if (!cancelled) setNodes([])
+        if (!signal.aborted) setNodes([])
       })
       .finally(() => {
-        if (!cancelled) setLoading(false)
+        if (!signal.aborted) setLoading(false)
       })
-    return () => {
-      cancelled = true
-    }
   }, [api, nodeId, objectType, version])
 
   // After the first edit of a grey entry its mapping exists: the selection follows to the real element.
@@ -203,7 +159,7 @@ export function NavigatorPanel({
   const pick = (id: string, node: NavNode) => {
     if (id === 'reset' && node.path && onReset) onReset(node.path, node.label)
     else if (id === 'activate' && node.path && onActivate) onActivate(node.path, node.label)
-    else if (id === 'copy') void navigator.clipboard?.writeText(node.label)
+    else if (id === 'copy') void copyText(node.label)
   }
 
   interface Row {
@@ -261,13 +217,18 @@ export function NavigatorPanel({
             if (hasChildren) toggle(key)
           }}
         >
-          {hasChildren ? (isCollapsed ? '▸' : '▾') : ''}
+          {hasChildren ? <Chevron open={!isCollapsed} /> : null}
         </span>
         <span className="nav-icon" title={node.icon === 'function' ? 'JDito function found in the process file (a marker, not an error)' : undefined}>
           <NavIcon icon={node.icon} />
         </span>
         <span className="nav-label">{node.label}</span>
-        {node.with_origin && origin ? <span className="nav-origin">{origin}</span> : null}
+        {node.with_origin && origin && styleConfig.navigator.moduleMark ? (
+          <span className="nav-module" title={origin}>
+            <Icon name="package" size="sm" color="muted" />
+          </span>
+        ) : null}
+        {node.with_origin && origin && styleConfig.navigator.moduleHint !== 'off' ? <span className="nav-origin">{origin}</span> : null}
       </div>
     )
   }
@@ -279,6 +240,7 @@ export function NavigatorPanel({
   return (
     <div
       className="nav-tree"
+      data-module-hint={styleConfig.navigator.moduleHint}
       role="tree"
       aria-label="Navigator"
       ref={treeRef}
@@ -333,25 +295,25 @@ function ApplicationFilter() {
   return (
     <div className="nav-filter" role="group" aria-label="Object filter">
       {entries.map(([label, color, indent]) => (
-        <button
+        <Button variant="bare"
           key={label}
-          type="button"
+
           role="checkbox"
           aria-checked={checked[label]}
           className={checked[label] ? 'nav-row nav-filter-row' : 'nav-row nav-filter-row is-dimmed'}
           style={{ paddingLeft: 6 + indent * 16 }}
-          disabled={!(label in shared) && label !== 'Executables Only'}
+          isDisabled={!(label in shared) && label !== 'Executables Only'}
           title={label === 'Process' || label === 'Report' ? 'Shown in the list for orientation; the node kind in the menu is not documented, so it cannot be dragged.' : label === 'Executables Only' ? 'Only processes of the tree group executables (variant EXECUTABLE)' : undefined}
           onClick={() => {
             const k = (label === 'Executables Only' ? 'ExecutablesOnly' : label) as keyof typeof shared
             setApplicationFilter(k, !shared[k])
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-            <path d="M1 3.5h4l1 1h7v7.5H1z" fill={`var(${color})`} opacity={checked[label] ? 1 : 0.35} />
-          </svg>
+          <span style={{ display: 'inline-flex', opacity: checked[label] ? 1 : 0.35 }}>
+            <Icon name="folder" weight="fill" size="sm" color={`var(${color})`} />
+          </span>
           <span className="nav-label">{label}</span>
-        </button>
+        </Button>
       ))}
     </div>
   )

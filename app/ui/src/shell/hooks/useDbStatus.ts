@@ -7,6 +7,7 @@ import type { DbStatus, TreeNode } from '../../wire/types'
 import type { OutputLine, OutputSubTab } from '../OutputPanel'
 import { listenBackend } from './backendEvent'
 import { timestamp } from './timestamp'
+import { useAbortableEffect } from '../../core/hooks/useAbortableEffect'
 
 export const NO_DB: DbStatus = { connected: false, tunnel_up: false, database: null, host: null }
 const DB_POLL_MS = 5000
@@ -38,13 +39,12 @@ export function useDbStatus(
   )
   const clearDb = useCallback(() => setDb(NO_DB), [])
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     const poll = () =>
       api
         .dbSystems()
         .then((list) => {
-          if (cancelled) return
+          if (signal.aborted) return
           setSystemsDb(list)
           const s = list.find((e) => e.active)?.status ?? NO_DB
           setDb((prev) => (prev.connected === s.connected && prev.tunnel_up === s.tunnel_up && prev.database === s.database ? prev : s))
@@ -53,7 +53,6 @@ export function useDbStatus(
     void poll()
     const timer = setInterval(poll, DB_POLL_MS)
     return () => {
-      cancelled = true
       clearInterval(timer)
     }
   }, [api])

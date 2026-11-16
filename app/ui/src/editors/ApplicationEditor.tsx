@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import type { EditorProps } from './registry'
 import { useProjectIndex } from './projectIndex'
 import { setApplicationFilter, useApplicationFilter } from './applicationFilter'
@@ -20,6 +20,8 @@ import {
   type AppNode,
 } from './applicationTree'
 import { errorText } from '../core/errorText'
+import { Button, Input } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Global menu of the Web Client (`____SYSTEM_APPLICATION_NEON`), as in the original Designer
 // (shot 49): left the menu as nested group tiles, right the list of everything that can be put into
@@ -77,15 +79,11 @@ export function ApplicationEditor({ nodeId, tree, api, onTreeChange }: EditorPro
   const [hover, setHover] = useState<{ name: string; label: string; used: boolean; draggable: boolean; x: number; y: number } | null>(null)
   const busy = useRef(false)
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     api
       .getObjectSource(nodeId)
-      .then((s) => !cancelled && setSource(s))
-      .catch((e) => !cancelled && setError(errorText(e)))
-    return () => {
-      cancelled = true
-    }
+      .then((s) => !signal.aborted && setSource(s))
+      .catch((e) => !signal.aborted && setError(errorText(e)))
   }, [api, nodeId, tree])
 
   const root = useMemo(() => (source ? parseApplicationTree(source.text) : null), [source])
@@ -266,16 +264,16 @@ export function ApplicationEditor({ nodeId, tree, api, onTreeChange }: EditorPro
     const siblings = nodeAt(root!, parentPath)?.children.length ?? 0
     const buttons = isSelected && !readOnly ? (
       <span className="app-tools">
-        <button type="button" aria-label="Move up" disabled={i === 0} onClick={(e) => (e.stopPropagation(), step('up', path))}>{'↑'}</button>
-        <button type="button" aria-label="Move down" disabled={i >= siblings - 1} onClick={(e) => (e.stopPropagation(), step('down', path))}>{'↓'}</button>
-        <button type="button" aria-label="Indent" disabled={i === 0 || nodeAt(root!, [...parentPath, i - 1])?.kind !== KIND_GROUP} onClick={(e) => (e.stopPropagation(), step('indent', path))}>{'⇥'}</button>
-        <button type="button" aria-label="Outdent" disabled={path.length < 2} onClick={(e) => (e.stopPropagation(), step('outdent', path))}>{'⇤'}</button>
+        <Button variant="bare" aria-label="Move up" isDisabled={i === 0} onClick={(e) => (e.stopPropagation(), step('up', path))}>{'↑'}</Button>
+        <Button variant="bare" aria-label="Move down" isDisabled={i >= siblings - 1} onClick={(e) => (e.stopPropagation(), step('down', path))}>{'↓'}</Button>
+        <Button variant="bare" aria-label="Indent" isDisabled={i === 0 || nodeAt(root!, [...parentPath, i - 1])?.kind !== KIND_GROUP} onClick={(e) => (e.stopPropagation(), step('indent', path))}>{'⇥'}</Button>
+        <Button variant="bare" aria-label="Outdent" isDisabled={path.length < 2} onClick={(e) => (e.stopPropagation(), step('outdent', path))}>{'⇤'}</Button>
       </span>
     ) : null
     const removeButton = readOnly ? null : (
-      <button type="button" className="app-remove" aria-label={`Remove ${node.name}`} onClick={(e) => (e.stopPropagation(), remove(path))}>
+      <Button variant="bare" className="app-remove" aria-label={`Remove ${node.name}`} onClick={(e) => (e.stopPropagation(), remove(path))}>
         {'⊗'}
-      </button>
+      </Button>
     )
     const dragProps = readOnly
       ? {}
@@ -325,7 +323,7 @@ export function ApplicationEditor({ nodeId, tree, api, onTreeChange }: EditorPro
         {...dropProps(path, null)}
       >
         <div className="app-tile-head" {...dragProps}>
-          <input
+          <Input
             className="app-title"
             aria-label={`${node.name} title`}
             placeholder="(no title)"
@@ -337,7 +335,7 @@ export function ApplicationEditor({ nodeId, tree, api, onTreeChange }: EditorPro
           />
           <span className="app-name">[{node.name}]</span>
           {node.icon !== null || path.length === 1 ? (
-            <input
+            <Input
               className="app-icon-field"
               aria-label={`${node.name} icon`}
               placeholder="icon"
@@ -361,13 +359,13 @@ export function ApplicationEditor({ nodeId, tree, api, onTreeChange }: EditorPro
     <div className="application-editor app-split" aria-label="Application navigation tree">
       <div className="app-left">
         <div className="app-bar">
-          <button type="button" onClick={addGroup} disabled={readOnly}>
+          <Button variant="bare" onClick={addGroup} isDisabled={readOnly}>
             Add group
-          </button>
+          </Button>
           {issues.length > 0 ? (
-            <button type="button" className="app-issues" title="Jump to the first broken reference" onClick={jumpToFirstIssue}>
+            <Button variant="bare" className="app-issues" title="Jump to the first broken reference" onClick={jumpToFirstIssue}>
               {issues.length} broken reference{issues.length === 1 ? '' : 's'}
-            </button>
+            </Button>
           ) : null}
           {readOnly ? <span className="app-readonly">Read only: this object belongs to a module.</span> : null}
         </div>
@@ -379,12 +377,12 @@ export function ApplicationEditor({ nodeId, tree, api, onTreeChange }: EditorPro
       </div>
       <div className="app-right">
         <div className="app-filter-row">
-          <input type="search" aria-label="Filter list" placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input type="search" aria-label="Filter list" placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
           <span className="app-chips" role="group" aria-label="Types">
             {PALETTE.map((p) => (
-              <button
+              <Button variant="bare"
                 key={p.type}
-                type="button"
+
                 role="checkbox"
                 aria-checked={filter[p.type]}
                 className={`app-chip${filter[p.type] ? ' is-on' : ''}`}
@@ -393,11 +391,11 @@ export function ApplicationEditor({ nodeId, tree, api, onTreeChange }: EditorPro
               >
                 <AppKindIcon kind={p.icon} />
                 {p.label}
-              </button>
+              </Button>
             ))}
-            <button type="button" role="checkbox" aria-checked={filter.ExecutablesOnly} className={`app-chip${filter.ExecutablesOnly ? ' is-on' : ''}`} title="Only processes of the tree group executables (variant EXECUTABLE)" onClick={() => setApplicationFilter('ExecutablesOnly', !filter.ExecutablesOnly)}>
+            <Button variant="bare" role="checkbox" aria-checked={filter.ExecutablesOnly} className={`app-chip${filter.ExecutablesOnly ? ' is-on' : ''}`} title="Only processes of the tree group executables (variant EXECUTABLE)" onClick={() => setApplicationFilter('ExecutablesOnly', !filter.ExecutablesOnly)}>
               Executables Only
-            </button>
+            </Button>
           </span>
           <span className="app-count" role="status">
             {palette.length} of {paletteTotal}

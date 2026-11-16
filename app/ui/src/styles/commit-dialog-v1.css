@@ -28,7 +28,7 @@
 .forge-commit-treebox {
   max-height: 340px;
   overflow: auto;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-input);
   padding: 2px 4px;
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { isMacPlatform } from '../core/shortcuts'
 import type { ReactNode } from 'react'
 import { useSshKeyPath } from '../settings/sshKey'
@@ -10,6 +10,8 @@ import { Modal } from '../core/Modal'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
 import { errorText } from '../core/errorText'
+import { Button, Input } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Services tab of the left panel (LAYOUT_SPEC section 4.3): the database connection, its tables
 // and the tunnel. The two export files are chosen here (also through the Tunnel node's menu or a
@@ -23,10 +25,10 @@ function PathField({ label, value, onChange, onBrowse }: { label: string; value:
     <label className="forge-field">
       <span>{label}</span>
       <span className="forge-field-row">
-        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} aria-label={label} />
-        <button type="button" onClick={onBrowse}>
+        <Input type="text" value={value} onChange={(e) => onChange(e.target.value)} aria-label={label} />
+        <Button variant="bare" onClick={onBrowse}>
           Browse...
-        </button>
+        </Button>
       </span>
     </label>
   )
@@ -39,11 +41,11 @@ function AuthFields({ mode, onMode, password, onPassword, keyField }: { mode: 'k
     <fieldset className="forge-auth">
       <legend>Tunnel authentication</legend>
       <label className="forge-check">
-        <input type="radio" name="tunnel-auth" checked={mode === 'key'} onChange={() => onMode('key')} />
+        <Input type="radio" name="tunnel-auth" checked={mode === 'key'} onChange={() => onMode('key')} />
         <span>Key auth</span>
       </label>
       <label className="forge-check">
-        <input type="radio" name="tunnel-auth" checked={mode === 'basic'} onChange={() => onMode('basic')} />
+        <Input type="radio" name="tunnel-auth" checked={mode === 'basic'} onChange={() => onMode('basic')} />
         <span>Basic auth</span>
       </label>
       {mode === 'key' ? (
@@ -51,7 +53,7 @@ function AuthFields({ mode, onMode, password, onPassword, keyField }: { mode: 'k
       ) : (
         <label className="forge-field">
           <span>Tunnel password</span>
-          <input type="password" autoComplete="off" value={password} onChange={(e) => onPassword(e.target.value)} aria-label="Tunnel password" />
+          <Input type="password" autoComplete="off" value={password} onChange={(e) => onPassword(e.target.value)} aria-label="Tunnel password" />
         </label>
       )}
     </fieldset>
@@ -88,23 +90,19 @@ export function ServicesPanel({
   const [dialog, setDialog] = useState<ConfigFocus | null>(null)
   const [schemaTick, setSchemaTick] = useState(0)
 
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (!db.connected) {
       setTables([])
       return
     }
-    let cancelled = false
     api
       .dbSchema()
       .then((t) => {
-        if (!cancelled) setTables(t)
+        if (!signal.aborted) setTables(t)
       })
       .catch((e) => {
-        if (!cancelled) setError(String(e instanceof Error ? e.message : e))
+        if (!signal.aborted) setError(String(e instanceof Error ? e.message : e))
       })
-    return () => {
-      cancelled = true
-    }
   }, [api, db.connected, schemaTick])
 
   async function browse(title: string, label: string, extensions: string[], set: (v: string) => void) {
@@ -183,8 +181,8 @@ export function ServicesPanel({
           {db.connected ? (
             <ul role="group">
               <li role="treeitem" aria-expanded="true">
-                <button
-                  type="button"
+                <Button variant="bare"
+
                   className="forge-services-db"
                   title="Open SQL editor"
                   onClick={() => onOpenSql('')}
@@ -194,13 +192,13 @@ export function ServicesPanel({
                   }}
                 >
                   {db.database} @ {db.host}
-                </button>
+                </Button>
                 <ul role="group" aria-label="Tables">
                   {tables.map((t) => (
                     <li key={`${t.schema}.${t.name}`} role="treeitem" aria-selected="false">
-                      <button type="button" className="forge-services-table" title={`SELECT * FROM ${t.name}`} onClick={() => onOpenSql(`SELECT * FROM \`${t.name}\` LIMIT 100`)}>
+                      <Button variant="bare" className="forge-services-table" title={`SELECT * FROM ${t.name}`} onClick={() => onOpenSql(`SELECT * FROM \`${t.name}\` LIMIT 100`)}>
                         {t.name}
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -211,8 +209,8 @@ export function ServicesPanel({
           )}
         </li>
         <li role="treeitem" aria-expanded="true">
-          <button
-            type="button"
+          <Button variant="bare"
+
             className="forge-services-group forge-services-tunnel"
             title="Double-click to choose the tunnel and server config"
             onDoubleClick={() => setDialog('tunnel')}
@@ -222,7 +220,7 @@ export function ServicesPanel({
             }}
           >
             Tunnel
-          </button>
+          </Button>
           <p className="forge-field-hint" data-testid="tunnel-state">
             {db.tunnel_up ? 'SSH tunnel is open' : 'SSH tunnel is closed'}
           </p>
@@ -237,12 +235,12 @@ export function ServicesPanel({
           onClose={() => setDialog(null)}
           footer={
             <>
-              <button type="button" onClick={() => setDialog(null)}>
+              <Button variant="bare" onClick={() => setDialog(null)}>
                 OK
-              </button>
-              <button type="button" disabled={!canConnect || db.connected} onClick={() => { setDialog(null); void connect() }}>
+              </Button>
+              <Button variant="bare" isDisabled={!canConnect || db.connected} onClick={() => { setDialog(null); void connect() }}>
                 Connect
-              </button>
+              </Button>
             </>
           }
         >
@@ -257,9 +255,9 @@ export function ServicesPanel({
           <PathField label="Tunnel config (tunnelconfig.xml)" value={tunnelConfig} onChange={setTunnelConfig} onBrowse={() => browse('Choose the tunnel config', 'XML', ['xml'], setTunnelConfig)} />
           <PathField label="Server config (serverconfig_system.xml)" value={serverConfig} onChange={setServerConfig} onBrowse={() => browse('Choose the system server config', 'XML', ['xml'], setServerConfig)} />
           <AuthFields mode={authMode} onMode={setAuthMode} password={tunnelPassword} onPassword={setTunnelPassword} keyField={<PathField label={isMacPlatform() ? 'SSH key (OpenSSH, optional)' : 'SSH key (.ppk, optional)'} value={keyFile} onChange={setKeyFile} onBrowse={() => browse('Choose the SSH key', isMacPlatform() ? 'OpenSSH key' : 'PuTTY key', isMacPlatform() ? [] : ['ppk'], setKeyFile)} />} />
-          <button type="button" onClick={connect} disabled={!canConnect}>
+          <Button variant="bare" onClick={connect} isDisabled={!canConnect}>
             {busy ? 'Connecting...' : 'Connect'}
-          </button>
+          </Button>
         </div>
       )}
     </div>

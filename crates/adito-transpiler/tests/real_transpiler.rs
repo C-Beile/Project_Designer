@@ -69,6 +69,7 @@ fn collecting_sink() -> (EventSink, Arc<Mutex<Vec<TranspileEvent>>>) {
 }
 
 #[test]
+#[ignore = "braucht eine echte ADITO-Installation oder ein Korpus (cargo test -- --ignored)"]
 fn valid_minimal_project_transpiles_successfully_with_exit_code_0() {
     let _guard = real_subprocess_lock().lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let config = TranspilerConfig::new(INSTALL_DIR, USER_DIR).with_timeout(Duration::from_secs(180));
@@ -107,6 +108,7 @@ fn valid_minimal_project_transpiles_successfully_with_exit_code_0() {
 }
 
 #[test]
+#[ignore = "braucht eine echte ADITO-Installation oder ein Korpus (cargo test -- --ignored)"]
 fn broken_project_fails_transpilation_with_exit_code_150() {
     let _guard = real_subprocess_lock().lock().unwrap_or_else(|poisoned| poisoned.into_inner());
     let config = TranspilerConfig::new(INSTALL_DIR, USER_DIR).with_timeout(Duration::from_secs(180));

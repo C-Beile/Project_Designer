@@ -4,7 +4,10 @@ import { getOptions, saveOptions, subscribeOptions } from '../settings/options'
 import { isPluginActive, subscribePluginPrefs } from '../settings/plugins'
 import { findCustomTheme, subscribeCustomThemes } from './customThemes'
 import { applyUiTheme } from './uiTheme'
-import { applyColorOverrides, subscribeColorOverrides } from './colorOverrides'
+import { BUILTIN_TOML_THEMES } from './builtinThemes'
+import { applyThemeTokens } from './themeToml'
+import { findUserTheme, subscribeThemes, USER_THEME_PATH } from './themeStore'
+import { setActiveEditorTheme } from './editorTheme'
 
 export type ThemeName = 'dark' | 'light' | 'lion'
 
@@ -12,12 +15,10 @@ export const THEME_LABELS: Record<ThemeName, string> = { dark: 'Dark (Night Owl)
 
 const THEME_PATH = ['appearance', 'theme'] as const
 
-// Night Owl (design-direction.md) is the confirmed dark palette; the light palette in tokens.css
-// is Forge's own, not-yet-confirmed counterpart (p6-theming-notes.md). Defaulting to 'dark' means
-// nobody sees the unconfirmed palette unless they deliberately switch to it.
+// Während des Umbaus ist Lion in der City der Standard (docs/ui-refactor-plan.md). Night Owl und Light folgen am Schluss.
 function readStoredTheme(): ThemeName {
   const stored = configGet<string>(...THEME_PATH)
-  return stored === 'light' || stored === 'lion' ? stored : 'dark'
+  return stored === 'light' || stored === 'dark' ? stored : 'lion'
 }
 
 /** Applies `data-theme` to <html> and persists the choice; returns the current theme and a setter. Without an argument the setter flips between dark and light. */
@@ -26,14 +27,15 @@ export function useTheme(): [ThemeName, (next?: ThemeName) => void] {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
-    // Der Standard (dark) steht nicht in der Datei: ein leerer Wert fehlt einfach.
-    configSet(THEME_PATH, theme === 'dark' ? undefined : theme)
+    // Der Standard (lion) steht nicht in der Datei: ein leerer Wert fehlt einfach.
+    configSet(THEME_PATH, theme === 'lion' ? undefined : theme)
   }, [theme])
 
   // The Options window (another window) changed the choice and Apply keeps it open: follow it right away.
   useEffect(() => {
     return onConfigChange((path) => {
       if (touches(path, THEME_PATH)) setTheme(readStoredTheme())
+      if (touches(path, USER_THEME_PATH)) setThemeStamp((n) => n + 1)
     })
   }, [])
 
@@ -43,13 +45,13 @@ export function useTheme(): [ThemeName, (next?: ThemeName) => void] {
     const bump = () => setThemeStamp((n) => n + 1)
     const offOptions = subscribeOptions(bump)
     const offThemes = subscribeCustomThemes(bump)
-    const offColors = subscribeColorOverrides(bump)
     const offPlugins = subscribePluginPrefs(bump)
+    const offUserThemes = subscribeThemes(bump)
     return () => {
       offOptions()
       offThemes()
-      offColors()
       offPlugins()
+      offUserThemes()
     }
   }, [])
   // A VS Code theme only counts while the import plugin is on; switching the plugin off brings the standard theme back.
@@ -64,9 +66,11 @@ export function useTheme(): [ThemeName, (next?: ThemeName) => void] {
     wasOn.current = importOn
   }, [importOn])
   useEffect(() => {
-    applyUiTheme(chosen ? findCustomTheme(chosen)?.data : undefined, theme)
-    // The colours the user set by hand lie on top of the theme.
-    applyColorOverrides()
+    const user = chosen ? undefined : findUserTheme(configGet<string>(...USER_THEME_PATH))?.parsed
+    applyUiTheme(chosen ? findCustomTheme(chosen)?.data : undefined, user ? user.meta.kind : theme)
+    const toml = chosen ? undefined : (user ?? BUILTIN_TOML_THEMES[theme])
+    applyThemeTokens(toml?.tokens)
+    setActiveEditorTheme(toml ?? null)
   }, [chosen, theme, themeStamp])
 
   const toggle = useCallback((next?: ThemeName) => setTheme((t) => next ?? (t === 'dark' ? 'light' : 'dark')), [])

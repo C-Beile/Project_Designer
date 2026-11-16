@@ -6,26 +6,31 @@ use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct EntryDto {
     pub name: String,
     pub is_dir: bool,
+    #[specta(type = u32)]
     pub size_bytes: u64,
+    #[specta(type = Option<i32>)]
     pub modified_unix: Option<i64>,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct VersionDirDto {
     pub name: String,
     pub path: String,
+    #[specta(type = u32)]
     pub size_bytes: u64,
+    #[specta(type = Option<i32>)]
     pub modified_unix: Option<i64>,
+    #[specta(type = Option<u32>)]
     pub days_unused: Option<u64>,
     /// Not used for longer than the threshold: the Janitor would offer it for removal.
     pub outdated: bool,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct LocalDataInfo {
     pub app_version: String,
     pub exe_dir: String,

@@ -4,7 +4,7 @@
 | Datei | Wofür |
 |---|---|
 | `protocol.ts` | Was Haupt- und Nebenfenster sich sagen: `EVENTS`, `FloatView`, `MainState`, `FloatAction`, Größen. |
-| `windowService.ts` | Der eine Ort, der OS-Fenster öffnet (`openDialogWindow`, `openFloatWindow`). Tauri steckt hinter `WindowBackend`. |
+| `windowService.ts` | Der eine Ort, der OS-Fenster öffnet (`openDialogWindow`, `openFloatWindow`). Tauri steckt hinter `WindowBackend`. Fenster-Limit aus `app/config/limits.toml`: `osPopupsAvailable(name?)` (Dialoge, sonst eingebettet), `osEditorWindowAvailable(offen)`; Rust meldet `window-limit`. |
 | `WindowRoot.tsx` | Einstieg jedes Nebenfensters: wählt nach `?window=` float, dialog oder editor. |
 | `DialogWindowApp.tsx` | Inhalt eines Dialog-Fensters. Tabelle `DIALOG_WINDOWS` (Name zu Dialog). |
 | `FloatApp.tsx` | Inhalt eines schwebenden Panels (scm, services, navigator, properties, output). |
@@ -22,7 +22,7 @@
 Eigene Betriebssystem-Fenster: schwebende Panels, Dialoge, verschobene Editoren. Das Hauptfenster bleibt der einzige Ort, an dem Projekt und Dokumente leben.
 
 ## Einstiegspunkte
-- `src/main.tsx` lädt bei `?window=<kind>&name=<name>` nur `WindowRoot` (nicht die ganze App).
+- `src/main.tsx` lädt bei `?window=<kind>&name=<name>` `WindowRoot` statt der App. `WindowRoot` lädt die Fenster-Apps per `lazyNamed`; Editoren melden sich erst im Editor-Fenster an.
 - Hauptfenster-Seite: `shell/hooks/useFloatingWindows.ts`, `useEditorWindows`, `useDialogWindows.ts`.
 
 ## Abhängigkeiten
@@ -32,9 +32,10 @@ Eigene Betriebssystem-Fenster: schwebende Panels, Dialoge, verschobene Editoren.
 ## Regeln und Fallen
 - Alles reist als Tauri-Event (`EVENTS` in `protocol.ts`). Ein Fenster hat keinen eigenen Projektzustand. Es bekommt `MainState` und schickt `FloatAction` zurück.
 - Ein Dokument ist in genau einem Fenster offen.
-- Ohne Tauri (Browser, Tests) gibt `osWindowsAvailable()` false. Dann laufen die eingebetteten Dialoge. Tests setzen ein Fake mit `setWindowBackend` (`src/test/fakeWindowBackend.ts`).
+- Ohne Tauri (Browser, Tests) gibt `osWindowsAvailable()` false. Dann laufen die eingebetteten Dialoge. Tests setzen ein Fake mit `setWindowBackend` (`tests/support/fakeWindowBackend.ts`).
 - Jedes OS-Fenster hat sein eigenes Register. `WindowRoot` meldet die Plugins an (`registerFeaturePlugins`), bevor es zeichnet. Git-Fenster (`git`, `sync`, `commitdiff`) und das scm-Panel kommen über `getDialog`/`useDialog`; ohne Plugin bleiben sie leer.
 - Das Ergebnis eines Dialog-Fensters wird als JSON-Text übertragen. Es muss serialisierbar sein.
+- `WindowRoot` und `DialogWindowApp` laden Fenster und Dialoge per `lazyNamed`: ein Popup holt nur seinen Code.
 - Neue Fenster brauchen einen passenden Namen in `app/src-tauri/capabilities/default.json` (`float-*`, `dialog-*`, `editor-*` sind erlaubt).
 
 ## Wenn du X ändern willst
@@ -46,4 +47,4 @@ Eigene Betriebssystem-Fenster: schwebende Panels, Dialoge, verschobene Editoren.
 | Was ein Float-Fenster vom Hauptfenster weiß | `MainState` in `protocol.ts` |
 
 ## Tests
-- `windows.test.tsx`, `dialogWindows.test.tsx`, `editorWindows.test.tsx` mit `src/test/fakeWindowBackend.ts`. `npx vitest run src/windows`.
+- `windows.test.tsx`, `dialogWindows.test.tsx`, `editorWindows.test.tsx` mit `tests/support/fakeWindowBackend.ts`. `npx vitest run tests/windows`.

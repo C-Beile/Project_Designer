@@ -48,6 +48,7 @@ fn fixture_project() -> PathBuf {
 }
 
 #[test]
+#[ignore = "braucht eine echte ADITO-Installation oder ein Korpus (cargo test -- --ignored)"]
 fn stub_engine_run_against_minimal_project_produces_a_report_with_0_percent_match() {
     let project = fixture_project();
     // Clean slate: remove any dist/ and own-engine-output left over from a previous run so the

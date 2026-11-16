@@ -33,7 +33,7 @@
   display: flex;
   flex-direction: column;
   background: var(--bg-elevated);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-input);
   box-shadow: 0 4px 14px rgb(0 0 0 / 0.4);
   font-size: 12px;
 }
@@ -67,4 +67,17 @@
 
 .forge-branch-item.is-current {
   font-weight: 700;
+}
+
+/* Auf der farbigen Statusleiste (--bg-statusbar) sind Warn- und Fehlerfarben schlecht lesbar:
+   Zustände zeigen sich hier über Text und Gewicht, nicht über die Farbe. */
+.forge-statusbar .forge-status-tunnel[data-state='off'],
+.forge-statusbar .forge-status-errors {
+  color: color-mix(in srgb, var(--fg-statusbar) 75%, var(--bg-statusbar));
+}
+
+.forge-statusbar .forge-status-tunnel:not([data-state='off']),
+.forge-statusbar .forge-status-errors.has-errors {
+  color: var(--fg-statusbar);
+  font-weight: 600;
 }

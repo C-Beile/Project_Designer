@@ -3,6 +3,7 @@ import { Modal } from '../core/Modal'
 import { PluginStateIcon } from './optionIcons'
 import { usePlugins } from '../core/plugins/registry'
 import { mergePluginList, getPluginPrefs, pluginState, setPluginPrefs, subscribePluginPrefs, withPluginActive, type PluginInfo } from '../settings/plugins'
+import { Button, Dropdown, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 
 // Tools > Plugins (manual 14.1, screenshot 202): tabs Updates, Available Plugins, Downloaded,
 // Installed (n) and Settings. Dito Designer's plugins are built-in components, so there is no catalog and
@@ -59,30 +60,30 @@ export function PluginsDialog({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       footer={
         <>
-          <button type="button" onClick={onClose}>
+          <Button variant="bare" onClick={onClose}>
             Close
-          </button>
-          <button type="button" disabled title="No help pages yet">
+          </Button>
+          <Button variant="bare" isDisabled title="No help pages yet">
             Help
-          </button>
+          </Button>
         </>
       }
     >
       <div className="forge-plugins">
         <div className="forge-opt-pages" role="tablist" aria-label="Plugin views">
           {(Object.keys(TAB_LABEL) as Tab[]).map((t) => (
-            <button key={t} type="button" role="tab" aria-selected={tab === t} className={`forge-opt-page${tab === t ? ' is-active' : ''}`} onClick={() => setTab(t)}>
+            <Button variant="bare" key={t} role="tab" aria-selected={tab === t} className={`forge-opt-page${tab === t ? ' is-active' : ''}`} onClick={() => setTab(t)}>
               {t === 'installed' ? `Installed (${PLUGINS.length})` : TAB_LABEL[t]}
-            </button>
+            </Button>
           ))}
         </div>
         {tab === 'updates' ? <p className="forge-field-hint forge-plugins-note">All installed plugins are up to date. Dito Designer plugins are part of the application and are updated with it.</p> : null}
         {tab === 'available' ? <p className="forge-field-hint forge-plugins-note">There is no online plugin catalog for Dito Designer. Components that are not implemented yet are listed as dimmed entries under Installed.</p> : null}
         {tab === 'downloaded' ? (
           <div className="forge-plugins-note">
-            <button type="button" disabled>
+            <Button variant="bare" isDisabled>
               Add Plugins…
-            </button>
+            </Button>
             <p className="forge-field-hint">nbm files of the original Designer cannot be loaded: Dito Designer has no NetBeans plugin loader.</p>
           </div>
         ) : null}
@@ -91,18 +92,13 @@ export function PluginsDialog({ onClose }: { onClose: () => void }) {
             <label className="forge-opt-row">
               <span className="forge-opt-label">Source</span>
               <span className="forge-opt-control">
-                <input type="text" readOnly value="Built into Dito Designer" aria-label="Plugin source" />
+                <Input type="text" readOnly value="Built into Dito Designer" aria-label="Plugin source" />
               </span>
             </label>
             <label className="forge-opt-row">
               <span className="forge-opt-label">Check for updates</span>
               <span className="forge-opt-control">
-                <select aria-label="Check frequency" value={prefs.checkFrequency} onChange={(e) => setPluginPrefs({ ...prefs, checkFrequency: e.target.value as typeof prefs.checkFrequency })}>
-                  <option value="startup">Every startup</option>
-                  <option value="weekly">Every week</option>
-                  <option value="monthly">Every month</option>
-                  <option value="never">Never</option>
-                </select>
+                <Dropdown value={prefs.checkFrequency} aria-label="Check frequency" options={[{ id: "startup", label: "Every startup" }, { id: "weekly", label: "Every week" }, { id: "monthly", label: "Every month" }, { id: "never", label: "Never" }]} onChange={(v) => setPluginPrefs({ ...prefs, checkFrequency: v as typeof prefs.checkFrequency })} />
               </span>
             </label>
             <p className="forge-field-hint">Stored for later; there is no plugin catalog to check yet.</p>
@@ -113,25 +109,25 @@ export function PluginsDialog({ onClose }: { onClose: () => void }) {
             <div className="forge-plugins-list">
               <div className="forge-plugins-search">
                 <label>
-                  <span>Search</span> <input type="text" aria-label="Search plugins" value={search} onChange={(e) => setSearch(e.target.value)} />
+                  <span>Search</span> <Input type="text" aria-label="Search plugins" value={search} onChange={(e) => setSearch(e.target.value)} />
                 </label>
               </div>
-              <table aria-label="Installed plugins">
-                <thead>
-                  <tr>
-                    <th>Select</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Active</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table aria-label="Installed plugins">
+                <TableHeader>
+
+                    <TableColumn isRowHeader>Select</TableColumn>
+                    <TableColumn>Name</TableColumn>
+                    <TableColumn>Category</TableColumn>
+                    <TableColumn>Active</TableColumn>
+
+                </TableHeader>
+                <TableBody>
                   {list.map((p) => {
                     const st = pluginState(p, prefs)
                     return (
-                      <tr key={p.id} className={`${p.id === selected ? 'is-selected' : ''}${st === 'missing' ? ' is-missing' : ''}`} onClick={() => setSelected(p.id)}>
-                        <td>
-                          <input
+                      <TableRow key={p.id} className={`${p.id === selected ? 'is-selected' : ''}${st === 'missing' ? ' is-missing' : ''}`} onClick={() => setSelected(p.id)}>
+                        <TableCell>
+                          <Input
                             type="checkbox"
                             aria-label={`Select ${p.name}`}
                             checked={checked.has(p.id)}
@@ -144,27 +140,27 @@ export function PluginsDialog({ onClose }: { onClose: () => void }) {
                               })
                             }
                           />
-                        </td>
-                        <td>{p.name}</td>
-                        <td>{p.category}</td>
-                        <td>
+                        </TableCell>
+                        <TableCell>{p.name}</TableCell>
+                        <TableCell>{p.category}</TableCell>
+                        <TableCell>
                           <StateDot state={st} />
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     )
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
               <div className="forge-plugins-actions">
-                <button type="button" disabled={!targets.some((p) => canToggle(p, 'activate'))} onClick={() => apply('activate')}>
+                <Button variant="bare" isDisabled={!targets.some((p) => canToggle(p, 'activate'))} onClick={() => apply('activate')}>
                   Activate
-                </button>
-                <button type="button" disabled={!targets.some((p) => canToggle(p, 'deactivate'))} onClick={() => apply('deactivate')}>
+                </Button>
+                <Button variant="bare" isDisabled={!targets.some((p) => canToggle(p, 'deactivate'))} onClick={() => apply('deactivate')}>
                   Deactivate
-                </button>
-                <button type="button" disabled title="Plugins are built into the application">
+                </Button>
+                <Button variant="bare" isDisabled title="Plugins are built into the application">
                   Uninstall
-                </button>
+                </Button>
               </div>
             </div>
             <div className="forge-plugins-detail" aria-label="Plugin details">

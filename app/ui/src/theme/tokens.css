@@ -40,6 +40,16 @@
 :root {
   color-scheme: dark;
 
+  /* Projektfarben (Tabs, Suche): das n-te offene Projekt nimmt die n-te Farbe, danach von vorn */
+  --project-1: #4a9eed;
+  --project-2: #2fb98a;
+  --project-3: #e0914a;
+  --project-4: #b072e0;
+  --project-5: #e0679a;
+  --project-6: #c5b83e;
+  --project-7: #4fc1d4;
+  --project-8: #e0675a;
+
   /* Surfaces (dark / Night Owl, default theme) */
   --bg: #011627; /* editor.background */
   --bg-elevated: #021320; /* editorWidget.background - popovers, menus, dialogs */
@@ -67,6 +77,15 @@
 
   /* Accents (lifted directly from Night Owl's syntax token colors - "mood" reference from
      design-direction.md) */
+  /* Redesign-Flächen (intern, nicht im Theme-Schema). Night Owl leitet sie aus vorhandenen Tokens ab. */
+  --border-panel: color-mix(in srgb, var(--bg-inset) 60%, #000); /* Linie zwischen Panels */
+  --bg-label: color-mix(in srgb, var(--bg) 60%, var(--bg-panel)); /* Beschriftungsspalte im Raster */
+  --bg-tab-inactive: var(--bg-inset);
+  --border-input: var(--border-strong);
+  --bg-toggle-active: var(--border);
+  --bg-statusbar: var(--selection);
+  --fg-statusbar: #ffffff;
+
   --accent: #82aaff; /* Library/function & constant */
   --accent-2: #c792ea; /* Keyword */
   --warm: #ecc48d; /* String */
@@ -101,27 +120,9 @@
   --icon-report: #92d6e8;
   --icon-folder: var(--border-strong);
 
-  /* Projects-tree type folders (LAYOUT_SPEC §4.4, estimated from the original's Screenshot 41).
-     They identify the ADITO object type, not the theme, so they are the same in dark and light
-     and deliberately not redefined in the light block below. */
-  --folder-system: #4a80c8;
-  --folder-preferences: #d452c8;
-  --folder-application: #e08a2e;
-  --folder-context: #e6c35c;
-  --folder-notificationtype: #c5de6a;
-  --folder-entity: #f25c9c;
-  --folder-view: #3fc3f5;
-  --folder-dashboard: #8e8cf0;
-  --folder-renderer: #7e7e7e;
-  --folder-process: #9cc25c;
-  --folder-test: #2c8cb4;
-  --folder-service: #3e9a3e;
-  --folder-report: #b49274;
-  --folder-language: #b48fd8;
-  --folder-role: #f0c878;
-  --folder-alias: #e88aa0;
-  --folder-others: #e05a3a;
-  --folder-plain: #c8c8c8;
+  /* Typfarben der Ordner im Projektbaum (--folder-<typ>) stehen nicht hier und nicht im Theme:
+     Sie gehören zum ADITO-Objekttyp und sind in allen Themes gleich. Quelle: app/config/style.toml
+     [tree-colors], gesetzt von config/styleConfig.ts. */
   --project-icon-a: #e05a3a;
   --project-icon-b: #4a80c8;
 
@@ -181,6 +182,14 @@
     1.4.11 non-text 3:1, and this token draws visible input/dropdown borders, not just a decorative
     line); darkened to #7a8888 (3.56:1) - see p6-theming-notes.md AA table */
   --focus-ring: #4070d4; /* own choice, mirrors the dark theme's accent-as-focus-ring pattern */
+
+  --border-panel: var(--border);
+  --bg-label: var(--bg-inset);
+  --bg-tab-inactive: var(--bg-inset);
+  --border-input: var(--border-strong);
+  --bg-toggle-active: var(--border);
+  --bg-statusbar: var(--selection);
+  --fg-statusbar: var(--fg);
 
   --accent: #4070d4; /* adjusted from the "String"/entity.name.function token #4876d6
     (4.19:1 -> fails AA; darkened to 4.52:1) */
@@ -247,6 +256,14 @@
   --selection: #2a78b4;
   --border-strong: #8a8a8a;
   --focus-ring: #4aa8e8;
+
+  --border-panel: #161616;
+  --bg-label: #2f2f2f;
+  --bg-tab-inactive: #292929;
+  --border-input: #555555;
+  --bg-toggle-active: #4a4a4a;
+  --bg-statusbar: #2a78b4;
+  --fg-statusbar: #ffffff;
 
   --accent: #4aa8e8;
   --accent-2: #b48fd8;

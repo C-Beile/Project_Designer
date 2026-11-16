@@ -1,0 +1,67 @@
+[theme]
+name = "Light"
+id = "light"
+kind = "light"                       # dark | light
+author = "Sarah Drasner (Night Owl Light), angepasst"
+
+[surface]
+base = "#fbfbfb"                # Hauptfläche, Editor
+raised = "#f0f0f0"              # Menüs, Dialoge, Popover
+panel = "#f6f6f6"               # Seitenflächen, aktiver Tab
+inset = "#f0f0f0"               # vertiefte oder inaktive Flächen
+titlebar = "#f0f0f0"            # Titelleiste
+titlebar-inactive = "#e4e4e4"   # Titelleiste, Fenster ohne Fokus
+
+[text]
+primary = "#403f53"             # normaler Text
+muted = "#5c7885"               # Nebentext
+comment = "#6b748d"             # Kommentare, Platzhalter
+titlebar = "#403f53"            # Text der Titelleiste
+titlebar-inactive = "#4a636f"   # Text der Titelleiste ohne Fokus
+
+[border]
+subtle = "#d9d9d9"              # feine Trennlinien
+strong = "#7a8888"              # deutliche Rahmen
+focus = "#4070d4"               # Fokusring
+
+[accent]
+primary = "#4070d4"             # Hauptakzent, Links
+secondary = "#994cc3"           # zweiter Akzent
+warm = "#aa0982"                # warmer Akzent
+cool = "#0c969b"                # kühler Akzent
+
+[state]
+error = "#e02621"               # Fehler
+warning = "#8e6f01"             # Warnung
+success = "#2e7d32"             # Erfolg
+
+[selection]
+background = "#d3e8f8"          # Hintergrund einer Auswahl
+text = "#403f53"                # Text einer Auswahl
+row = "#cfe3f7"                 # gewählte Zeile in Listen und Properties
+
+[button.primary]
+background = "#22847b"          # Hauptknopf, Hintergrund
+text = "#ffffff"                # Hauptknopf, Text
+
+[editor]
+background = "#fbfbfb"
+foreground = "#403f53"
+selection = "#d3e8f8"
+line-highlight = "#f6f6f6"
+cursor = "#4070d4"
+line-number = "#5c7885"
+line-number-active = "#403f53"
+
+[editor.syntax]
+keyword = "#994cc3"
+string = "#4876d6"
+number = "#aa0982"
+comment = "#989fb1"
+function = "#994cc3"
+type = "#b76d19"
+variable = "#403f53"
+constant = "#4876d6"
+identifier = "#403f53"
+operator = "#0c969b"
+delimiter = "#403f53"

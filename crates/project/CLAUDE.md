@@ -32,7 +32,8 @@
 | `src/watch.rs` | Re-Export von `FileStamp`/`file_stamp` (Stempel je geöffneter Datei). Die Erkennung im ganzen Projekt macht `project-index`. |
 | `src/settings.rs` | Eigene Einstellungen und Liste offener Projekte. |
 | `src/discover.rs` | `find_projects`: ADITO-Projekte direkt in einem Ordner finden (`.aditoprj` oder `package.json` plus Objektordner). |
-| `src/webservices.rs` | `list_webservices`: Entity-Webservices von Projekt und Modulen mit erlaubten Methoden und Login-Typen (nur lesen). |
+| `src/webservices.rs` | `list_webservices`: Entity-Webservices von Projekt und Modulen mit erlaubten Methoden und Login-Typen (nur lesen). `list_servers`: Hosts der Server-Configs der Systeme. |
+| `src/http_wire.rs` | Hilfen für den eigenen HTTP-Client des REST-Clients: Ziel-URL zerlegen, Antwort lesen, Base64. |
 | `src/file_list.rs` | Dateinamen für die Schnellsuche, Theme-Dateien lesen. |
 | `src/import_resolve.rs` | Ziel eines `import ... from` finden. |
 | `src/jdito_types.rs` | JDito-Typdefinitionen fürs Code-Feld. |

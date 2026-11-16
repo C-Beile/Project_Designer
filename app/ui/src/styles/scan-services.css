@@ -7,7 +7,7 @@
   background: transparent;
   color: var(--fg);
   border: 1px solid transparent;
-  border-radius: 2px;
+  border-radius: var(--radius-control);
 }
 
 .forge-scan-bar button:hover:not(:disabled),
@@ -20,8 +20,8 @@
   padding: 1px 10px;
   background: var(--bg-panel);
   color: var(--fg);
-  border: 1px solid var(--border-strong);
-  border-radius: 2px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-control);
 }
 
 .forge-scan-actions button:disabled {
@@ -77,12 +77,3 @@
   color: #d29922;
 }
 
-.tunnel-auth {
-  display: inline-flex;
-  gap: 4px;
-  margin-left: auto;
-}
-
-.tunnel-auth input {
-  width: 200px;
-}

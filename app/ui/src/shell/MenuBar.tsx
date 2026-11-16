@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react'
 import type { MenuDef, MenuItemDef } from './menuModel'
 import { formatShortcut } from '../core/shortcuts'
+import { Button } from '../core/ui/controls'
 
 // Classic desktop menu bar, operable without a mouse like the original: Alt or F10 opens the
 // first menu, Alt+<letter> opens a menu directly, arrows move, Enter runs, Esc closes.
@@ -192,8 +193,8 @@ export function MenuBar({ menus, onCommand }: { menus: MenuDef[]; onCommand: (it
         const isOpen = open?.menu === mi
         return (
           <div key={m.id} className="forge-menubar-entry">
-            <button
-              type="button"
+            <Button variant="bare"
+
               role="menuitem"
               aria-haspopup="menu"
               aria-expanded={isOpen}
@@ -207,7 +208,7 @@ export function MenuBar({ menus, onCommand }: { menus: MenuDef[]; onCommand: (it
               }}
             >
               {m.label}
-            </button>
+            </Button>
             {isOpen ? (
               <ul className="forge-menu" role="menu" aria-label={m.label}>
                 {m.items.map((it, ii) => {

@@ -1,19 +1,20 @@
 import { configGet, configSet } from '../settings/appConfig'
-// Docking layout of the main window (LAYOUT_SPEC §3): which tool windows are open, minimized or
-// closed, and how large they are. Survives restarts like the original Designer's window layout,
-// but a damaged or foreign stored value must never keep the app from opening - it then simply
-// starts from the default layout.
+import { layoutConfig } from '../config/layoutConfig'
+// Layout des Hauptfensters: welche Tool-Fenster offen oder zu sind und die Anordnung des Docking-Gitters
+// (`dock`, von dockview). Es überlebt Neustarts, aber ein beschädigter oder fremder gespeicherter Wert
+// darf die App nie am Öffnen hindern: dann gilt die Standard-Anordnung aus `app/config/layout.toml`.
 
 export type PanelId = 'projects' | 'properties' | 'navigator' | 'output'
-export type PanelMode = 'open' | 'minimized' | 'closed'
+export type PanelMode = 'open' | 'closed'
 
 export interface LayoutState {
-  leftWidth: number
-  rightWidth: number
-  bottomHeight: number
-  // Share of the left column taken by Projects/Services; the rest belongs to Properties.
-  leftSplit: number
   panels: Record<PanelId, PanelMode>
+  /** Serialisiertes dockview-Gitter; leer = Standard-Anordnung. */
+  dock?: unknown
+  /** Größenfaktor der Standard-Anordnung (Voreinstellung "Compact"); 1 = wie in layout.toml. */
+  scale?: number
+  /** Wird nur im Speicher gesetzt: ein neuer Wert baut das Gitter neu (Reset, Voreinstellung, gespeichertes Layout laden). */
+  reset?: number
 }
 
 export const PANEL_IDS: PanelId[] = ['projects', 'properties', 'navigator', 'output']
@@ -27,50 +28,28 @@ export const PANEL_TITLES: Record<PanelId, string> = {
 
 export const LAYOUT_PATH = ['layout', 'main'] as const
 
-export const LIMITS = {
-  leftWidth: [160, 900],
-  rightWidth: [120, 700],
-  bottomHeight: [80, 800],
-  leftSplit: [0.15, 0.85],
-} as const
-
 export function defaultLayout(): LayoutState {
-  return {
-    leftWidth: 340,
-    rightWidth: 260,
-    bottomHeight: 240,
-    leftSplit: 0.62,
-    panels: { projects: 'open', properties: 'open', navigator: 'open', output: 'open' },
-  }
+  const opens = (id: PanelId): PanelMode => (layoutConfig.panels.find((p) => p.id === id)?.opens === 'on-demand' ? 'closed' : 'open')
+  return { panels: { projects: opens('projects'), properties: opens('properties'), navigator: opens('navigator'), output: opens('output') } }
 }
 
-export function clamp(value: number, [min, max]: readonly [number, number]): number {
-  return Math.min(max, Math.max(min, value))
-}
-
-function isMode(v: unknown): v is PanelMode {
-  return v === 'open' || v === 'minimized' || v === 'closed'
-}
-
-function num(v: unknown, fallback: number, limits: readonly [number, number]): number {
-  return typeof v === 'number' && Number.isFinite(v) ? clamp(v, limits) : fallback
-}
-
-/** Accepts only well-formed values; anything unknown falls back field by field to the default. */
+/** Nur wohlgeformte Werte; alles Unbekannte fällt Feld für Feld auf den Standard zurück. Der alte Modus "minimized" gilt als zu. */
 export function sanitizeLayout(raw: unknown): LayoutState {
   const d = defaultLayout()
   if (!raw || typeof raw !== 'object') return d
   const r = raw as Record<string, unknown>
   const panelsRaw = (r.panels && typeof r.panels === 'object' ? r.panels : {}) as Record<string, unknown>
   const panels = { ...d.panels }
-  for (const id of PANEL_IDS) if (isMode(panelsRaw[id])) panels[id] = panelsRaw[id]
-  return {
-    leftWidth: num(r.leftWidth, d.leftWidth, LIMITS.leftWidth),
-    rightWidth: num(r.rightWidth, d.rightWidth, LIMITS.rightWidth),
-    bottomHeight: num(r.bottomHeight, d.bottomHeight, LIMITS.bottomHeight),
-    leftSplit: num(r.leftSplit, d.leftSplit, LIMITS.leftSplit),
-    panels,
+  for (const id of PANEL_IDS) {
+    if (panelsRaw[id] === 'open') panels[id] = 'open'
+    else if (panelsRaw[id] === 'closed' || panelsRaw[id] === 'minimized') panels[id] = 'closed'
   }
+  // Panels von Plugins (core/contrib/panels.ts) haben eigene Ids; ihr Zustand bleibt erhalten.
+  for (const [id, mode] of Object.entries(panelsRaw)) {
+    if (!PANEL_IDS.includes(id as PanelId) && (mode === 'open' || mode === 'closed')) (panels as Record<string, PanelMode>)[id] = mode
+  }
+  const scale = typeof r.scale === 'number' && r.scale >= 0.5 && r.scale <= 1.5 ? r.scale : undefined
+  return { panels, dock: r.dock && typeof r.dock === 'object' ? r.dock : undefined, scale }
 }
 
 export function loadLayout(): LayoutState {
@@ -79,5 +58,6 @@ export function loadLayout(): LayoutState {
 }
 
 export function saveLayout(layout: LayoutState): void {
-  configSet(LAYOUT_PATH, layout)
+  const { reset: _memoryOnly, ...stored } = layout
+  configSet(LAYOUT_PATH, stored)
 }

@@ -20,17 +20,20 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-inset);
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border-panel);
+  background: var(--bg-panel);
 }
 
 .entity-toolbar button {
-  padding: 1px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
   background: transparent;
   color: var(--fg);
   border: 1px solid transparent;
-  border-radius: 2px;
+  border-radius: var(--radius-control);
 }
 
 .entity-toolbar button:disabled {
@@ -38,8 +41,8 @@
 }
 
 .entity-toolbar button[aria-pressed="true"] {
-  background: var(--bg-panel);
-  border-color: var(--border-strong);
+  background: var(--bg-toggle-active);
+  border-color: transparent;
 }
 
 .entity-new {
@@ -57,7 +60,8 @@
   padding: 3px 0;
   list-style: none;
   background: var(--bg-elevated);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-control);
 }
 
 .entity-new li {
@@ -87,6 +91,8 @@
   background: var(--diagram-box);
   color: var(--diagram-box-fg);
   border: 1px solid var(--diagram-box-head);
+  border-radius: var(--radius-box);
+  overflow: hidden;
   font-size: 12px;
 }
 

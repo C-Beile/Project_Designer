@@ -18,7 +18,7 @@ use toml::Table;
 /// Speichern erhalten.
 pub const SETTINGS_FILE_NAME: &str = config::CONFIG_FILE_NAME;
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct ForgeSettings {
     /// Folder of the installed ADITO Designer chosen by the user. `None` means "discover it
     /// automatically at transpile time".

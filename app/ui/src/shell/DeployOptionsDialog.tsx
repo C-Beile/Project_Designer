@@ -6,6 +6,7 @@ import { useSshKeyPath } from '../settings/sshKey'
 import { resolvePathVariables } from '../properties/pathVariables'
 import { systemKey } from '../services/tunnelState'
 import { errorText } from '../core/errorText'
+import { Button, Dropdown, Input } from '../core/ui/controls'
 
 // First dialog of a deploy (original Designer, manual chapter 11, picture 178): Project, System and
 // the three check boxes. Added by Dito Designer: "Build before deploy" (Build and Deploy) and the tunnel
@@ -44,7 +45,6 @@ export interface DeployOptionsResult {
   build: boolean
   connectedSystem: string | null
 }
-
 
 // Project: the one worked in last (the active project). System: the one whose tunnel is open right now;
 // with several open tunnels the system last deployed to wins, without any open tunnel the remembered or default one.
@@ -117,43 +117,27 @@ export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: For
       onClose={onCancel}
       footer={
         <>
-          <button type="button" onClick={ok} disabled={!tunnelOk || !system} title={!tunnelOk ? 'Open the tunnel to the system first' : undefined}>
+          <Button variant="bare" onClick={ok} isDisabled={!tunnelOk || !system} title={!tunnelOk ? 'Open the tunnel to the system first' : undefined}>
             OK
-          </button>
-          <button type="button" onClick={onCancel}>
+          </Button>
+          <Button variant="bare" onClick={onCancel}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >
       <div className="forge-deploy">
         <label className="forge-field">
           <span>Project:</span>
-          <select
-            aria-label="Project"
-            value={project}
-            onChange={(e) => {
-              setProject(e.target.value)
-              const entry = payload.systemsByProject?.[e.target.value]
+          <Dropdown value={project} aria-label="Project" options={payload.projects.map((p) => ({ id: p, label: baseName(p) }))} onChange={(v) => {
+              setProject(v)
+              const entry = payload.systemsByProject?.[v]
               if (entry) setSystem(entry.defaultSystem || entry.systems[0]?.name || '')
-            }}
-          >
-            {payload.projects.map((p) => (
-              <option key={p} value={p}>
-                {baseName(p)}
-              </option>
-            ))}
-          </select>
+            }} />
         </label>
         <label className="forge-field">
           <span>System:</span>
-          <select aria-label="System" value={system} onChange={(e) => setSystem(e.target.value)}>
-            {systemList.map((s) => (
-              <option key={s.name} value={s.name}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+          <Dropdown value={system} aria-label="System" options={systemList.map((s) => ({ id: s.name, label: s.name }))} onChange={(v) => setSystem(v)} />
         </label>
         {warning ? (
           <p className="forge-field-error" role="alert">
@@ -167,10 +151,10 @@ export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: For
         ) : (
           <p className="forge-tunnel-state" role="status">
             <span className="forge-tunnel-dot" aria-hidden="true" /> The tunnel to {system || 'the system'} is not open.
-            <button type="button" className="forge-action-button" onClick={() => void openTunnel()} disabled={opening || !current} aria-busy={opening}>
+            <Button variant="bare" className="forge-action-button" onClick={() => void openTunnel()} isDisabled={opening || !current} aria-busy={opening}>
               {opening ? <span className="forge-btn-spinner" aria-hidden="true" /> : null}
               {opening ? 'Opening...' : 'Open tunnel'}
-            </button>
+            </Button>
           </p>
         )}
         {error ? (
@@ -181,23 +165,23 @@ export function DeployOptionsDialog({ api, payload, onOk, onCancel }: { api: For
         <fieldset className="forge-opt-group">
           <legend>Steps</legend>
           <label className="forge-check">
-            <input type="checkbox" checked={build} onChange={(e) => setBuild(e.target.checked)} />
+            <Input type="checkbox" checked={build} onChange={(e) => setBuild(e.target.checked)} />
             <span>Build (transpile) before the deploy</span>
           </label>
           <span className="forge-check-hint">The project is transpiled first; the deploy then writes the transpiled result.</span>
           <label className="forge-check">
-            <input type="checkbox" checked={checkScan} onChange={(e) => setCheckScan(e.target.checked)} />
+            <Input type="checkbox" checked={checkScan} onChange={(e) => setCheckScan(e.target.checked)} />
             <span>Check Scan Services (Errors, Warnings)</span>
           </label>
         </fieldset>
         <fieldset className="forge-opt-group">
           <legend>Options</legend>
           <label className="forge-check">
-            <input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />
+            <Input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />
             <span>Force deploy</span>
           </label>
           <label className="forge-check" title="Deploying the userhelp is not available yet">
-            <input type="checkbox" disabled />
+            <Input type="checkbox" disabled />
             <span>Deploy Userhelp</span>
           </label>
         </fieldset>

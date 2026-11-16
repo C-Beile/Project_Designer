@@ -4,13 +4,13 @@
 
 .language-grid .lang-toolbar { flex: 0 0 auto; gap: 6px; padding: 6px 10px; background: var(--bg-panel); border-bottom: 1px solid var(--border); }
 
-.language-grid .lang-toolbar button { width: 26px; height: 24px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: 3px; background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
+.language-grid .lang-toolbar button { width: 26px; height: 24px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; color: var(--fg); font: inherit; cursor: pointer; }
 
 .language-grid .lang-toolbar button:not(:disabled):hover { background: color-mix(in srgb, var(--fg) 12%, transparent); }
 
 .language-grid .lang-sep { width: 1px; height: 18px; margin: 0 4px; background: var(--border); }
 
-.language-grid .lang-toolbar select { height: 24px; padding: 0 6px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: 3px; }
+.language-grid .lang-toolbar select { height: 24px; padding: 0 6px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius-control); }
 
 .language-grid .lang-count { margin-left: 4px; padding: 0 9px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-inset); font-size: 11px; line-height: 18px; color: var(--fg-muted); }
 
@@ -18,7 +18,7 @@
 
 .language-grid .lang-fields label { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: none; background: none; min-height: 0; }
 
-.language-grid .lang-fields input { width: 120px; height: 22px; padding: 0 8px; box-sizing: border-box; background: var(--bg-inset); border: 1px solid var(--border); border-radius: 3px; }
+.language-grid .lang-fields input { width: 120px; height: 22px; padding: 0 8px; box-sizing: border-box; background: var(--bg-inset); border: 1px solid var(--border); border-radius: var(--radius-control); }
 
 .language-grid .forge-field-error { flex: 0 0 auto; margin: 0; }
 
@@ -93,7 +93,7 @@
 
 .commit-diff-heads { display: grid; grid-template-columns: 1fr 1fr; color: var(--fg-muted); font-size: 12px; }
 
-.commit-diff .forge-monaco-host { flex: 1 1 auto; min-height: 360px; border: 1px solid color-mix(in srgb, var(--fg) 18%, transparent); border-radius: 4px; }
+.commit-diff .forge-monaco-host { flex: 1 1 auto; min-height: 360px; border: 1px solid color-mix(in srgb, var(--fg) 18%, transparent); border-radius: var(--radius-control); }
 
 .forge-commit-file { cursor: default; }
 
@@ -124,7 +124,7 @@
 
 .vp-rowlist { display: flex; flex-direction: column; gap: 6px; }
 
-.vp-rowbar { display: flex; align-items: center; gap: 12px; padding: 2px 6px; border-radius: 3px; background: var(--bg-elevated); }
+.vp-rowbar { display: flex; align-items: center; gap: 12px; padding: 2px 6px; border-radius: var(--radius-control); background: var(--bg-elevated); }
 
 .vp-rowbar-label { flex: 0 0 220px; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -174,51 +174,11 @@
 
 .tunnel-view button.is-active { background: var(--selected-bg); color: var(--selected-fg); }
 
-.tp { margin: 10px 12px; border: 1px solid color-mix(in srgb, var(--fg) 20%, transparent); border-radius: 10px; background: var(--bg-elevated, var(--bg)); overflow: hidden; }
-
-.tp-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 12px 16px; border-bottom: 1px solid color-mix(in srgb, var(--fg) 14%, transparent); }
-
-.tp-grow { flex: 1 1 auto; }
-
-.tp-hint { color: var(--fg-muted); font-size: 12px; }
-
-.tp-label { padding: 10px 18px 4px; color: var(--fg-muted); font-size: 12px; }
-
-.tp-pad { padding: 10px 18px; }
-
-.tp-btn { padding: 4px 12px; border-radius: 7px; border: 1px solid color-mix(in srgb, var(--fg) 22%, transparent); background: color-mix(in srgb, var(--fg) 6%, transparent); color: var(--fg); cursor: pointer; }
-
-.tp-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--fg) 14%, transparent); }
-
-.tp-btn.is-primary { background: var(--selected-bg); color: var(--selected-fg); border-color: transparent; }
-
-.tp-service-head { display: flex; align-items: center; gap: 10px; padding: 8px 18px; background: color-mix(in srgb, var(--fg) 7%, transparent); border-top: 1px solid color-mix(in srgb, var(--fg) 10%, transparent); }
-
-.tp-count { font-size: 12px; color: var(--fg-muted); }
-
-.tp-count.is-good { color: var(--success, #addb67); }
-
-.tp-port { display: flex; align-items: center; gap: 22px; padding: 9px 18px 9px 30px; border-top: 1px solid color-mix(in srgb, var(--fg) 8%, transparent); }
-
-.tp-port.is-up { background: color-mix(in srgb, var(--success, #addb67) 8%, transparent); }
-
-.tp-port-no { min-width: 52px; font-weight: 700; font-size: 15px; }
-
-.tp-error { color: var(--error, #ef5350); font-size: 12px; }
-
-.tp-more { display: flex; align-items: center; gap: 8px; padding: 10px 18px; cursor: pointer; border-top: 1px solid color-mix(in srgb, var(--fg) 14%, transparent); user-select: none; }
-
-.tp-more input { padding: 3px 8px; border-radius: 6px; border: 1px solid color-mix(in srgb, var(--fg) 25%, transparent); background: transparent; color: var(--fg); }
-
-.tp-chev { font-size: 10px; color: var(--fg-muted); }
-
-.tp.is-compact { margin: 0; border: 0; border-radius: 0; }
-
-.project-tree-tunnel-btn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 18px; margin-left: 4px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: transparent; color: var(--fg-muted); cursor: pointer; }
+.project-tree-tunnel-btn { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 18px; margin-left: 4px; padding: 0; border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; color: var(--fg-muted); cursor: pointer; }
 
 .project-tree-tunnel-btn:hover { color: var(--fg); background: color-mix(in srgb, var(--fg) 16%, transparent); border-color: color-mix(in srgb, var(--fg) 28%, transparent); }
 
-.type-combo-button { display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; min-height: 28px; padding: 3px 10px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; font: inherit; text-align: left; cursor: pointer; }
+.type-combo-button { display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; min-height: 28px; padding: 3px 10px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius-control); font: inherit; text-align: left; cursor: pointer; }
 
 .type-combo-button:hover { border-color: var(--border-strong); }
 
@@ -228,9 +188,9 @@
 
 .type-combo-chevron { flex: none; color: var(--fg-muted); }
 
-.type-swatch { flex: none; width: 14px; height: 14px; border-radius: 3px; }
+.type-swatch { flex: none; width: 14px; height: 14px; border-radius: var(--radius-control); }
 
-.type-combo-list { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 2px); max-height: 240px; margin: 0; padding: 3px 0; overflow-y: auto; list-style: none; background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 4px; box-shadow: 0 8px 20px rgb(0 0 0 / 0.5); }
+.type-combo-list { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 2px); max-height: 240px; margin: 0; padding: 3px 0; overflow-y: auto; list-style: none; background: var(--bg-elevated); border: 1px solid var(--border-input); border-radius: var(--radius-control); box-shadow: 0 8px 20px rgb(0 0 0 / 0.5); }
 
 .type-combo-option { display: flex; align-items: center; gap: 8px; padding: 5px 10px; cursor: pointer; }
 
@@ -242,7 +202,7 @@
 
 .type-combo-option.is-disabled:hover { background: transparent; }
 
-.forge-modal-body select, .forge-os-dialog select { appearance: none; min-height: 28px; padding-right: 28px; border-radius: 4px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a96a6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
+.forge-modal-body select, .forge-os-dialog select { appearance: none; min-height: 28px; padding-right: 28px; border-radius: var(--radius-control); cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a96a6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
 
 .forge-modal-body select:disabled, .forge-os-dialog select:disabled { cursor: default; opacity: 0.7; }
 
@@ -265,7 +225,7 @@
 
 .svt { padding: 4px 0; }
 
-.svt-row { display: flex; align-items: center; gap: 6px; min-height: 24px; padding: 2px 8px; cursor: pointer; border-radius: 4px; }
+.svt-row { display: flex; align-items: center; gap: 6px; min-height: 24px; padding: 2px 8px; cursor: pointer; border-radius: var(--radius-control); }
 
 .svt-row:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
 
@@ -285,7 +245,7 @@
 
 .svt-db-data { color: var(--folder-view); }
 
-.svt-icon-btn { flex: none; min-width: 22px; height: 20px; padding: 0 6px; border: 1px solid transparent; border-radius: 4px; background: transparent; color: var(--fg-muted); font-size: 11px; cursor: pointer; opacity: 0; }
+.svt-icon-btn { flex: none; min-width: 22px; height: 20px; padding: 0 6px; border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; color: var(--fg-muted); font-size: 11px; cursor: pointer; opacity: 0; }
 
 .svt-row:hover .svt-icon-btn, .svt-icon-btn:focus-visible { opacity: 1; }
 
@@ -293,9 +253,9 @@
 
 .svt-tables { padding: 2px 0 6px 22px; }
 
-.svt-filter { box-sizing: border-box; width: calc(100% - 8px); margin: 2px 0 4px; min-height: 24px; padding: 2px 8px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; font: inherit; }
+.svt-filter { box-sizing: border-box; width: calc(100% - 8px); margin: 2px 0 4px; min-height: 24px; padding: 2px 8px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius-control); font: inherit; }
 
-.svt-table { display: flex; align-items: center; gap: 6px; width: 100%; padding: 2px 8px; border: 0; border-radius: 4px; background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.svt-table { display: flex; align-items: center; gap: 6px; width: 100%; padding: 2px 8px; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
 
 .svt-table:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); }
 
@@ -312,12 +272,6 @@
 
 /* Tunnel manager: the whole view scrolls, also when "Other services" is open */
 .tunnel-editor { overflow: auto; }
-
-.tp { overflow: visible; }
-
-.tp-info { display: flex; flex-wrap: wrap; gap: 4px 18px; padding: 8px 14px; border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent); color: var(--fg-muted); font-size: 12px; }
-
-.tp-target { display: block; color: var(--fg-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Problems: the selected row keeps its selection colour on striped (even) rows too, so its dark text stays readable */
 .forge-problems-table tbody tr.forge-problem-row.is-selected td,
@@ -352,7 +306,7 @@
 
 .users-prop > span { color: var(--fg-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.users-prop input { box-sizing: border-box; width: 100%; min-height: 24px; padding: 2px 6px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: 3px; font: inherit; }
+.users-prop input { box-sizing: border-box; width: 100%; min-height: 24px; padding: 2px 6px; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius-control); font: inherit; }
 
 .users-prop.is-changed input { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 
@@ -503,7 +457,7 @@
 .sheet-table tr.is-selected .sheet-value input[type="text"],
 .sheet-table tr.is-selected .sheet-value input[type="password"] { color: var(--selected-fg); }
 
-.forge-progress-bar { height: 10px; min-width: 280px; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.forge-progress-bar { height: 10px; min-width: 280px; border: 1px solid var(--border); border-radius: var(--radius-control); overflow: hidden; background: color-mix(in srgb, var(--fg) 8%, transparent); }
 
 .forge-progress-bar-fill { height: 100%; background: var(--brand-link); transition: width 0.25s ease; }
 
@@ -513,7 +467,7 @@ select { color: var(--fg); background-color: var(--bg-inset, var(--bg)); color-s
 
 option, optgroup { color: var(--fg); background-color: var(--bg-elevated, var(--bg)); }
 
-.preferences-editor .pref-row select { width: 100%; box-sizing: border-box; border: 1px solid color-mix(in srgb, var(--fg) 22%, transparent); border-radius: 3px; padding: 2px 4px; cursor: pointer; }
+.preferences-editor .pref-row select { width: 100%; box-sizing: border-box; border: 1px solid color-mix(in srgb, var(--fg) 22%, transparent); border-radius: var(--radius-control); padding: 2px 4px; cursor: pointer; }
 
 .preferences-editor .is-selected select { background-color: color-mix(in srgb, var(--selected-fg) 14%, var(--selected-bg)); color: var(--selected-fg); border-color: color-mix(in srgb, var(--selected-fg) 55%, transparent); }
 
@@ -594,7 +548,7 @@ option, optgroup { color: var(--fg); background-color: var(--bg-elevated, var(--
 
 .forge-deploy-box { list-style: none; margin: 0; padding: 4px 6px; min-height: 260px; max-height: 52vh; overflow: auto; border: 1px solid var(--border); background: var(--bg-inset); }
 
-.forge-deploy-box li { padding: 3px 4px; border-radius: 2px; }
+.forge-deploy-box li { padding: 3px 4px; border-radius: var(--radius-control); }
 
 .forge-deploy-box li:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
 
@@ -602,7 +556,7 @@ option, optgroup { color: var(--fg); background-color: var(--bg-elevated, var(--
 
 .forge-deploy-hint { margin: 10px 4px 0; text-align: right; color: var(--fg-muted); font-size: 12px; }
 
-.forge-deploy-menu { position: fixed; z-index: 3000; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 3px; padding: 2px; box-shadow: 0 4px 14px rgb(0 0 0 / 0.4); }
+.forge-deploy-menu { position: fixed; z-index: 3000; background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-control); padding: 2px; box-shadow: 0 4px 14px rgb(0 0 0 / 0.4); }
 
 .forge-deploy-menu button { display: block; width: 100%; text-align: left; padding: 4px 14px; background: none; border: none; color: var(--fg); cursor: pointer; }
 

@@ -2,7 +2,7 @@
 
 .vp-modebar { display: inline-flex; gap: 0; margin: 0 0 10px; padding: 2px; background: var(--bg-inset); border: 1px solid var(--border); border-radius: 6px; }
 
-.vp-mode { padding: 3px 14px; border: none; border-radius: 4px; background: transparent; color: var(--fg-muted); font: inherit; cursor: pointer; }
+.vp-mode { padding: 3px 14px; border: none; border-radius: var(--radius-control); background: transparent; color: var(--fg-muted); font: inherit; cursor: pointer; }
 
 .vp-mode:hover { color: var(--fg); }
 
@@ -34,7 +34,7 @@
 
 .vp-field-label { font-size: 11px; letter-spacing: 0.02em; }
 
-.vp-field-box { border-radius: 3px; }
+.vp-field-box { border-radius: var(--radius-control); }
 
 .vp-field-box:not(.is-edit) { background: var(--bg-elevated); }
 

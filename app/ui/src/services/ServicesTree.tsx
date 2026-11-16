@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useResource } from '../core/hooks/useResource'
+import { useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
-import type { SchemaTable } from '../wire/types'
 import { TunnelGlyph } from '../tree/TunnelGlyph'
 import { useTunnelState, systemNameOf, projectOfPath } from './tunnelState'
 import { closeSystemTunnel } from './useSystemTunnels'
-import { errorText } from '../core/errorText'
+import { Button, Input } from '../core/ui/controls'
+import { ConfiguredIcon, Icon } from '../core/icons/Icon'
 
 // Services tab: project > system > database alias (System_alias, Data_alias ...) > tables. Every
 // open session of the tunnel state shows up by itself; tables are read when an alias is opened and
@@ -62,43 +63,28 @@ export function groupSessions(bySystem: Record<string, { connected: boolean; tun
 }
 
 function Chevron({ open }: { open: boolean }) {
-  return (
-    <svg className={`svt-chevron${open ? ' is-open' : ''}`} viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">
-      <path d="M2 1l4 3-4 3" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
+  return <ConfiguredIcon id="chevron" area="control" fallback={open ? 'caret-down' : 'caret-right'} size="sm" className="svt-chevron" />
 }
 
 function DbGlyph({ kind }: { kind: 'system' | 'data' }) {
-  return (
-    <svg className={`svt-db svt-db-${kind}`} viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-      <ellipse cx="8" cy="3.8" rx="5" ry="2.1" fill="currentColor" />
-      <path d="M3 3.8v8.4c0 1.2 2.2 2.1 5 2.1s5-.9 5-2.1V3.8c0 1.2-2.2 2.1-5 2.1S3 5 3 3.8z" fill="currentColor" opacity="0.6" />
-    </svg>
-  )
+  return <Icon name="database" size="md" className={`svt-db svt-db-${kind}`} />
 }
 
 function AliasNode({ api, alias, onOpenSql }: { api: ForgeApi; alias: AliasEntry; onOpenSql: (sql: string) => void }) {
   const [open, setOpen] = useState(false)
-  const [tables, setTables] = useState<SchemaTable[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState('')
   const [tick, setTick] = useState(0)
 
-  useEffect(() => {
-    if (!open) return
-    let cancelled = false
-    setError(null)
-    void (async () => {
+  const schema = useResource(
+    async () => {
+      if (!open) return null
       await api.dbActivate(alias.sessionKey).catch(() => false)
       return api.dbSchema()
-    })()
-      .then((t) => !cancelled && setTables(t))
-      .catch((e) => !cancelled && setError(errorText(e)))
-    return () => {
-      cancelled = true
-    }
-  }, [api, alias.sessionKey, open, tick])
+    },
+    [api, alias.sessionKey, open, tick],
+  )
+  const tables = schema.data ?? null
+  const error = schema.error ?? null
 
   const shown = useMemo(() => {
     const f = filter.trim().toLowerCase()
@@ -120,8 +106,8 @@ function AliasNode({ api, alias, onOpenSql }: { api: ForgeApi; alias: AliasEntry
         </span>
         <span className="svt-grow" />
         {open && tables ? <span className="svt-count">{tables.length}</span> : null}
-        <button
-          type="button"
+        <Button variant="bare"
+
           className="svt-icon-btn"
           title="Open SQL editor for this alias"
           aria-label={`Open SQL for ${alias.label}`}
@@ -131,9 +117,9 @@ function AliasNode({ api, alias, onOpenSql }: { api: ForgeApi; alias: AliasEntry
           }}
         >
           SQL
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button variant="bare"
+
           className="svt-icon-btn"
           title="Read the tables again"
           aria-label={`Refresh ${alias.label}`}
@@ -144,7 +130,7 @@ function AliasNode({ api, alias, onOpenSql }: { api: ForgeApi; alias: AliasEntry
           }}
         >
           ↻
-        </button>
+        </Button>
       </div>
       {open ? (
         <div className="svt-tables">
@@ -154,16 +140,14 @@ function AliasNode({ api, alias, onOpenSql }: { api: ForgeApi; alias: AliasEntry
             </p>
           ) : null}
           {tables === null && !error ? <p className="forge-field-hint">Reading tables...</p> : null}
-          {tables && tables.length > 12 ? <input className="svt-filter" type="search" placeholder="Filter tables" aria-label={`Filter tables of ${alias.label}`} value={filter} onChange={(e) => setFilter(e.target.value)} /> : null}
+          {tables && tables.length > 12 ? <Input className="svt-filter" type="search" placeholder="Filter tables" aria-label={`Filter tables of ${alias.label}`} value={filter} onChange={(e) => setFilter(e.target.value)} /> : null}
           <ul role="group" aria-label={`Tables of ${alias.label}`}>
             {shown.map((t) => (
               <li key={`${t.schema}.${t.name}`} role="treeitem" aria-selected="false">
-                <button type="button" className="svt-table" title={`SELECT * FROM ${t.name}`} onClick={() => openTable(t.name)}>
-                  <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
-                    <path d="M2 3h12v10H2zM2 6.5h12M6 6.5V13" fill="none" stroke="currentColor" strokeWidth="1.1" />
-                  </svg>
+                <Button variant="bare" className="svt-table" title={`SELECT * FROM ${t.name}`} onClick={() => openTable(t.name)}>
+                  <Icon name="table" size="sm" />
                   {t.name}
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
@@ -201,10 +185,7 @@ export function ServicesTree({ api, onOpenSql, projects = [] }: { api: ForgeApi;
     <ul className="svt" role="tree" aria-label="Database connections">
       <li role="treeitem" aria-expanded="true" className="svt-root">
         <div className="svt-row svt-root-row">
-          <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" className="svt-db">
-            <ellipse cx="8" cy="3.8" rx="5" ry="2.1" fill="currentColor" />
-            <path d="M3 3.8v8.4c0 1.2 2.2 2.1 5 2.1s5-.9 5-2.1V3.8c0 1.2-2.2 2.1-5 2.1S3 5 3 3.8z" fill="currentColor" opacity="0.6" />
-          </svg>
+          <Icon name="database" size="md" className="svt-db" />
           <strong className="svt-name">Databases</strong>
           <span className="svt-meta">{tunnelCount} {tunnelCount === 1 ? 'connection' : 'connections'}</span>
         </div>
@@ -225,8 +206,8 @@ export function ServicesTree({ api, onOpenSql, projects = [] }: { api: ForgeApi;
                     <span className="svt-name">{systemNameOf(s.systemKey)}</span>
                     <span className="svt-meta">{s.aliases.length} {s.aliases.length === 1 ? 'database' : 'databases'}</span>
                     <span className="svt-grow" />
-                    <button
-                      type="button"
+                    <Button variant="bare"
+
                       className="svt-icon-btn"
                       title={`Close the connections and the tunnel of ${systemNameOf(s.systemKey)}`}
                       aria-label={`Disconnect ${systemNameOf(s.systemKey)}`}
@@ -236,7 +217,7 @@ export function ServicesTree({ api, onOpenSql, projects = [] }: { api: ForgeApi;
                       }}
                     >
                       ✕
-                    </button>
+                    </Button>
                   </div>
                   {!opened.has(s.systemKey) ? null : (
                     <ul role="group">
@@ -256,7 +237,7 @@ export function ServicesTree({ api, onOpenSql, projects = [] }: { api: ForgeApi;
       <li role="treeitem" aria-expanded={tunnelsOpen} className="svt-root">
         <div className="svt-row svt-root-row" title="The tunnels are opened with the tunnel button of a system in the Projects tree" onClick={() => setTunnelsOpen((v) => !v)}>
           <Chevron open={tunnelsOpen} />
-          <TunnelGlyph size={14} />
+          <TunnelGlyph size="md" />
           <strong className="svt-name">Tunnel</strong>
           <span className="svt-meta">{tunnelCount} open</span>
         </div>
@@ -270,9 +251,9 @@ export function ServicesTree({ api, onOpenSql, projects = [] }: { api: ForgeApi;
                     <span className="svt-name">{systemNameOf(s.systemKey)}</span>
                     <span className="svt-meta">{g.label}</span>
                     <span className="svt-grow" />
-                    <button type="button" className="svt-icon-btn" title={`Close the tunnel and the connections of ${systemNameOf(s.systemKey)} (${g.label})`} aria-label={`Close ${systemNameOf(s.systemKey)} of ${g.label}`} onClick={() => closeSystem(s.systemKey, s.aliases.map((a) => a.sessionKey))}>
+                    <Button variant="bare" className="svt-icon-btn" title={`Close the tunnel and the connections of ${systemNameOf(s.systemKey)} (${g.label})`} aria-label={`Close ${systemNameOf(s.systemKey)} of ${g.label}`} onClick={() => closeSystem(s.systemKey, s.aliases.map((a) => a.sessionKey))}>
                       Close
-                    </button>
+                    </Button>
                   </div>
                 </li>
               )),

@@ -1,4 +1,5 @@
 import { isTauriRuntime } from '../chrome/tauriWindow'
+import { limitsConfig } from '../config/limitsConfig'
 import { EVENTS, type Geometry, type WindowResultEvent } from './protocol'
 
 // The one place that opens operating-system windows. The Tauri calls sit behind a small backend
@@ -46,11 +47,17 @@ const tauriBackend: WindowBackend = {
   // tool window stays embedded in the main window.
   available: () => isTauriRuntime() && !isMacOs(),
   async open(req) {
-    const { invoke } = await import('@tauri-apps/api/core')
+    const { commands } = await import('../api/bindings')
     // Aktuelle Hintergrundfarbe des Themes: das neue Fenster startet schon in dieser Farbe.
     const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
     const background = /^#[0-9a-f]{6}$/i.test(bg) ? bg : null
-    await invoke('window_open', { req: { ...req, modal: !!req.modal, payload: req.payload === undefined ? null : JSON.stringify(req.payload), background } })
+    const { maxPopups, maxEditorWindows: maxEditors } = limitsConfig.windows
+    try {
+      await commands.windowOpen({ ...req, modal: !!req.modal, payload: req.payload === undefined ? null : JSON.stringify(req.payload), background, max_popups: maxPopups, max_editors: maxEditors })
+    } catch (e) {
+      if (String(e) === 'window-limit') throw new Error(`Too many windows are open (at most ${req.kind === 'editor' ? maxEditors : maxPopups}). Close one first.`)
+      throw e
+    }
   },
   // Das Backend gibt die Nutzlast nur einmal heraus (`remove`). Im Entwicklungsmodus startet React (StrictMode) jeden
   // Effekt zweimal; der zweite Aufruf bekäme `null` und das Fenster liefe mit leerer Nutzlast (z. B. leerer Projektordner).
@@ -59,30 +66,30 @@ const tauriBackend: WindowBackend = {
     const key = `${kind}:${name}`
     let cached = payloadCache.get(key)
     if (!cached) {
-      cached = import('@tauri-apps/api/core').then(({ invoke }) => invoke<string | null>('window_payload', { kind, name }))
+      cached = import('../api/bindings').then(({ commands }) => commands.windowPayload(kind, name))
       payloadCache.set(key, cached)
     }
     return cached
   },
   async result(kind, name, result) {
-    const { invoke } = await import('@tauri-apps/api/core')
-    await invoke('window_result', { kind, name, result })
+    const { commands } = await import('../api/bindings')
+    await commands.windowResult(kind, name, result)
   },
   async close(kind, name) {
-    const { invoke } = await import('@tauri-apps/api/core')
-    await invoke('window_close', { kind, name })
+    const { commands } = await import('../api/bindings')
+    await commands.windowClose(kind, name)
   },
   async closeGuard(kind, name, on) {
-    const { invoke } = await import('@tauri-apps/api/core')
-    await invoke('window_close_guard', { kind, name, on })
+    const { commands } = await import('../api/bindings')
+    await commands.windowCloseGuard(kind, name, on)
   },
   async mainContains(x, y) {
-    const { invoke } = await import('@tauri-apps/api/core')
-    return invoke<boolean>('main_window_contains', { x, y })
+    const { commands } = await import('../api/bindings')
+    return commands.mainWindowContains(x, y)
   },
   async exitApp() {
-    const { invoke } = await import('@tauri-apps/api/core')
-    await invoke('app_exit')
+    const { commands } = await import('../api/bindings')
+    await commands.appExit()
   },
   async emit(event, payload) {
     const { emit } = await import('@tauri-apps/api/event')
@@ -108,6 +115,18 @@ export function osWindowsAvailable(): boolean {
   return backend.available()
 }
 
+const openDialogNames = new Set<string>()
+
+/** Dialog windows can open: OS windows exist and fewer than `max-popups` (limits.toml) are open. Otherwise the caller embeds the dialog in the main window. */
+/** Noch Platz für ein weiteres Editor-Fenster (`max-editor-windows` in limits.toml)? `open` = Zahl der offenen Editor-Fenster. */
+export function osEditorWindowAvailable(open: number): boolean {
+  return backend.available() && open < limitsConfig.windows.maxEditorWindows
+}
+
+export function osPopupsAvailable(name?: string): boolean {
+  return backend.available() && ((name !== undefined && openDialogNames.has(name)) || openDialogNames.size < limitsConfig.windows.maxPopups)
+}
+
 /**
  * Opens a dialog as its own window and waits for its result (null when it was cancelled or closed).
  * A modal dialog locks the main window until it is closed.
@@ -125,6 +144,7 @@ export async function openDialogWindow<T>(
       .listen(EVENTS.windowResult, (p) => {
         const e = p as WindowResultEvent
         if (e.kind !== 'dialog' || e.name !== name) return
+        openDialogNames.delete(name)
         stop?.()
         try {
           resolve(e.result === null ? null : (JSON.parse(e.result) as T))
@@ -135,8 +155,10 @@ export async function openDialogWindow<T>(
       .then(async (unlisten) => {
         stop = unlisten
         try {
+          openDialogNames.add(name)
           await backend.open({ kind: 'dialog', name, title, ...size, modal: options.modal ?? true, resizable: options.resizable, payload })
         } catch (e) {
+          openDialogNames.delete(name)
           unlisten()
           reject(e)
         }

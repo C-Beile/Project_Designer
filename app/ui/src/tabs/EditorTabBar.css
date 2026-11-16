@@ -2,3 +2,29 @@
   outline: 1px solid var(--focus-ring);
   outline-offset: -1px;
 }
+
+/* Leichtere Leiste: Reiter ohne Fläche, Kreuz erst beim Darüberfahren oder im aktiven Reiter */
+.forge-tab { position: relative; background: transparent; }
+.forge-tab:hover { background: var(--bg-tab-inactive); }
+.forge-tab.is-active { background: var(--bg); }
+.forge-tab .forge-tab-close { opacity: 0; }
+.forge-tab:hover .forge-tab-close,
+.forge-tab.is-active .forge-tab-close,
+.forge-tab-close:focus-visible { opacity: 0.7; }
+
+/* Mehrere Projekte: Streifen oben in der Projektfarbe (aktiv voll, sonst blass) */
+.forge-tab.has-project::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 2px; background: var(--tab-project); opacity: 0.35; }
+.forge-tab.has-project:hover::before { opacity: 0.7; }
+.forge-tab.has-project.is-active { box-shadow: none; }
+.forge-tab.has-project.is-active::before { opacity: 1; }
+
+/* Gruppiert: Kopf in Projektfarbe über den Reitern des Projekts */
+.forge-tabgroup { display: flex; flex-direction: column; flex: 0 0 auto; margin-right: 6px; }
+.forge-tabgroup-label { align-self: flex-start; max-width: 160px; height: 16px; padding: 0 8px; border-radius: var(--radius-sm) var(--radius-sm) 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-sm); line-height: 16px; color: var(--fg); background: color-mix(in srgb, var(--tab-project) 35%, transparent); }
+.forge-tabgroup-tabs { display: flex; gap: 2px; border-top: 2px solid var(--tab-project); }
+.forge-tabgroup-tabs .forge-tab { border-radius: 0; }
+.forge-tabgroup-tabs .forge-tab.is-active { box-shadow: none; }
+
+/* Zu viele Reiter */
+.forge-tabbar-strip.is-scroll { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.forge-tabbar-strip.is-wrap { flex-wrap: wrap; overflow: visible; row-gap: 2px; }

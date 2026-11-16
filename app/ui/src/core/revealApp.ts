@@ -1,3 +1,5 @@
+import { markPerf } from './perf/marks'
+
 /**
  * Zeigt die Seite erst nach zwei Frames und geladenen Schriften, damit man kein ungestyltes Zwischenbild sieht.
  * `showWindow`: das OS-Fenster startet unsichtbar und erscheint fertig gezeichnet.
@@ -6,10 +8,11 @@ export function revealApp(showWindow = false): void {
   const root = document.documentElement
   const done = () => {
     root.setAttribute('data-ready', '')
+    markPerf('first-paint')
     if (!showWindow) return
     // Ein Frame warten, damit der Inhalt schon gemalt ist, wenn das Fenster erscheint.
     requestAnimationFrame(() => {
-      void import('@tauri-apps/api/core').then(({ invoke }) => invoke('window_show')).catch(() => {})
+      void import('../api/bindings').then(({ commands }) => commands.windowShow()).catch(() => {})
     })
   }
   const show = () => requestAnimationFrame(() => requestAnimationFrame(done))

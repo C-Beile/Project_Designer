@@ -5,6 +5,7 @@ import { clearChannelsWhere } from '../../problems/problemStore'
 import type { TreeNode } from '../../wire/types'
 import { samePath } from '../shellHelpers'
 import { getOptions } from '../../settings/options'
+import { useAbortableEffect } from '../../core/hooks/useAbortableEffect'
 
 export interface ProjectsDeps {
   api: ForgeApi
@@ -47,15 +48,11 @@ export function useProjects({ api, projectRoot, setStatus }: ProjectsDeps) {
 
   const [loadingProjects, setLoadingProjects] = useState<Set<string>>(() => new Set())
   const [iconSvgs, setIconSvgs] = useState<ReadonlyMap<string, string>>(() => new Map())
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     void api
       .listIcons()
-      .then((list) => !cancelled && setIconSvgs(new Map(list.map((i) => [i.id, i.svg]))))
+      .then((list) => !signal.aborted && setIconSvgs(new Map(list.map((i) => [i.id, i.svg]))))
       .catch(() => undefined)
-    return () => {
-      cancelled = true
-    }
   }, [api])
 
   useEffect(() => {
@@ -82,12 +79,17 @@ export function useProjects({ api, projectRoot, setStatus }: ProjectsDeps) {
   const treeRef = useRef(tree)
   treeRef.current = tree
   const objectsByType = useMemo(() => collectByType(tree), [tree])
+  // Alle Objekte aller offenen Projekte, je Eintrag mit seinem Projekt (Suche Strg+O).
   const openableModels = useMemo(
     () =>
-      [...objectsByType.entries()]
-        .flatMap(([type, names]) => [...names].map((name) => ({ type, name })))
+      projects
+        .flatMap((projectRoot) =>
+          [...collectByType(trees[projectRoot] ?? []).entries()]
+            .filter(([type]) => !type.includes(':'))
+            .flatMap(([type, names]) => [...names].map((name) => ({ type, name, projectRoot }))),
+        )
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })),
-    [objectsByType],
+    [projects, trees],
   )
   const activeTree = useMemo(() => trees[root] ?? [], [trees, root])
 

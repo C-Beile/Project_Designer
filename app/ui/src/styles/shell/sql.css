@@ -18,8 +18,8 @@
   padding: 2px 12px;
   background: var(--bg-panel);
   color: var(--fg);
-  border: 1px solid var(--border-strong);
-  border-radius: 2px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-control);
 }
 
 .forge-sql-write {

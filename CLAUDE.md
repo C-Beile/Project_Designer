@@ -71,9 +71,9 @@ Wichtige Ordner haben eine eigene `CLAUDE.md` (Karte) mit Dateiliste, Regeln, Fa
 
 ## Bibliotheken
 
-- Frontend: react, react-dom, monaco-editor, marked, dompurify, @tauri-apps/api. Kein State-Manager, kein Komponenten-Kit, kein Router. Alles eigenes CSS (`styles.css`).
+- Frontend: react, react-dom, monaco-editor, marked, dompurify, @tauri-apps/api, react-aria-components (nur in `core/ui/controls/`), dockview-react (Docking, nur in `shell/dock/`), smol-toml (Dev-Config und Themes). Kein State-Manager, kein Router (kleine Stores: `core/store.ts`). Alles eigenes CSS (`styles.css`) auf Tokens.
 - Rust: tauri 2 (+ updater, log), serde, quick-xml, tokio, sqlx (MySQL/Postgres), tiberius (MSSQL), zip, notify, rfd (Datei-Dialoge), windows-sys, clap, thiserror.
-- Git, SSH-Tunnel und Transpiler laufen über externe Programme, nicht über Bibliotheken.
+- Git und Transpiler laufen über externe Programme. Der SSH-Tunnel läuft in der App über `russh` (kein plink mehr).
 
 ## Bauen und starten (Windows)
 
@@ -84,24 +84,26 @@ Wichtige Ordner haben eine eigene `CLAUDE.md` (Karte) mit Dateiliste, Regeln, Fa
 - Tests: `cargo test --workspace --no-fail-fast` und `cd app/ui && npm test`
 - UI-Typen prüfen: `cd app/ui && npx tsc -p tsconfig.app.json --noEmit` (ein nacktes `npx tsc --noEmit` prüft nichts, `tsconfig.json` hat nur Verweise).
 - Editor ist **VS Code** (nicht Visual Studio). `.vscode/` ist per `.gitignore` lokal. Dort liegt eine F5-Konfiguration "Dito Designer (Debug)" mit `cppvsdbg` (Erweiterung `ms-vscode.cpptools`).
-- Logs der App: `%APPDATA%\de.threehillsit.dito-designer\logs` (Menü Help > Open Log Folder). Dort landen Abstürze (`PANIC`), UI-Fehler (`UI-ERROR`, auch Fehler-Popups und fehlgeschlagene Tauri-Befehle), Plugin-Fehler (`ERROR plugin_call plugin.befehl (Argumente): Fehler`, Geheimnisse verdeckt) und Zeiten (`PERF`).
+- Logs der App: `%LOCALAPPDATA%\DitoDesigner\logs` (Menü Help > Open Log Folder). Dort landen Abstürze (`PANIC`), UI-Fehler (`UI-ERROR`, auch Fehler-Popups und fehlgeschlagene Tauri-Befehle), Plugin-Fehler (`ERROR plugin_call plugin.befehl (Argumente): Fehler`, Geheimnisse verdeckt) und Zeiten (`PERF`).
 
 ## Stand der Tests (nach Index + File-Watcher, 2026-11-12)
 
-- Rust: 676 grün, 12 rot. Alle 12 brauchen eine echte ADITO-Installation oder ein Korpus (`native-transpiler` lib 2 + `full_harness_run`, `npm-modules` resolve_real_corpus 3 + resolve_synthetic 2, `adito-transpiler` real_transpiler 2, `project` transpile_action_real 2: `official_engine...` und `missing_engine_param...`, weil der offizielle Transpiler Standard ist). `native-transpiler` `incremental_stage` ist manchmal flaky.
-- UI: 606 grün, 3 rot (`newObjectRenameZip.test.tsx`), 4 Testdateien laden nicht (fehlende Dateien unter `E:0_design`: sheetLayout, menuSpec, toolbarSpec, popupSpec).
+- Rust: 12 Tests sind `#[ignore]` (laufen nur mit `cargo test -- --ignored`), weil sie eine echte ADITO-Installation oder ein Korpus brauchen (`native-transpiler` lib 2 + `full_harness_run`, `npm-modules` resolve_real_corpus 3 + resolve_synthetic 2, `adito-transpiler` real_transpiler 2, `project` transpile_action_real 2: `official_engine...` und `missing_engine_param...`, weil der offizielle Transpiler Standard ist). `native-transpiler` `incremental_stage` ist manchmal flaky.
+- Rust-Tests laufen in Sekunden, die Zeit steckt im Bauen und Linken (`[profile.test]` in `Cargo.toml` spart Debug-Infos). Beim Iterieren nur die geänderte Crate: `cargo test -p <crate>`.
+- UI (2026-11-15): 739 grün, ca. 35 s. Tests liegen in `app/ui/tests/` (gleiche Ordner wie `src/`, Hilfen in `tests/support/`). Beim Iterieren gezielt: `npx vitest run tests/<ordner>`.
 - Bauen mit MSVC: `rust-toolchain.toml` steht auf GNU (braucht MinGW im PATH). Ohne MinGW: `RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-msvc` setzen.
 
 ## Umbau
 
-Aufteilung in Crates und Plugins nach `docs/refactoring-plan.md` (dort Stand, Namen, Begründungen). Umgesetzt, aber **nicht committet** und **nicht in der laufenden App geprüft**. Umgestellt auf das UI-Register: Git-Toolbar-Knöpfe, Statusleisten-Slots, Baum-Kontextmenü-Slot, Plugins-Dialog (`mergePluginList`). Auch der Git-Branch-Knopf der Statusleiste (`features/git/GitStatusItem.tsx`) und die Git-Befehle (`team.*`) hängen jetzt am Register. Offen: optional `ts-rs`/`specta`. CI: `.github/workflows/ci.yml` (Tests blockieren noch nicht, siehe Basislinie).
+Aufteilung in Crates und Plugins nach `docs/refactoring-plan.md` (dort Stand, Namen, Begründungen). Umgesetzt, aber **nicht committet** und **nicht in der laufenden App geprüft**. Umgestellt auf das UI-Register: Git-Toolbar-Knöpfe, Statusleisten-Slots, Baum-Kontextmenü-Slot, Plugins-Dialog (`mergePluginList`). Auch der Git-Branch-Knopf der Statusleiste (`features/git/GitStatusItem.tsx`) und die Git-Befehle (`team.*`) hängen jetzt am Register. tauri-specta typisiert alle Befehle (`app/src-tauri/src/bindings.rs`, erzeugt `app/ui/src/api/bindings.ts` beim Debug-Start). CI: `.github/workflows/ci.yml` (Tests blockieren noch nicht, siehe Basislinie).
 
 ## Konfiguration (`designer.conf`)
 
-- Eine Datei für alle Einstellungen: `%APPDATA%\de.threehillsit.dito-designer\designer.conf`, **TOML**, ein Abschnitt je Art (`[general]`, `[ssh]`, `[projects]`, `[window]`, `[popups.<name>]`, `[appearance]`, `[options]`, `[editor]`, `[toolbar]`, `[layout]`, `[plugins]`, `[deploy]`, `[rest]`, `[tree]`, `[windows]` ...).
+- Eine Datei für alle Einstellungen: `%LOCALAPPDATA%\DitoDesigner\designer.conf`, **TOML**, ein Abschnitt je Art (`[general]`, `[ssh]`, `[projects]`, `[window]`, `[popups.<name>]`, `[appearance]`, `[options]`, `[editor]`, `[toolbar]`, `[layout]`, `[plugins]`, `[deploy]`, `[rest]`, `[tree]`, `[windows]` ...).
 - Regeln (`crates/app-base/src/config.rs`): leere Werte (`null`, leere Listen/Abschnitte) werden nie gespeichert; Pfade (Werte **und** Schlüssel) immer mit `/`; Lesen nachsichtig; Schreiben atomar und unter einem Schloss (`config::update`).
 - Oberfläche: `app/ui/src/settings/appConfig.ts` (`configGet`/`configSet`, Pfad als Liste). Kein `localStorage` mehr. Geladen wird einmal in `main.tsx`, geschrieben gebündelt; andere Fenster folgen über `forge://config-changed` (`onConfigChange`).
 - Fenster: Hauptfenster und Dialog-Fenster merken Lage, Größe, Bildschirm (`app/src-tauri/src/window_state.rs`, Regeln in `app_base::window_state`).
+- Der Ordner `DitoDesigner` (nicht der Tauri-Name) kommt aus `app/src-tauri/src/data_dir.rs`; der alte Ordner `%APPDATA%\de.threehillsit.dito-designer` wird einmal dorthin kopiert.
 - Zugangsdaten stehen nie in der Datei (Windows-Anmeldeinfo bzw. Git Credential Manager).
 - Alte `settings.json` und `recent-project.json` werden einmal übernommen, wenn es noch keine `designer.conf` gibt. Alte `localStorage`-Werte werden ignoriert.
 
@@ -121,3 +123,7 @@ Aufteilung in Crates und Plugins nach `docs/refactoring-plan.md` (dort Stand, Na
 - Nichts committen oder pushen ohne Auftrag.- Neue UI-Teile eines Features über das UI-Register (`core/plugins/registry.ts`) anmelden, nicht fest in Shell/Toolbar/StatusBar einbauen. Eigene Masken aus `core/ui/` nutzen (Recycling).
 - Neue Befehle eines Plugins über `plugin_call` laufen lassen, nicht als neuer Tauri-Befehl. Jeder Tauri-Befehl packt seinen Rumpf in `commands::guard`/`guard_async` (Panic-Schutz, siehe `app/src-tauri/CLAUDE.md`).
 - Einfache, mechanische Aufgaben an Haiku (`code-chores`), nicht an Opus.
+- UI-Umbau: Plan und Entscheidungen stehen in `docs/ui-refactor-plan.md` (React Aria, TOML-Themes, Docking mit dockview, tauri-specta, `app/config/` für Dev-Konfiguration). Vor Arbeit an der UI lesen.
+- Quelldateien nie mit PowerShell 5.1 (`Set-Content`, `Out-File`) schreiben, das speichert ANSI statt UTF-8. Prüfung: `node scripts/check-encoding.mjs`.
+- Lint: `cd app/ui && npm run lint`. Die Basislinie `lint-baseline.json` darf nicht schlechter werden.
+- UI-Regel: Elemente in einer Reihe (Button neben Suchfeld, Input, Select) haben exakt dieselbe Höhe. Immer `--h-control` bzw. die Controls aus `core/ui/controls/` nutzen, keine eigenen Höhen. Gilt auch in Mockups.

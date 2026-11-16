@@ -46,7 +46,7 @@ pub const TREE_FOLDERS: &[(&str, &[&str])] = &[
     ("others", &[]),
 ];
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum NodeKind {
     Project,
@@ -63,7 +63,7 @@ fn is_false(b: &bool) -> bool {
     !*b
 }
 
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Default, Serialize, specta::Type)]
 pub struct TreeNode {
     /// For model objects and files the absolute file path (what `get_property_tree`/`save` take);
     /// synthetic `project:`/`folder:`/`dir:`/`libraries:`/`missing:` ids otherwise. The same object

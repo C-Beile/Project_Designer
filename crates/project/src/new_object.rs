@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 
 pub use crate::object_names::{check_reserved, validate_name, MSG_EMPTY, MSG_EXISTS, MSG_SYSTEM_NAME, ROLE_PREFIX, SYSTEM_PREFIX};
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct NewObjectKind {
     /// Folder below the project root, e.g. `neonView`.
     pub folder: String,

@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { NewObjectKind } from '../wire/types'
 import { localNameError } from '../tree/nameRules'
 import { Modal } from '../core/Modal'
 import { TypeCombo } from './TypeCombo'
 import { errorText } from '../core/errorText'
+import { Button, Dropdown, Input } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // "Create New Model" (DESIGNER_BEHAVIOR_SPEC.md 4.2): project, type and name. The Finish button stays off
 // until the name passes all checks, a project is chosen and the type is supported. A type with a fixed name
@@ -41,23 +43,19 @@ export function NewObjectDialog({
   const [nameError, setNameError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     void api.newObjectKinds().then((list) => {
-      if (cancelled) return
+      if (signal.aborted) return
       setKinds(list)
       setFolder((cur) => (cur && list.some((k) => k.folder === cur && k.enabled) ? cur : (list.find((k) => k.enabled)?.folder ?? null)))
     })
-    return () => {
-      cancelled = true
-    }
   }, [api])
 
   const kind = kinds.find((k) => k.folder === folder) ?? null
 
   const fixedName = kind?.fixed_name ?? null
 
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (!folder) {
       setNameError(null)
       return
@@ -71,13 +69,9 @@ export function NewObjectDialog({
       setNameError(local)
       return
     }
-    let cancelled = false
     void api.validateNewName(project, folder, name).then((msg) => {
-      if (!cancelled) setNameError(msg)
+      if (!signal.aborted) setNameError(msg)
     })
-    return () => {
-      cancelled = true
-    }
   }, [api, project, folder, name, fixedName])
 
   const ready = !!kind && kind.enabled && !!project && (fixedName ? true : name.length > 0 && !nameError) && (!kind.needs_title || title.trim().length > 0)
@@ -98,24 +92,18 @@ export function NewObjectDialog({
       onClose={onClose}
       footer={
         <>
-          <button type="button" disabled={!ready} onClick={() => void create()}>
+          <Button variant="bare" isDisabled={!ready} onClick={() => void create()}>
             Finish
-          </button>
-          <button type="button" onClick={onClose}>
+          </Button>
+          <Button variant="bare" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >
       <label className="forge-field">
         <span>Project:</span>
-        <select aria-label="Project" value={project} disabled={(projects?.length ?? 0) < 2} onChange={(e) => setProject(e.target.value)}>
-          {(projects && projects.length > 0 ? projects : [projectRoot]).map((p) => (
-            <option key={p} value={p}>
-              {p.split(/[\/]/).filter(Boolean).pop() ?? p}
-            </option>
-          ))}
-        </select>
+        <Dropdown value={project} aria-label="Project" isDisabled={(projects?.length ?? 0) < 2} options={(projects && projects.length > 0 ? projects : [projectRoot]).map((p) => ({ id: p, label: p.split(/[\/]/).filter(Boolean).pop() ?? p }))} onChange={(v) => setProject(v)} />
       </label>
       <div className="forge-field">
         <span>Type:</span>
@@ -124,7 +112,7 @@ export function NewObjectDialog({
       {fixedName ? null : (
         <label className="forge-field">
           <span>Name:</span>
-          <input
+          <Input
             type="text"
             value={name}
             aria-label="Object name"
@@ -145,13 +133,13 @@ export function NewObjectDialog({
       {kind?.needs_title ? (
         <label className="forge-field">
           <span>Title</span>
-          <input type="text" value={title} aria-label="Object title" onChange={(e) => setTitle(e.target.value)} />
+          <Input type="text" value={title} aria-label="Object title" onChange={(e) => setTitle(e.target.value)} />
         </label>
       ) : null}
       {kind?.reference_label ? (
         <label className="forge-field">
           <span>{kind.reference_label}</span>
-          <input type="text" value={reference} aria-label={kind.reference_label} onChange={(e) => setReference(e.target.value)} />
+          <Input type="text" value={reference} aria-label={kind.reference_label} onChange={(e) => setReference(e.target.value)} />
         </label>
       ) : null}
       {error ? (

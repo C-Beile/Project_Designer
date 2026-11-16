@@ -51,7 +51,7 @@
 
 .rest-check { display: flex; align-items: center; gap: 6px; color: var(--fg-muted); font-size: 11.5px; cursor: pointer; }
 
-.rest-bar { display: flex; align-items: stretch; gap: 0; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--bg-inset); overflow: hidden; }
+.rest-bar { display: flex; align-items: stretch; gap: 0; border: 1px solid var(--border-input); border-radius: 8px; background: var(--bg-inset); overflow: hidden; }
 
 .rest-bar:focus-within { border-color: var(--focus-ring, var(--accent)); }
 
@@ -76,7 +76,7 @@
 .u-path { color: var(--fg); }
 .u-service { color: var(--success); font-weight: 600; }
 .u-id { color: var(--cyan); }
-.u-variable { color: var(--warning); background: color-mix(in srgb, var(--warning) 18%, transparent); border-radius: 3px; }
+.u-variable { color: var(--warning); background: color-mix(in srgb, var(--warning) 18%, transparent); border-radius: var(--radius-control); }
 .u-qkey { color: var(--brand-teal, var(--cyan)); }
 .u-qvalue { color: var(--warm, var(--warning)); }
 
@@ -146,7 +146,7 @@
 
 .rest-res { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1 1 auto; }
 
-.rest-error { margin: 0; padding: 8px 12px; border-left: 3px solid var(--error); background: color-mix(in srgb, var(--error) 12%, transparent); border-radius: 4px; }
+.rest-error { margin: 0; padding: 8px 12px; border-left: 3px solid var(--error); background: color-mix(in srgb, var(--error) 12%, transparent); border-radius: var(--radius-control); }
 
 .rest-res-bar { display: flex; align-items: center; gap: 12px; }
 
@@ -188,7 +188,7 @@
 
 .rest-dots:hover, .rest-dots[aria-expanded='true'] { color: var(--fg); background: color-mix(in srgb, var(--fg) 8%, transparent); border-color: var(--border); }
 
-.rest-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 5; display: flex; flex-direction: column; min-width: 170px; padding: 4px; background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 6px 18px rgb(0 0 0 / 0.35); }
+.rest-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 5; display: flex; flex-direction: column; min-width: 170px; padding: 4px; background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 6px 18px color-mix(in srgb, var(--bg-inset) 35%, transparent); }
 
 .rest-menu button { padding: 6px 10px; background: none; border: none; border-radius: 4px; color: var(--fg); text-align: left; cursor: pointer; }
 

@@ -6,24 +6,24 @@
 | `Shell.tsx` | Hauptfenster: ruft alle Hooks auf und verdrahtet sie. |
 | `ShellPanels.tsx` | `useShellPanels`: baut Editorbereich und die vier Panels. |
 | `hooks/` | Die ausgezogenen Hooks. Siehe `hooks/CLAUDE.md`. |
-| `DockLayout.tsx` | Andock-Rahmen (Projects, Properties, Editor, Navigator, Output). |
 | `layoutState.ts` | Zustand und Speicherung des Layouts. |
 | `menuModel.ts` | Hauptmenü als Daten (`buildMenus`, `TOOL_WINDOWS`, `MenuContext`). Menü "Debug" (vor Help) nur wenn `isDevBuild()`; Tests setzen `ctx.devBuild`. |
-| `debugMenu.test.ts` | Test: Debug-Menü nur im Dev-Build, Plugin-Einträge. |
 | `MenuBar.tsx` | Menüleiste mit Tastaturbedienung. |
 | `Toolbar.tsx` | Werkzeugleiste, liest auch `useToolbarItems` aus dem Register. |
 | `toolbarPrefs.ts` | Gruppen der Werkzeugleiste, an/aus, gespeichert. |
 | `StatusBar.tsx` | Statusleiste, Plätze für Plugin-Felder. |
 | `IndexStatusItem.tsx` | Feld der Statusleiste: Fortschritt des Projekt-Index (`Indexing 45%  Datei`), danach kurz `Index ready`. Klick öffnet den IDE-Log. |
-| `coreStatusItems.ts` | `registerCoreStatusItems()`: Statusleisten-Beiträge des Kerns (ohne Plugin). Aufruf in `App.tsx` und `test/setup.ts`. |
+| `coreStatusItems.ts` | `registerCoreStatusItems()`: Statusleisten-Beiträge des Kerns (ohne Plugin). Aufruf in `App.tsx` und `tests/support/setup.ts`. |
 | `ProjectsPanel.tsx` | Kopf und Inhalt des Projects-Panels. |
 | `PropertiesBody.tsx` | Inhalt des Properties-Panels je Auswahl. |
-| `OutputPanel.tsx` | Output-Fenster (Unter-Reiter `database`, `build`, `default`, `nodejs`). |
+| `OutputPanel.tsx` | Output-Fenster: jedes Fenster (Build, Database, Default, NodeJS, IDE Log, Scan Services, Search Results, Notifications, Refactoring, Problems) ist ein eigener, schließbarer Reiter (`OutputTabId`). Das Panel ist beim Start zu (`opens = "on-demand"`); `showToolWindow` in `Shell.tsx` öffnet nur den Reiter der Aktion. |
 | `RefactoringPanel.tsx` | Refactoring-Reiter (Find Usages, Safely Delete, Rename). |
 | `TabSwitcher.tsx` | Ctrl+Tab Liste der offenen Tabs. |
 | `QuickFileSearch.tsx` | Doppel-Ctrl: Dateisuche. |
 | `Dialogs.tsx` | About-Dialog. |
 | `OptionsDialog.tsx` | Tools > Options. |
+| `LoopbackSetup.tsx` | Options > ADITO > General (nur macOS): Knopf für die Zusatzadressen 127.0.200.x der Tunnel (einmal Admin-Passwort). |
+| `SshKeyPassphrase.tsx` | Options > ADITO > General, unter dem Schlüsselpfad: prüft die Datei, zeigt das Passphrase-Feld nur bei geschütztem Schlüssel, prüft und merkt sie im Schlüsselbund. |
 | `PluginsDialog.tsx` | Tools > Plugins. |
 | `UpdatesDialog.tsx` | Hilfe > Updates. |
 | `LocalDataDialog.tsx` | Hilfe > Local Data. |
@@ -33,7 +33,7 @@
 | `NewProjectDialog.tsx` | Neues Projekt oder Klon. |
 | `NewObjectDialog.tsx` | "Create New Model". |
 | `TypeCombo.tsx` | Typ-Auswahl für "Create New Model". |
-| `OpenModelDialog.tsx` | Datei > Open (Ctrl+O). |
+| `OpenModelDialog.tsx` | Datei > Open (Ctrl+O): Popup im Hauptfenster, Suche über alle offenen Projekte, gruppiert nach Projekt (einklappbar), Typ-Filter als `MultiSelect` (`[search] disabledTypes`), Gruppierung nach Projekt oder Typ (`[search] groupBy`). Eigenes CSS: `OpenModelDialog.css`. |
 | `ProjectZipDialog.tsx` | Export/Import Project als Zip. |
 | `ConflictDialog.tsx` | Datei von außen geändert. |
 | `DeployOptionsDialog.tsx` | Deploy, erster Dialog (Projekt, System, Optionen). |
@@ -44,15 +44,21 @@
 | `TranspileProgress.tsx` | Fortschritt eines Builds. |
 | `TranspileMatchDialog.tsx` | Übereinstimmung eigener Transpiler mit offiziellem. |
 | `nativeGuard.tsx` | Sperrt Browser-Tasten und -Menüs im Release. |
-| `icons.tsx` | Eigene Toolbar- und Panel-Icons. |
+| `icons.tsx` | Toolbar- und Panel-Icons (`IconSave` ...) als Phosphor-Icons. Name, Stil und Farbe aus `style.toml` (`[icon.<id>]`). |
 | `optionIcons.tsx` | Icons der Options-Kategorien. |
-| `ThemePicker.tsx` | Options > Appearance > Theme: Galerie der Themes mit Vorschaubild, `LivePreview` der Farben. |
-| `ColorSample.tsx` | Options > Appearance > Colours: Beispiel neben jeder Farbe. |
+| `ThemePicker.tsx` | Options > Appearance > General: Galerie der Themes mit Vorschaubild. |
+| `CodeFormattingPage.tsx` | Options > Appearance > Code formatting: Schrift, Größe, Zeilenabstand, Ligaturen der Code-Editoren mit Vorschau. |
 | `shellHelpers.ts` | Kleine reine Helfer (`findNodeByPath`, `baseName`, `samePath`). |
+| `TextAndDensity.tsx` | Options > General > Text and density: Schriftgröße, Schriftart und Dichte. Wirkt sofort über `theme/appearance.ts`. |
+| `AppearanceGeneralPage.tsx` | Options > Appearance > General (erste Seite): Theme (`ThemePicker`, `UserThemeSection`, kompakt) und die Tab-Einstellung (Farbstreifen oder nach Projekt gruppiert). |
+| `TextAndSizePage.tsx` | Options > Appearance > Text & size: Interface size (Zoom) und `TextAndDensity`. |
+| `UserThemeSection.tsx` | Options > Appearance > General: eigene Themes wählen, Knopf für das Theme Studio (eine Zeile). |
+| `dock/` | `DockHost.tsx` (dockview: Panels andocken, stapeln, verschieben; Anordnung in `layout.dock`), `dockPlan.ts` (reine Funktion: Standard-Anordnung aus `app/config/layout.toml`), `DockHost.css` (dockview auf unsere Tokens). |
+| `layouts.ts` | Voreinstellungen (`LAYOUT_PRESETS`: Default, Compact, Editor Focus) und gespeicherte Layouts des Nutzers (`[layouts.<name>]` in `designer.conf`: `saveNamedLayout`, `loadNamedLayout`, `deleteNamedLayout`). Menü: Window > Layouts. |
 <!-- AUTO:END -->
 
 ## Zweck
-Hauptfenster: Layout, Menü, Toolbar, Dialoge und die Hooks, die den Zustand halten. Tests: `*.test.tsx` neben den Dateien (`Shell.test.tsx` fährt das ganze Fenster mit `mockApi`).
+Hauptfenster: Layout, Menü, Toolbar, Dialoge und die Hooks, die den Zustand halten. Tests: `tests/shell/*.test.tsx` (`Shell.test.tsx` fährt das ganze Fenster mit `mockApi`).
 
 ## Einstiegspunkte
 - `Shell({ api, projectRoot })` in `Shell.tsx`. `groupOpenTunnels` ist dort ebenfalls exportiert.
@@ -74,12 +80,12 @@ Hauptfenster: Layout, Menü, Toolbar, Dialoge und die Hooks, die den Zustand hal
 |---|---|
 | Menüpunkt | `menuModel.ts`, Befehl in `hooks/useShellCommands.ts` (oder `commands` des passenden Hooks) |
 | Toolbar-Taste | `Toolbar.tsx`, `toolbarPrefs.ts` |
-| Neues Panel oder Layout | `layoutState.ts`, `DockLayout.tsx`, `ShellPanels.tsx` |
+| Neues Panel | `[panel.<id>]` in `app/config/layout.toml`, `PanelId` und Inhalt in `layoutState.ts` und `ShellPanels.tsx` |
+| Standard-Anordnung der Panels | `app/config/layout.toml`; die Regeln stehen in `dock/dockPlan.ts` |
 | Neuer Dialog des Hauptfensters | neue Datei hier, `ShellDialog` in `hooks/dialogTypes.ts`, `hooks/useDialogWindows.ts` |
 | Neue Option-Kategorie | `OptionsDialog.tsx` |
 | Neuer Zustand mit Logik | neuer Hook in `hooks/`, Aufruf in `Shell.tsx` |
 
 ## Tests
-- `npm test` in `app/ui`. Einzeln: `npx vitest run src/shell/Shell.test.tsx`.
-- `test/setup.ts` stellt `import.meta.env.DEV` auf false: Tests sehen das Menü ohne Debug.
-- `menuSpec.test.ts` und `toolbarSpec.test.tsx` brauchen Spec-Dateien unter `E:\60_design` (laut Root-`CLAUDE.md` fehlen sie).
+- `npm test` in `app/ui`. Einzeln: `npx vitest run tests/shell/Shell.test.tsx`.
+- `tests/support/setup.ts` stellt `import.meta.env.DEV` auf false: Tests sehen das Menü ohne Debug.

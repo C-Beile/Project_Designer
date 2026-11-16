@@ -62,7 +62,7 @@ pub struct ObjectRef {
     pub model_name: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum Action {
     Created,
@@ -74,7 +74,7 @@ pub enum Action {
     Removed,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct Outcome {
     pub action: Action,
     /// Directory name below `<project>/modification/`, if a modification is involved.

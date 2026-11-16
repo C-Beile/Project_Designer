@@ -5,7 +5,7 @@
   flex: 0 0 32px;
   background: var(--bg-titlebar);
   color: var(--fg-titlebar);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-panel);
   user-select: none;
   /* Falls back gracefully outside Tauri (plain browser preview during `npm run dev`) - this
      attribute is inert HTML there, so the bar just isn't draggable, no error. */

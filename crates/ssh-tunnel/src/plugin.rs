@@ -2,7 +2,7 @@
 //! Argumente sind ein JSON-Objekt mit camelCase-Feldern (`projectRoot`, `keyFile` ...).
 //! Der `TunnelManager` gehört der App; sie gibt dieselbe `Arc` auch an das Datenbank-Plugin.
 
-use crate::tunnel_config;
+use crate::{ssh_keys, ssh_session, tunnel_config};
 use crate::tunnel_core::{clean_tunnel_inputs, tunnel_auth, TunnelEntry};
 use crate::tunnels::{TunnelManager, TunnelRequest};
 use plugin_api::feature::{to_json as json, unknown_command};
@@ -51,14 +51,46 @@ impl FeaturePlugin for TunnelPlugin {
             "delete_tunnel_row" => json(tunnel_config::delete_tunnel_row(&a.root()?, &a.string("reference")?, a.get("index")?)?),
             "tunnel_connect" => self.connect(&a),
             "tunnel_disconnect" => {
-                self.tunnels.disconnect(&a.string("targetHost")?, a.get("targetPort")?);
-                json(())
+                // `true`: der Tunnel gehört einem anderen Programm, dessen Besitzer wurde gebeten ihn zu schließen.
+                json(self.tunnels.disconnect_any(&a.string("targetHost")?, a.get("targetPort")?))
             }
             "tunnel_disconnect_all" => {
                 self.tunnels.disconnect_all();
                 json(())
             }
             "tunnel_list" => json(self.tunnels.list()),
+            // Zusatzadressen 127.0.200.x: vorhanden? Auf macOS einmal einrichten (Admin-Passwort).
+            "loopback_status" => json(crate::loopback::status()),
+            "loopback_setup" => {
+                crate::loopback::setup()?;
+                json(crate::loopback::status())
+            }
+            // Schlüssel prüfen: vorhanden, Format, braucht er eine Passphrase?
+            "key_inspect" => json(ssh_keys::inspect_key(&a.string("path")?)),
+            // Passphrase prüfen (die mitgegebene, sonst die im Schlüsselbund). `Err` ist der Text für die Oberfläche.
+            "key_unlock" => {
+                let path = a.string("path")?;
+                let given = a.opt_string("passphrase")?.filter(|p| !p.is_empty());
+                let passphrase = given.or_else(|| ssh_keys::stored_passphrase(&path));
+                ssh_keys::unlock_check(&path, passphrase.as_deref())?;
+                json(())
+            }
+            "key_passphrase_save" => {
+                let path = a.string("path")?;
+                let passphrase = a.string("passphrase")?;
+                ssh_keys::unlock_check(&path, Some(&passphrase))?;
+                ssh_keys::save_passphrase(&path, &passphrase)?;
+                json(())
+            }
+            "key_passphrase_forget" => {
+                ssh_keys::forget_passphrase(&a.string("path")?)?;
+                json(())
+            }
+            "key_passphrase_stored" => json(ssh_keys::stored_passphrase(&a.string("path")?).is_some()),
+            "host_key_forget" => {
+                ssh_session::forget_host(&ssh_session::host_id(&a.string("host")?, a.get("port")?));
+                json(())
+            }
             _ => Err(unknown_command(self.id(), command)),
         }
     }

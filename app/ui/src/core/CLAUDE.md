@@ -9,17 +9,24 @@
 | `openFileBus.ts` | `openFileInDesigner(path)`: "Open File" aus einem eigenen Fenster (Commit-Fenster) öffnet die Datei im Hauptfenster. |
 | `outputBus.ts` | `logOutput(sub, text)` schreibt ins Output-Fenster. `requestShell` für kleine Bitten an die Shell. SQL-Maskierung. |
 | `shortcuts.ts` | Kürzel als `Mod+Shift+S` schreiben, anzeigen (`formatShortcut`) und prüfen (`matchesShortcut`). |
-| `errorText.ts` | `errorText(e)`: Fehler als Text. |
+| `errorText.ts` | `errorText(e)`: Fehler als Text (auch Ereignisse wie ein Worker, der nicht lädt, statt "[object Event]"). `errorDetails(e)`: mit Stack und Ursache. |
 | `clipboard.ts` | `copyText(text)`: kopiert in die Zwischenablage (mit Rückfall). Für alles, was kopiert. |
 | `errorLog.ts` | `logError(text)` schreibt ins Protokoll; `main.tsx` setzt die Senke. `notify(kind:'error')` ruft es auf. |
 | `errorHandling.tsx` | `ErrorBoundary` (Absturz eines Editors), `CrashListener` (schreibt ins Logfile). |
+| `projectColor.ts` | `projectColor(root, projects)`: CSS-Farbe (`--project-1..8` aus `theme/tokens.css`) eines Projekts nach seiner Stelle in der Liste der offenen. Für Tabs und Suche. |
 | `treeIndex.ts` | Suchen im Projektbaum: `collectByType`, `findObject`, `entityOfView`, `collectIcons`. |
 | `revealApp.ts` | `revealApp()`: blendet die Seite erst nach zwei Frames ein (setzt `data-ready` auf `<html>`), damit kein ungestyltes Zwischenbild aufblitzt. |
 | `uuid.ts` | `newUuid`, `copyNewUuid`. |
 | `indexStatus.ts` | Store für den Stand des Projekt-Index je Projekt (`useIndexStatus`, `applyIndexProgress`, `summarizeIndex`). Ignoriert alte Generationen. Nicht `projectIndex` nennen: `editors/projectIndex.ts` meint etwas anderes. |
 | `scm.ts` | Neutraler Store für den Source-Control-Stand: `useScm`, `refreshScm`, `decorationFor`, `indexOf`, `setScmProvider`. Ohne Plugin leer. |
+| `icons/` | Phosphor-Icons: `Icon`, `ConfiguredIcon`, Liste `ICONS`. Siehe `icons/CLAUDE.md`. |
 | `plugins/` | `registry.ts`: UI-Register für Plugins. `ShellExtensions.tsx` rendert die Shell-Beiträge. |
-| `ui/` | Masken-Baukasten: FormDialog, ListDialog, DataTable, ProgressBar, `CopyButton` (Kopieren-Knopf mit grünem Haken), `uiDialogs`. |
+| `ui/` | `blocks/` (`SchemaForm`, `PropertyGrid`), `controls/` (Basis-Bausteine auf React Aria), `gallery/` (Vorschau-Tabs des Theme Studios), Masken-Baukasten: FormDialog, ListDialog, DataTable, ProgressBar, `CopyButton` (Kopieren-Knopf mit grünem Haken), `uiDialogs`. |
+| `contrib/` | Einstiegspunkte des Umbaus: `contextKeys.ts` (Kontext-Schlüssel mit `when`), `keybindings.ts` (`registerKeybinding`, `commandForKey`), `settings.ts` (`registerSetting`, `useSettingValue`, `readSetting`, `writeSetting`), `fieldEditors.ts` (`registerFieldEditor`, `registerFieldAction` für das Properties-Panel), `panels.ts` (`registerPanel`: Plugin-Panels im Docking-Gitter mit Menüpunkt in Window). |
+| `hooks/` | `useAbortableEffect.ts`: wie `useEffect` mit `AbortSignal` (Antworten prüfen `signal.aborted`). `useResource.ts`: lädt einen Wert, verwirft veraltete Antworten (AbortSignal), lädt neu bei `deps`, `reload()` und `invalidateResources(tag)`. Ersetzt `let cancelled = false`. |
+| `lazyNamed.ts` | `lazyNamed(() => import('./Foo'), 'Foo')`: `React.lazy` für benannte Exporte (Fenster und Dialoge laden erst bei Bedarf). |
+| `perf/` | `marks.ts` (`markPerf`), `perfSnapshot.ts` (Debug > Perf Snapshot: Marken, Speicher, DOM-Größe als JSON in die Zwischenablage). |
+| `store.ts` | `createStore(initial)`: kleiner Store mit `get`, `set`, `update`, `subscribe` und Hook `use()`. Nimm ihn statt eines handgebauten Listener-Sets. |
 <!-- AUTO:END -->
 
 ## Zweck
@@ -47,13 +54,18 @@ Gemeinsame Bausteine ohne Fachlogik. Hauptfenster und alle OS-Fenster nutzen sie
 | Zeile ins Output-Fenster | `logOutput` in `outputBus.ts` |
 | Neues Kürzel formatieren | `shortcuts.ts` |
 | Plugin-Beitrag, Maske | siehe unten |
+| Neues Panel eines Plugins | `registerPanel({ id, title, area, group, opens, plugin, component })` (`contrib/panels.ts`) |
+| Neues Hauptmenü | `registerMainMenu({ id, label, mnemonic, order, items })` (`shell/menuModel.ts`) |
+| Neue Einstellung | `registerSetting({ id, page, kind, label, default, path })` (`contrib/settings.ts`), Anzeige per `<SchemaForm page="..." />` aus `ui/blocks/` |
+| Neues Tastenkürzel für einen Befehl | `registerKeybinding({ command, key, when })` (`contrib/keybindings.ts`); `shell/hooks/useShellCommands.ts` führt es aus |
+| Daten laden im Effekt | `useResource(load, deps, tags)`; Effekt mit mehreren Zuständen oder Abmelden: `useAbortableEffect((signal) => ...)`. Nie `let cancelled = false` |
 
 ### plugins/registry.ts
 Alle Register sind Stores. `register*` gibt eine Abmelde-Funktion zurück. Ein Beitrag mit `plugin` zählt nur, wenn das Plugin und seine `requires` angemeldet sind.
 - `registerPlugin(info)`: Plugin anmelden. `isPluginAvailable(id)` fragt, `usePlugins()` liest.
 - `registerCommand(id, run, plugin?)`: Befehl. `hasCommand`, `runCommandById`, `runCommandAsync` führen ihn aus.
 - `registerMenuContribution({menu, items, order})`: Einträge im Hauptmenü. Lesen: `useMenuContributions`, `getMenuContributions`.
-- Debug-Menü (nur Dev-Build, `isDevBuild()` in `shell/menuModel.ts`): ein Plugin hängt sich mit `registerMenuContribution({ menu: 'debug', order, items })` ein und meldet den Befehl mit `registerCommand`. Der Kern bringt `debug.rebuildIndex` und `debug.dumpIndex` mit.
+- Debug-Menü (nur Dev-Build, `isDevBuild()` in `shell/menuModel.ts`): ein Plugin hängt sich mit `registerMenuContribution({ menu: 'debug', order, items })` ein und meldet den Befehl mit `registerCommand`. Der Kern bringt `debug.rebuildIndex` und `debug.dumpIndex` mit; sie stehen fest in `buildMenus` (`shell/menuModel.ts`), nicht im Register.
 - `registerOptionsPage({id, category, title, component})`: Seite in Tools > Options. Lesen: `useOptionsPages`.
 - `registerToolbarItem({id, group, command, state})`: Knopf der Werkzeugleiste. Lesen: `useToolbarItems(group)`.
 - `registerStatusBarItem({id, align, component})`: Feld der Statusleiste. Lesen: `useStatusBarItems(align)`.
@@ -75,4 +87,4 @@ Der Kern liest den Stand (Baum-Farben, Tabs, Speichern). Das SCM-Plugin sagt mit
 - Große Dialoge mit eigenem Layout bleiben normale Komponenten mit `Modal` (siehe `shell/`).
 
 ## Tests
-- `*.test.tsx` neben den Dateien, z. B. `plugins/registry.test.tsx`. `npx vitest run src/core`.
+- `*.test.tsx` in `tests/core/`, z. B. `plugins/registry.test.tsx`. `npx vitest run tests/core`.

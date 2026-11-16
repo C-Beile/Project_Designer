@@ -21,6 +21,8 @@ import {
   toCsv,
 } from './sqlTools'
 import { errorText } from '../core/errorText'
+import { Button, Dropdown, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
+import { copyText } from '../core/clipboard'
 
 // Execute SQL window (manual chapter 8, screenshot 088): connection row, icon bar, statement
 // editor, one result tab per executed statement with the middle bar (add/delete/save/cancel/
@@ -51,9 +53,9 @@ interface Pending {
 
 function Btn({ label, title, onClick, disabled, pressed, children }: { label: string; title?: string; onClick?: () => void; disabled?: boolean; pressed?: boolean; children: ReactNode }) {
   return (
-    <button type="button" className="forge-sql-ibtn" aria-label={label} title={title ?? label} aria-pressed={pressed} disabled={disabled} onClick={onClick}>
+    <Button variant="bare" className="forge-sql-ibtn" aria-label={label} title={title ?? label} aria-pressed={pressed} isDisabled={disabled} onClick={onClick}>
       {children}
-    </button>
+    </Button>
   )
 }
 
@@ -203,18 +205,9 @@ export function SqlEditor({
         <label>
           <span>Connection:</span>
           {sessions.length > 1 ? (
-            <select aria-label="Connection" value={activeKey} disabled={!db.connected} onChange={(e) => void switchSession(e.target.value)}>
-              {activeKey === '' ? <option value="">{connectionLabel}</option> : null}
-              {sessions.map((s) => (
-                <option key={s.key} value={s.key}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+            <Dropdown aria-label="Connection" value={activeKey} isDisabled={!db.connected} onChange={(v) => void switchSession(v)} options={[...(activeKey === '' ? [{ id: '', label: connectionLabel }] : []), ...sessions.map((s) => ({ id: s.key, label: s.label }))]} />
           ) : (
-            <select aria-label="Connection" value={db.connected ? 'current' : ''} disabled={!db.connected} onChange={() => {}}>
-              {db.connected ? <option value="current">{connectionLabel}</option> : <option value="">&lt;not connected&gt;</option>}
-            </select>
+            <Dropdown aria-label="Connection" value={db.connected ? 'current' : ''} isDisabled={!db.connected} onChange={() => {}} options={[db.connected ? { id: 'current', label: connectionLabel } : { id: '', label: '<not connected>' }]} />
           )}
         </label>
       </div>
@@ -306,25 +299,25 @@ export function SqlEditor({
           <div className="forge-sql-history" role="dialog" aria-label="SQL history">
             <div className="forge-sql-history-head">
               <strong>SQL history</strong>
-              <button
-                type="button"
+              <Button variant="bare"
+
                 onClick={() => {
                   clearSqlHistory()
                   setHistory([])
                 }}
               >
                 Clear
-              </button>
-              <button type="button" onClick={() => setHistory(null)}>
+              </Button>
+              <Button variant="bare" onClick={() => setHistory(null)}>
                 Close
-              </button>
+              </Button>
             </div>
             {history.length === 0 ? <p className="forge-field-hint">No statements executed yet.</p> : null}
             <ul>
               {history.map((h) => (
                 <li key={h}>
-                  <button
-                    type="button"
+                  <Button variant="bare"
+
                     title={h}
                     onClick={() => {
                       const current = handle.current?.getValue() ?? ''
@@ -334,7 +327,7 @@ export function SqlEditor({
                     }}
                   >
                     {oneLine(h)}
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
@@ -348,18 +341,18 @@ export function SqlEditor({
             {pending.statements.length === 1 ? 'This statement can change data in the database. Run it?' : `These ${pending.statements.length} statements can change data in the database. Run them?`}
           </p>
           <pre>{pending.statements.join(';\n')}</pre>
-          <button
-            type="button"
+          <Button variant="bare"
+
             onClick={() => {
               if (pending.after === 'grid') void gridRun.current?.()
               else void runStatements(pending.statements, true)
             }}
           >
             {pending.statements.length === 1 ? 'Run statement' : `Run ${pending.statements.length} statements`}
-          </button>
-          <button type="button" onClick={() => setPending(null)}>
+          </Button>
+          <Button variant="bare" onClick={() => setPending(null)}>
             Cancel
-          </button>
+          </Button>
         </div>
       ) : null}
       <div className="forge-sql-result">
@@ -368,12 +361,12 @@ export function SqlEditor({
           <div className="forge-sql-tabs" role="tablist" aria-label="Statement results">
             {tabs.map((t) => (
               <span key={t.id} className={`forge-sql-tab${t.id === activeTab ? ' is-active' : ''}${t.error ? ' is-error' : ''}`}>
-                <button type="button" role="tab" aria-selected={t.id === activeTab} title={t.sql} onClick={() => setActiveTab(t.id)}>
+                <Button variant="bare" role="tab" aria-selected={t.id === activeTab} title={t.sql} onClick={() => setActiveTab(t.id)}>
                   {oneLine(t.sql, 40)}
-                </button>
-                <button type="button" aria-label={`Close result ${oneLine(t.sql, 20)}`} onClick={() => closeTab(t.id)}>
+                </Button>
+                <Button variant="bare" aria-label={`Close result ${oneLine(t.sql, 20)}`} onClick={() => closeTab(t.id)}>
                   ×
-                </button>
+                </Button>
               </span>
             ))}
           </div>
@@ -568,10 +561,9 @@ function ResultPane({
   }
 
   async function copyCsv() {
-    try {
-      await navigator.clipboard.writeText(toCsv(columns, view.map((v) => v.row), '\t'))
+    if (await copyText(toCsv(columns, view.map((v) => v.row), '\t'))) {
       setMessage('Result copied to the clipboard (tab separated).')
-    } catch {
+    } else {
       setMessage('The clipboard is not available.')
     }
   }
@@ -619,13 +611,7 @@ function ResultPane({
         </Btn>
         <label className="forge-sql-mid-field">
           <span>Max. rows:</span>
-          <select aria-label="Max. rows" value={maxRows} onChange={(e) => onMaxRows(Number(e.target.value))}>
-            {MAX_ROWS_CHOICES.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
+          <Dropdown value={String(maxRows)} aria-label="Max. rows" options={MAX_ROWS_CHOICES.map((n) => ({ id: String(n), label: String(n) }))} onChange={(v) => onMaxRows(Number(v))} />
         </label>
         <span className="forge-sql-mid-field" data-testid="sql-summary">
           Fetched Rows: <strong>{shownRows.length}</strong>
@@ -640,31 +626,31 @@ function ResultPane({
         </Btn>
         <label className="forge-sql-mid-field forge-sql-matching">
           <span>Matching Rows:</span>
-          <input type="text" aria-label="Matching Rows" value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <Input type="text" aria-label="Matching Rows" value={filter} onChange={(e) => setFilter(e.target.value)} />
         </label>
       </div>
       {message ? <p className="forge-field-hint">{message}</p> : null}
       <div className="forge-sql-grid">
-        <table className="forge-sql-table" aria-label="Query result">
-          <thead>
-            <tr>
-              <th className="forge-sql-rownum">#</th>
+        <Table className="forge-sql-table" aria-label="Query result">
+          <TableHeader>
+
+              <TableColumn isRowHeader className="forge-sql-rownum">#</TableColumn>
               {columns.map((c, i) => (
-                <th key={i} onClick={() => setSort((s) => (s && s.col === i ? (s.dir === 1 ? { col: i, dir: -1 } : null) : { col: i, dir: 1 }))} title="click to sort">
+                <TableColumn key={i} onClick={() => setSort((s) => (s && s.col === i ? (s.dir === 1 ? { col: i, dir: -1 } : null) : { col: i, dir: 1 }))} title="click to sort">
                   {c}
                   {sort?.col === i ? (sort.dir === 1 ? ' ▲' : ' ▼') : ''}
-                </th>
+                </TableColumn>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+
+          </TableHeader>
+          <TableBody>
             {view.map((v, n) => (
-              <tr key={v.index} className={`${v.index === selected ? 'is-selected' : ''}${v.isNew ? ' is-new' : ''}`} onClick={() => setSelected(v.index)}>
-                <td className="forge-sql-rownum">{n + 1}</td>
+              <TableRow key={v.index} className={`${v.index === selected ? 'is-selected' : ''}${v.isNew ? ' is-new' : ''}`} onClick={() => setSelected(v.index)}>
+                <TableCell className="forge-sql-rownum">{n + 1}</TableCell>
                 {v.row.map((value, c) => {
                   const editing = cell && cell.row === v.index && cell.col === c
                   return (
-                    <td
+                    <TableCell
                       key={c}
                       className={`${value === null ? 'is-null' : ''}${!v.isNew && edits.get(v.index) && edits.get(v.index)![c] !== result.rows[v.index][c] ? ' is-edited' : ''}`}
                       onDoubleClick={() => {
@@ -677,7 +663,7 @@ function ResultPane({
                       }}
                     >
                       {editing ? (
-                        <input
+                        <Input
                           autoFocus
                           aria-label={`Edit ${columns[c]}`}
                           defaultValue={value ?? ''}
@@ -695,13 +681,13 @@ function ResultPane({
                       ) : (
                         value
                       )}
-                    </td>
+                    </TableCell>
                   )
                 })}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       {cellMenu ? (
         <TreeContextMenu
@@ -716,8 +702,8 @@ function ResultPane({
           x={cellMenu.x}
           y={cellMenu.y}
           onPick={(id) => {
-            if (id === 'cell') void navigator.clipboard?.writeText(cellMenu.row[cellMenu.col] ?? '')
-            else if (id === 'row') void navigator.clipboard?.writeText(cellMenu.row.map((v) => v ?? '').join('\t'))
+            if (id === 'cell') void copyText(cellMenu.row[cellMenu.col] ?? '')
+            else if (id === 'row') void copyText(cellMenu.row.map((v) => v ?? '').join('\t'))
             else if (id === 'result') void copyCsv()
             else if (id === 'csv') exportCsv()
             else if (id === 'edit') setCell({ row: cellMenu.index, col: cellMenu.col })

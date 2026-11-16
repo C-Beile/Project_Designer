@@ -12,7 +12,7 @@
 
 .forge-branch-count { padding: 0 7px; border-radius: 9px; background: color-mix(in srgb, var(--fg) 12%, transparent); font-size: 10px; letter-spacing: 0; }
 
-.forge-branch-item { align-items: center; border-radius: 4px; margin: 0 4px; width: calc(100% - 8px); }
+.forge-branch-item { align-items: center; border-radius: var(--radius-control); margin: 0 4px; width: calc(100% - 8px); }
 
 .forge-branch-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

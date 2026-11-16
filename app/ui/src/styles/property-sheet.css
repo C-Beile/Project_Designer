@@ -54,7 +54,7 @@
   background: var(--bg-inset);
   color: var(--fg);
   border: 1px solid var(--border);
-  border-radius: 2px;
+  border-radius: var(--radius-control);
 }
 
 .alias-config-panel input[type='checkbox'] { justify-self: start; margin: 0 8px; width: 14px; height: 14px; accent-color: var(--accent); }

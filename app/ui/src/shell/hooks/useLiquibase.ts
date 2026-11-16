@@ -13,7 +13,7 @@ import { timestamp } from './timestamp'
 
 export interface LiquibaseDeps {
   api: ForgeApi
-  showToolWindow: (id: 'output', focus?: boolean) => void
+  showToolWindow: (id: 'build', focus?: boolean) => void
   appendLog: (sub: OutputSubTab, lines: OutputLine[]) => void
   transpile: (mode: TranspileMode, project?: string) => Promise<boolean>
   setOutputSub: (sub: OutputSubTab) => void
@@ -60,7 +60,7 @@ export function useLiquibase({ api, showToolWindow, appendLog, transpile, setOut
           }),
         )
         if (!choice) return
-        showToolWindow('output', false)
+        showToolWindow('build', false)
         setOutputSub('build')
         log('info', `Liquibase update of ${plan.target_alias} started`)
         if (!choice.useDist && !(await transpile('partial', project))) {

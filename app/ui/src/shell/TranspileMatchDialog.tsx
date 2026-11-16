@@ -1,6 +1,7 @@
 import type { CompareReport } from '../wire/types'
 import { Modal } from '../core/Modal'
 import { DataTable, ProgressBar, type DataColumn } from '../core/ui'
+import { Button } from '../core/ui/controls'
 
 // How far the built-in transpiler is: the share of the files of the official output that it reproduces
 // byte for byte, and the biggest groups of files that still differ.
@@ -22,12 +23,12 @@ export function TranspileMatchDialog({ report, reference, onChangeReference, onC
       onClose={onClose}
       footer={
         <>
-          <button type="button" onClick={onChangeReference}>
+          <Button variant="bare" onClick={onChangeReference}>
             Change Reference...
-          </button>
-          <button type="button" onClick={onClose}>
+          </Button>
+          <Button variant="bare" onClick={onClose}>
             Close
-          </button>
+          </Button>
         </>
       }
     >

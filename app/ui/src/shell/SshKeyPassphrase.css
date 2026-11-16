@@ -1,0 +1,12 @@
+/* Options > ADITO > General: Rückmeldung zur Passphrase des SSH-Schlüssels. */
+.forge-modal-body .forge-field-ok, .forge-os-dialog .forge-field-ok {
+  margin: 0;
+  padding: 6px 10px;
+  border-left: 3px solid var(--success);
+  border-radius: 0 3px 3px 0;
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.forge-modal-body .forge-field > .forge-field-ok, .forge-os-dialog .forge-field > .forge-field-ok { grid-column: 2; }

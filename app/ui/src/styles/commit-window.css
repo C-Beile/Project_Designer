@@ -10,11 +10,11 @@
 
 .forge-commit-selected strong { color: var(--fg); }
 
-.forge-commit-filter { margin-left: auto; width: 200px; height: 24px; padding: 0 8px; box-sizing: border-box; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; }
+.forge-commit-filter { margin-left: auto; width: 200px; height: 24px; padding: 0 8px; box-sizing: border-box; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius-control); }
 
 .forge-commit-filter:focus { outline: none; border-color: var(--focus-ring, var(--accent)); }
 
-.forge-commit-badge { margin-left: auto; min-width: 18px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 3px; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; color: #fff; background: #6b7280; }
+.forge-commit-badge { margin-left: auto; min-width: 18px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: var(--radius-control); font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; color: #fff; background: #6b7280; }
 
 .forge-commit-badge.is-added { background: #2f8f46; }
 

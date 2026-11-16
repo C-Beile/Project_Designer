@@ -3,7 +3,8 @@ import type { ForgeApi } from '../../api/ForgeApi'
 import { errorText } from '../../core/errorText'
 import { Modal } from '../../core/Modal'
 import { openUiDialog } from '../../core/ui/uiDialogs'
-import { openDialogWindow, osWindowsAvailable } from '../../windows/windowService'
+import { openDialogWindow, osPopupsAvailable } from '../../windows/windowService'
+import { Button, Input } from '../../core/ui/controls'
 
 interface Props {
   url: string | null
@@ -46,23 +47,23 @@ export function GitLoginDialog({ url, login, onResult, onClose }: Props) {
       onEnter={() => void submit()}
       footer={
         <>
-          <button type="button" disabled={busy || !user.trim() || !password} onClick={() => void submit()}>
+          <Button variant="bare" isDisabled={busy || !user.trim() || !password} onClick={() => void submit()}>
             Sign in
-          </button>
-          <button type="button" onClick={cancel}>
+          </Button>
+          <Button variant="bare" onClick={cancel}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >
       {url ? <p>{url}</p> : null}
       <label className="forge-field">
         <span>User Name:</span>
-        <input type="text" aria-label="User Name" autoComplete="off" value={user} onChange={(e) => setUser(e.target.value)} />
+        <Input type="text" aria-label="User Name" autoComplete="off" value={user} onChange={(e) => setUser(e.target.value)} />
       </label>
       <label className="forge-field">
         <span>Password or Access Token:</span>
-        <input type="password" aria-label="Password or Access Token" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <Input type="password" aria-label="Password or Access Token" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} />
       </label>
       {error ? (
         <p className="forge-field-error" role="alert">
@@ -93,7 +94,7 @@ export function GitLoginWindow({ api, payload, done }: { api: ForgeApi; payload:
  * Liefert true, wenn angemeldet wurde.
  */
 export async function askGitLogin(root: string, url: string | null, login: (user: string, password: string) => Promise<void>): Promise<boolean> {
-  if (osWindowsAvailable()) {
+  if (osPopupsAvailable()) {
     const r = await openDialogWindow<{ signedIn: boolean }>('gitlogin', 'Git Sign In', { width: 420, height: 250 }, { project: root, url }, { modal: true }).catch(() => null)
     return r?.signedIn === true
   }

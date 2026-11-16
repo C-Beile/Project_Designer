@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Modal } from '../Modal'
 import { errorText } from '../errorText'
+import { Button, Input } from './controls'
+import { Dropdown } from './controls'
 
 // Maske "Formular": Felder aus einer Beschreibung, Pflichtfelder, eigene Prüfung, OK/Abbrechen.
 // Nutzt die Klassen der vorhandenen Dialoge (forge-field, forge-check, forge-field-error).
@@ -97,12 +99,12 @@ export function FormDialog({ title, fields, initial, okLabel = 'OK', cancelLabel
       onEnter={() => void submit()}
       footer={
         <>
-          <button type="button" disabled={!valid || busy} onClick={() => void submit()}>
+          <Button variant="bare" isDisabled={!valid || busy} onClick={() => void submit()}>
             {okLabel}
-          </button>
-          <button type="button" onClick={onCancel}>
+          </Button>
+          <Button variant="bare" onClick={onCancel}>
             {cancelLabel}
-          </button>
+          </Button>
         </>
       }
     >
@@ -111,22 +113,16 @@ export function FormDialog({ title, fields, initial, okLabel = 'OK', cancelLabel
           <div key={f.id}>
             {f.type === 'checkbox' ? (
               <label className="forge-check">
-                <input type="checkbox" checked={raw[f.id] === true} disabled={f.disabled} aria-label={f.label} onChange={(e) => set(f.id, e.target.checked)} />
+                <Input type="checkbox" checked={raw[f.id] === true} disabled={f.disabled} aria-label={f.label} onChange={(e) => set(f.id, e.target.checked)} />
                 <span>{f.label}</span>
               </label>
             ) : (
               <label className="forge-field">
                 <span>{f.label}</span>
                 {f.type === 'select' ? (
-                  <select aria-label={f.label} value={raw[f.id] as string} disabled={f.disabled} onChange={(e) => set(f.id, e.target.value)}>
-                    {f.options.map((o) => (
-                      <option key={o.value} value={o.value}>
-                        {o.label}
-                      </option>
-                    ))}
-                  </select>
+                  <Dropdown value={raw[f.id] as string} aria-label={f.label} isDisabled={f.disabled} options={f.options.map((o) => ({ id: o.value, label: o.label }))} onChange={(v) => set(f.id, v)} />
                 ) : (
-                  <input
+                  <Input
                     type={f.type}
                     aria-label={f.label}
                     value={raw[f.id] as string}

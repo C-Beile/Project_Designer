@@ -24,7 +24,7 @@
 
 .vp-master-slave { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr); gap: 12px; align-items: start; }
 
-.vp-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; }
+.vp-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-control); padding: 8px 10px; }
 
 .vp-card-head { font-weight: 600; margin-bottom: 8px; color: var(--fg-muted); }
 
@@ -36,7 +36,7 @@
 
 .vp-field-box { min-height: 22px; padding: 2px 6px; border-bottom: 1px solid var(--border-strong); color: var(--fg-muted); }
 
-.vp-field-box.is-edit { border: 1px solid var(--border-strong); border-radius: 3px; background: var(--bg); }
+.vp-field-box.is-edit { border: 1px solid var(--border-input); border-radius: var(--radius-control); background: var(--bg); }
 
 .vp-profile { display: flex; gap: 12px; align-items: center; }
 
@@ -48,7 +48,7 @@
 
 .vp-scores { display: flex; gap: 8px; flex-wrap: wrap; }
 
-.vp-score { flex: 1; min-width: 90px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; padding: 8px; text-align: center; }
+.vp-score { flex: 1; min-width: 90px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: var(--radius-control); padding: 8px; text-align: center; }
 
 .vp-score-value { font-size: 18px; font-weight: 600; color: var(--accent); }
 
@@ -58,17 +58,17 @@
 
 .vp-table td { padding: 5px 6px; border-bottom: 1px solid var(--border); }
 
-.vp-skeleton { display: block; height: 8px; width: 70%; background: var(--border); border-radius: 3px; }
+.vp-skeleton { display: block; height: 8px; width: 70%; background: var(--border); border-radius: var(--radius-control); }
 
 .vp-tabbar { display: flex; gap: 2px; border-bottom: 1px solid var(--border-strong); margin-bottom: 8px; flex-wrap: wrap; }
 
 .vp-tab { background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--fg-muted); padding: 4px 10px; cursor: pointer; }
 
-.vp-tab.is-active { color: var(--fg); border-bottom-color: var(--brand-underline); }
+.vp-tab.is-active { color: var(--fg); border-bottom-color: var(--accent); }
 
-.vp-ref { border: 1px dashed var(--border-strong); padding: 10px; color: var(--fg-muted); border-radius: 4px; }
+.vp-ref { border: 1px dashed var(--border-strong); padding: 10px; color: var(--fg-muted); border-radius: var(--radius-control); }
 
-.vp-frame { border: 1px dashed var(--border-strong); border-radius: 3px; padding: 8px 10px; margin: 0; min-width: 0; }
+.vp-frame { border: 1px dashed var(--border-strong); border-radius: var(--radius-control); padding: 8px 10px; margin: 0; min-width: 0; }
 
 .vp-frame > legend { padding: 0 6px; font-size: 11px; color: var(--fg); background: var(--bg-elevated); border: 1px solid var(--border); }
 
@@ -94,8 +94,8 @@
   padding: 2px 12px;
   background: var(--bg-panel);
   color: var(--fg);
-  border: 1px solid var(--border-strong);
-  border-radius: 2px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-control);
 }
 
 .forge-services-tree,

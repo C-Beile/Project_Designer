@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { NewObjectKind } from '../wire/types'
+import { Button } from '../core/ui/controls'
+import { ConfiguredIcon } from '../core/icons/Icon'
 
 // Type chooser of "Create New Model": a drop-down list whose entries carry the colour square of the
 // folder type, as in the tree, so the type is recognised at a glance. Types that cannot be created
@@ -36,8 +38,8 @@ export function TypeCombo({ kinds, value, onChange }: { kinds: NewObjectKind[]; 
 
   return (
     <div className="type-combo" ref={root}>
-      <button
-        type="button"
+      <Button variant="bare"
+
         role="combobox"
         aria-label="Object type"
         aria-haspopup="listbox"
@@ -61,10 +63,8 @@ export function TypeCombo({ kinds, value, onChange }: { kinds: NewObjectKind[]; 
       >
         {current ? <span className="type-swatch" style={swatch(current.folder)} /> : null}
         <span className="type-combo-label">{current?.label ?? ''}</span>
-        <svg className="type-combo-chevron" viewBox="0 0 10 6" width="10" height="6" aria-hidden="true">
-          <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
+        <ConfiguredIcon id="chevron" area="control" fallback="caret-down" size="sm" className="type-combo-chevron" />
+      </Button>
       {open ? (
         <ul className="type-combo-list" role="listbox" aria-label="Object types">
           {kinds.map((k) => (

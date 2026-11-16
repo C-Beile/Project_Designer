@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { errorText } from '../core/errorText'
+import { Input } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Double Ctrl: search the file names of the open projects (names only, never the content). The
 // files are listed once per open; typing narrows the list, Enter or a click opens the file.
@@ -58,14 +60,10 @@ export function QuickFileSearch({ api, projectRoots, onOpen, onClose }: { api: F
   const [index, setIndex] = useState(0)
   const listRef = useRef<HTMLUListElement>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     Promise.all(projectRoots.map((r) => api.listProjectFiles(r).then((list) => list.map((f) => `${r.replace(/[\\/]+$/, '').replace(/\\/g, '/')}/${f}`))))
-      .then((all) => !cancelled && setFiles(all.flat()))
-      .catch((e) => !cancelled && setError(errorText(e)))
-    return () => {
-      cancelled = true
-    }
+      .then((all) => !signal.aborted && setFiles(all.flat()))
+      .catch((e) => !signal.aborted && setError(errorText(e)))
   }, [api, projectRoots])
 
   const shown = useMemo(() => matchFiles(files ?? [], query), [files, query])
@@ -109,7 +107,7 @@ export function QuickFileSearch({ api, projectRoots, onOpen, onClose }: { api: F
           }
         }}
       >
-        <input autoFocus type="text" placeholder="Search file names..." aria-label="File name" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <Input autoFocus type="text" placeholder="Search file names..." aria-label="File name" value={query} onChange={(e) => setQuery(e.target.value)} />
         {error ? <p className="forge-field-error">{error}</p> : null}
         {files === null && !error ? <p className="forge-field-hint">Reading the files…</p> : null}
         {files !== null ? (

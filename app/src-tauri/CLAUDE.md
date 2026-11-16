@@ -22,9 +22,10 @@ Die dünne Tauri-Hülle. Sie nimmt `invoke(...)` aus der UI an und ruft `crates/
 | Datei | Wofür |
 |---|---|
 | `main.rs` | Startet `designer_app_lib::run()`. |
-| `lib.rs` | `run()`: Tauri-Builder, State (`.manage`), `generate_handler!` (Handler-Liste), `build_feature_registry`, `build_transpiler_registry`, `TauriEvents` (`EventSink`), macOS-Menü, Panic-/Backup-Hooks. |
+| `lib.rs` | `run()`: Tauri-Builder, State (`.manage`), `invoke_handler(bindings::builder().invoke_handler())`, `build_feature_registry`, `build_transpiler_registry`, `TauriEvents` (`EventSink`), macOS-Menü, Panic-/Backup-Hooks. |
 | `window_state.rs` | Merkt Lage, Größe und Bildschirm des Hauptfensters (`[window]`) und der Dialog-Fenster (`[popups.<name>]`) in `designer.conf`; stellt sie beim Öffnen wieder her. Das Hauptfenster startet unsichtbar (`visible: false`) und wird in `init_main` gezeigt. |
-| `os_windows.rs` | Eigene Fenster (`float-*`, `dialog-*`, `editor-*`): öffnen, Payload, Ergebnis, Schließ-Sperre, `app_exit`. |
+| `os_windows.rs` | Eigene Fenster (`float-*`, `dialog-*`, `editor-*`): öffnen (zählt gegen `max_popups`/`max_editors` aus der UI, sonst Fehler `window-limit`), Payload, Ergebnis, Schließ-Sperre, `app_exit`. |
+| `bindings.rs` | tauri-specta: Alle Befehle sind typisiert (tauri-specta): hier steht die Liste (`collect_commands!`), der Debug-Start schreibt `app/ui/src/api/bindings.ts`. Neuer Befehl: `#[specta::specta]` unter `#[tauri::command]`, Typen mit `specta::Type` (kein `usize`/`u64`/`i64` in Feldern: `#[specta(type = u32)]`), Eintrag in `builder()`. |
 | `lsp_bridge.rs` | Sprachserver-Prozess für das Code-Feld (`start_lsp`, `send_lsp_message`). |
 | `commands/mod.rs` | Modulliste und `blocking(...)`. |
 
@@ -36,16 +37,17 @@ Die dünne Tauri-Hülle. Sie nimmt `invoke(...)` aus der UI an und ruft `crates/
 | `index.rs` | `index_status`, `index_verify`, `index_rebuild`, `index_dump` (Debug: Index als JSON in den Log-Ordner) und `rename_hints` (Kandidaten für Rename aus dem Index) |
 | `editor.rs` | `get_property_tree`, `set_property`, `get_property_sheet`, `get_navigator`, `set_sheet_property`, `remove_sheet_property`, `reset_sheet_property`, `reset_sheet_element`, `activate_mapping`, `enable_modification`, `set_modification_property`, `set_modification_script`, `discard_modification`, `list_diagnostics`, `undo`, `redo`, `save`, `save_overwrite`, `reload_object`, `external_changes`, `get_object_source`, `set_object_source`, `read_jdito_types` |
 | `files.rs` | `read_linked_file`, `write_linked_file`, `read_theme_file`, `read_theme_pack`, `copy_object`, `delete_object`, `file_info`, `file_paste`, `file_rename`, `file_delete`, `open_in_system`, `new_object_kinds`, `validate_new_name`, `create_object`, `rename_plan`, `rename_object` |
-| `rest.rs` | `rest_list_webservices`, `rest_send` (HTTP über `reqwest`, Basic mit Passwort aus dem System-Schlüsselbund), `rest_has_password`, `rest_save_password`, `rest_forget_password` |
+| `rest.rs` | `rest_list_webservices`, `rest_list_servers`, `rest_send` (eigener HTTP-Client über `rustls`/`tokio`, Hilfen in `project::http_wire`, Basic mit Passwort aus dem System-Schlüsselbund), `rest_has_password`, `rest_save_password`, `rest_forget_password` |
 | `transpile.rs` | `execute_action`, `npm_run`, `cancel_build`, `transpile_compare` |
 | `settings.rs` | `get_settings`, `set_settings`, `config_get` (ganze `designer.conf` als JSON), `config_set` (ein Wert nach Pfad, sendet `forge://config-changed`), `detect_designer_install` (und Hilfen `settings_file`, `write_settings`) |
+| `themes.rs` | `user_themes_list`, `user_theme_write`, `user_theme_delete`, `user_themes_open_folder` |
 | `dialogs.rs` | `pick_project_folder`, `pick_project_folders`, `pick_file`, `pick_save_file` (über `platform::FileDialog`) |
 | `misc.rs` | `check_for_update`, `install_update`, `local_data_info`, `open_local_url`, `open_log_folder`, `open_backup_folder`, `log_client_error`, `set_log_timezone` |
 | `os_windows.rs` (in `src/`) | `window_open`, `window_payload`, `window_result`, `window_close`, `window_close_guard`, `app_exit`, `main_window_contains`, `window_show` |
 | `lsp_bridge.rs` (in `src/`) | `start_lsp`, `send_lsp_message` |
 
 ## Einstiegspunkte
-- `lib.rs` `run()`. Dort: `.manage(...)` (State), `.invoke_handler(tauri::generate_handler![...])` (Handler-Liste).
+- `lib.rs` `run()`. Dort: `.manage(...)` (State), `.invoke_handler(bindings::builder().invoke_handler())` (alle Befehle).
 - `build_feature_registry(app)`: meldet Plugins an. Mit `#[cfg(feature = ...)]` je Plugin.
 - `build_transpiler_registry()`: `native` immer, `adito` nur mit Feature `adito-transpiler`. Vorgabe ist `native`.
 - `plugin_call(plugin, command, args)`: der eine Befehl für alle Plugin-Aufrufe. `plugin_list` sagt der UI, welche Plugins es gibt und ob `available`.
@@ -58,7 +60,8 @@ Die dünne Tauri-Hülle. Sie nimmt `invoke(...)` aus der UI an und ruft `crates/
 - **Jeder Tauri-Befehl packt seinen Rumpf in `crate::commands::guard("name", || { ... })` (sync) oder `guard_async("name", async { ... }).await` (async).** Ein Panic wird so zum Fehlertext (bei `Result`) oder zum leeren Wert (`Option`, `Vec`, `bool`, `()`) und kommt ins Protokoll, statt die App zu beenden oder das Versprechen im Frontend offen zu lassen. Neue Rückgabetypen: `PanicFallback` in `commands/mod.rs` ergänzen.
 - Cargo-Features: `git`, `ssh-tunnel`, `database` (zieht `ssh-tunnel`), `deploy` und `liquibase` (ziehen `database`), `adito-transpiler`. Alle in `default`. Prüfung mit weniger: `cargo check -p designer-app --no-default-features --features git`.
 - Der Projekt-Index ist Kern (kein Plugin): State `Arc<IndexRegistry>` (in `setup` angelegt, `lib.rs`), Befehle in `commands/index.rs`. Er sendet `forge://index-progress` und `forge://project-changed` über `TauriEvents`. Async-Befehle mit `State` müssen ein `Result` liefern, sonst `app.state::<...>()` nehmen (siehe `list_project_files`).
-- Neuer Befehl: Funktion mit `#[tauri::command]` in `commands/<datei>.rs` UND Eintrag in `generate_handler!` in `lib.rs`. Ohne Eintrag meldet die UI "command not found" erst zur Laufzeit.
+- Neuer Befehl: Funktion mit `#[tauri::command]` und `#[specta::specta]` in `commands/<datei>.rs` UND Eintrag in `collect_commands!` in `bindings.rs`. Ohne Eintrag meldet die UI erst zur Laufzeit "command not found". Typen: `specta::Type`; kein `usize`/`u64`/`i64` (`#[specta(type = u32)]`); loses JSON als `commands::Json`.
+- Tests der Tauri-Hülle (`cargo test -p designer-app`) starten unter Windows nicht (STATUS_ENTRYPOINT_NOT_FOUND, fehlendes Manifest). Prüfen mit `cargo check -p designer-app`.
 - `blocking(|| ...)` (`commands/mod.rs`) führt langsame Arbeit außerhalb des UI-Threads aus (`spawn_blocking`) und macht aus einem abgestürzten Task einen Fehlertext. Langsame Befehle: `async fn` + `blocking`. Ohne das friert das Fenster ein. `plugin_call` nutzt es auch.
 - Plugin-Zustand gehört den Plugins (z. B. `TunnelManager`, `DbManager`), nicht Tauri. Sie werden in `build_feature_registry` gebaut und als `Arc` weitergereicht.
 - Events an die UI: `app.emit("forge://...")`. Aus Plugins heraus über `EventSink` (`TauriEvents`).
@@ -70,7 +73,7 @@ Die dünne Tauri-Hülle. Sie nimmt `invoke(...)` aus der UI an und ruft `crates/
 ## Wenn du X ändern willst
 | Aufgabe | Datei |
 |---|---|
-| Neuer Befehl für die UI | `src/commands/<passende Datei>.rs` und `generate_handler!` in `src/lib.rs`, Logik in `crates/project` |
+| Neuer Befehl für die UI | `src/commands/<passende Datei>.rs` und `collect_commands!` in `src/bindings.rs`, Logik in `crates/project` |
 | Neues Plugin anmelden | `Cargo.toml` (optional + Feature), `build_feature_registry` in `src/lib.rs` |
 | Neue Transpiler-Engine anmelden | `build_transpiler_registry` in `src/lib.rs` |
 | Neuer State | `.manage(...)` in `run()` in `src/lib.rs` |

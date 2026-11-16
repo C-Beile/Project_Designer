@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { notify } from '../core/notifications'
-import { openDialogWindow, osWindowsAvailable } from './windowService'
+import { openDialogWindow, osPopupsAvailable } from './windowService'
 import { errorText } from '../core/errorText'
 
 // A dialog of the main window that opens as an operating-system window of its own when windows are
@@ -21,7 +21,7 @@ export function useOsDialog<T>(active: boolean, build: () => OsDialogSpec, onRes
   const latest = useRef({ build, onResult, onFinished })
   latest.current = { build, onResult, onFinished }
   useEffect(() => {
-    if (!active || !osWindowsAvailable() || open.current) return
+    if (!active || !osPopupsAvailable() || open.current) return
     open.current = true
     const spec = latest.current.build()
     void openDialogWindow<T>(spec.name, spec.title, spec.size, spec.payload, { modal: spec.modal ?? true, resizable: spec.resizable })

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useResource } from '../core/hooks/useResource'
 import type { ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
-import type { FileHistory } from '../wire/types'
+import { Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 
 // History sub-tab: read-only Git log of the file. Outside a repository this is a calm hint,
 // not an error.
@@ -19,25 +19,9 @@ function Hint({ children }: { children: ReactNode }) {
 }
 
 export function HistoryView({ api, path }: { api: ForgeApi; path: string }) {
-  const [history, setHistory] = useState<FileHistory | null>(null)
-  const [failed, setFailed] = useState(false)
-
-  useEffect(() => {
-    let cancelled = false
-    setHistory(null)
-    setFailed(false)
-    api
-      .getFileHistory(path)
-      .then((h) => {
-        if (!cancelled) setHistory(h)
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [api, path])
+  const loaded = useResource(() => api.getFileHistory(path), [api, path], [], { clearOnReload: true })
+  const history = loaded.data ?? null
+  const failed = !!loaded.error
 
   if (failed) return <Hint>The history could not be read.</Hint>
   if (!history) return <Hint>Please Wait…</Hint>
@@ -45,28 +29,28 @@ export function HistoryView({ api, path }: { api: ForgeApi; path: string }) {
   if (history.commits.length === 0) return <Hint>No commits found for this file.</Hint>
   return (
     <div className="forge-history">
-      <table className="forge-history-table" aria-label="File history">
-        <thead>
-          <tr>
-            <th>Commit</th>
-            <th>Author</th>
-            <th>Date</th>
-            <th>Subject</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table className="forge-history-table" aria-label="File history">
+        <TableHeader>
+
+            <TableColumn isRowHeader>Commit</TableColumn>
+            <TableColumn>Author</TableColumn>
+            <TableColumn>Date</TableColumn>
+            <TableColumn>Subject</TableColumn>
+
+        </TableHeader>
+        <TableBody>
           {history.commits.map((c) => (
-            <tr key={c.hash}>
-              <td className="forge-history-hash" title={c.hash}>
+            <TableRow key={c.hash}>
+              <TableCell className="forge-history-hash" title={c.hash}>
                 {c.hash.slice(0, 8)}
-              </td>
-              <td>{c.author}</td>
-              <td>{shortDate(c.date)}</td>
-              <td>{c.subject}</td>
-            </tr>
+              </TableCell>
+              <TableCell>{c.author}</TableCell>
+              <TableCell>{shortDate(c.date)}</TableCell>
+              <TableCell>{c.subject}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

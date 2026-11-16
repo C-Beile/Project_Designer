@@ -3,13 +3,12 @@
 use super::blocking;
 use super::settings::settings_file;
 use project::settings;
-use tauri::Manager;
 
 /// Update access token of the private release repository; it is baked in at build time from the
 /// CI secret and is never part of the source tree.
 pub const UPDATE_TOKEN: Option<&str> = option_env!("DITO_UPDATE_TOKEN");
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, specta::Type)]
 pub struct UpdateInfo {
     version: String,
     notes: Option<String>,
@@ -30,6 +29,7 @@ pub fn private_repo_updater(app: &tauri::AppHandle) -> Result<tauri_plugin_updat
 
 /// Help > Check for Updates: asks the private release repository whether a newer version exists.
 #[tauri::command]
+#[specta::specta]
 pub async fn check_for_update(app: tauri::AppHandle) -> Result<Option<UpdateInfo>, String> {
     crate::commands::guard_async("check_for_update", async {
     let update = private_repo_updater(&app)?.check().await.map_err(|e| e.to_string())?;
@@ -39,6 +39,7 @@ pub async fn check_for_update(app: tauri::AppHandle) -> Result<Option<UpdateInfo
 
 /// Downloads and installs the newer version after the user confirmed, then restarts the app.
 #[tauri::command]
+#[specta::specta]
 pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     crate::commands::guard_async("install_update", async {
     let update = private_repo_updater(&app)?
@@ -54,9 +55,10 @@ pub async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
 /// Help > Local Data and the Janitor list: Dito Designer's own data folder plus, read-only, the version
 /// folders of the original Designer. Nothing is changed or deleted.
 #[tauri::command]
+#[specta::specta]
 pub async fn local_data_info(threshold_days: u32, app: tauri::AppHandle) -> Result<project::local_data::LocalDataInfo, String> {
     crate::commands::guard_async("local_data_info", async {
-    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let data_dir = crate::data_dir::app_data_dir(&app)?;
     let settings = settings_file(&app)?;
     let version = app.package_info().version.to_string();
     blocking(move || {
@@ -81,12 +83,13 @@ pub fn open_in_file_manager(dir: &std::path::Path) -> Result<(), String> {
 /// "Open in browser" of the tunnel manager: only an address of this computer (127.0.0.1 or
 /// localhost with a port) is opened in the default browser.
 #[tauri::command(async)]
+#[specta::specta]
 pub fn open_local_url(url: String) -> Result<(), String> {
     crate::commands::guard("open_local_url", || {
     let rest = url.strip_prefix("http://").or_else(|| url.strip_prefix("https://")).ok_or("Only http and https addresses can be opened.")?;
     let host_port = rest.split('/').next().unwrap_or("");
     let (host, port) = host_port.rsplit_once(':').ok_or("The address needs a port.")?;
-    if !(host == "127.0.0.1" || host == "localhost") || port.parse::<u16>().is_err() {
+    if !(host == "127.0.0.1" || host == "localhost" || host.starts_with("127.0.200.")) || port.parse::<u16>().is_err() {
         return Err("Only addresses of this computer can be opened.".into());
     }
     if rest.chars().any(|c| c.is_whitespace() || matches!(c, '"' | '<' | '>' | '`' | '^' | '&' | '|')) {
@@ -103,6 +106,7 @@ pub fn open_local_url(url: String) -> Result<(), String> {
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn open_log_folder() -> Result<String, String> {
     crate::commands::guard("open_log_folder", || {
     let dir = app_base::crashlog::log_dir();
@@ -112,6 +116,7 @@ pub fn open_log_folder() -> Result<String, String> {
 }
 
 #[tauri::command(async)]
+#[specta::specta]
 pub fn open_backup_folder() -> Result<String, String> {
     crate::commands::guard("open_backup_folder", || {
     let dir = app_base::backup::backup_dir();
@@ -122,6 +127,7 @@ pub fn open_backup_folder() -> Result<String, String> {
 
 /// Writes an error that happened in the frontend (render crash, unhandled promise) to the log file.
 #[tauri::command(async)]
+#[specta::specta]
 pub fn log_client_error(message: String) -> Option<String> {
     crate::commands::guard("log_client_error", || {
     app_base::crashlog::write_entry("UI-ERROR", &message).map(|p| p.to_string_lossy().into_owned())
@@ -130,6 +136,7 @@ pub fn log_client_error(message: String) -> Option<String> {
 
 /// Die UI meldet ihre Zeitzone (Minuten östlich von UTC), damit Einträge der Log-Datei und des IDE Logs in Ortszeit stehen.
 #[tauri::command]
+#[specta::specta]
 pub fn set_log_timezone(offset_minutes: i32) {
     crate::commands::guard("set_log_timezone", || {
     app_base::crashlog::set_utc_offset_minutes(offset_minutes);

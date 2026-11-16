@@ -1,0 +1,33 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ui: vite dev",
+            "type": "shell",
+            "command": "npm run dev",
+            "options": { "cwd": "${workspaceFolder}/app/ui" },
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": { "regexp": "^$" },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "VITE",
+                    "endsPattern": "Local:"
+                }
+            }
+        },
+        {
+            "label": "rust: build designer-app",
+            "type": "shell",
+            "command": "cargo build -p designer-app",
+            "options": { "cwd": "${workspaceFolder}" },
+            "problemMatcher": ["$rustc"]
+        },
+        {
+            "label": "debug: prepare",
+            "dependsOn": ["ui: vite dev", "rust: build designer-app"],
+            "dependsOrder": "parallel",
+            "problemMatcher": []
+        }
+    ]
+}

@@ -5,10 +5,11 @@ import type { GitFileStatus, GitOutput, GitOverview } from '../../wire/types'
 import { Modal } from '../../core/Modal'
 import { CommitDiffDialog } from './CommitDiffDialog'
 import { TreeContextMenu } from '../../tree/TreeContextMenu'
-import { openDialogWindow, osWindowsAvailable } from '../../windows/windowService'
+import { openDialogWindow, osPopupsAvailable } from '../../windows/windowService'
 import { Chevron, CollapseAllIcon, ExpandAllIcon, FileIcon, FolderIcon, ListToggleIcon } from './commitIcons'
 import { errorText } from '../../core/errorText'
 import { openFileInDesigner } from '../../core/openFileBus'
+import { Button, Dropdown, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, TextArea } from '../../core/ui/controls'
 
 // Team menu: basic Git on the repository of the active project (commit, pull, push, switch
 // branch, status, history). Every action runs from exactly one click on its own button and never
@@ -103,10 +104,10 @@ function FolderNode({ folder, label, handlers }: { folder: TreeFolder; label: st
   return (
     <li role="treeitem" aria-expanded={open}>
       <div className="forge-commit-row">
-        <button type="button" className="forge-commit-twisty" aria-label={`${open ? 'Collapse' : 'Expand'} ${label}`} onClick={() => onToggleCollapse(folder.path)}>
+        <Button variant="bare" className="forge-commit-twisty" aria-label={`${open ? 'Collapse' : 'Expand'} ${label}`} onClick={() => onToggleCollapse(folder.path)}>
           <Chevron open={open} />
-        </button>
-        <input
+        </Button>
+        <Input
           type="checkbox"
           aria-label={label}
           checked={on === all.length}
@@ -144,7 +145,7 @@ function FileRow({ file, label, handlers }: { file: GitFileStatus; label: string
       }}
       onDoubleClick={() => handlers.onFileMenu?.(file.path, -1, -1)}
     >
-      <input type="checkbox" aria-label={file.path} checked={handlers.checked.has(file.path)} onChange={(e) => handlers.onToggleFile(file.path, e.target.checked)} />
+      <Input type="checkbox" aria-label={file.path} checked={handlers.checked.has(file.path)} onChange={(e) => handlers.onToggleFile(file.path, e.target.checked)} />
       <FileIcon json={file.path.endsWith('.json')} />
       <span className={`forge-commit-name ${fileClass(file.code)}`} title={`${file.code.trim() || '?'}  ${file.path}`}>
         {label}
@@ -248,7 +249,7 @@ export function GitDialog({
 
   // The changes of one file open as a window of their own, as in the original Designer.
   const showChanges = (path: string) => {
-    if (osWindowsAvailable()) {
+    if (osPopupsAvailable()) {
       void openDialogWindow('commitdiff', `Diff for file ${path}`, { width: 1280, height: 760 }, { root: projectRoot, path }, { modal: false }).catch(() => setDiffPath(path))
     } else setDiffPath(path)
   }
@@ -298,22 +299,22 @@ export function GitDialog({
       footer={
         isCommitView ? (
           <>
-            <button type="button" className={running === 'commit' ? 'is-busy' : undefined} disabled={!canCommit} aria-busy={running === 'commit'} onClick={() => void runAction('commit', commit)} title={!canCommit && !busy ? 'Tick files and enter a commit message' : undefined}>
+            <Button variant="bare" className={running === 'commit' ? 'is-busy' : undefined} isDisabled={!canCommit} aria-busy={running === 'commit'} onClick={() => void runAction('commit', commit)} title={!canCommit && !busy ? 'Tick files and enter a commit message' : undefined}>
               {running === 'commit' ? <span className="forge-btn-spinner" aria-hidden="true" /> : null}
               {running === 'commit' ? 'Committing...' : 'Commit'}
-            </button>
-            <button type="button" className={`is-primary${running === 'push' ? ' is-busy' : ''}`} disabled={!canCommit} aria-busy={running === 'push'} title="Commits the checked files, then pushes the current branch" onClick={() => void runAction('push', commitAndPush)}>
+            </Button>
+            <Button variant="bare" className={`is-primary${running === 'push' ? ' is-busy' : ''}`} isDisabled={!canCommit} aria-busy={running === 'push'} title="Commits the checked files, then pushes the current branch" onClick={() => void runAction('push', commitAndPush)}>
               {running === 'push' ? <span className="forge-btn-spinner" aria-hidden="true" /> : null}
               {running === 'push' ? 'Committing and pushing...' : 'Commit & Push'}
-            </button>
-            <button type="button" onClick={onClose} disabled={busy}>
+            </Button>
+            <Button variant="bare" onClick={onClose} isDisabled={busy}>
               Cancel
-            </button>
+            </Button>
           </>
         ) : (
-          <button type="button" onClick={onClose}>
+          <Button variant="bare" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         )
       }
     >
@@ -332,9 +333,9 @@ export function GitDialog({
           {initialTab !== 'changes' ? (
           <div className="forge-subtabs" role="tablist" aria-label="Git views">
             {TABS.map((t) => (
-              <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={`forge-subtab${tab === t.id ? ' is-active' : ''}`} onClick={() => setTab(t.id)}>
+              <Button variant="bare" key={t.id} role="tab" aria-selected={tab === t.id} className={`forge-subtab${tab === t.id ? ' is-active' : ''}`} onClick={() => setTab(t.id)}>
                 {t.label}
-              </button>
+              </Button>
             ))}
           </div>
           ) : null}
@@ -351,11 +352,11 @@ export function GitDialog({
                   </span>
                 </div>
                 <div className="forge-commit-toolbar" role="toolbar" aria-label="Commit tree">
-                  <button type="button" title="Expand all" aria-label="Expand all" onClick={() => setCollapsed(new Set())}>
+                  <Button variant="bare" title="Expand all" aria-label="Expand all" onClick={() => setCollapsed(new Set())}>
                     <ExpandAllIcon />
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button variant="bare"
+
                     title="Collapse all"
                     aria-label="Collapse all"
                     onClick={() => {
@@ -370,11 +371,11 @@ export function GitDialog({
                     }}
                   >
                     <CollapseAllIcon />
-                  </button>
-                  <button type="button" title="Show changes as a list" aria-label="Show as list" aria-pressed={flat} className={flat ? 'is-active' : undefined} onClick={() => setFlat((v) => !v)}>
+                  </Button>
+                  <Button variant="bare" title="Show changes as a list" aria-label="Show as list" aria-pressed={flat} className={flat ? 'is-active' : undefined} onClick={() => setFlat((v) => !v)}>
                     <ListToggleIcon />
-                  </button>
-                  <input type="search" className="forge-commit-filter" placeholder="Filter files" aria-label="Filter files" value={fileFilter} onChange={(e) => setFileFilter(e.target.value)} />
+                  </Button>
+                  <Input type="search" className="forge-commit-filter" placeholder="Filter files" aria-label="Filter files" value={fileFilter} onChange={(e) => setFileFilter(e.target.value)} />
                 </div>
                 {overview.files.length === 0 ? <p className="forge-field-hint">No changes.</p> : null}
                 {overview.files.length > 0 && visibleFiles.length === 0 ? <p className="forge-field-hint">No file matches the filter.</p> : null}
@@ -417,7 +418,7 @@ export function GitDialog({
                 <div className="forge-titled-rule">
                   <span>Commit Message</span>
                 </div>
-                <textarea className="forge-commit-message" value={message} onChange={(e) => setMessage(e.target.value)} aria-label="Commit message" rows={5} placeholder="Describe the change in one line" />
+                <TextArea className="forge-commit-message" value={message} onChange={(e) => setMessage(e.target.value)} aria-label="Commit message" rows={5} placeholder="Describe the change in one line" />
                 <div className={`forge-commit-counter${message.length > 72 ? ' is-long' : ''}`} aria-live="polite">
                   {message.length} characters{message.length > 72 ? ' - a short subject line (up to about 72) reads better in the history' : ''}
                 </div>
@@ -429,23 +430,23 @@ export function GitDialog({
                 </div>
                 <label className="forge-commit-author">
                   <span>Name:</span>
-                  <input type="text" readOnly value={overview.user_name ?? ''} placeholder="from git config user.name" title="The author comes from the Git configuration of the repository." />
+                  <Input type="text" readOnly value={overview.user_name ?? ''} placeholder="from git config user.name" title="The author comes from the Git configuration of the repository." />
                 </label>
                 <label className="forge-commit-author">
                   <span>Email:</span>
-                  <input type="text" readOnly value={overview.user_email ?? ''} placeholder="from git config user.email" title="The author comes from the Git configuration of the repository." />
+                  <Input type="text" readOnly value={overview.user_email ?? ''} placeholder="from git config user.email" title="The author comes from the Git configuration of the repository." />
                 </label>
                 <div className="forge-titled-rule">
                   <span>General</span>
                 </div>
                 <label className="forge-commit-check" title="Not available yet">
-                  <input type="checkbox" disabled /> Amend Commit
+                  <Input type="checkbox" disabled /> Amend Commit
                 </label>
                 <div className="forge-titled-rule">
                   <span>Before Commit</span>
                 </div>
                 <label className="forge-commit-check" title="Not available yet">
-                  <input type="checkbox" disabled /> ESLint analyze changed files
+                  <Input type="checkbox" disabled /> ESLint analyze changed files
                 </label>
               </aside>
             </div>
@@ -456,28 +457,28 @@ export function GitDialog({
               <p className="forge-field-hint">No commits yet.</p>
             ) : (
               <div className="forge-history">
-                <table className="forge-history-table" aria-label="Commit history">
-                  <thead>
-                    <tr>
-                      <th>Commit</th>
-                      <th>Author</th>
-                      <th>Date</th>
-                      <th>Subject</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table className="forge-history-table" aria-label="Commit history">
+                  <TableHeader>
+
+                      <TableColumn isRowHeader>Commit</TableColumn>
+                      <TableColumn>Author</TableColumn>
+                      <TableColumn>Date</TableColumn>
+                      <TableColumn>Subject</TableColumn>
+
+                  </TableHeader>
+                  <TableBody>
                     {overview.commits.map((c) => (
-                      <tr key={c.hash}>
-                        <td className="forge-history-hash" title={c.hash}>
+                      <TableRow key={c.hash}>
+                        <TableCell className="forge-history-hash" title={c.hash}>
                           {c.hash.slice(0, 8)}
-                        </td>
-                        <td>{c.author}</td>
-                        <td>{shortDate(c.date)}</td>
-                        <td>{c.subject}</td>
-                      </tr>
+                        </TableCell>
+                        <TableCell>{c.author}</TableCell>
+                        <TableCell>{shortDate(c.date)}</TableCell>
+                        <TableCell>{c.subject}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )
           ) : null}
@@ -486,38 +487,24 @@ export function GitDialog({
             <div>
               <label className="forge-field">
                 <span>Switch to branch</span>
-                <select value={target} onChange={(e) => setTarget(e.target.value)} aria-label="Branch">
-                  {overview.branches.map((b) => (
-                    <option key={b.name} value={b.name} disabled={b.is_current}>
-                      {b.name}
-                      {b.is_current ? ' (current)' : ''}
-                    </option>
-                  ))}
-                </select>
+                <Dropdown value={target} aria-label="Branch" options={overview.branches.map((b) => ({ id: b.name, label: `${b.name}${b.is_current ? ' (current)' : ''}` }))} onChange={(v) => setTarget(v)} />
               </label>
-              <button type="button" disabled={busy || !target} onClick={() => act(() => api.gitCheckout(projectRoot, target))}>
+              <Button variant="bare" isDisabled={busy || !target} onClick={() => act(() => api.gitCheckout(projectRoot, target))}>
                 Switch branch
-              </button>
+              </Button>
               <hr />
               <label className="forge-field">
                 <span>New branch name</span>
-                <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} aria-label="New branch name" />
+                <Input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} aria-label="New branch name" />
               </label>
               <label className="forge-field">
                 <span>Start from</span>
-                <select value={remoteTarget} onChange={(e) => setRemoteTarget(e.target.value)} aria-label="Start from">
-                  <option value="">{overview.branch ?? 'current HEAD'} (current)</option>
-                  {overview.remote_branches.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
+                <Dropdown value={remoteTarget} aria-label="Start from" options={[{ id: "", label: `${overview.branch ?? 'current HEAD'}(current)` }, ...overview.remote_branches.map((r) => ({ id: r, label: r }))]} onChange={(v) => setRemoteTarget(v)} />
               </label>
               {nameIssue ? <p className="forge-field-error">{nameIssue}</p> : null}
-              <button type="button" disabled={busy || newName.trim() === '' || !!nameIssue} onClick={() => act(() => api.gitCreateBranch(projectRoot, newName.trim(), remoteTarget || null))}>
+              <Button variant="bare" isDisabled={busy || newName.trim() === '' || !!nameIssue} onClick={() => act(() => api.gitCreateBranch(projectRoot, newName.trim(), remoteTarget || null))}>
                 Create and switch
-              </button>
+              </Button>
             </div>
           ) : null}
 

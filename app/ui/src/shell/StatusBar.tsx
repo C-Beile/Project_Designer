@@ -5,6 +5,7 @@ import type { MenuEntry } from '../tree/contextMenu'
 import { getEditorStatus, goToLine, subscribeEditorStatus, toggleOvertype } from '../theme/monacoActions'
 import { TunnelStateIcon } from '../tree/TunnelStateIcon'
 import { TUNNEL_PHASE_LABEL, type TunnelPhase } from '../services/tunnelState'
+import { Button } from '../core/ui/controls'
 
 // Status bar. Layout from the original (reference shots 58, 59, 60): notification and task icons,
 // the Git branch, INS, caret position and encoding sit at the right edge; the branch opens a
@@ -119,17 +120,17 @@ export function StatusBar({
 
   return (
     <footer className="forge-statusbar" aria-label="Status bar">
-      <button type="button" className="forge-status-btn forge-status-system" title="Run configuration (system): click to choose" onClick={systemMenu}>
+      <Button variant="bare" className="forge-status-btn forge-status-system" title="Run configuration (system): click to choose" onClick={systemMenu}>
         {system || '-'}
-      </button>
+      </Button>
       <span className="forge-status-message" role="status">
         {message}
       </span>
       {leftItems.map((i) => (
         <i.component key={i.id} data={slotData} openMenu={openMenu} />
       ))}
-      <button
-        type="button"
+      <Button variant="bare"
+
         className="forge-status-btn forge-status-progress"
         title={task ? `${task.label} (click to open the Output window)` : 'Background tasks: no task is running (click to open the Output window)'}
         onClick={onShowOutput}
@@ -144,41 +145,41 @@ export function StatusBar({
         ) : (
           <span aria-label="Background tasks">{'☰'}</span>
         )}
-      </button>
-      <button
-        type="button"
+      </Button>
+      <Button variant="bare"
+
         className={`forge-status-btn forge-status-errors${errors > 0 ? ' has-errors' : ''}`}
         title={errors > 0 ? 'Show the Problems tab' : 'No errors (click to open the Problems tab)'}
         onClick={onShowProblems}
       >
         {errors > 0 ? `✖ ${errors} error${errors === 1 ? '' : 's'}` : '✔ No errors'}
-      </button>
+      </Button>
       {tunnel === null ? null : (
-        <button type="button" className="forge-status-btn forge-status-tunnel" data-state={tunnelPhase ?? (tunnel ? 'on' : 'off')} title={`SSH tunnel (${TUNNEL_PHASE_LABEL[tunnelPhase ?? (tunnel ? 'on' : 'off')]})${tunnelDetail ? `: ${tunnelDetail}` : ''}${openTunnels && openTunnels.length > 0 ? `: ${openTunnels.join(', ')}` : ''} - click for the tunnel overview`} onClick={tunnelMenu}>
+        <Button variant="bare" className="forge-status-btn forge-status-tunnel" data-state={tunnelPhase ?? (tunnel ? 'on' : 'off')} title={`SSH tunnel (${TUNNEL_PHASE_LABEL[tunnelPhase ?? (tunnel ? 'on' : 'off')]})${tunnelDetail ? `: ${tunnelDetail}` : ''}${openTunnels && openTunnels.length > 0 ? `: ${openTunnels.join(', ')}` : ''} - click for the tunnel overview`} onClick={tunnelMenu}>
           <TunnelStateIcon state={tunnelPhase ?? (tunnel ? 'on' : 'off')} /> Tunnel: {tunnelPhase === 'connecting' ? <>Connecting...{tunnelDetail ? ` ${tunnelDetail.replace(/^.*\((\d+ s)\)$/, '$1')}` : ''}</> : tunnelPhase === 'error' ? 'error' : tunnelPhase === 'open' ? 'open' : tunnel ? (openTunnels && openTunnels.length > 1 ? `on (${openTunnels.length})` : 'on') : 'off'}
-        </button>
+        </Button>
       )}
-      <button type="button" className="forge-status-btn forge-status-notify" title="Notifications (click to open the Notifications tab)" aria-label="Notifications" onClick={onShowNotifications}>
+      <Button variant="bare" className="forge-status-btn forge-status-notify" title="Notifications (click to open the Notifications tab)" aria-label="Notifications" onClick={onShowNotifications}>
         {'✉'}
-      </button>
+      </Button>
       {rightItems.map((i) => (
         <i.component key={i.id} data={slotData} openMenu={openMenu} />
       ))}
-      <button type="button" className="forge-status-btn forge-status-cell" title="Insert or overtype mode (click or Insert key to switch)" onClick={() => toggleOvertype()} disabled={!editor.hasEditor}>
+      <Button variant="bare" className="forge-status-btn forge-status-cell" title="Insert or overtype mode (click or Insert key to switch)" onClick={() => toggleOvertype()} isDisabled={!editor.hasEditor}>
         {editor.overtype ? 'OVR' : 'INS'}
-      </button>
-      <button
-        type="button"
+      </Button>
+      <Button variant="bare"
+
         className="forge-status-btn forge-status-cell forge-status-caret"
         title="Line:column of the caret (click for Go to Line)"
-        disabled={!editor.hasEditor}
+        isDisabled={!editor.hasEditor}
         onClick={() => goToLine()}
       >
         {caretText}
-      </button>
-      <button type="button" className="forge-status-btn forge-status-cell" title="Encoding (click for details)" onClick={encodingMenu}>
+      </Button>
+      <Button variant="bare" className="forge-status-btn forge-status-cell" title="Encoding (click for details)" onClick={encodingMenu}>
         {editor.hasEditor ? 'UTF-8' : 'N/A'}
-      </button>
+      </Button>
       {menu ? <TreeContextMenu entries={menu.entries} x={menu.at.x} y={menu.at.y} onPick={menu.pick} onClose={closeMenu} /> : null}
     </footer>
   )

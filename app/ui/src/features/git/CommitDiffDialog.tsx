@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type * as Monaco from 'monaco-editor'
 import type { ForgeApi } from '../../api/ForgeApi'
-import type { DiffContent } from '../../wire/types'
 import { Modal } from '../../core/Modal'
-import { errorText } from '../../core/errorText'
+import { useResource } from '../../core/hooks/useResource'
+import { Button, Dropdown } from '../../core/ui/controls'
 
 // "Show Changes" of the commit window: the committed version (HEAD) against the working copy of one
 // file, side by side and read-only, with the whitespace choice of the original Designer.
@@ -15,22 +15,13 @@ const WHITESPACE = [
 ] as const
 
 export function CommitDiffDialog({ api, root, path, onClose }: { api: ForgeApi; root: string; path: string; onClose: () => void }) {
-  const [content, setContent] = useState<DiffContent | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [whitespace, setWhitespace] = useState<(typeof WHITESPACE)[number]['id']>('none')
   const hostRef = useRef<HTMLDivElement | null>(null)
   const editorRef = useRef<Monaco.editor.IStandaloneDiffEditor | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
-    api
-      .scmDiff(root, path, 'unstaged', null)
-      .then((c) => !cancelled && setContent(c))
-      .catch((e) => !cancelled && setError(errorText(e)))
-    return () => {
-      cancelled = true
-    }
-  }, [api, root, path])
+  const diff = useResource(() => api.scmDiff(root, path, 'unstaged', null), [api, root, path])
+  const content = diff.data ?? null
+  const error = diff.error ?? null
 
   useEffect(() => {
     const host = hostRef.current
@@ -94,34 +85,28 @@ export function CommitDiffDialog({ api, root, path, onClose }: { api: ForgeApi; 
       onClose={onClose}
       footer={
         <>
-          <button type="button" onClick={onClose}>
+          <Button variant="bare" onClick={onClose}>
             OK
-          </button>
-          <button type="button" onClick={onClose}>
+          </Button>
+          <Button variant="bare" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >
       <div className="commit-diff">
         <div className="commit-diff-bar">
           <span className="commit-diff-nav">
-            <button type="button" title="Next difference" aria-label="Next difference" onClick={() => goTo('next')}>
+            <Button variant="bare" title="Next difference" aria-label="Next difference" onClick={() => goTo('next')}>
               ↓
-            </button>
-            <button type="button" title="Previous difference" aria-label="Previous difference" onClick={() => goTo('previous')}>
+            </Button>
+            <Button variant="bare" title="Previous difference" aria-label="Previous difference" onClick={() => goTo('previous')}>
               ↑
-            </button>
+            </Button>
           </span>
           <label className="commit-diff-ws">
             <span>Whitespace Treatment:</span>
-            <select value={whitespace} onChange={(e) => setWhitespace(e.target.value as typeof whitespace)} aria-label="Whitespace Treatment">
-              {WHITESPACE.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.label}
-                </option>
-              ))}
-            </select>
+            <Dropdown value={whitespace} aria-label="Whitespace Treatment" options={WHITESPACE.map((w) => ({ id: w.id, label: w.label }))} onChange={(v) => setWhitespace(v as typeof whitespace)} />
           </label>
         </div>
         <div className="commit-diff-heads">

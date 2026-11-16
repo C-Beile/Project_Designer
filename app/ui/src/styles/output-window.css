@@ -24,8 +24,8 @@
 .forge-output-filter input {
   background: var(--bg);
   color: var(--fg);
-  border: 1px solid var(--border-strong);
-  border-radius: 2px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-control);
   height: 20px;
   padding: 0 4px;
 }
@@ -54,7 +54,7 @@
   background: transparent;
   color: var(--fg);
   border: 1px solid transparent;
-  border-radius: 2px;
+  border-radius: var(--radius-control);
   font-size: 12px;
   line-height: 1;
 }
@@ -62,13 +62,6 @@
 .forge-output-btn[aria-pressed="true"] {
   background: var(--bg-panel);
   border-color: var(--border-strong);
-}
-
-.forge-output-bar-sep {
-  width: 14px;
-  height: 1px;
-  margin: 3px 0;
-  background: var(--border);
 }
 
 .forge-output-log.is-wrapped {

@@ -1,11 +1,16 @@
+import { useResource } from '../core/hooks/useResource'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ForgeApi, IconDto } from '../api/ForgeApi'
 import { matchesPattern } from './WildcardPicker'
+import { Button, Input } from '../core/ui/controls'
+import { CaretDown } from '../core/icons/Icon'
 
 // Business background: like the original Designer, an icon property is a drop-down list that shows each
 // icon next to its id. The value can still be typed (filters the list) and is stored exactly as typed or picked.
 
 let iconCache: Promise<IconDto[]> | null = null
+
+const NO_ICONS: IconDto[] = []
 
 function loadIcons(api: ForgeApi): Promise<IconDto[]> {
   if (!iconCache) {
@@ -18,18 +23,11 @@ function loadIcons(api: ForgeApi): Promise<IconDto[]> {
 }
 
 export function IconCombo({ api, value, disabled, onCommit }: { api: ForgeApi; value: string; disabled?: boolean; onCommit: (id: string) => void }) {
-  const [icons, setIcons] = useState<IconDto[]>([])
   const [text, setText] = useState(value)
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    let cancelled = false
-    void loadIcons(api).then((list) => !cancelled && setIcons(list))
-    return () => {
-      cancelled = true
-    }
-  }, [api])
+  const icons = useResource(() => loadIcons(api), [api]).data ?? NO_ICONS
 
   useEffect(() => setText(value), [value])
 
@@ -59,7 +57,7 @@ export function IconCombo({ api, value, disabled, onCommit }: { api: ForgeApi; v
       }}
     >
       <span className="icon-combo-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: current?.svg ?? '' }} />
-      <input
+      <Input
         type="text"
         aria-label="Icon"
         value={text}
@@ -79,9 +77,9 @@ export function IconCombo({ api, value, disabled, onCommit }: { api: ForgeApi; v
           } else if (e.key === 'ArrowDown') setOpen(true)
         }}
       />
-      <button type="button" className="icon-combo-arrow" aria-label="Show icons" disabled={disabled} tabIndex={-1} onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen((o) => !o)}>
-        {'▾'}
-      </button>
+      <Button variant="bare" className="icon-combo-arrow" aria-label="Show icons" isDisabled={disabled} tabIndex={-1} onMouseDown={(e) => e.preventDefault()} onClick={() => setOpen((o) => !o)}>
+        <CaretDown />
+      </Button>
       {open && hits.length > 0 ? (
         <ul className="icon-combo-list" role="listbox" aria-label="Icons">
           <li role="option" aria-selected={value === ''} tabIndex={-1} onMouseDown={(e) => e.preventDefault()} onClick={() => pick('')}>

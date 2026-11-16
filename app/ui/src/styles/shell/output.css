@@ -1,7 +1,7 @@
 .forge-badge {
   min-width: 14px;
-  padding: 0 4px;
-  border-radius: 7px;
+  padding: 0 5px;
+  border-radius: var(--radius-badge);
   background: var(--error);
   color: var(--bg);
   font-size: 10px;
@@ -29,43 +29,6 @@
   flex: 1 1 auto;
 }
 
-.forge-minimized-strip {
-  display: flex;
-  gap: 2px;
-  flex: 0 0 auto;
-  background: var(--bg-inset);
-}
-
-.forge-minimized-left,
-.forge-minimized-right {
-  flex-direction: column;
-  width: 20px;
-  padding-top: 4px;
-}
-
-.forge-minimized-bottom {
-  height: 20px;
-  padding-left: 4px;
-}
-
-.forge-minimized-btn {
-  border: 1px solid var(--border);
-  background: var(--bg-panel);
-  color: var(--fg-muted);
-  padding: 2px 6px;
-  white-space: nowrap;
-}
-
-.forge-minimized-left .forge-minimized-btn,
-.forge-minimized-right .forge-minimized-btn {
-  writing-mode: vertical-rl;
-  padding: 6px 1px;
-}
-
-.forge-minimized-btn:hover {
-  color: var(--fg);
-}
-
 .forge-output {
   display: flex;
   flex-direction: column;
@@ -77,23 +40,24 @@
   display: flex;
   flex: 0 0 auto;
   gap: 2px;
-  padding: 2px 4px 0;
-  border-bottom: 1px solid var(--border);
+  padding: 0 6px;
+  border-bottom: 1px solid var(--border-panel);
 }
 
 .forge-output-subtab {
-  padding: 1px 12px;
-  border: 1px solid transparent;
-  border-bottom: none;
+  padding: 3px 10px;
+  border: none;
   background: transparent;
   color: var(--fg-muted);
 }
 
-.forge-output-subtab.is-active {
-  background: var(--bg);
-  border-color: var(--border);
+.forge-output-subtab:hover {
   color: var(--fg);
-  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.forge-output-subtab.is-active {
+  color: var(--fg);
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
 .forge-output-log,

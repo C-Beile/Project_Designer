@@ -24,7 +24,7 @@
 
 .language-grid .lang-toolbar button[aria-pressed='true'] { background: color-mix(in srgb, var(--accent) 22%, transparent); border-color: var(--accent); }
 
-.language-grid .lang-toolbar input[type='search'] { width: 220px; height: 24px; padding: 0 8px; box-sizing: border-box; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: 3px; }
+.language-grid .lang-toolbar input[type='search'] { width: 220px; height: 24px; padding: 0 8px; box-sizing: border-box; background: var(--bg-inset); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius-control); }
 
 .language-grid .lang-toolbar input:focus, .language-grid .lang-toolbar select:focus { outline: none; border-color: var(--focus-ring, var(--accent)); }
 

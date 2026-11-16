@@ -1,6 +1,7 @@
 import { useState, useSyncExternalStore } from 'react'
 import { Modal } from './Modal'
 import { UiDialogHost } from './ui/uiDialogs'
+import { Button, Input } from './ui/controls'
 
 // In-app replacement for window.confirm: a promise-based question shown as a modal inside the
 // window. A second request with the same text while the first is still open joins the first one,
@@ -97,7 +98,7 @@ function PromptField({ spec, value, onChange }: { spec: PromptSpec; value: strin
     <>
       <label className="forge-field">
         {spec.label ? <span>{spec.label}</span> : null}
-        <input type="text" value={value} aria-label={spec.label ?? 'Value'} autoFocus onChange={(e) => onChange(e.target.value)} />
+        <Input type="text" value={value} aria-label={spec.label ?? 'Value'} autoFocus onChange={(e) => onChange(e.target.value)} />
       </label>
       {issue ? <p className="forge-field-error">{issue}</p> : null}
     </>
@@ -121,9 +122,9 @@ function PendingDialog({ pending }: { pending: Pending }) {
       footer={
         <>
           {pending.choices.map((c, i) => (
-            <button key={c.id} type="button" disabled={i === 0 && !!pending.prompt && (!!issue || value.trim() === '')} onClick={() => (i === 0 ? submit() : answer(pending, c.id, value))}>
+            <Button variant="bare" key={c.id} isDisabled={i === 0 && !!pending.prompt && (!!issue || value.trim() === '')} onClick={() => (i === 0 ? submit() : answer(pending, c.id, value))}>
               {c.label}
-            </button>
+            </Button>
           ))}
         </>
       }

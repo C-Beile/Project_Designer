@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { ModelEntry } from '../wire/types'
 import { Modal } from '../core/Modal'
 import { errorText } from '../core/errorText'
+import { Button, Dropdown, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // File > Export Project / Import Project, laid out like the manual's export window (img 011):
 // "Export the entire system", one tab per data model type with picked/total counts, "Select all",
@@ -40,8 +42,7 @@ export function ProjectZipDialog({
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     async function load() {
       try {
         let list: ModelEntry[]
@@ -49,7 +50,7 @@ export function ProjectZipDialog({
           list = await api.listProjectModels(projectRoot)
         } else {
           const file = await api.pickFile('Import Project', 'Zip file', ['zip'])
-          if (cancelled) return
+          if (signal.aborted) return
           if (!file) {
             onClose()
             return
@@ -57,21 +58,18 @@ export function ProjectZipDialog({
           setZipPath(file)
           list = await api.inspectProjectZip(projectRoot, file)
         }
-        if (cancelled) return
+        if (signal.aborted) return
         setModels(list)
         setTab(list[0]?.folder ?? null)
         setPicked(new Set(list.map(keyOf)))
       } catch (e) {
-        if (!cancelled) {
+        if (!signal.aborted) {
           setError(errorText(e))
           setModels([])
         }
       }
     }
     void load()
-    return () => {
-      cancelled = true
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, projectRoot, mode])
 
@@ -127,12 +125,12 @@ export function ProjectZipDialog({
       onClose={onClose}
       footer={
         <>
-          <button type="button" disabled={busy || chosen.length === 0} onClick={() => void run()}>
+          <Button variant="bare" isDisabled={busy || chosen.length === 0} onClick={() => void run()}>
             OK
-          </button>
-          <button type="button" onClick={onClose}>
+          </Button>
+          <Button variant="bare" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >
@@ -142,7 +140,7 @@ export function ProjectZipDialog({
       {models && models.length > 0 ? (
         <>
           <label className="forge-check">
-            <input type="checkbox" checked={allPicked} aria-label={mode === 'export' ? 'Export the entire system' : 'Import the entire system'} onChange={(e) => setMany(models, e.target.checked)} />
+            <Input type="checkbox" checked={allPicked} aria-label={mode === 'export' ? 'Export the entire system' : 'Import the entire system'} onChange={(e) => setMany(models, e.target.checked)} />
             <span>{mode === 'export' ? 'Export the entire system' : 'Import the entire system'}</span>
           </label>
           <div role="tablist" aria-label="Data model types" className="forge-zip-tabs" style={{ display: 'flex', flexWrap: 'wrap', gap: 4, margin: '8px 0' }}>
@@ -150,52 +148,52 @@ export function ProjectZipDialog({
               const all = models.filter((m) => m.folder === f)
               const n = all.filter((m) => picked.has(keyOf(m))).length
               return (
-                <button key={f} type="button" role="tab" aria-selected={tab === f} onClick={() => setTab(f)}>
+                <Button variant="bare" key={f} role="tab" aria-selected={tab === f} onClick={() => setTab(f)}>
                   {f} {n}/{all.length}
-                </button>
+                </Button>
               )
             })}
           </div>
           <label className="forge-check">
-            <input type="checkbox" checked={tabAllPicked} aria-label="Select all" onChange={(e) => setMany(inTab, e.target.checked)} />
+            <Input type="checkbox" checked={tabAllPicked} aria-label="Select all" onChange={(e) => setMany(inTab, e.target.checked)} />
             <span>Select all</span>
           </label>
           <div style={{ maxHeight: 300, overflow: 'auto', margin: '8px 0' }}>
-            <table className="forge-problems-table" aria-label="Data models">
-              <thead>
-                <tr>
-                  <th>Export</th>
-                  <th>Data model</th>
-                  <th>DATE_EDIT</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="forge-problems-table" aria-label="Data models">
+              <TableHeader>
+
+                  <TableColumn isRowHeader>Export</TableColumn>
+                  <TableColumn>Data model</TableColumn>
+                  <TableColumn>DATE_EDIT</TableColumn>
+
+              </TableHeader>
+              <TableBody>
                 {inTab.map((m) => {
                   const k = keyOf(m)
                   return (
-                    <tr key={k}>
-                      <td>
-                        <input type="checkbox" checked={picked.has(k)} aria-label={k} onChange={() => toggle(picked, setPicked, k)} />
-                      </td>
-                      <td>
+                    <TableRow key={k}>
+                      <TableCell>
+                        <Input type="checkbox" checked={picked.has(k)} aria-label={k} onChange={() => toggle(picked, setPicked, k)} />
+                      </TableCell>
+                      <TableCell>
                         {m.name}
                         {mode === 'import' && m.exists ? (
                           <label className="forge-check" style={{ marginLeft: 12 }}>
-                            <input type="checkbox" checked={overwrite.has(k)} aria-label={`Overwrite ${k}`} onChange={() => toggle(overwrite, setOverwrite, k)} />
+                            <Input type="checkbox" checked={overwrite.has(k)} aria-label={`Overwrite ${k}`} onChange={() => toggle(overwrite, setOverwrite, k)} />
                             <span>Exists: overwrite (nothing is deleted)</span>
                           </label>
                         ) : null}
-                      </td>
-                      <td>{formatDate(m.modified_secs)}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell>{formatDate(m.modified_secs)}</TableCell>
+                    </TableRow>
                   )
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <label className="forge-field">
             <span>Sign for system</span>
-            <select disabled title="Not built: what signing does is not documented" aria-label="Sign for system" />
+            <Dropdown isDisabled title="Not built: what signing does is not documented" aria-label="Sign for system" value="" options={[]} onChange={() => {}} />
           </label>
         </>
       ) : null}

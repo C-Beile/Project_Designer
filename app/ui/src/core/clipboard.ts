@@ -23,3 +23,12 @@ export async function copyText(text: string): Promise<boolean> {
     return false
   }
 }
+
+/** Liest Text aus der Zwischenablage; leer, wenn das nicht erlaubt ist. */
+export async function readText(): Promise<string> {
+  try {
+    return (await navigator.clipboard?.readText?.()) ?? ''
+  } catch {
+    return ''
+  }
+}

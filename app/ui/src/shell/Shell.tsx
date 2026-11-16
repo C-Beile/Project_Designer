@@ -8,11 +8,14 @@ import { TitleBar } from '../chrome/TitleBar'
 import { useTheme } from '../theme/useTheme'
 import { ExperimentalEngineWarning } from '../settings/TranspilerEngineSelector'
 import type { DiagnosticDto, TreeNode, WireValue } from '../wire/types'
-import { DockLayout } from './DockLayout'
+import { DockHost } from './dock/DockHost'
+import { DEFAULT_FONT_SIZE, readAppearance } from '../theme/appearance'
 import { loadLayout, saveLayout, type LayoutState } from './layoutState'
 import { MenuBar } from './MenuBar'
 import { TOOL_WINDOWS, type ToolWindowId } from './menuModel'
-import { type OutputMainTab, type OutputSubTab } from './OutputPanel'
+import { useTabMemory } from './hooks/useTabMemory'
+import { subscribeOutput } from '../core/outputBus'
+import { isOutputTab, type OutputSubTab, type OutputTabId } from './OutputPanel'
 import { StatusBar } from './StatusBar'
 import { Toolbar } from './Toolbar'
 import { AboutDialog } from './Dialogs'
@@ -116,8 +119,9 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
 
   const [layout, setLayout] = useState<LayoutState>(loadLayout)
   const [projectsTab, setProjectsTab] = useState<'projects' | 'services'>('projects')
-  const [outputTab, setOutputTab] = useState<OutputMainTab>('output')
-  const [outputSub, setOutputSub] = useState<OutputSubTab>('build')
+  // Output-Fenster: erst offen, wenn der Nutzer oder eine Aktion sie öffnet; jedes ist ein eigener Reiter.
+  const [outputTabs, setOutputTabs] = useState<OutputTabId[]>([])
+  const [outputTab, setOutputTab] = useState<OutputTabId>('build')
   const { logs, appendLog, clearLog } = useOutputLogs()
 
   const [installDir, setInstallDir] = useState<string | null>(null)
@@ -212,6 +216,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   const { tabState, setTabState, drafts, flushers, historyFlags, unsaved, markUnsaved, activateNode, activateNodeRef, handleOpen, handleActivateTab, closeTabNow, handleCloseTab, handleCloseOthers, handleCloseAll } = useTabs({
     api, root, treeRef, editorWindowsRef, saveIdsRef, projectOf, refreshDiagnostics, setSelected, setTreeSelection, setActiveProject, setSelectedProject, setValue, setDiagnostics, setCanUndo, setCanRedo, setAliasSel, setStatus,
   })
+  useTabMemory({ projects, trees, loadingProjects, tabState, handleOpen })
 
   const closeProjects = useCallback(
     (toClose: string[]) => {
@@ -268,7 +273,6 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     [handleOpen],
   )
 
-
   const selectedId = selected?.id ?? null
   const { applyOutcome, saveIds, registerFlush } = useSave({
     api, root, gitActive, tabState, selectedId, drafts, flushers, historyFlags, editorWindowsRef, saveIdsRef, markUnsaved, refreshDiagnostics, setValue, setSheetVersion, setCanUndo, setCanRedo, setConflict, setScanTick, setStatus,
@@ -288,12 +292,37 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     const panel = TOOL_WINDOWS.find((w) => w.id === id)!.panel
     if (panel) setLayout((prev) => ({ ...prev, panels: { ...prev.panels, [panel]: 'open' } }))
     if (id === 'projects' || id === 'services') setProjectsTab(id)
-    if (id === 'output' || id === 'idelog' || id === 'scanservices' || id === 'search' || id === 'notifications' || id === 'refactoring' || id === 'problems') setOutputTab(id)
+    if (isOutputTab(id)) {
+      setOutputTabs((prev) => (prev.includes(id) ? prev : [...prev, id]))
+      setOutputTab(id)
+    }
     if (focus) {
       const selector = panel ? `[data-panel="${panel}"]` : '.forge-editor-area'
       setTimeout(() => document.querySelector<HTMLElement>(selector)?.focus(), 0)
     }
   }, [])
+
+  // Ein Reiter schließt sich mit dem x. Der letzte nimmt das ganze Output-Panel mit.
+  const closeOutputTab = useCallback(
+    (id: OutputTabId) => {
+      const i = outputTabs.indexOf(id)
+      const next = outputTabs.filter((t) => t !== id)
+      setOutputTabs(next)
+      if (outputTab === id && next.length > 0) setOutputTab(next[Math.min(i, next.length - 1)])
+      if (next.length === 0) setLayout((prev) => ({ ...prev, panels: { ...prev.panels, output: 'closed' } }))
+    },
+    [outputTabs, outputTab],
+  )
+  // Der Reiter, der zu einer Quelle gehört, geht mit der ersten Zeile von Hand ausgelöster Aktionen auf (SQL, REST, Tunnel).
+  const setOutputSub = useCallback((sub: OutputSubTab) => {
+    if (sub !== 'ide') showToolWindow(sub, false)
+  }, [showToolWindow])
+  // Properties geht erst auf, wenn etwas es braucht: ein gewähltes Objekt, Projekt oder Modul.
+  const inspectedId = inspected && (inspectedKind === 'object' || inspectedKind === 'project' || inspectedKind === 'module') ? inspected.id : null
+  useEffect(() => {
+    if (inspectedId) showToolWindow('properties', false)
+  }, [inspectedId, showToolWindow])
+  useEffect(() => subscribeOutput((sub) => { if (sub !== 'ide') showToolWindow(sub, false) }), [showToolWindow])
 
   useEffect(() => {
     setIndexOpenLog(() => showToolWindow('idelog'))
@@ -355,7 +384,6 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       }),
     [showToolWindow, handleOpen],
   )
-
 
   // "Open File" in the changes list of the Commit window: opens the file, as an object when it is one of the project.
   useEffect(
@@ -469,14 +497,14 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   const hasProject = root.trim() !== ''
   const totalErrors = errorCount(problemList)
 
-  useDialogWindows({ dialog, setDialog, hasProject, root, engine, setEngine, theme, toggleTheme, menus, setInstallDir, openableModels, tree, handleOpen, setStatus })
+  useDialogWindows({ dialog, setDialog, hasProject, root, engine, setEngine, theme, toggleTheme, menus, setInstallDir, setStatus })
 
   const { editor, panels } = useShellPanels({
     api, root, projects, tree, objectsByType, tabState, setTabState, selected, selectedProject, value, setValue, sheetVersion, setSheetVersion, setCanUndo, setCanRedo, recent, recentList, unsaved, hasProject, totalErrors,
     problemList, problemCounts, scanning, logs, clearLog, db, changeDb, drafts, historyFlags, sqlTexts, sqlNonce, reveal, setReveal, projectIndex, editorWindows, bridge, systemBadge, gitFor, loadingProjects,
-    iconSvgs, projectsTab, setProjectsTab, outputTab, setOutputTab, outputSub, setOutputSub, aliasSel, inspected, inspectedKind, inspectedObject, elementSel, focusLabel, setNavSel, resetNavElement,
+    iconSvgs, projectsTab, setProjectsTab, outputTabs, outputTab, setOutputTab, closeOutputTab, aliasSel, inspected, inspectedKind, inspectedObject, elementSel, focusLabel, setNavSel, resetNavElement,
     activateNavElement, refactoring, setRefactoring, doRefactoring, setCtxMenu, runTreeAction, handleActivateTab, handleCloseTab, handleCloseOthers, handleCloseAll, handleTreeSelect, handleOpen,
-    openProjectAt, closeProjects, openSql, openProblem, markUnsaved, refreshDiagnostics, applyOutcome, registerFlush, setScanTick, setReloadToken, setStatus,
+    openProjectAt, openSql, openProblem, markUnsaved, refreshDiagnostics, applyOutcome, registerFlush, setScanTick, setReloadToken, setStatus,
   })
 
   return (
@@ -508,7 +536,8 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         />
       </ErrorBoundary>
       <ExperimentalEngineWarning engine={engine} />
-      <DockLayout
+      <DockHost
+        uiFactor={readAppearance().fontSize / DEFAULT_FONT_SIZE}
         layout={effectiveLayout}
         onLayoutChange={setLayout}
         panels={panels}
@@ -539,7 +568,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
           openTunnels={groupOpenTunnels(Object.entries(tunnelState.bySystem).filter(([k, v]) => k !== '' && !k.includes('|alias:') && (v.connected || v.tunnel_up)).map(([k]) => (projects.length > 1 ? `${systemNameOf(k)} (${baseName(k.slice(0, k.lastIndexOf('|')))})` : systemNameOf(k))))}
           errors={totalErrors}
           onShowProblems={() => showToolWindow('problems')}
-          onShowOutput={() => showToolWindow('output')}
+          onShowOutput={() => showToolWindow(outputTab)}
           onShowNotifications={() => showToolWindow('notifications')}
           onShowServices={() => showToolWindow('services')}
           onCloseTunnels={() => {
@@ -682,7 +711,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
           }}
         />
       ) : null}
-      {!transpileRunning && buildResult ? <TranspileResult result={buildResult} onClose={() => setBuildResult(null)} onShowMatch={() => void compareWithReference(buildResult.project, false).catch(() => {})} onShowOutput={() => { showToolWindow('output', false); setOutputSub('build') }} onDeploy={() => { setBuildResult(null); void startDeploy(false) }} /> : null}
+      {!transpileRunning && buildResult ? <TranspileResult result={buildResult} onClose={() => setBuildResult(null)} onShowMatch={() => void compareWithReference(buildResult.project, false).catch(() => {})} onShowOutput={() => showToolWindow('build', false)} onDeploy={() => { setBuildResult(null); void startDeploy(false) }} /> : null}
       {transpileRunning ? <TranspileProgress label={`Transpiling (${engine})...`} progress={engine === 'official' ? null : buildProgress} onCancel={engine === 'official' ? () => void cancelBuild() : undefined} /> : null}
       {deployOptions ? (
         <DeployOptionsDialog api={api} payload={deployOptions.payload} onOk={(r) => deployOptions.resolve(r)} onCancel={() => deployOptions.resolve(null)} />
@@ -711,14 +740,16 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       <DialogHost />
       <ToastHost />
       {dialog === 'about' && !osWindowsAvailable() ? <AboutDialog api={api} onClose={() => setDialog(null)} /> : null}
-      {dialog === 'openModel' && hasProject && !osWindowsAvailable() ? (
+      {dialog === 'openModel' && hasProject ? (
         <OpenModelDialog
           models={openableModels}
+          projects={projects}
           onClose={() => setDialog(null)}
           onPick={(m) => {
             setDialog(null)
-            const node = findObject(tree, m.type, m.name)
-            if (node) void handleOpen(node)
+            const own = m.projectRoot ? trees[m.projectRoot] : undefined
+            const node = findObject(own ?? tree, m.type, m.name)
+            if (node) void handleOpen(node, own?.[0])
           }}
         />
       ) : null}

@@ -4,6 +4,9 @@ import type { CommitFile, GitCommit, GitOutput } from '../../wire/types'
 import { LazyDiffView } from './LazyDiffView'
 import { Modal } from '../../core/Modal'
 import { errorText } from '../../core/errorText'
+import { Button, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../../core/ui/controls'
+import { copyText } from '../../core/clipboard'
+import { useAbortableEffect } from '../../core/hooks/useAbortableEffect'
 
 // Toolbar Pull and Push: Pull shows what the remote has that is not here yet before anything is
 // merged; Push lists the local commits that are not on the remote and pushes the chosen ones.
@@ -47,23 +50,19 @@ export function SyncDialog({
   const [filesError, setFilesError] = useState<string | null>(null)
   const [openFile, setOpenFile] = useState<string | null>(null)
 
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     setFiles(null)
     setFilesError(null)
     setOpenFile(null)
     if (!selected) return
-    let cancelled = false
     api
       .scmCommitFiles(projectRoot, selected)
       .then((list) => {
-        if (cancelled) return
+        if (signal.aborted) return
         setFiles(list)
         setOpenFile(list[0]?.path ?? null)
       })
-      .catch((e) => !cancelled && setFilesError(errorText(e)))
-    return () => {
-      cancelled = true
-    }
+      .catch((e) => !signal.aborted && setFilesError(errorText(e)))
   }, [api, projectRoot, selected])
 
   async function load() {
@@ -122,12 +121,12 @@ export function SyncDialog({
       onClose={onClose}
       footer={
         <>
-          <button type="button" className="is-primary" disabled={!canRun} onClick={run}>
+          <Button variant="bare" className="is-primary" isDisabled={!canRun} onClick={run}>
             {title}
-          </button>
-          <button type="button" onClick={onClose}>
+          </Button>
+          <Button variant="bare" onClick={onClose}>
             Cancel
-          </button>
+          </Button>
         </>
       }
     >
@@ -140,34 +139,34 @@ export function SyncDialog({
           <p className="forge-field-hint">{heading}</p>
         )}
         {commits && total > 0 ? (
-          <table className="forge-history-table" aria-label={mode === 'pull' ? 'Incoming commits' : 'Local commits'}>
-            <thead>
-              <tr>
-                {mode === 'push' ? <th /> : null}
-                <th>Commit</th>
-                <th>Author</th>
-                <th>Date</th>
-                <th>Message</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="forge-history-table" aria-label={mode === 'pull' ? 'Incoming commits' : 'Local commits'}>
+            <TableHeader>
+
+                {mode === 'push' ? <TableColumn isRowHeader /> : null}
+                <TableColumn>Commit</TableColumn>
+                <TableColumn>Author</TableColumn>
+                <TableColumn>Date</TableColumn>
+                <TableColumn>Message</TableColumn>
+
+            </TableHeader>
+            <TableBody>
               {commits.map((c, i) => (
-                <tr key={c.hash} className={`${mode === 'push' && !isChecked(i) ? 'is-unchecked' : ''}${c.hash === selected ? ' is-selected' : ''}`.trim() || undefined} aria-selected={c.hash === selected} onClick={() => setSelected(c.hash)}>
+                <TableRow key={c.hash} className={`${mode === 'push' && !isChecked(i) ? 'is-unchecked' : ''}${c.hash === selected ? ' is-selected' : ''}`.trim() || undefined} aria-selected={c.hash === selected} onClick={() => setSelected(c.hash)}>
                   {mode === 'push' ? (
-                    <td>
-                      <input type="checkbox" aria-label={`Push ${c.subject}`} checked={isChecked(i)} onClick={(e) => e.stopPropagation()} onChange={(e) => toggle(i, e.target.checked)} />
-                    </td>
+                    <TableCell>
+                      <Input type="checkbox" aria-label={`Push ${c.subject}`} checked={isChecked(i)} onClick={(e) => e.stopPropagation()} onChange={(e) => toggle(i, e.target.checked)} />
+                    </TableCell>
                   ) : null}
-                  <td className="forge-history-hash" title={c.hash}>
+                  <TableCell className="forge-history-hash" title={c.hash}>
                     {c.hash.slice(0, 8)}
-                  </td>
-                  <td>{c.author}</td>
-                  <td>{when(c.date)}</td>
-                  <td>{c.subject}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell>{c.author}</TableCell>
+                  <TableCell>{when(c.date)}</TableCell>
+                  <TableCell>{c.subject}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         ) : null}
         {selectedCommit ? (
           <div className="sync-changes">
@@ -178,13 +177,13 @@ export function SyncDialog({
               <span className="forge-field-hint">
                 {selectedCommit.author} · {when(selectedCommit.date)}
               </span>
-              <button type="button" onClick={() => void navigator.clipboard?.writeText(selectedCommit.hash)}>
+              <Button variant="bare" onClick={() => void copyText(selectedCommit.hash)}>
                 Copy hash
-              </button>
+              </Button>
               {mode === 'push' ? (
-                <button type="button" onClick={() => toggle(commits!.indexOf(selectedCommit), true)} title="Ticks this commit and every older one">
+                <Button variant="bare" onClick={() => toggle(commits!.indexOf(selectedCommit), true)} title="Ticks this commit and every older one">
                   Push up to here
-                </button>
+                </Button>
               ) : null}
             </div>
             {filesError ? <p className="forge-field-error">{filesError}</p> : null}

@@ -17,14 +17,14 @@ use crate::tree_ops::{locate_object, rewrite_for_copy};
 
 const RENAMABLE: &[&str] = &["entity", "neonView", "entityWebservice"];
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, specta::Type)]
 pub struct TextHit {
     pub file: String,
     pub line: u32,
     pub text: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct RenamePlan {
     pub object: String,
     pub new_name: String,

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { KeyboardEvent } from 'react'
+import { Input } from '../core/ui/controls'
 
 // Gemeinsame Text-Zelle für ViewCanvasEditor, ContextEditor und DashboardEditor. Tastenlogik: Enter speichert, Escape verwirft, Tab und Blur speichern, ohne Maus.
 export function EditableText({
@@ -40,7 +41,7 @@ export function EditableText({
   }
 
   return (
-    <input
+    <Input
       aria-label={ariaLabel}
       type={masked ? 'password' : 'text'}
       readOnly={disabled}

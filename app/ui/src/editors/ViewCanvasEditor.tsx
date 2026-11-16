@@ -12,6 +12,7 @@ import { TreeContextMenu } from '../tree/TreeContextMenu'
 import type { MenuEntry } from '../tree/contextMenu'
 import { confirmDialog } from '../core/dialogService'
 import { errorText } from '../core/errorText'
+import { Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 
 // Ziel 1 (neonView-Editor): a structured list view of the view's layout
 // reference table, not a full drag-and-drop canvas. architecture.md names "ein eigener
@@ -166,16 +167,16 @@ export function ViewCanvasEditor({ nodeId, tree, api, onTreeChange }: EditorProp
 
   const modeBar = (
     <div className="vp-modebar" role="group" aria-label="View display">
-      <button type="button" className={`vp-mode${mode === 'preview' ? ' is-active' : ''}`} aria-pressed={mode === 'preview'} onClick={() => setMode('preview')}>
+      <Button variant="bare" className={`vp-mode${mode === 'preview' ? ' is-active' : ''}`} aria-pressed={mode === 'preview'} onClick={() => setMode('preview')}>
         Preview
-      </button>
-      <button type="button" className={`vp-mode${mode === 'structure' ? ' is-active' : ''}`} aria-pressed={mode === 'structure'} onClick={() => setMode('structure')}>
+      </Button>
+      <Button variant="bare" className={`vp-mode${mode === 'structure' ? ' is-active' : ''}`} aria-pressed={mode === 'structure'} onClick={() => setMode('structure')}>
         Structure
-      </button>
+      </Button>
       {mode === 'preview' && entityFields ? (
-        <button type="button" className={`vp-mode vp-fields-toggle${showFields ? ' is-active' : ''}`} aria-pressed={showFields} title="Show the entity fields to drag them into a ViewTemplate" onClick={() => setShowFields((v) => !v)}>
+        <Button variant="bare" className={`vp-mode vp-fields-toggle${showFields ? ' is-active' : ''}`} aria-pressed={showFields} title="Show the entity fields to drag them into a ViewTemplate" onClick={() => setShowFields((v) => !v)}>
           Entity fields
-        </button>
+        </Button>
       ) : null}
     </div>
   )
@@ -235,16 +236,16 @@ export function ViewCanvasEditor({ nodeId, tree, api, onTreeChange }: EditorProp
         <p>No master-slave layout on this view.</p>
       )}
 
-      <table aria-label="View references">
-        <thead>
-          <tr>
-            <th>Master</th>
-            <th>Reference id</th>
-            <th>Entity field</th>
-            <th>Sub-view</th>
-          </tr>
-        </thead>
-        <tbody>
+      <Table aria-label="View references">
+        <TableHeader>
+
+            <TableColumn isRowHeader>Master</TableColumn>
+            <TableColumn>Reference id</TableColumn>
+            <TableColumn>Entity field</TableColumn>
+            <TableColumn>Sub-view</TableColumn>
+
+        </TableHeader>
+        <TableBody>
           {references.map((reference, index) => {
             const refId = textField(reference, 'name') ?? ''
             const entityField = textField(reference, 'entityField') ?? ''
@@ -253,28 +254,28 @@ export function ViewCanvasEditor({ nodeId, tree, api, onTreeChange }: EditorProp
             const isMaster = master !== undefined && master === refId
 
             return (
-              <tr key={refId || index}>
-                <td>{isMaster ? '★' : ''}</td>
-                <td>{refId}</td>
-                <td>
+              <TableRow key={refId || index}>
+                <TableCell>{isMaster ? '★' : ''}</TableCell>
+                <TableCell>{refId}</TableCell>
+                <TableCell>
                   <EditableText
                     value={entityField}
                     ariaLabel={`Reference ${index} entity field`}
                     onCommit={(next) => commitScalar(`${basePath}.entityField`, next)}
                   />
-                </td>
-                <td>
+                </TableCell>
+                <TableCell>
                   <EditableText
                     value={view}
                     ariaLabel={`Reference ${index} view`}
                     onCommit={(next) => commitScalar(`${basePath}.view`, next)}
                   />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

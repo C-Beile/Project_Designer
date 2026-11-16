@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
+import { Button, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from './controls'
 
 // Maske "Tabelle": Spaltenbeschreibung, Sortierung per Klick auf die Kopfzeile, optional Auswahl
 // (eine Zeile oder mehrere mit Häkchen). Gleiche Optik wie die vorhandenen Tabellen (forge-problems-table).
@@ -49,6 +50,8 @@ export function DataTable<R>({ columns, rows, rowKey, ariaLabel, className = 'fo
     onSelectedChange?.(keys)
   }
 
+  // Der Tabellenkopf zeichnet sich bei React Aria verzögert neu: der Schlüssel setzt das Kästchen sicher auf den neuen Stand.
+  const allChosen = rows.length > 0 && rows.every((r) => chosen.includes(rowKey(r)))
   const column = sort ? columns.find((c) => c.id === sort.id) : undefined
   const shown = column?.value ? [...rows].sort((a, b) => compare(column.value!(a), column.value!(b)) * (sort!.dir === 'asc' ? 1 : -1)) : rows
 
@@ -59,59 +62,60 @@ export function DataTable<R>({ columns, rows, rowKey, ariaLabel, className = 'fo
   }
 
   return (
-    <table className={`forge-data-table ${className}`} aria-label={ariaLabel}>
-      <thead>
-        <tr>
+    <Table className={`forge-data-table ${className}`} aria-label={ariaLabel}>
+      <TableHeader>
+
           {selection === 'multiple' ? (
-            <th>
-              <input
+            <TableColumn isRowHeader>
+              <Input
+                key={String(allChosen)}
                 type="checkbox"
                 aria-label="Select all"
-                checked={rows.length > 0 && rows.every((r) => chosen.includes(rowKey(r)))}
+                defaultChecked={allChosen}
                 onChange={(e) => choose(e.target.checked ? rows.map(rowKey) : [])}
               />
-            </th>
+            </TableColumn>
           ) : null}
-          {columns.map((c) => (
-            <th key={c.id} aria-sort={sort?.id === c.id ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}>
+          {columns.map((c, i) => (
+            <TableColumn key={c.id} isRowHeader={i === 0} aria-sort={sort?.id === c.id ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}>
               {c.sortable && c.value ? (
-                <button type="button" className="forge-link" onClick={() => toggleSort(c)}>
+                <Button variant="bare" className="forge-link" onClick={() => toggleSort(c)}>
                   {c.header}
                   {sort?.id === c.id ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}
-                </button>
+                </Button>
               ) : (
                 c.header
               )}
-            </th>
+            </TableColumn>
           ))}
-        </tr>
-      </thead>
-      <tbody>
+
+      </TableHeader>
+      <TableBody>
         {shown.map((r) => {
           const key = rowKey(r)
           return (
-            <tr key={key} className={chosen.includes(key) ? 'is-selected' : undefined} aria-selected={selection === 'none' ? undefined : chosen.includes(key)} onClick={() => select(key)}>
+            <TableRow key={key} className={chosen.includes(key) ? 'is-selected' : undefined} aria-selected={selection === 'none' ? undefined : chosen.includes(key)} onClick={() => select(key)}>
               {selection === 'multiple' ? (
-                <td>
-                  <input type="checkbox" aria-label={key} checked={chosen.includes(key)} onChange={() => toggle(key)} />
-                </td>
+                <TableCell>
+                  <Input type="checkbox" aria-label={key} checked={chosen.includes(key)} onChange={() => toggle(key)} />
+                </TableCell>
               ) : null}
               {columns.map((c) => (
-                <td key={c.id} title={c.title?.(r)}>
+                <TableCell key={c.id} title={c.title?.(r)}>
                   {c.render ? c.render(r) : String(c.value?.(r) ?? '')}
-                </td>
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           )
         })}
         {rows.length === 0 && emptyText ? (
-          <tr>
-            <td className="forge-field-hint" colSpan={columns.length + (selection === 'multiple' ? 1 : 0)}>
+          <TableRow>
+            <TableCell className="forge-field-hint" colSpan={columns.length + (selection === 'multiple' ? 1 : 0)}>
               {emptyText}
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ) : null}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   )
 }

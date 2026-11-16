@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { ImportedTheme } from '../theme/vscodeTheme'
+import { Button, Input } from '../core/ui/controls'
 
 // Theme choice of Options > Appearance as a gallery: every theme is a card with a small picture of the window in its
 // colours, so a theme can be picked by looking at it. The built-in themes come first, then the installed VS Code themes.
@@ -105,69 +106,34 @@ export function ThemePicker({
   return (
     <div className="forge-theme-picker">
       <div className="forge-theme-bar">
-        <input type="search" className="forge-theme-search" aria-label="Search themes" placeholder={`Search ${cards.length} themes`} value={filter} onChange={(e) => setFilter(e.target.value)} />
+        <Input type="search" className="forge-theme-search" aria-label="Search themes" placeholder={`Search ${cards.length} themes`} value={filter} onChange={(e) => setFilter(e.target.value)} />
         {canImport ? (
           <>
-            <button type="button" className="is-primary" onClick={onInstallFile} title="A theme file (.json, .tmTheme) or an extension package (.vsix)">
+            <Button variant="bare" className="is-primary" onClick={onInstallFile} title="A theme file (.json, .tmTheme) or an extension package (.vsix)">
               Install theme…
-            </button>
-            <button type="button" onClick={onInstallFolder} title="The folder of a VS Code theme extension, for example in C:\Users\you\.vscode\extensions">
+            </Button>
+            <Button variant="bare" onClick={onInstallFolder} title="The folder of a VS Code theme extension, for example in C:\Users\you\.vscode\extensions">
               From folder…
-            </button>
+            </Button>
           </>
         ) : null}
       </div>
       <div className="forge-theme-grid" role="radiogroup" aria-label="Theme">
         {shown.map((card) => (
           <div key={card.id} className={`forge-theme-card${selected === card.id ? ' is-selected' : ''}`}>
-            <button type="button" role="radio" aria-checked={selected === card.id} className="forge-theme-card-main" onClick={() => onSelect(card.id)}>
+            <Button variant="bare" role="radio" aria-checked={selected === card.id} className="forge-theme-card-main" title={`${card.kind === 'dark' ? 'Dark' : 'Light'} · ${card.source}`} onClick={() => onSelect(card.id)}>
               <Picture preview={card.preview} />
               <span className="forge-theme-name">{card.name}</span>
-              <span className="forge-theme-meta">
-                {card.kind === 'dark' ? 'Dark' : 'Light'} · {card.source}
-              </span>
               {selected === card.id ? <span className="forge-theme-check" aria-hidden="true">✓</span> : null}
-            </button>
+            </Button>
             {card.source === 'VS Code' ? (
-              <button type="button" className="forge-theme-remove" aria-label={`Remove ${card.name}`} title="Remove this theme" onClick={() => onRemove(card.id)}>
+              <Button variant="bare" className="forge-theme-remove" aria-label={`Remove ${card.name}`} title="Remove this theme" onClick={() => onRemove(card.id)}>
                 ×
-              </button>
+              </Button>
             ) : null}
           </div>
         ))}
         {shown.length === 0 ? <p className="forge-field-hint">No theme matches.</p> : null}
-      </div>
-      {canImport && themes.length === 0 ? <p className="forge-field-hint">No VS Code theme installed yet. Choose “Install theme…” or “From folder…” and pick a theme from your VS Code (C:\Users\you\.vscode\extensions).</p> : null}
-    </div>
-  )
-}
-
-/** A small window drawn with the colours the interface has right now, so a changed colour can be judged at once. */
-export function LivePreview() {
-  return (
-    <div className="forge-live-preview" aria-hidden="true">
-      <div className="forge-live-title">
-        <i />
-        <span>Dito Designer — Project</span>
-      </div>
-      <div className="forge-live-body">
-        <div className="forge-live-side">
-          <b>Projects</b>
-          <span className="is-selected">entity</span>
-          <span>context</span>
-          <span className="is-muted">others</span>
-        </div>
-        <div className="forge-live-editor">
-          <span><em className="kw">const</em> name = <em className="str">"Pichler"</em></span>
-          <span><em className="cm">// comment</em></span>
-          <span><em className="fn">open</em>(name, <em className="num">42</em>)</span>
-          <div className="forge-live-buttons">
-            <button type="button" tabIndex={-1}>OK</button>
-            <span className="forge-live-error">Error</span>
-            <span className="forge-live-warn">Warning</span>
-            <span className="forge-live-ok">Success</span>
-          </div>
-        </div>
       </div>
     </div>
   )

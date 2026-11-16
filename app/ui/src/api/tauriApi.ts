@@ -1,40 +1,51 @@
-import { invoke as rawInvoke } from '@tauri-apps/api/core'
 import { callSite } from '../core/errorLog'
+import { commands } from './bindings'
 
 /**
  * Alle Tauri-Aufrufe laufen hierüber. Schlägt ein Befehl fehl, kommt Name und Fehlertext ins Protokoll
  * (Log-Ordner). Ohne Argumente, damit keine Geheimnisse in die Datei geraten. Bei `plugin_call` loggt das Backend zusätzlich den Fehler mit Argumenten; hier kommt der Aufrufer (Datei:Zeile) dazu.
  */
-function invoke<T = unknown>(command: string, args?: Record<string, unknown>): Promise<T> {
-  const site = callSite() // Aufrufer jetzt merken: nach dem await ist der Stapel weg
+function reportFailure(text: string, site: string): void {
   const nl = String.fromCharCode(10)
-  const report = (text: string) => void rawInvoke('log_client_error', { message: text + nl + 'aufgerufen von:' + nl + site }).catch(() => {})
-  // Ein leerer Projektordner ist immer ein Fehler des Aufrufers: sofort und mit Aufrufer melden, statt Windows-Fehler 123 aus dem Prozessstart.
-  if (command === 'plugin_call') {
-    const inner = (args?.args ?? {}) as Record<string, unknown>
-    if ('projectRoot' in inner && (typeof inner.projectRoot !== 'string' || inner.projectRoot.trim() === '')) {
-      const message = `${String(args?.plugin)}.${String(args?.command)}: kein Projektordner übergeben (projectRoot ist leer)`
-      report(`command plugin_call ${message}`)
-      return Promise.reject(message)
-    }
-  }
-  return rawInvoke<T>(command, args).catch((e: unknown) => {
-    if (command !== 'log_client_error') {
-      const what = command === 'plugin_call' ? `plugin_call ${String(args?.plugin)}.${String(args?.command)}` : command
-      report(`command ${what} failed: ${typeof e === 'string' ? e : e instanceof Error ? e.message : JSON.stringify(e)}`)
-    }
+  void commands.logClientError(text + nl + 'aufgerufen von:' + nl + site).catch(() => {})
+}
+
+function failureText(e: unknown): string {
+  return typeof e === 'string' ? e : e instanceof Error ? e.message : JSON.stringify(e)
+}
+
+/** Befehl aus `bindings.ts` (tauri-specta, typisiert) mit demselben Fehler-Protokoll wie `invoke`. */
+function typed<T>(command: string, call: () => Promise<T>): Promise<T> {
+  const site = callSite()
+  return call().catch((e: unknown) => {
+    reportFailure(`command ${command} failed: ${failureText(e)}`, site)
     throw e
   })
 }
 
+/** Plugin-Befehl über den einen Tauri-Befehl `plugin_call`; Fehler kommen mit Aufrufer ins Protokoll. */
+function pluginCall<T = unknown>(plugin: string, command: string, args: Record<string, unknown>): Promise<T> {
+  const site = callSite() // Aufrufer jetzt merken: nach dem await ist der Stapel weg
+  // Ein leerer Projektordner ist immer ein Fehler des Aufrufers: sofort und mit Aufrufer melden, statt Windows-Fehler 123 aus dem Prozessstart.
+  if ('projectRoot' in args && (typeof args.projectRoot !== 'string' || args.projectRoot.trim() === '')) {
+    const message = `${plugin}.${command}: kein Projektordner übergeben (projectRoot ist leer)`
+    reportFailure(`command plugin_call ${message}`, site)
+    return Promise.reject(message)
+  }
+  return commands.pluginCall(plugin, command, args).catch((e: unknown) => {
+    reportFailure(`command plugin_call ${plugin}.${command} failed: ${failureText(e)}`, site)
+    throw e
+  }) as Promise<T>
+}
+
 /** Meldet dem Backend die Zeitzone des Nutzers, damit das Protokoll Ortszeit zeigt (JS: Minuten westlich von UTC, daher negiert). */
 export function syncLogTimezone(): void {
-  void rawInvoke('set_log_timezone', { offsetMinutes: -new Date().getTimezoneOffset() }).catch(() => {})
+  void commands.setLogTimezone(-new Date().getTimezoneOffset()).catch(() => {})
 }
 
 /** Git ist ein Plugin: alle Aufrufe laufen über den einen Befehl `plugin_call`. */
 const gitCall = <T,>(command: string, args: Record<string, unknown>) =>
-  invoke<T>('plugin_call', { plugin: 'git', command, args })
+  pluginCall<T>('git', command, args)
 
 /** Git-Aufruf mit Netzwerk: bei fehlender Anmeldung fragt das Git-Plugin den Benutzer und wiederholt ihn einmal (`api/gitAuth.ts`). */
 const gitNetCall = <T,>(command: string, projectRoot: string, args: Record<string, unknown> = {}) =>
@@ -49,149 +60,160 @@ const gitNetCall = <T,>(command: string, projectRoot: string, args: Record<strin
 import { withGitAuth } from './gitAuth'
 import { withCheckoutChoice } from './gitCheckout'
 import type { ForgeApi } from './ForgeApi'
-import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, IndexStatus, VerifyOutcome, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, RestServerDto, WebserviceDto, RestUserDto, RestResponseDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, RepoLink, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, ForwardStatusDto, SshKeyInfoDto, LoopbackStatusDto, LiquibaseTarget, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployOutcome, DeployOverview, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, RestUserDto, DbStatus, SystemDbStatus, FileHistory, GitOutput, GitOverview, RepoLink, SchemaTable, SqlResult } from '../wire/types'
 
 // The real implementation - a pure pass-through to the Tauri commands in
 // app/src-tauri/src/lib.rs, one call each, no business logic (architecture.md §1
 // "Grundregel" applies to the frontend adapter too, not just the Rust side).
 export const tauriForgeApi: ForgeApi = {
-  openProject: (path) => invoke<TreeNode[]>('open_project', { path }),
-  listTreeChildren: (nodeId) => invoke<TreeNode[]>('list_tree_children', { nodeId }),
-  restoreOpenProjects: () => invoke<string[]>('restore_open_projects'),
-  listIcons: () => invoke('list_icons'),
-  addOpenProject: (path) => invoke<string[]>('add_open_project', { path }),
-  removeOpenProject: (path) => invoke<string[]>('remove_open_project', { path }),
-  getPropertyTree: (nodeId) => invoke<WireValue>('get_property_tree', { nodeId }),
-  setProperty: (nodeId, path, value) => invoke<WireValue>('set_property', { nodeId, path, value }),
-  listDiagnostics: (nodeId) => invoke<DiagnosticDto[]>('list_diagnostics', { nodeId }),
+  openProject: (path) => typed('open_project', () => commands.openProject(path)),
+  listTreeChildren: (nodeId) => typed('list_tree_children', () => commands.listTreeChildren(nodeId)),
+  restoreOpenProjects: () => typed('restore_open_projects', () => commands.restoreOpenProjects()),
+  listIcons: () => typed('list_icons', () => commands.listIcons()),
+  addOpenProject: (path) => typed('add_open_project', () => commands.addOpenProject(path)),
+  removeOpenProject: (path) => typed('remove_open_project', () => commands.removeOpenProject(path)),
+  getPropertyTree: (nodeId) => typed('get_property_tree', () => commands.getPropertyTree(nodeId)),
+  setProperty: (nodeId, path, value) => typed('set_property', () => commands.setProperty(nodeId, path, value)),
+  listDiagnostics: (nodeId) => typed('list_diagnostics', () => commands.listDiagnostics(nodeId)),
   executeAction: (actionId, targetPath, params) =>
-    invoke<void>('execute_action', { actionId, targetPath, params }),
-  undo: (nodeId) => invoke<UndoRedoOutcome>('undo', { nodeId }),
-  redo: (nodeId) => invoke<UndoRedoOutcome>('redo', { nodeId }),
-  save: (nodeId) => invoke<void>('save', { nodeId }),
-  saveOverwrite: (nodeId) => invoke<void>('save_overwrite', { nodeId }),
-  reloadObject: (nodeId) => invoke<void>('reload_object', { nodeId }),
-  externalChanges: (nodeIds) => invoke<string[]>('external_changes', { nodeIds }),
-  indexStatus: (projectRoot) => invoke<IndexStatus | null>('index_status', { projectRoot }),
-  indexVerify: (projectRoot) => invoke<VerifyOutcome>('index_verify', { projectRoot }),
-  indexRebuild: (projectRoot) => invoke<void>('index_rebuild', { projectRoot }),
-  indexDump: (projectRoot) => invoke<string>('index_dump', { projectRoot }),
-  openLogFolder: () => invoke<string>('open_log_folder'),
-  openBackupFolder: () => invoke<string>('open_backup_folder'),
-  logClientError: (message) => invoke<string | null>('log_client_error', { message }),
-  readAliasConfigs: (projectRoot, reference) => invoke<AliasConfigDto[]>('plugin_call', { plugin: 'database', command: 'read_alias_configs', args: { projectRoot, reference } }),
-  readTunnelConfig: (projectRoot, reference) => invoke<TunnelRowDto[]>('plugin_call', { plugin: 'ssh-tunnel', command: 'read_tunnel_config', args: { projectRoot, reference } }),
-  addTunnelRow: (projectRoot, reference, row) => invoke<TunnelRowDto[]>('plugin_call', { plugin: 'ssh-tunnel', command: 'add_tunnel_row', args: { projectRoot, reference, row } }),
-  deleteTunnelRow: (projectRoot, reference, index) => invoke<TunnelRowDto[]>('plugin_call', { plugin: 'ssh-tunnel', command: 'delete_tunnel_row', args: { projectRoot, reference, index } }),
-  importConfigFile: (projectRoot, source) => invoke<string>('plugin_call', { plugin: 'database', command: 'import_config_file', args: { projectRoot, source } }),
-  openLocalUrl: (url) => invoke<void>('open_local_url', { url }),
-  listProjectFiles: (projectRoot) => invoke<string[]>('list_project_files', { projectRoot }),
-  readThemeFile: (path) => invoke<string>('read_theme_file', { path }),
-  readThemePack: (path) => invoke<{ name: string; text: string }[]>('read_theme_pack', { path }),
-  resolveImport: (projectRoot, spec, fromFile) => invoke<string | null>('resolve_import', { projectRoot, spec, fromFile }),
+    typed('execute_action', () => commands.executeAction(actionId, targetPath, params)).then(() => undefined),
+  undo: (nodeId) => typed('undo', () => commands.undo(nodeId)),
+  redo: (nodeId) => typed('redo', () => commands.redo(nodeId)),
+  save: (nodeId) => typed('save', () => commands.save(nodeId)).then(() => undefined),
+  saveOverwrite: (nodeId) => typed('save_overwrite', () => commands.saveOverwrite(nodeId)).then(() => undefined),
+  reloadObject: (nodeId) => typed('reload_object', () => commands.reloadObject(nodeId)).then(() => undefined),
+  externalChanges: (nodeIds) => typed('external_changes', () => commands.externalChanges(nodeIds)),
+  indexStatus: (projectRoot) => typed('index_status', () => commands.indexStatus(projectRoot)),
+  indexVerify: (projectRoot) => typed('index_verify', () => commands.indexVerify(projectRoot)),
+  indexRebuild: (projectRoot) => typed('index_rebuild', () => commands.indexRebuild(projectRoot)).then(() => undefined),
+  indexDump: (projectRoot) => typed('index_dump', () => commands.indexDump(projectRoot)),
+  openLogFolder: () => typed('open_log_folder', () => commands.openLogFolder()),
+  userThemes: () => typed('user_themes_list', () => commands.userThemesList()),
+  saveUserTheme: async (file, text) => void (await typed('user_theme_write', () => commands.userThemeWrite(file, text))),
+  deleteUserTheme: async (file) => void (await typed('user_theme_delete', () => commands.userThemeDelete(file))),
+  openUserThemesFolder: () => typed('user_themes_open_folder', () => commands.userThemesOpenFolder()),
+  openBackupFolder: () => typed('open_backup_folder', () => commands.openBackupFolder()),
+  logClientError: (message) => commands.logClientError(message),
+  readAliasConfigs: (projectRoot, reference) => pluginCall<AliasConfigDto[]>('database', 'read_alias_configs', { projectRoot, reference }),
+  readTunnelConfig: (projectRoot, reference) => pluginCall<TunnelRowDto[]>('ssh-tunnel', 'read_tunnel_config', { projectRoot, reference }),
+  addTunnelRow: (projectRoot, reference, row) => pluginCall<TunnelRowDto[]>('ssh-tunnel', 'add_tunnel_row', { projectRoot, reference, row }),
+  deleteTunnelRow: (projectRoot, reference, index) => pluginCall<TunnelRowDto[]>('ssh-tunnel', 'delete_tunnel_row', { projectRoot, reference, index }),
+  importConfigFile: (projectRoot, source) => pluginCall<string>('database', 'import_config_file', { projectRoot, source }),
+  openLocalUrl: async (url) => void (await typed('open_local_url', () => commands.openLocalUrl(url))),
+  listProjectFiles: (projectRoot) => typed('list_project_files', () => commands.listProjectFiles(projectRoot)),
+  readThemeFile: (path) => typed('read_theme_file', () => commands.readThemeFile(path)),
+  readThemePack: (path) => typed('read_theme_pack', () => commands.readThemePack(path)),
+  resolveImport: (projectRoot, spec, fromFile) => typed('resolve_import', () => commands.resolveImport(projectRoot, spec, fromFile)),
   readLinkedFile: (projectRoot, reference) =>
-    invoke<string>('read_linked_file', { projectRoot, reference }),
+    typed('read_linked_file', () => commands.readLinkedFile(projectRoot, reference)),
   writeLinkedFile: (projectRoot, reference, content) =>
-    invoke<void>('write_linked_file', { projectRoot, reference, content }),
-  pickProjectFolder: (title) => invoke<string | null>('pick_project_folder', { title: title ?? null }),
-  getRecentProject: () => invoke<string | null>('get_recent_project'),
-  getRecentProjects: () => invoke<string[]>('get_recent_projects'),
-  findProjectsInFolder: (folder) => invoke<FoundProjectDto[]>('find_projects_in_folder', { folder }),
-  restListServers: (projectRoot) => invoke<RestServerDto[]>('rest_list_servers', { projectRoot }),
-  restListWebservices: (projectRoot) => invoke<WebserviceDto[]>('rest_list_webservices', { projectRoot }),
-  restUsers: () => invoke<RestUserDto[]>('plugin_call', { plugin: 'database', command: 'rest_users', args: {} }),
-  restSend: (request) => invoke<RestResponseDto>('rest_send', { request }),
-  restHasPassword: (url, user) => invoke<boolean>('rest_has_password', { url, user }),
-  restSavePassword: (url, user, password) => invoke<void>('rest_save_password', { url, user, password }),
-  restForgetPassword: (url, user) => invoke<void>('rest_forget_password', { url, user }),
-  pickProjectFolders: (title) => invoke<string[]>('pick_project_folders', { title: title ?? null }),
-  setRecentProject: (path) => invoke<void>('set_recent_project', { path }),
-  getSettings: () => invoke<ForgeSettings>('get_settings'),
-  configGet: () => invoke<Record<string, unknown>>('config_get'),
+    typed('write_linked_file', () => commands.writeLinkedFile(projectRoot, reference, content)).then(() => undefined),
+  pickProjectFolder: (title) => typed('pick_project_folder', () => commands.pickProjectFolder(title ?? null)),
+  getRecentProject: () => typed('get_recent_project', () => commands.getRecentProject()),
+  getRecentProjects: () => typed('get_recent_projects', () => commands.getRecentProjects()),
+  findProjectsInFolder: (folder) => typed('find_projects_in_folder', () => commands.findProjectsInFolder(folder)),
+  restListWebservices: (projectRoot) => typed('rest_list_webservices', () => commands.restListWebservices(projectRoot)),
+  restListServers: (projectRoot) => typed('rest_list_servers', () => commands.restListServers(projectRoot)),
+  restUsers: () => pluginCall<RestUserDto[]>('database', 'rest_users', {}),
+  restSend: (request) => typed('rest_send', () => commands.restSend(request)),
+  restHasPassword: (url, user) => typed('rest_has_password', () => commands.restHasPassword(url, user)),
+  restSavePassword: (url, user, password) => typed('rest_save_password', () => commands.restSavePassword(url, user, password)).then(() => undefined),
+  restForgetPassword: (url, user) => typed('rest_forget_password', () => commands.restForgetPassword(url, user)).then(() => undefined),
+  pickProjectFolders: (title) => typed('pick_project_folders', () => commands.pickProjectFolders(title ?? null)),
+  setRecentProject: (path) => typed('set_recent_project', () => commands.setRecentProject(path)).then(() => undefined),
+  getSettings: () => typed('get_settings', () => commands.getSettings()),
+  configGet: () => typed('config_get', () => commands.configGet()) as Promise<Record<string, unknown>>,
   configSet: async (path, value) => {
-    await invoke<null>('config_set', { path, value })
+    await typed('config_set', () => commands.configSet(path, value)).then(() => undefined)
   },
-  setSettings: (settings) => invoke<void>('set_settings', { settings }),
-  detectDesignerInstall: () => invoke<string | null>('detect_designer_install'),
-  pluginList: () => invoke<{ id: string; name: string; available: boolean }[]>('plugin_list'),
+  setSettings: (settings) => typed('set_settings', () => commands.setSettings(settings)).then(() => undefined),
+  detectDesignerInstall: () => typed('detect_designer_install', () => commands.detectDesignerInstall()),
+  pluginList: () => typed('plugin_list', () => commands.pluginList()),
   getCurrentBranch: (projectRoot) => gitCall<string | null>('get_current_branch', { projectRoot }),
-  getPropertySheet: (nodeId, path) => invoke<PropertySheet>('get_property_sheet', { nodeId, path }),
-  setSheetProperty: (nodeId, path, name, value, typed) =>
-    invoke<UndoRedoOutcome>('set_sheet_property', { nodeId, path, name, value, typed }),
-  removeSheetProperty: (nodeId, path, name) => invoke<UndoRedoOutcome>('remove_sheet_property', { nodeId, path, name }),
-  resetSheetProperty: (nodeId, path, name) => invoke<ResetOutcome>('reset_sheet_property', { nodeId, path, name }),
-  resetSheetElement: (nodeId, path) => invoke<ResetOutcome>('reset_sheet_element', { nodeId, path }),
-  fileInfo: (path) => invoke<FileInfoDto>('file_info', { path }),
-  filePaste: (projectRoot, source, destDir, cut) => invoke<string>('file_paste', { projectRoot, source, destDir, cut }),
-  fileRename: (projectRoot, path, newName) => invoke<string>('file_rename', { projectRoot, path, newName }),
-  fileDelete: (projectRoot, path) => invoke<void>('file_delete', { projectRoot, path }),
-  openInSystem: (path) => invoke<void>('open_in_system', { path }),
-  npmRun: (projectRoot, action, confirmed) => invoke<number>('npm_run', { projectRoot, action, confirmed }),
-  activateMapping: (nodeId, path) => invoke<ActivateOutcome>('activate_mapping', { nodeId, path }),
-  findUsages: (projectRoot, objectType, name) => invoke<UsageDto[]>('find_usages', { projectRoot, objectType, name }),
-  localDataInfo: (thresholdDays) => invoke<LocalDataInfo>('local_data_info', { thresholdDays }),
-  liquibaseTarget: (system, alias, connectionAlias) => invoke<LiquibaseTarget>('plugin_call', { plugin: 'liquibase', command: 'liquibase_target', args: { system, alias, connectionAlias: connectionAlias ?? null } }),
-  liquibaseConnections: (system) => invoke('plugin_call', { plugin: 'liquibase', command: 'liquibase_connections', args: { system } }),
-  liquibaseUpdate: (system, alias, projectRoot, connectionAlias, useDist) => invoke<string>('plugin_call', { plugin: 'liquibase', command: 'liquibase_update', args: { system, alias, projectRoot, connectionAlias: connectionAlias ?? null, useDist: useDist ?? false } }),
-  liquibasePlan: (projectRoot, alias) => invoke('plugin_call', { plugin: 'liquibase', command: 'liquibase_plan', args: { projectRoot, alias } }),
-  checkForUpdate: () => invoke<UpdateInfo | null>('check_for_update'),
-  installUpdate: () => invoke<void>('install_update'),
-  scanProblems: (projectRoot) => invoke<ProblemDto[]>('scan_problems', { projectRoot }),
-  enableModification: (nodeId, projectRoot) => invoke<void>('enable_modification', { nodeId, projectRoot }),
-  setModificationProperty: (nodeId, path, name, value, typed, kind) =>
-    invoke<ModificationOutcome>('set_modification_property', { nodeId, path, name, value, typed, kind }),
+  getPropertySheet: (nodeId, path) => typed('get_property_sheet', () => commands.getPropertySheet(nodeId, path)),
+  setSheetProperty: (nodeId, path, name, value, asTyped) =>
+    typed('set_sheet_property', () => commands.setSheetProperty(nodeId, path, name, value, asTyped)),
+  removeSheetProperty: (nodeId, path, name) => typed('remove_sheet_property', () => commands.removeSheetProperty(nodeId, path, name)),
+  resetSheetProperty: (nodeId, path, name) => typed('reset_sheet_property', () => commands.resetSheetProperty(nodeId, path, name)),
+  resetSheetElement: (nodeId, path) => typed('reset_sheet_element', () => commands.resetSheetElement(nodeId, path)),
+  fileInfo: (path) => typed('file_info', () => commands.fileInfo(path)),
+  filePaste: (projectRoot, source, destDir, cut) => typed('file_paste', () => commands.filePaste(projectRoot, source, destDir, cut)),
+  fileRename: (projectRoot, path, newName) => typed('file_rename', () => commands.fileRename(projectRoot, path, newName)),
+  fileDelete: (projectRoot, path) => typed('file_delete', () => commands.fileDelete(projectRoot, path)).then(() => undefined),
+  openInSystem: (path) => typed('open_in_system', () => commands.openInSystem(path)).then(() => undefined),
+  npmRun: (projectRoot, action, confirmed) => typed('npm_run', () => commands.npmRun(projectRoot, action, confirmed)),
+  activateMapping: (nodeId, path) => typed('activate_mapping', () => commands.activateMapping(nodeId, path)),
+  findUsages: (projectRoot, objectType, name) => typed('find_usages', () => commands.findUsages(projectRoot, objectType, name)),
+  localDataInfo: (thresholdDays) => typed('local_data_info', () => commands.localDataInfo(thresholdDays)),
+  liquibaseTarget: (system, alias, connectionAlias) => pluginCall<LiquibaseTarget>('liquibase', 'liquibase_target', { system, alias, connectionAlias: connectionAlias ?? null }),
+  liquibaseConnections: (system) => pluginCall('liquibase', 'liquibase_connections', { system }),
+  liquibaseUpdate: (system, alias, projectRoot, connectionAlias, useDist) => pluginCall<string>('liquibase', 'liquibase_update', { system, alias, projectRoot, connectionAlias: connectionAlias ?? null, useDist: useDist ?? false }),
+  liquibasePlan: (projectRoot, alias) => pluginCall('liquibase', 'liquibase_plan', { projectRoot, alias }),
+  checkForUpdate: () => typed('check_for_update', () => commands.checkForUpdate()),
+  installUpdate: () => typed('install_update', () => commands.installUpdate()).then(() => undefined),
+  scanProblems: (projectRoot) => typed('scan_problems', () => commands.scanProblems(projectRoot)),
+  enableModification: (nodeId, projectRoot) => typed('enable_modification', () => commands.enableModification(nodeId, projectRoot)).then(() => undefined),
+  setModificationProperty: (nodeId, path, name, value, asTyped, kind) =>
+    typed('set_modification_property', () => commands.setModificationProperty(nodeId, path, name, value, asTyped, kind)),
   setModificationScript: (nodeId, path, name, content) =>
-    invoke<ModificationOutcome>('set_modification_script', { nodeId, path, name, content }),
-  discardModification: (projectRoot, dir) => invoke<void>('discard_modification', { projectRoot, dir }),
-  getNavigator: (nodeId) => invoke<NavNode[]>('get_navigator', { nodeId }),
-  getObjectSource: (nodeId) => invoke<ObjectSource>('get_object_source', { nodeId }),
-  setObjectSource: (nodeId, text) => invoke<UndoRedoOutcome>('set_object_source', { nodeId, text }),
+    typed('set_modification_script', () => commands.setModificationScript(nodeId, path, name, content)),
+  discardModification: (projectRoot, dir) => typed('discard_modification', () => commands.discardModification(projectRoot, dir)).then(() => undefined),
+  getNavigator: (nodeId) => typed('get_navigator', () => commands.getNavigator(nodeId)),
+  getObjectSource: (nodeId) => typed('get_object_source', () => commands.getObjectSource(nodeId)),
+  setObjectSource: (nodeId, text) => typed('set_object_source', () => commands.setObjectSource(nodeId, text)),
   getFileHistory: (path) => gitCall<FileHistory>('get_file_history', { path }),
-  tunnelConnect: (row, keyFile, tunnelPassword) => invoke<ForwardStatusDto>('plugin_call', { plugin: 'ssh-tunnel', command: 'tunnel_connect', args: { row, keyFile, tunnelPassword } }),
-  tunnelDisconnect: (targetHost, targetPort) => invoke<void>('plugin_call', { plugin: 'ssh-tunnel', command: 'tunnel_disconnect', args: { targetHost, targetPort } }),
-  tunnelDisconnectAll: () => invoke<void>('plugin_call', { plugin: 'ssh-tunnel', command: 'tunnel_disconnect_all', args: {} }),
-  tunnelList: () => invoke<ForwardStatusDto[]>('plugin_call', { plugin: 'ssh-tunnel', command: 'tunnel_list', args: {} }),
-  pickFile: (title, label, extensions) => invoke<string | null>('pick_file', { title, label, extensions }),
-  dbConnect: (tunnelConfig, serverConfig, keyFile, tunnelPassword, system) => invoke<DbStatus>('plugin_call', { plugin: 'database', command: 'db_connect', args: { tunnelConfig, serverConfig, keyFile, tunnelPassword: tunnelPassword ?? null, system: system ?? null } }),
-  systemTunnelState: (projectRoot, tunnelRef, serverRef) => invoke('plugin_call', { plugin: 'database', command: 'system_tunnel_state', args: { projectRoot, tunnelRef, serverRef } }),
-  dbConnectAlias: (system, alias, tunnelConfig, serverIds) => invoke<DbStatus>('plugin_call', { plugin: 'database', command: 'db_connect_alias', args: { system, alias, tunnelConfig, serverIds } }),
-  dbCancelConnect: () => invoke<void>('plugin_call', { plugin: 'database', command: 'db_cancel_connect', args: {} }),
-  cancelBuild: () => invoke<boolean>('cancel_build'),
-  dbDisconnect: (system) => invoke<void>('plugin_call', { plugin: 'database', command: 'db_disconnect', args: { system: system ?? null } }),
-  dbStatus: (system) => invoke<DbStatus>('plugin_call', { plugin: 'database', command: 'db_status', args: { system: system ?? null } }),
-  dbSystems: () => invoke<SystemDbStatus[]>('plugin_call', { plugin: 'database', command: 'db_systems', args: {} }),
-  dbActivate: (system) => invoke<boolean>('plugin_call', { plugin: 'database', command: 'db_activate', args: { system } }),
-  dbQuery: (sql, allowWrite) => invoke<SqlResult>('plugin_call', { plugin: 'database', command: 'db_query', args: { sql, allowWrite } }),
-  dbSchema: () => invoke<SchemaTable[]>('plugin_call', { plugin: 'database', command: 'db_schema', args: {} }),
-  systemUsers: () => invoke<TableDump>('plugin_call', { plugin: 'database', command: 'system_users', args: {} }),
-  systemUserProperties: (user) => invoke<UserPropertyDto[]>('plugin_call', { plugin: 'database', command: 'system_user_properties', args: { user } }),
-  systemAssignedRoles: () => invoke<string[]>('plugin_call', { plugin: 'database', command: 'system_assigned_roles', args: {} }),
-  systemUserSetProperty: (id, value, confirmed) => invoke<void>('plugin_call', { plugin: 'database', command: 'system_user_set_property', args: { id, value, confirmed } }),
-  systemUserSetPassword: (user, password, confirmed) => invoke<void>('plugin_call', { plugin: 'database', command: 'system_user_set_password', args: { user, password, confirmed } }),
-  systemUserSet: (user, key, value, confirmed) => invoke<void>('plugin_call', { plugin: 'database', command: 'system_user_set', args: { user, key, value, confirmed } }),
-  systemUserSetList: (user, key, values, confirmed) => invoke<void>('plugin_call', { plugin: 'database', command: 'system_user_set_list', args: { user, key, values, confirmed } }),
-  systemUserCreate: (title, confirmed) => invoke<string>('plugin_call', { plugin: 'database', command: 'system_user_create', args: { title, confirmed } }),
-  systemUserDelete: (user, confirmed) => invoke<void>('plugin_call', { plugin: 'database', command: 'system_user_delete', args: { user, confirmed } }),
-  systemAliasConfigs: () => invoke<AliasConfigTable>('plugin_call', { plugin: 'database', command: 'system_alias_configs', args: {} }),
-  systemAliasList: (serverIds) => invoke<AliasConfigDto[]>('plugin_call', { plugin: 'database', command: 'system_alias_list', args: { serverIds } }),
-  systemServerIds: (configReference, systemName) => invoke<string[]>('plugin_call', { plugin: 'database', command: 'system_server_ids', args: { configReference, systemName } }),
-  deployOverview: (projectRoot) => invoke<DeployOverview>('plugin_call', { plugin: 'deploy', command: 'deploy_overview', args: { projectRoot } }),
-  deployPlan: (projectRoot, force, mapping) => invoke<DeployPlan>('plugin_call', { plugin: 'deploy', command: 'deploy_plan', args: { projectRoot, force, mapping } }),
-  deployShowChanges: (projectRoot, key, mapping) => invoke<DeployChangeView>('plugin_call', { plugin: 'deploy', command: 'deploy_show_changes', args: { projectRoot, key, mapping } }),
-  deployExecute: (projectRoot, keys, force, mapping, confirmed) => invoke<DeployOutcome>('plugin_call', { plugin: 'deploy', command: 'deploy_execute', args: { projectRoot, keys, force, mapping, confirmed } }),
-  copyObject: (source, destRoot, newName) => invoke<string>('copy_object', { source, destRoot, newName }),
-  deleteObject: (source) => invoke<void>('delete_object', { source }),
-  newObjectKinds: () => invoke<NewObjectKind[]>('new_object_kinds'),
-  validateNewName: (projectRoot, folder, name) => invoke<string | null>('validate_new_name', { projectRoot, folder, name }),
-  createObject: (projectRoot, folder, name, title, reference) => invoke<string>('create_object', { projectRoot, folder, name, title, reference }),
-  renamePlan: (projectRoot, source, newName) => invoke<RenamePlan>('rename_plan', { projectRoot, source, newName }),
-  renameObject: (projectRoot, source, newName) => invoke<string>('rename_object', { projectRoot, source, newName }),
-  listProjectModels: (projectRoot) => invoke<ModelEntry[]>('list_project_models', { projectRoot }),
-  exportProjectZip: (projectRoot, models, target) => invoke<number>('export_project_zip', { projectRoot, models, target }),
-  inspectProjectZip: (projectRoot, zipPath) => invoke<ModelEntry[]>('inspect_project_zip', { projectRoot, zipPath }),
-  importProjectZip: (projectRoot, zipPath, selected, overwrite) => invoke<ImportOutcome>('import_project_zip', { projectRoot, zipPath, selected, overwrite }),
-  pickSaveFile: (title, defaultName, label, extensions) => invoke<string | null>('pick_save_file', { title, defaultName, label, extensions }),
-  readJditoTypes: (projectRoot) => invoke<JditoTypes | null>('read_jdito_types', { projectRoot }),
+  tunnelConnect: (row, keyFile, tunnelPassword) => pluginCall<ForwardStatusDto>('ssh-tunnel', 'tunnel_connect', { row, keyFile, tunnelPassword }),
+  tunnelDisconnect: (targetHost, targetPort) => pluginCall<void>('ssh-tunnel', 'tunnel_disconnect', { targetHost, targetPort }),
+  tunnelDisconnectAll: () => pluginCall<void>('ssh-tunnel', 'tunnel_disconnect_all', {}),
+  tunnelList: () => pluginCall<ForwardStatusDto[]>('ssh-tunnel', 'tunnel_list', {}),
+  sshKeyInspect: (path) => pluginCall<SshKeyInfoDto>('ssh-tunnel', 'key_inspect', { path }),
+  sshKeyUnlock: (path, passphrase) => pluginCall<void>('ssh-tunnel', 'key_unlock', { path, passphrase: passphrase ?? null }),
+  sshKeySavePassphrase: (path, passphrase) => pluginCall<void>('ssh-tunnel', 'key_passphrase_save', { path, passphrase }),
+  sshKeyForgetPassphrase: (path) => pluginCall<void>('ssh-tunnel', 'key_passphrase_forget', { path }),
+  loopbackStatus: () => pluginCall<LoopbackStatusDto>('ssh-tunnel', 'loopback_status', {}),
+  loopbackSetup: () => pluginCall<LoopbackStatusDto>('ssh-tunnel', 'loopback_setup', {}),
+  sshKeyHasPassphrase: (path) => pluginCall<boolean>('ssh-tunnel', 'key_passphrase_stored', { path }),
+  pickFile: (title, label, extensions) => typed('pick_file', () => commands.pickFile(title ?? null, label, extensions)),
+  dbConnect: (tunnelConfig, serverConfig, keyFile, tunnelPassword, system) => pluginCall<DbStatus>('database', 'db_connect', { tunnelConfig, serverConfig, keyFile, tunnelPassword: tunnelPassword ?? null, system: system ?? null }),
+  systemTunnelState: (projectRoot, tunnelRef, serverRef) => pluginCall('database', 'system_tunnel_state', { projectRoot, tunnelRef, serverRef }),
+  dbConnectAlias: (system, alias, tunnelConfig, serverIds) => pluginCall<DbStatus>('database', 'db_connect_alias', { system, alias, tunnelConfig, serverIds }),
+  dbCancelConnect: () => pluginCall<void>('database', 'db_cancel_connect', {}),
+  cancelBuild: () => typed('cancel_build', () => commands.cancelBuild()),
+  dbDisconnect: (system) => pluginCall<void>('database', 'db_disconnect', { system: system ?? null }),
+  dbStatus: (system) => pluginCall<DbStatus>('database', 'db_status', { system: system ?? null }),
+  dbSystems: () => pluginCall<SystemDbStatus[]>('database', 'db_systems', {}),
+  dbActivate: (system) => pluginCall<boolean>('database', 'db_activate', { system }),
+  dbQuery: (sql, allowWrite) => pluginCall<SqlResult>('database', 'db_query', { sql, allowWrite }),
+  dbSchema: () => pluginCall<SchemaTable[]>('database', 'db_schema', {}),
+  systemUsers: () => pluginCall<TableDump>('database', 'system_users', {}),
+  systemUserProperties: (user) => pluginCall<UserPropertyDto[]>('database', 'system_user_properties', { user }),
+  systemAssignedRoles: () => pluginCall<string[]>('database', 'system_assigned_roles', {}),
+  systemUserSetProperty: (id, value, confirmed) => pluginCall<void>('database', 'system_user_set_property', { id, value, confirmed }),
+  systemUserSetPassword: (user, password, confirmed) => pluginCall<void>('database', 'system_user_set_password', { user, password, confirmed }),
+  systemUserSet: (user, key, value, confirmed) => pluginCall<void>('database', 'system_user_set', { user, key, value, confirmed }),
+  systemUserSetList: (user, key, values, confirmed) => pluginCall<void>('database', 'system_user_set_list', { user, key, values, confirmed }),
+  systemUserCreate: (title, confirmed) => pluginCall<string>('database', 'system_user_create', { title, confirmed }),
+  systemUserDelete: (user, confirmed) => pluginCall<void>('database', 'system_user_delete', { user, confirmed }),
+  systemAliasConfigs: () => pluginCall<AliasConfigTable>('database', 'system_alias_configs', {}),
+  systemAliasList: (serverIds) => pluginCall<AliasConfigDto[]>('database', 'system_alias_list', { serverIds }),
+  systemServerIds: (configReference, systemName) => pluginCall<string[]>('database', 'system_server_ids', { configReference, systemName }),
+  deployOverview: (projectRoot) => pluginCall<DeployOverview>('deploy', 'deploy_overview', { projectRoot }),
+  deployPlan: (projectRoot, force, mapping) => pluginCall<DeployPlan>('deploy', 'deploy_plan', { projectRoot, force, mapping }),
+  deployShowChanges: (projectRoot, key, mapping) => pluginCall<DeployChangeView>('deploy', 'deploy_show_changes', { projectRoot, key, mapping }),
+  deployExecute: (projectRoot, keys, force, mapping, confirmed) => pluginCall<DeployOutcome>('deploy', 'deploy_execute', { projectRoot, keys, force, mapping, confirmed }),
+  copyObject: (source, destRoot, newName) => typed('copy_object', () => commands.copyObject(source, destRoot, newName)),
+  deleteObject: (source) => typed('delete_object', () => commands.deleteObject(source)).then(() => undefined),
+  newObjectKinds: () => typed('new_object_kinds', () => commands.newObjectKinds()),
+  validateNewName: (projectRoot, folder, name) => typed('validate_new_name', () => commands.validateNewName(projectRoot, folder, name)),
+  createObject: (projectRoot, folder, name, title, reference) => typed('create_object', () => commands.createObject(projectRoot, folder, name, title ?? null, reference ?? null)),
+  renamePlan: (projectRoot, source, newName) => typed('rename_plan', () => commands.renamePlan(projectRoot, source, newName)),
+  renameObject: (projectRoot, source, newName) => typed('rename_object', () => commands.renameObject(projectRoot, source, newName)),
+  listProjectModels: (projectRoot) => typed('list_project_models', () => commands.listProjectModels(projectRoot)),
+  exportProjectZip: (projectRoot, models, target) => typed('export_project_zip', () => commands.exportProjectZip(projectRoot, models, target)),
+  inspectProjectZip: (projectRoot, zipPath) => typed('inspect_project_zip', () => commands.inspectProjectZip(projectRoot, zipPath)),
+  importProjectZip: (projectRoot, zipPath, selected, overwrite) => typed('import_project_zip', () => commands.importProjectZip(projectRoot, zipPath, selected, overwrite)),
+  pickSaveFile: (title, defaultName, label, extensions) => typed('pick_save_file', () => commands.pickSaveFile(title ?? null, defaultName, label, extensions)),
+  readJditoTypes: (projectRoot) => typed('read_jdito_types', () => commands.readJditoTypes(projectRoot)),
   gitOverview: (projectRoot) => gitCall<GitOverview>('git_overview', { projectRoot }),
   gitCommit: (projectRoot, message, paths) => gitCall<GitOutput>('git_commit', { projectRoot, message, paths }),
   gitPull: (projectRoot) => withCheckoutChoice('', (mode) => gitNetCall<GitOutput>('git_pull', projectRoot, { mode }), 'pull'),
@@ -206,8 +228,8 @@ export const tauriForgeApi: ForgeApi = {
   },
   gitConnect: (projectRoot, url, sshKey, user, password) => gitCall<string>('git_connect', { projectRoot, url, sshKey, user, password }),
   projectClone: (url, location, name, sshKey, password) => gitCall<string>('clone_repository', { url, location, name, sshKey, password }),
-  projectCreateEmpty: (location, name) => invoke<string>('project_create_empty', { location, name }),
-  transpileCompare: (reference, projectRoot) => invoke<CompareReport>('transpile_compare', { reference, projectRoot }),
+  projectCreateEmpty: (location, name) => typed('project_create_empty', () => commands.projectCreateEmpty(location, name)),
+  transpileCompare: (reference, projectRoot) => typed('transpile_compare', () => commands.transpileCompare(reference, projectRoot)),
   gitCreateBranch: (projectRoot, name, start) => withCheckoutChoice(name, (mode) => gitCall<GitOutput>('git_create_branch', { projectRoot, name, start, mode })),
   scmStatus: (projectRoot) => gitCall<ScmOverview>('scm_status', { projectRoot }),
   scmStage: (projectRoot, paths) => gitCall<GitOutput>('scm_stage', { projectRoot, paths }),

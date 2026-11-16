@@ -32,7 +32,7 @@
 .preferences-editor .pref-row input[type="text"],
 .preferences-editor .pref-row input[type="password"],
 .preferences-editor .sheet-value input[type="text"],
-.preferences-editor .sheet-value input[type="password"] { background: color-mix(in srgb, var(--fg) 6%, transparent); border: 1px solid color-mix(in srgb, var(--fg) 22%, transparent); color: var(--fg); border-radius: 3px; padding: 2px 6px; width: 100%; box-sizing: border-box; cursor: text; }
+.preferences-editor .sheet-value input[type="password"] { background: color-mix(in srgb, var(--fg) 6%, transparent); border: 1px solid color-mix(in srgb, var(--fg) 22%, transparent); color: var(--fg); border-radius: var(--radius-control); padding: 2px 6px; width: 100%; box-sizing: border-box; cursor: text; }
 
 .preferences-editor input[readonly] { opacity: 0.6; cursor: not-allowed; }
 

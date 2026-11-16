@@ -4,7 +4,6 @@ use super::blocking;
 use project::actions::dispatch_action;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use tauri::Manager;
 
 /// Ziel A.2 command 4: generic action dispatch by id (architecture.md §2 `Action` extension
 /// point). See `project::actions` doc for why this honestly reports "not registered" this
@@ -14,6 +13,7 @@ use tauri::Manager;
 /// own data folder is passed along so the official transpiler gets Forge's private profile
 /// there instead of any developer folder (RISKS.md R43).
 #[tauri::command]
+#[specta::specta]
 pub async fn execute_action(
     action_id: String,
     target_path: String,
@@ -22,7 +22,7 @@ pub async fn execute_action(
 ) -> Result<(), String> {
     crate::commands::guard_async("execute_action", async {
     if !params.contains_key("forge_data_dir") {
-        if let Ok(dir) = app.path().app_data_dir() {
+        if let Ok(dir) = crate::data_dir::app_data_dir(&app) {
             params.insert("forge_data_dir".to_string(), dir.to_string_lossy().into_owned());
         }
     }
@@ -46,6 +46,7 @@ pub async fn execute_action(
 /// NodeJS menu: runs one npm command in the project folder; each output line is sent as the event
 /// `forge://npm-output` while it is produced. `confirmed` must be true for login and publish.
 #[tauri::command]
+#[specta::specta]
 pub async fn npm_run(project_root: String, action: String, confirmed: bool, app: tauri::AppHandle) -> Result<i32, String> {
     crate::commands::guard_async("npm_run", async {
     blocking(move || {
@@ -62,6 +63,7 @@ pub async fn npm_run(project_root: String, action: String, confirmed: bool, app:
 
 /// Ends the running official transpiler (the UI asks first). False when no build is running.
 #[tauri::command(async)]
+#[specta::specta]
 pub fn cancel_build() -> bool {
     crate::commands::guard("cancel_build", || {
     project::transpile_action::cancel_build()
@@ -69,6 +71,7 @@ pub fn cancel_build() -> bool {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn transpile_compare(
     registry: tauri::State<'_, std::sync::Arc<plugin_api::TranspilerRegistry>>,
     reference: String,

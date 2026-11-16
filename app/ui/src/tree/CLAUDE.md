@@ -8,7 +8,7 @@
 | `TreeContextMenu.tsx` | Popup des Kontextmenüs (Untermenüs, Pfeiltasten). |
 | `TreeDialogs.tsx` | Bestätigungen: Löschen, Einfügen mit Namen, Umbenennen. |
 | `nameRules.ts` | Namensregeln des Namensdialogs (ohne Dateizugriff). |
-| `treeIcons.tsx` | `NodeIcon`: eigene 16-px-Icons je Knotenart und Objekttyp. |
+| `treeIcons.tsx` | `NodeIcon`: Phosphor-Icon je Knotenart und Objekttyp (Name, Stil, Farbe aus `style.toml`). Nur das Projekt-Zeichen ist eine eigene SVG-Marke. |
 | `TunnelGlyph.tsx` | Tunnel-Zeichen (öffnet den Tunnel-Manager). |
 | `TunnelStateIcon.tsx` | Tunnel-Zustand als Form. |
 <!-- AUTO:END -->
@@ -35,8 +35,8 @@ Projects-Baum und sein Kontextmenü. Der Baum selbst kommt als `TreeNode` vom Ba
 | Neuer Menüeintrag für den Kern | `contextMenu.ts` plus Zweig in `shell/hooks/useTreeActions.ts` |
 | Eintrag durch ein Plugin | `registerTreeContextItem` (`core/plugins/registry.ts`) |
 | Regeln je Objekttyp (kopieren, umbenennen, Verwendungen) | `COPY_BLOCKED_TYPES`, `USAGE_TYPES`, `RENAME_TYPES` in `contextMenu.ts` |
-| Icon eines Objekttyps | `objectIcon` in `treeIcons.tsx`, Farbe in `src/theme/tokens.css` |
+| Icon eines Objekttyps | `[icon.<typ>]` in `app/config/style.toml` (`name`, `color`); neuer Typ: `OBJECT_TYPE_ID` in `treeIcons.tsx` |
 | Namensregel | `nameRules.ts` und das Gegenstück in Rust |
 
 ## Tests
-- `ProjectTree.test.tsx`, `contextMenu.test.tsx`. `popupSpec.test.ts` braucht Spec-Dateien unter `E:\60_design` (fehlen laut Root-`CLAUDE.md`). `npx vitest run src/tree`.
+- `ProjectTree.test.tsx`, `contextMenu.test.tsx`. `npx vitest run tests/tree`.

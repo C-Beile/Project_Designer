@@ -17,9 +17,9 @@ import { useTunnelState } from '../services/tunnelState'
 import { osWindowsAvailable } from '../windows/windowService'
 import type { useEditorWindows } from '../windows/useEditorWindows'
 import type { AliasConfigDto, TreeNode, TreeNodeKind, UndoRedoOutcome, WireValue } from '../wire/types'
-import type { PanelContent } from './DockLayout'
+import type { PanelContent } from './dock/DockHost'
 import type { PanelId } from './layoutState'
-import { OutputBody, OutputTabs, type OutputMainTab, type OutputSubTab } from './OutputPanel'
+import { OutputBody, OutputTabs, outputView, type OutputTabId } from './OutputPanel'
 import { PropertiesBody } from './PropertiesBody'
 import { ProjectsPanelBody, ProjectsPanelHeader } from './ProjectsPanel'
 import { baseName, originLabel } from './shellHelpers'
@@ -29,6 +29,7 @@ import type { useOutputLogs } from './hooks/useOutputLogs'
 import type { useProblemScan } from './hooks/useProblemScan'
 import type { useRefactoring } from './hooks/useRefactoring'
 import type { useTreeActions } from './hooks/useTreeActions'
+import { Button } from '../core/ui/controls'
 
 type Refactoring = ReturnType<typeof useRefactoring>
 type TreeActions = ReturnType<typeof useTreeActions>
@@ -77,10 +78,10 @@ export interface ShellPanelsDeps {
   iconSvgs: ReadonlyMap<string, string>
   projectsTab: 'projects' | 'services'
   setProjectsTab: (tab: 'projects' | 'services') => void
-  outputTab: OutputMainTab
-  setOutputTab: (tab: OutputMainTab) => void
-  outputSub: OutputSubTab
-  setOutputSub: (sub: OutputSubTab) => void
+  outputTabs: OutputTabId[]
+  outputTab: OutputTabId
+  setOutputTab: (tab: OutputTabId) => void
+  closeOutputTab: (tab: OutputTabId) => void
   aliasSel: { config: AliasConfigDto; system: string } | null
   inspected: TreeNode | null
   inspectedKind: TreeNodeKind | null
@@ -102,7 +103,6 @@ export interface ShellPanelsDeps {
   handleTreeSelect: (node: TreeNode, top: TreeNode) => void
   handleOpen: (node: TreeNode, top?: TreeNode) => Promise<void>
   openProjectAt: (path: string) => void
-  closeProjects: (toClose: string[]) => void
   openSql: (sql: string) => void
   openProblem: (p: Problem) => void
   markUnsaved: (nodeId: string, dirty: boolean) => void
@@ -118,9 +118,9 @@ export interface ShellPanelsDeps {
 export function useShellPanels({
   api, root, projects, tree, objectsByType, tabState, setTabState, selected, selectedProject, value, setValue, sheetVersion, setSheetVersion, setCanUndo, setCanRedo, recent, recentList, unsaved, hasProject, totalErrors,
   problemList, problemCounts, scanning, logs, clearLog, db, changeDb, drafts, historyFlags, sqlTexts, sqlNonce, reveal, setReveal, projectIndex, editorWindows, bridge, systemBadge, gitFor, loadingProjects,
-  iconSvgs, projectsTab, setProjectsTab, outputTab, setOutputTab, outputSub, setOutputSub, aliasSel, inspected, inspectedKind, inspectedObject, elementSel, focusLabel, setNavSel, resetNavElement,
+  iconSvgs, projectsTab, setProjectsTab, outputTabs, outputTab, setOutputTab, closeOutputTab, aliasSel, inspected, inspectedKind, inspectedObject, elementSel, focusLabel, setNavSel, resetNavElement,
   activateNavElement, refactoring, setRefactoring, doRefactoring, setCtxMenu, runTreeAction, handleActivateTab, handleCloseTab, handleCloseOthers, handleCloseAll, handleTreeSelect, handleOpen,
-  openProjectAt, closeProjects, openSql, openProblem, markUnsaved, refreshDiagnostics, applyOutcome, registerFlush, setScanTick, setReloadToken, setStatus,
+  openProjectAt, openSql, openProblem, markUnsaved, refreshDiagnostics, applyOutcome, registerFlush, setScanTick, setReloadToken, setStatus,
 }: ShellPanelsDeps) {
   // The Services tab only exists while a system is connected; it is the place to see and close the connections.
   const tunnelStates = useTunnelState()
@@ -141,14 +141,14 @@ export function useShellPanels({
       <p>No project open yet.</p>
       <p className="forge-field-hint">Use File &gt; Open Project… or the Open Project button in the toolbar to choose a project folder.</p>
       {recent ? (
-        <button type="button" className="forge-link-btn" onClick={() => openProjectAt(recent)}>
+        <Button variant="bare" className="forge-link-btn" onClick={() => openProjectAt(recent)}>
           Recent: {recent}
-        </button>
+        </Button>
       ) : null}
     </div>
   ) : (
     <div className="forge-editor-pane">
-      <EditorTabBar tabs={tabState.tabs} activeId={tabState.activeId} dirtyIds={unsaved} onActivate={handleActivateTab} onClose={handleCloseTab} onCloseOthers={handleCloseOthers} onCloseAll={handleCloseAll} onMoveToWindow={osWindowsAvailable() ? (id, at) => { const tab = tabState.tabs.find((t) => t.id === id); if (tab) void editorWindows.moveToWindow(tab, at) } : undefined} problemCounts={problemCounts} badgeFor={(t) => (t.node.object_type === 'system' ? systemBadge(t.node) : null)} gitFor={(t) => (t.node.diff ? null : gitFor(t.node))} />
+      <EditorTabBar projects={projects} tabs={tabState.tabs} activeId={tabState.activeId} dirtyIds={unsaved} onActivate={handleActivateTab} onClose={handleCloseTab} onCloseOthers={handleCloseOthers} onCloseAll={handleCloseAll} onMoveToWindow={osWindowsAvailable() ? (id, at) => { const tab = tabState.tabs.find((t) => t.id === id); if (tab) void editorWindows.moveToWindow(tab, at) } : undefined} problemCounts={problemCounts} badgeFor={(t) => (t.node.object_type === 'system' ? systemBadge(t.node) : null)} gitFor={(t) => (t.node.diff ? null : gitFor(t.node))} />
       {currentTab ? (
         <ProjectIndexContext.Provider value={projectIndex}>
         <ObjectEditorArea
@@ -193,7 +193,9 @@ export function useShellPanels({
   )
 
   const userSel = useUserSelection()
-  const propertiesTitle = userSel ? `${userSel.title || userSel.user} - Properties` : aliasSel ? `${isConfigurationAlias(aliasSel.config.name) ? sectionLabel(configSection) : aliasSel.config.name} - Properties` : focusLabel ? `${focusLabel} - Properties` : 'Properties'
+  // Bei nur einem offenen Projekt braucht der Titel dessen Namen nicht.
+  const onlyProjectSelected = inspectedKind === 'project' && !elementSel && projects.length === 1
+  const propertiesTitle = userSel ? `Properties - ${userSel.title || userSel.user}` : aliasSel ? `Properties - ${isConfigurationAlias(aliasSel.config.name) ? sectionLabel(configSection) : aliasSel.config.name}` : focusLabel && !onlyProjectSelected ? `Properties - ${focusLabel}` : 'Properties'
   const configRef = currentTab && isAliasConfigNode(currentTab.node) ? parseAliasConfigRef(currentTab.node.path) : null
   const configTabOpen = !!configRef && !currentTab?.node.id.startsWith('dbbrowser:') && isConfigurationAlias(configRef.alias)
   const navigatorTitle = configTabOpen ? 'Navigator' : inspectedObject && focusLabel ? `${focusLabel} - Navigator` : 'Navigator'
@@ -227,7 +229,6 @@ export function useShellPanels({
           api={api}
           tab={projectsTab}
           tree={tree}
-          root={root}
           loading={loadingProjects.size > 0}
           problemCounts={problemCounts}
           badgeFor={systemBadge}
@@ -239,7 +240,6 @@ export function useShellPanels({
           onOpen={handleOpen}
           onContextMenu={(node, top, x, y) => setCtxMenu({ node, top, x, y })}
           onFileKey={(key, node, top) => runTreeAction(key === 'cut' ? 'file.cut' : key === 'copy' ? 'file.copy' : key === 'paste' ? 'file.paste' : 'file.delete', node, top)}
-          onCloseProject={() => closeProjects([root])}
           onOpenSql={openSql}
           setStatus={setStatus}
           recentProjects={recentList}
@@ -251,12 +251,14 @@ export function useShellPanels({
     },
     properties: {
       title: propertiesTitle,
-      header: <span className="forge-panel-title">{propertiesTitle}</span>,
+      header: null,
+      tabTitle: propertiesTitle,
       body: propertiesBody,
     },
     navigator: {
       title: navigatorTitle,
-      header: <span className="forge-panel-title">{navigatorTitle}</span>,
+      header: null,
+      tabTitle: navigatorTitle,
       body: configTabOpen ? (
         <ConfigNavigator />
       ) : (
@@ -278,12 +280,14 @@ export function useShellPanels({
     },
     output: {
       title: 'Output',
-      header: <OutputTabs active={outputTab} activeSub={outputSub} onSelect={setOutputTab} problemCount={totalErrors} />,
-      body: (
+      header: outputTabs.length > 0 ? <OutputTabs tabs={outputTabs} active={outputTab} onSelect={setOutputTab} onClose={closeOutputTab} problemCount={totalErrors} /> : null,
+      headerInTab: true,
+      body: outputTabs.length === 0 ? (
+        <div className="forge-panel-empty">No output windows open. Open one from the Window menu.</div>
+      ) : (
         <OutputBody
-          active={outputTab}
-          sub={outputSub}
-          onSelectSub={setOutputSub}
+          active={outputView(outputTab).main}
+          sub={outputView(outputTab).sub}
           logs={logs}
           problems={problemList}
           scanning={scanning}

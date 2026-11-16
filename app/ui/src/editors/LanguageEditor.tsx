@@ -9,6 +9,7 @@ import { useProjectIndex } from './projectIndex'
 import { addEntry, deleteEntry, parseLanguageEntries, setEntry } from './languageEntries'
 import { copyValuesPlan, removeKeysPlan } from './languageOps'
 import { errorText } from '../core/errorText'
+import { Button, Dropdown, Input } from '../core/ui/controls'
 
 // Language editor (original Designer, shot 103): table Module | Key | Value, sortable by column,
 // thousands of rows drawn through a window of rows. Key and value of every row can be edited
@@ -71,7 +72,7 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
   const [viewport, setViewport] = useState(420)
   const box = useRef<HTMLDivElement | null>(null)
   const busy = useRef(false)
-  const cancelled = useRef(false)
+  const editCancelled = useRef(false)
 
   const reload = useCallback(() => {
     api
@@ -234,7 +235,7 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
   }
 
   function commit(file: number, col: 'name' | 'value', text: string) {
-    cancelled.current = false
+    editCancelled.current = false
     setEditing(null)
     if (readOnly || !source) return
     void apply(setEntry(source.text, file, col === 'name' ? { name: text } : { value: text }))
@@ -318,24 +319,19 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
     <div className="language-editor language-grid" aria-label="Language entries">
       <div className="lang-toolbar" role="toolbar" aria-label="Language toolbar">
         {ORIGINAL_ICONS.map((ic, k) => (
-          <button key={k} type="button" aria-label={ic.label} title={ic.working ? ic.hint : `${ic.hint} (meaning in the original not documented)`} disabled={!ic.working} onClick={ic.label === 'Refresh' ? reload : undefined}>
+          <Button variant="bare" key={k} aria-label={ic.label} title={ic.working ? ic.hint : `${ic.hint} (meaning in the original not documented)`} isDisabled={!ic.working} onClick={ic.label === 'Refresh' ? reload : undefined}>
             {ic.glyph}
-          </button>
+          </Button>
         ))}
         <span className="lang-sep" aria-hidden="true" />
-        <button type="button" title="Add row (Insert)" aria-label="Add row" disabled={readOnly} onClick={() => void addRow()}>
+        <Button variant="bare" title="Add row (Insert)" aria-label="Add row" isDisabled={readOnly} onClick={() => void addRow()}>
           +
-        </button>
-        <button type="button" title="Remove rows (Delete)" aria-label="Remove rows" disabled={readOnly || marked.size === 0} onClick={() => void removeRows()}>
+        </Button>
+        <Button variant="bare" title="Remove rows (Delete)" aria-label="Remove rows" isDisabled={readOnly || marked.size === 0} onClick={() => void removeRows()}>
           {'\u2212'}
-        </button>
-        <input type="search" aria-label="Search entries" placeholder="Search" value={needle} onChange={(e) => setNeedle(e.target.value)} />
-        <select aria-label="Search in" value={scope} onChange={(e) => setScope(e.target.value as 'all' | Column)}>
-          <option value="all">All</option>
-          <option value="module">Module</option>
-          <option value="name">Key</option>
-          <option value="value">Value</option>
-        </select>
+        </Button>
+        <Input type="search" aria-label="Search entries" placeholder="Search" value={needle} onChange={(e) => setNeedle(e.target.value)} />
+        <Dropdown value={scope} aria-label="Search in" options={[{ id: "all", label: "All" }, { id: "module", label: "Module" }, { id: "name", label: "Key" }, { id: "value", label: "Value" }]} onChange={(v) => setScope(v as 'all' | Column)} />
         <span className="lang-count" role="status">
           {shown.length === rows.length ? `${rows.length} entries` : `${shown.length} of ${rows.length} entries`}
           {duplicateKeys > 0 ? `, ${duplicateKeys} duplicate key${duplicateKeys === 1 ? '' : 's'}` : ''}
@@ -360,10 +356,10 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
       ) : null}
       <div className="lang-head" role="row">
         {(['module', 'name', 'value'] as Column[]).map((c) => (
-          <button key={c} type="button" role="columnheader" aria-sort={sort?.col === c ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'} className={`lang-col lang-col-${c}`} onClick={() => headerSort(c)}>
+          <Button variant="bare" key={c} role="columnheader" aria-sort={sort?.col === c ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'} className={`lang-col lang-col-${c}`} onClick={() => headerSort(c)}>
             {c === 'module' ? 'Module' : c === 'name' ? 'Key' : 'Value'}
             {arrow(c)}
-          </button>
+          </Button>
         ))}
       </div>
       {source === null && !error ? (
@@ -415,7 +411,7 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
                 {(['name', 'value'] as const).map((col) => (
                   <div key={col} role="gridcell" className={`lang-col lang-col-${col}`} onDoubleClick={() => !readOnly && setEditing({ file: r.file, col })}>
                     {editing && editing.file === r.file && editing.col === col ? (
-                      <input
+                      <Input
                         autoFocus
                         aria-label={col === 'name' ? 'Edit key' : 'Edit value'}
                         defaultValue={editing.seed ?? r[col]}
@@ -424,7 +420,7 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
                           e.stopPropagation()
                           if (e.key === 'Enter') commit(r.file, col, e.currentTarget.value)
                           else if (e.key === 'Escape') {
-                            cancelled.current = true
+                            editCancelled.current = true
                             setEditing(null)
                           }
                           else if (e.key === 'Tab') {
@@ -435,7 +431,7 @@ export function LanguageEditor({ nodeId, tree, api, onTreeChange }: EditorProps)
                           }
                         }}
                         onBlur={(e) => {
-                          if (cancelled.current) cancelled.current = false
+                          if (editCancelled.current) editCancelled.current = false
                           else if (editing) commit(r.file, col, e.currentTarget.value)
                         }}
                       />

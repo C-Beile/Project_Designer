@@ -1,0 +1,98 @@
+/* Dockview an unsere Tokens hängen. Nur Variablen, keine festen Farben. */
+.forge-dock {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--bg);
+  /* eigener Stapelkontext: Trennlinien und Panels von dockview liegen nie über Menüs */
+  isolation: isolate;
+}
+
+/* dockview setzt die Höhe des Panel-Inhalts nicht für Flex-Kinder: Panel füllt die Gruppe ganz. */
+.dv-react-part > .forge-panel,
+.dv-react-part > .forge-editor-area {
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.forge-dockview {
+  flex: 1 1 auto;
+  min-width: 0;
+  --dv-group-view-background-color: var(--bg-panel);
+  --dv-tabs-and-actions-container-background-color: var(--bg-panel);
+  --dv-tabs-and-actions-container-height: var(--tab-h);
+  --dv-tabs-and-actions-container-font-size: inherit;
+  --dv-activegroup-visiblepanel-tab-background-color: var(--bg-panel);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--bg-panel);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--bg-panel);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--bg-panel);
+  --dv-activegroup-visiblepanel-tab-color: var(--fg);
+  --dv-activegroup-hiddenpanel-tab-color: var(--fg-muted);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--fg);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--fg-muted);
+  --dv-tab-divider-color: transparent;
+  --dv-separator-border: var(--border-panel);
+  --dv-paneview-active-outline-color: var(--focus-ring);
+  --dv-sash-color: var(--border-panel);
+  --dv-active-sash-color: var(--handle-hover);
+  --dv-drag-over-background-color: color-mix(in srgb, var(--accent) 14%, transparent);
+  --dv-drag-over-border-color: var(--accent);
+  --dv-drag-over-border: 2px solid var(--accent);
+  --dv-icon-hover-background-color: var(--bg-elevated);
+}
+
+.forge-dock-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  padding: 0 4px 0 8px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.forge-dock-tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Dock-Reiter, der die Reiter eines Panels selbst enthält (Output): kein eigener Akzent, keine Innenabstände. */
+.forge-dock-tab-multi {
+  flex: 1 1 auto;
+  padding: 0;
+  gap: 0;
+}
+
+.forge-dockview .dv-tab.dv-active-tab:has(.forge-dock-tab-multi),
+.forge-dockview .dv-tab:has(.forge-dock-tab-multi) {
+  flex: 1 1 auto;
+  box-shadow: none;
+}
+
+/* Vorschau beim Ziehen: gestrichelter Platzhalter, kein echter Reiter. */
+.forge-dock-tab-ghost {
+  height: calc(100% - 8px);
+  margin: 4px 6px;
+  padding: 0 10px;
+  color: var(--accent);
+  font-style: italic;
+  font-weight: 400;
+  background: transparent;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-tab);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Aktiver Reiter eines Panels: Akzent-Unterkante wie bei den Output-Reitern. */
+.forge-dockview .dv-tab.dv-active-tab {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* Dock-Trennlinien: beim Darüberfahren grau, beim Ziehen Akzent (wie alle Griffe). */
+.forge-dockview .dv-split-view-container > .dv-sash-container > .dv-sash:active {
+  background-color: var(--handle-active);
+}

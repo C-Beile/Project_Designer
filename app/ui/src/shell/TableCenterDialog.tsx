@@ -3,6 +3,7 @@ import type { ForgeApi } from '../api/ForgeApi'
 import type { DbStatus, SqlResult } from '../wire/types'
 import { Modal } from '../core/Modal'
 import { errorText } from '../core/errorText'
+import { Button } from '../core/ui/controls'
 
 // System Table Control Center (manual 13.2, screenshot 192), read-only: the ASYS_ tables of the
 // connected system database with the version information of ASYS_VERSIONHISTORY. Creating,
@@ -101,9 +102,9 @@ export function TableCenterDialog({ api, db, onClose }: { api: ForgeApi; db: DbS
       title="System Table Control Center"
       onClose={onClose}
       footer={
-        <button type="button" onClick={onClose}>
+        <Button variant="bare" onClick={onClose}>
           Close
-        </button>
+        </Button>
       }
     >
       <div className="forge-tablecenter">
@@ -112,18 +113,18 @@ export function TableCenterDialog({ api, db, onClose }: { api: ForgeApi; db: DbS
         ) : (
           <>
             <div className="forge-tablecenter-bar" role="toolbar" aria-label="System table actions">
-              <button type="button" disabled title={`Create optional tables - ${NOT_AVAILABLE}`} aria-label="Create optional tables">
+              <Button variant="bare" isDisabled title={`Create optional tables - ${NOT_AVAILABLE}`} aria-label="Create optional tables">
                 +
-              </button>
-              <button type="button" disabled title="Delete the selected tables - not offered: dropping system tables cannot be undone" aria-label="Delete tables">
+              </Button>
+              <Button variant="bare" isDisabled title="Delete the selected tables - not offered: dropping system tables cannot be undone" aria-label="Delete tables">
                 -
-              </button>
-              <button type="button" disabled title={`Resolve problems - ${NOT_AVAILABLE}`} aria-label="Resolve problems">
+              </Button>
+              <Button variant="bare" isDisabled title={`Resolve problems - ${NOT_AVAILABLE}`} aria-label="Resolve problems">
                 ✧
-              </button>
-              <button type="button" onClick={() => setTick((t) => t + 1)} title="Refresh" aria-label="Refresh">
+              </Button>
+              <Button variant="bare" onClick={() => setTick((t) => t + 1)} title="Refresh" aria-label="Refresh">
                 ↻
-              </button>
+              </Button>
             </div>
             {error ? (
               <p className="forge-field-error" role="alert">

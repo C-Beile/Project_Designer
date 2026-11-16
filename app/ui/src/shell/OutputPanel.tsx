@@ -6,6 +6,8 @@ import { RefactoringPanel, type RefactoringState } from './RefactoringPanel'
 import type { UsageDto } from '../wire/types'
 import { ScanServicesPanel } from '../diagnostics/ScanServicesPanel'
 import type { Problem } from '../problems/problemStore'
+import { Button, Dropdown, Input } from '../core/ui/controls'
+import { copyText } from '../core/clipboard'
 
 // Bottom tool window (manual chapter 7, screenshot 082). Like the original, a vertical button bar
 // sits left of the console (start, stop, exit, clear cache) - these four act on a server instance,
@@ -25,6 +27,30 @@ export const OUTPUT_MAIN_TABS: { id: OutputMainTab; label: string }[] = [
   { id: 'problems', label: 'Problems' },
 ]
 
+/** Ein Fenster des Output-Panels. Jedes ist ein eigener, schließbarer Reiter (Window-Menü blendet sie wieder ein). */
+export type OutputTabId = 'database' | 'build' | 'default' | 'nodejs' | 'idelog' | 'scanservices' | 'search' | 'notifications' | 'refactoring' | 'problems'
+
+export const OUTPUT_TABS: { id: OutputTabId; label: string }[] = [
+  { id: 'build', label: 'Build' },
+  { id: 'database', label: 'Database' },
+  { id: 'default', label: 'Default' },
+  { id: 'nodejs', label: 'NodeJS' },
+  { id: 'idelog', label: 'IDE Log' },
+  { id: 'scanservices', label: 'Scan Services' },
+  { id: 'search', label: 'Search Results' },
+  { id: 'notifications', label: 'Notifications' },
+  { id: 'refactoring', label: 'Refactoring' },
+  { id: 'problems', label: 'Problems' },
+]
+
+export const isOutputTab = (id: string): id is OutputTabId => OUTPUT_TABS.some((t) => t.id === id)
+
+/** Welche Ansicht (Hauptfenster und Log-Quelle) zu einem Reiter gehört. */
+export function outputView(id: OutputTabId): { main: OutputMainTab; sub: OutputSubTab } {
+  if (id === 'database' || id === 'build' || id === 'default' || id === 'nodejs') return { main: 'output', sub: id }
+  return { main: id, sub: 'build' }
+}
+
 export const OUTPUT_SUB_TABS: { id: OutputSubTab; label: string }[] = [
   { id: 'database', label: 'Database' },
   { id: 'build', label: 'Build' },
@@ -42,46 +68,56 @@ export interface OutputLine {
 }
 
 export function OutputTabs({
+  tabs,
   active,
-  activeSub,
   onSelect,
+  onClose,
   problemCount,
 }: {
-  active: OutputMainTab
-  activeSub: OutputSubTab
-  onSelect: (tab: OutputMainTab) => void
+  tabs: OutputTabId[]
+  active: OutputTabId
+  onSelect: (tab: OutputTabId) => void
+  onClose: (tab: OutputTabId) => void
   problemCount: number
 }) {
   return (
     <div className="forge-panel-tabs" role="tablist" aria-label="Output windows">
-      {OUTPUT_MAIN_TABS.map((t) => (
-        <button
-          key={t.id}
-          type="button"
-          role="tab"
-          aria-selected={active === t.id}
-          className={`forge-panel-tab${active === t.id ? ' is-active' : ''}`}
-          onClick={() => onSelect(t.id)}
-        >
-          {t.id === 'output' && active === 'output' ? `Output - ${OUTPUT_SUB_TABS.find((x) => x.id === activeSub)!.label}` : t.label}
-          {t.id === 'problems' && problemCount > 0 ? (
-            <span className="forge-badge" aria-label={`${problemCount} errors`}>
-              {problemCount}
-            </span>
-          ) : null}
-        </button>
-      ))}
+      {tabs.map((id) => {
+        const label = OUTPUT_TABS.find((t) => t.id === id)!.label
+        return (
+          <div
+            key={id}
+            className={`forge-panel-tab forge-panel-tab-closable${active === id ? ' is-active' : ''}`}
+            onMouseDown={(e) => {
+              if (e.button === 1) e.preventDefault()
+            }}
+            onAuxClick={(e) => {
+              if (e.button === 1) onClose(id)
+            }}
+          >
+            <Button variant="bare" role="tab" aria-selected={active === id} className="forge-panel-tab-label" onClick={() => onSelect(id)}>
+              {label}
+              {id === 'problems' && problemCount > 0 ? (
+                <span className="forge-badge" aria-label={`${problemCount} errors`}>
+                  {problemCount}
+                </span>
+              ) : null}
+            </Button>
+            <Button variant="bare" className="forge-panel-btn" aria-label={`Close ${label}`} title={`Close ${label}`} onClick={() => onClose(id)}>
+              {'×'}
+            </Button>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
-const NOT_AVAILABLE_SERVER = 'Needs a running server instance - Dito Designer cannot start one yet'
-
 function SideButton({ label, title, disabled, pressed, onClick, children }: { label: string; title: string; disabled?: boolean; pressed?: boolean; onClick?: () => void; children: string }) {
   return (
-    <button type="button" className="forge-output-btn" aria-label={label} title={title} aria-pressed={pressed} disabled={disabled} onClick={onClick}>
+    <Button variant="bare" className="forge-output-btn" aria-label={label} title={title} aria-pressed={pressed} isDisabled={disabled} onClick={onClick}>
       {children}
-    </button>
+    </Button>
   )
 }
 
@@ -102,7 +138,8 @@ export function OutputBody({
 }: {
   active: OutputMainTab
   sub: OutputSubTab
-  onSelectSub: (tab: OutputSubTab) => void
+  /** Nur das schwebende Output-Fenster hat eine eigene Auswahl der Quelle; im Dock ist jede Quelle ein Reiter. */
+  onSelectSub?: (tab: OutputSubTab) => void
   logs: Record<OutputSubTab, OutputLine[]>
   problems: Problem[]
   scanning: boolean
@@ -170,58 +207,31 @@ export function OutputBody({
   }
 
   async function copyAll() {
-    try {
-      await navigator.clipboard.writeText(shown.map((l) => l.text).join('\n'))
+    if (await copyText(shown.map((l) => l.text).join('\n'))) {
       setNotice('Copied to the clipboard.')
-    } catch {
+    } else {
       setNotice('The clipboard is not available.')
     }
   }
 
   return (
     <div className="forge-output">
-      <div className="forge-output-subtabs" role="tablist" aria-label="Output sources">
-        {(ideLog ? [] : OUTPUT_SUB_TABS).map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={sub === t.id}
-            className={`forge-output-subtab${sub === t.id ? ' is-active' : ''}`}
-            onClick={() => onSelectSub(t.id)}
-          >
-            {t.label}
-            {(logs[t.id] ?? []).length > 0 ? <span className="forge-output-count">{logs[t.id].length}</span> : null}
-          </button>
-        ))}
+      <div className="forge-output-subtabs">
+        {ideLog || !onSelectSub ? null : (
+          <Dropdown
+            value={sub}
+            aria-label="Output source"
+            options={OUTPUT_SUB_TABS.map((t) => ({ id: t.id, label: (logs[t.id] ?? []).length > 0 ? `${t.label} (${logs[t.id].length})` : t.label }))}
+            onChange={(v) => onSelectSub(v as OutputSubTab)}
+          />
+        )}
         <span className="forge-output-filter">
-          <select aria-label="Show lines" value={level} onChange={(e) => setLevel(e.target.value as 'all' | 'warn' | 'error')}>
-            <option value="all">All</option>
-            <option value="warn">Warnings and errors</option>
-            <option value="error">Errors only</option>
-          </select>
-          <input type="text" aria-label="Filter output" placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+          <Dropdown value={level} aria-label="Show lines" options={[{ id: "all", label: "All" }, { id: "warn", label: "Warnings and errors" }, { id: "error", label: "Errors only" }]} onChange={(v) => setLevel(v as 'all' | 'warn' | 'error')} />
+          <Input type="text" aria-label="Filter output" placeholder="Filter…" value={filter} onChange={(e) => setFilter(e.target.value)} />
         </span>
       </div>
       <div className="forge-output-main">
         <div className="forge-output-bar" role="toolbar" aria-label="Output actions" aria-orientation="vertical">
-          {ideLog ? null : (
-            <>
-              <SideButton label="Start" title={`start - ${NOT_AVAILABLE_SERVER}`} disabled>
-                ▶
-              </SideButton>
-              <SideButton label="Stop" title={`stop - ${NOT_AVAILABLE_SERVER}`} disabled>
-                ■
-              </SideButton>
-              <SideButton label="Exit" title={`exit - ${NOT_AVAILABLE_SERVER}`} disabled>
-                ✖
-              </SideButton>
-              <SideButton label="Clear cache" title={`clear cache - ${NOT_AVAILABLE_SERVER}`} disabled>
-                🗑
-              </SideButton>
-              <span className="forge-output-bar-sep" aria-hidden="true" />
-            </>
-          )}
           <SideButton label="Clear log" title="Clear this log" onClick={() => onClear(logSub)}>
             ⌫
           </SideButton>
@@ -277,7 +287,7 @@ export function OutputBody({
           x={logMenu.x}
           y={logMenu.y}
           onPick={(id) => {
-            if (id === 'copy') void navigator.clipboard?.writeText(logMenu.selection)
+            if (id === 'copy') void copyText(logMenu.selection)
             else if (id === 'copyAll') void copyAll()
             else if (id === 'wrap') setWrap((v) => !v)
             else if (id === 'clear') onClear(logSub)

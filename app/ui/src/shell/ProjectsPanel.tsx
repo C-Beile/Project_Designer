@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { ComponentProps } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { ServicesPanel } from '../services/ServicesPanel'
 import { ProjectTree } from '../tree/ProjectTree'
-import { ProjectIcon } from '../tree/treeIcons'
 import { tunnelTabNode } from '../tabs/tabModel'
 import { errorText } from '../core/errorText'
 import { textField } from '../wire/types'
@@ -13,24 +12,29 @@ import { baseName, samePath } from './shellHelpers'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { chooseWorkspaceFolder, getWorkspaceFolders } from '../settings/workspaceFolder'
 import { requestShell } from '../core/outputBus'
+import { Button } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 export type ProjectsTab = 'projects' | 'services'
 
 // Kopf des Projects-Panels: Reiter Projects / Services (schwebende Reiter fehlen).
 export function ProjectsPanelHeader({ tab, floating, onTab, servicesVisible = true }: { tab: ProjectsTab; floating: FloatView[]; onTab: (t: ProjectsTab) => void; servicesVisible?: boolean }) {
+  const tabs = (['projects', 'services'] as const).filter((t) => !floating.includes(t as FloatView) && (t === 'projects' || servicesVisible || tab === 'services'))
+  // Ein einzelner Reiter wiederholt nur den Titel des Dock-Reiters darüber: dann kein Kopf.
+  if (tabs.length < 2) return null
   return (
     <div className="forge-panel-tabs" role="tablist" aria-label="Project windows">
-      {(['projects', 'services'] as const).filter((t) => !floating.includes(t as FloatView) && (t === 'projects' || servicesVisible || tab === 'services')).map((t) => (
-        <button
+      {tabs.map((t) => (
+        <Button variant="bare"
           key={t}
-          type="button"
+
           role="tab"
           aria-selected={tab === t}
           className={`forge-panel-tab${tab === t ? ' is-active' : ''}`}
           onClick={() => onTab(t)}
         >
           {t === 'projects' ? 'Projects' : 'Services'}
-        </button>
+        </Button>
       ))}
     </div>
   )
@@ -40,7 +44,6 @@ export interface ProjectsPanelBodyProps {
   api: ForgeApi
   tab: ProjectsTab
   tree: TreeNode[]
-  root: string
   loading: boolean
   problemCounts: ComponentProps<typeof ProjectTree>['problemCounts']
   badgeFor: ComponentProps<typeof ProjectTree>['badgeFor']
@@ -52,7 +55,6 @@ export interface ProjectsPanelBodyProps {
   onOpen: (node: TreeNode, top?: TreeNode) => Promise<void>
   onContextMenu: ComponentProps<typeof ProjectTree>['onContextMenu']
   onFileKey: ComponentProps<typeof ProjectTree>['onFileKey']
-  onCloseProject: () => void
   onOpenSql: (sql: string) => void
   setStatus: (text: string) => void
   /** Recently opened projects for the context menu of the empty panel area. */
@@ -63,22 +65,18 @@ export interface ProjectsPanelBodyProps {
 }
 
 // Inhalt des Projects-Panels: Projektbaum mit Leiste des aktiven Projekts, oder die Services.
-export function ProjectsPanelBody({ api, tab, tree, root, loading, problemCounts, badgeFor, gitFor, iconSvg, db, onDbChange, onSelect, onOpen, onContextMenu, onFileKey, onCloseProject, onOpenSql, setStatus, recentProjects, openProjects, onOpenProjects, onOpenRecent }: ProjectsPanelBodyProps) {
+export function ProjectsPanelBody({ api, tab, tree, loading, problemCounts, badgeFor, gitFor, iconSvg, db, onDbChange, onSelect, onOpen, onContextMenu, onFileKey, onOpenSql, setStatus, recentProjects, openProjects, onOpenProjects, onOpenRecent }: ProjectsPanelBodyProps) {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const [inside, setInside] = useState<Record<string, FoundProjectDto[]>>({})
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     if (!menu) return
-    let cancelled = false
     for (const folder of [...recentProjects, ...getWorkspaceFolders()]) {
       api
         .findProjectsInFolder(folder)
         .then((list) => {
-          if (!cancelled && list.length > 0) setInside((prev) => ({ ...prev, [folder]: list }))
+          if (!signal.aborted && list.length > 0) setInside((prev) => ({ ...prev, [folder]: list }))
         })
         .catch(() => undefined)
-    }
-    return () => {
-      cancelled = true
     }
   }, [api, menu, recentProjects])
   if (tab !== 'projects') return <ServicesPanel api={api} db={db} onDbChange={onDbChange} onOpenSql={onOpenSql} projects={openProjects} />
@@ -113,7 +111,7 @@ export function ProjectsPanelBody({ api, tab, tree, root, loading, problemCounts
     <div
       className="projects-panel"
       onContextMenu={(e) => {
-        // A row of the tree has its own menu; this one belongs to the empty area and the active project bar.
+        // A row of the tree has its own menu; this one belongs to the empty area.
         if (e.defaultPrevented) return
         e.preventDefault()
         setMenu({ x: e.clientX, y: e.clientY })
@@ -142,17 +140,6 @@ export function ProjectsPanelBody({ api, tab, tree, root, loading, problemCounts
         gitFor={gitFor}
         onFileKey={onFileKey}
       />
-      {root ? (
-        <div className="projects-active-bar" aria-label="Active project">
-          <ProjectIcon />
-          <span className="projects-active-name" title={root}>
-            {baseName(root)}
-          </span>
-          <button type="button" aria-label={`Close project ${baseName(root)}`} title="Close Project" onClick={onCloseProject}>
-            ×
-          </button>
-        </div>
-      ) : null}
       {menu ? (
         <TreeContextMenu
           entries={[

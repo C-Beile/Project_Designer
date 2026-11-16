@@ -8,7 +8,7 @@
   height: 22px;
   align-items: stretch;
   background: var(--bg-titlebar);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-panel);
   user-select: none;
   position: relative;
   z-index: 30;
@@ -42,7 +42,7 @@
   list-style: none;
   background: var(--bg-elevated);
   color: var(--fg);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border-input);
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.35);
   z-index: 40;
 }

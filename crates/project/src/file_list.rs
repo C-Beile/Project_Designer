@@ -82,7 +82,7 @@ pub fn read_theme_file(path: &Path) -> Result<String, String> {
 }
 
 /// One text file of a theme package: its path inside the package (forward slashes) and its text.
-#[derive(Debug, Clone, serde::Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, serde::Serialize, PartialEq, Eq, specta::Type)]
 pub struct ThemePackFile {
     pub name: String,
     pub text: String,

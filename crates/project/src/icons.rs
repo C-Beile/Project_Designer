@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 
 const BUNDLED_ICONS: &str = include_str!("../assets/icons.json");
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, specta::Type)]
 pub struct IconDto {
     pub id: String,
     pub svg: String,

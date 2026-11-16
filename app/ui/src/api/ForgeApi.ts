@@ -1,4 +1,5 @@
-import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, IndexStatus, VerifyOutcome, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, RestServerDto, WebserviceDto, RestUserDto, RestRequestDto, RestResponseDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, RepoLink, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
+import type { UserTheme } from './bindings'
+import type { CompareReport, ActivateOutcome, FileInfoDto, CommitFile, DiffContent, Gutter, ScmDiffSide, ScmOverview, GitCommit, NewObjectKind, RenamePlan, ModelEntry, ImportOutcome, JditoTypes, ForwardStatusDto, SshKeyInfoDto, LoopbackStatusDto, UsageDto, LocalDataInfo, UpdateInfo, LiquibaseTarget, ProblemDto, IndexStatus, VerifyOutcome, AliasConfigDto, AliasConfigTable, DeployChangeView, DeployMapping, DeployOverview, DeployOutcome, DeployPlan, TableDump, UserPropertyDto, TunnelRowDto, FoundProjectDto, RestServerDto, WebserviceDto, RestUserDto, RestRequestDto, RestResponseDto, DbStatus, SystemDbStatus, DiagnosticDto, FileHistory, ForgeSettings, GitOutput, GitOverview, RepoLink, SchemaTable, SqlResult, ModificationOutcome, ResetOutcome, NavNode, ObjectSource, PropertySheet, TreeNode, UndoRedoOutcome, WireValue } from '../wire/types'
 
 // The frontend's one seam onto the generic Tauri command surface (architecture.md §6: "Commands
 // sind generisch ... nicht pro Editor-Typ dupliziert"). Every editor component talks to this
@@ -39,6 +40,11 @@ export interface ForgeApi {
   /** Debug: writes the whole index as JSON into the log folder and returns the file path. */
   indexDump(projectRoot: string): Promise<string>
   openLogFolder(): Promise<string>
+  /** Theme files of the user (`*.theme.toml` in the app data folder). */
+  userThemes(): Promise<UserTheme[]>
+  saveUserTheme(file: string, text: string): Promise<void>
+  deleteUserTheme(file: string): Promise<void>
+  openUserThemesFolder(): Promise<string>
   openBackupFolder(): Promise<string>
   /** Writes a frontend error to the log file; resolves to the log file path. */
   logClientError(message: string): Promise<string | null>
@@ -165,6 +171,18 @@ export interface ForgeApi {
   tunnelDisconnect(targetHost: string, targetPort: number): Promise<void>
   tunnelDisconnectAll(): Promise<void>
   tunnelList(): Promise<ForwardStatusDto[]>
+  /** Prüft eine Schlüsseldatei: vorhanden, lesbar, braucht sie eine Passphrase? */
+  sshKeyInspect(path: string): Promise<SshKeyInfoDto>
+  /** Prüft die Passphrase (die mitgegebene, sonst die gemerkte). Wirft den Text für die Oberfläche. */
+  sshKeyUnlock(path: string, passphrase?: string | null): Promise<void>
+  /** Prüft die Passphrase und merkt sie im System-Schlüsselbund. */
+  sshKeySavePassphrase(path: string, passphrase: string): Promise<void>
+  sshKeyForgetPassphrase(path: string): Promise<void>
+  sshKeyHasPassphrase(path: string): Promise<boolean>
+  /** Gibt es die Zusatzadressen 127.0.200.x für Tunnel? */
+  loopbackStatus(): Promise<LoopbackStatusDto>
+  /** macOS: legt die Adressen dauerhaft an (fragt einmal nach dem Admin-Passwort). */
+  loopbackSetup(): Promise<LoopbackStatusDto>
   // Without a system name these act on the active session; with one, only on that system's session.
   // Ends the running official transpiler (the caller has asked first); false when none runs.
   cancelBuild(): Promise<boolean>

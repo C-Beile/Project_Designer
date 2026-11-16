@@ -10,6 +10,8 @@ import { AliasIcon } from './aliasIcons'
 import { useProjectIndex } from './projectIndex'
 import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { errorText } from '../core/errorText'
+import { Button } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // System editor (original Designer, shots 43 and 87): every alias config of the system as a
 // two-column list Icon | Config (name, type line, JDBC URL right-aligned for database aliases). The
@@ -99,8 +101,7 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
     }
   }
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     setConfigs(null)
     setError(null)
     setOutdated(false)
@@ -114,17 +115,14 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
       } catch (e) {
         if (!reference) throw e
         list = await api.readAliasConfigs(projectRoot, reference)
-        if (!cancelled) setError(`The alias configs could not be read from the system database (${errorText(e)}); showing the server config file instead.`)
+        if (!signal.aborted) setError(`The alias configs could not be read from the system database (${errorText(e)}); showing the server config file instead.`)
       }
-      if (!cancelled) setConfigs(list)
+      if (!signal.aborted) setConfigs(list)
       const plan = await api.deployPlan(projectRoot, false, null).catch(() => null)
-      if (!cancelled && plan) setOutdated(plan.outdated)
+      if (!signal.aborted && plan) setOutdated(plan.outdated)
     })().catch((e) => {
-      if (!cancelled) setError(errorText(e))
+      if (!signal.aborted) setError(errorText(e))
     })
-    return () => {
-      cancelled = true
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, projectRoot, reference, name, nodeId, db.connected, tunnel.reload])
 
@@ -178,17 +176,17 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
             <p>Connection to database unavailable.</p>
           )}
           <div className="system-db-buttons">
-            <button type="button" disabled={reconnecting || !!progress || !tunnelRef || !reference} title={!tunnelRef || !reference ? UNCONFIGURED_HINT : undefined} onClick={() => void testTunnel()}>
+            <Button variant="bare" isDisabled={reconnecting || !!progress || !tunnelRef || !reference} title={!tunnelRef || !reference ? UNCONFIGURED_HINT : undefined} onClick={() => void testTunnel()}>
               {reconnecting || progress ? 'Testing...' : 'Test tunnel'}
-            </button>
+            </Button>
             {progress ? (
-              <button type="button" onClick={() => void api.dbCancelConnect()}>
+              <Button variant="bare" onClick={() => void api.dbCancelConnect()}>
                 Cancel
-              </button>
+              </Button>
             ) : null}
-            <button type="button" onClick={() => setShowDetails((v) => !v)}>
+            <Button variant="bare" onClick={() => setShowDetails((v) => !v)}>
               Details...
-            </button>
+            </Button>
           </div>
           {showDetails ? (
             <pre className="forge-error-detail" aria-label="Connection details">
@@ -210,9 +208,9 @@ export function SystemEditor({ nodeId, projectRoot, tree, api }: EditorProps) {
             <div className="alias-head" role="row">
               <span role="columnheader">Icon</span>
               <span role="columnheader">Config</span>
-              <button type="button" className="alias-refresh" title="Reads ASYS_ALIASCONFIG again" aria-label="Refresh alias configs" onClick={() => requestSystemReload()}>
+              <Button variant="bare" className="alias-refresh" title="Reads ASYS_ALIASCONFIG again" aria-label="Refresh alias configs" onClick={() => requestSystemReload()}>
                 {'↻'}
-              </button>
+              </Button>
             </div>
             <div className="alias-body">
               {configs.map((c) => (

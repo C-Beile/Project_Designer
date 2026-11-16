@@ -27,6 +27,9 @@ jobs:
       - name: Rust compiles with the fewest plugins
         run: cargo check -p designer-app --no-default-features --features git
 
+      - name: Source encoding (valid UTF-8, no broken umlauts)
+        run: node scripts/check-encoding.mjs
+
       - name: UI install
         working-directory: app/ui
         run: npm install
@@ -34,6 +37,9 @@ jobs:
       - name: UI types
         working-directory: app/ui
         run: npx tsc -p tsconfig.app.json --noEmit
+
+      - name: UI lint (not worse than the baseline)
+        run: node scripts/lint-baseline.mjs
 
       # Tests: 10 Rust and 3 UI tests need a real ADITO installation or files outside the repo
       # (see CLAUDE.md, "Stand der Tests"). Until these are fixed, the test steps report but do not block.

@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useResource } from '../../core/hooks/useResource'
+import { useEffect, useMemo, useRef } from 'react'
 import { notify } from '../../core/notifications'
 import { registerCommand, setPluginData, type ShellExtensionContext } from '../../core/plugins/registry'
 import { refreshScm, useScm } from '../../core/scm'
@@ -17,24 +18,11 @@ import { useGit } from './useGit'
 export function GitShellBridge({ api, root, hasProject, reloadToken, setReloadToken, dialog, setDialog, handleOpen, isPluginActive }: ShellExtensionContext) {
   const gitActive = isPluginActive('git')
   const scm = useScm()
-  const [branch, setBranch] = useState<string | null>(null)
+  const currentBranch = useResource(async () => (root.trim() ? api.getCurrentBranch(root).catch(() => null) : null), [api, root, reloadToken])
+  const branch = currentBranch.data ?? null
   const { gitView, syncMode, pulling, pullResult, setPullResult, notifySync, openGit, quickBranch, openDiff, commands } = useGit({ api, root, branch, dialog, setDialog, setReloadToken, handleOpen })
 
   // Aktueller Branch des Projekts.
-  useEffect(() => {
-    setBranch(null)
-    if (!root.trim()) return
-    let cancelled = false
-    api
-      .getCurrentBranch(root)
-      .then((b) => {
-        if (!cancelled) setBranch(b)
-      })
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [api, root, reloadToken])
 
   // Git status of the active project: after opening, after reloads, after saves and when the window gets focus.
   useEffect(() => {

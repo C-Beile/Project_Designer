@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useResource } from '../../core/hooks/useResource'
+import { useMemo, useState } from 'react'
 import type { ForgeApi } from '../../api/ForgeApi'
 import { Modal } from '../../core/Modal'
-import { errorText } from '../../core/errorText'
-import type { CommitFile, GitCommit } from '../../wire/types'
+import type { GitCommit } from '../../wire/types'
+import { Button } from '../../core/ui/controls'
 
 // What a pull brought in: the new commits (who, when, what) and, per commit, the files that changed. Shown on
 // request from the notification of a finished pull, so the pull itself never interrupts the work.
@@ -44,22 +45,12 @@ function authorColor(name: string): string {
 
 function CommitCard({ api, root, commit }: { api: ForgeApi; root: string; commit: GitCommit }) {
   const [open, setOpen] = useState(false)
-  const [files, setFiles] = useState<CommitFile[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  useEffect(() => {
-    if (!open || files !== null) return
-    let cancelled = false
-    api
-      .scmCommitFiles(root, commit.hash)
-      .then((f) => !cancelled && setFiles(f))
-      .catch((e) => !cancelled && setError(errorText(e)))
-    return () => {
-      cancelled = true
-    }
-  }, [api, root, commit.hash, open, files])
+  const loaded = useResource(async () => (open ? api.scmCommitFiles(root, commit.hash) : null), [api, root, commit.hash, open])
+  const files = loaded.data ?? null
+  const error = loaded.error ?? null
   return (
     <li className="pull-commit">
-      <button type="button" className="pull-commit-head" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+      <Button variant="bare" className="pull-commit-head" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
         <span className="pull-avatar" style={{ background: authorColor(commit.author) }} aria-hidden="true">
           {initials(commit.author)}
         </span>
@@ -72,7 +63,7 @@ function CommitCard({ api, root, commit }: { api: ForgeApi; root: string; commit
         <span className="pull-chevron" aria-hidden="true">
           {open ? '▾' : '▸'}
         </span>
-      </button>
+      </Button>
       {open ? (
         <div className="pull-files">
           {error ? <p className="forge-field-error">{error}</p> : null}
@@ -98,7 +89,7 @@ export function PullResultDialog({ api, root, result, onClose }: { api: ForgeApi
   const authors = useMemo(() => [...new Set(result.commits.map((c) => c.author))], [result.commits])
   const title = `Pull result${result.branch ? ` · ${result.branch}` : ''}`
   return (
-    <Modal title={title} onClose={onClose} onEnter={onClose} footer={<button type="button" onClick={onClose}>Close</button>}>
+    <Modal title={title} onClose={onClose} onEnter={onClose} footer={<Button variant="bare" onClick={onClose}>Close</Button>}>
       <div className="pull-result">
         <p className="pull-summary">
           <strong>

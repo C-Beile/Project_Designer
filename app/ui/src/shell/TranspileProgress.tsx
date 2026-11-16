@@ -1,4 +1,5 @@
 import { ProgressBar } from '../core/ui'
+import { Button } from '../core/ui/controls'
 
 // Progress of a running build: a small panel in the corner. It does not block the window, so work in
 // the Designer goes on while the build runs. The built-in transpiler reports how far it is: a bar
@@ -16,9 +17,9 @@ export function TranspileProgress({ label, onCancel, progress }: { label: string
     <div className="forge-build-progress" role="status" aria-label="Transpiling...">
       <div className="forge-build-progress-head">
         <strong>{progress ? `Transpiling... ${progress.percent} %` : 'Transpiling...'}</strong>
-        <button type="button" disabled={!onCancel} title={onCancel ? 'Ends the running build after a question' : 'This engine cannot be cancelled'} onClick={() => onCancel?.()}>
+        <Button variant="bare" isDisabled={!onCancel} title={onCancel ? 'Ends the running build after a question' : 'This engine cannot be cancelled'} onClick={() => onCancel?.()}>
           Cancel
-        </button>
+        </Button>
       </div>
       <p>{progress ? progress.stage : label}</p>
       <ProgressBar percent={progress?.percent} label={progress ? 'Build progress' : 'Build running'} />
@@ -43,28 +44,28 @@ export function TranspileResult({ result, onDeploy, onShowOutput, onShowMatch, o
     <div className={`forge-build-progress forge-build-result ${result.ok ? 'is-ok' : 'is-failed'}`} role="status" aria-label={result.ok ? 'Transpile finished' : 'Transpile failed'}>
       <div className="forge-build-progress-head">
         <strong>{result.ok ? `Transpile finished (${result.seconds} s)` : 'Transpile failed'}</strong>
-        <button type="button" aria-label="Close" onClick={onClose}>
+        <Button variant="bare" aria-label="Close" onClick={onClose}>
           {'×'}
-        </button>
+        </Button>
       </div>
       <p>{result.ok ? `${name} is transpiled. Changes you make now count for the next transpile.` : (result.message ?? 'See the Output for details.')}</p>
       {result.ok && typeof result.match === 'number' ? (
         <p>
           Match with the reference:{' '}
-          <button type="button" className="forge-link" onClick={onShowMatch} aria-label="Show the match with the reference">
+          <Button variant="bare" className="forge-link" onClick={onShowMatch} aria-label="Show the match with the reference">
             {result.match.toFixed(2)} %
-          </button>
+          </Button>
         </p>
       ) : null}
       <div className="forge-build-result-actions">
         {result.ok ? (
-          <button type="button" onClick={onDeploy}>
+          <Button variant="bare" onClick={onDeploy}>
             Deploy...
-          </button>
+          </Button>
         ) : null}
-        <button type="button" onClick={onShowOutput}>
+        <Button variant="bare" onClick={onShowOutput}>
           Show Output
-        </button>
+        </Button>
       </div>
     </div>
   )

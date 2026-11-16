@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { INDEX_READY_SHOWN_MS, openIndexLog, summarizeIndex, useIndexStatus } from '../core/indexStatus'
 import { ProgressBar } from '../core/ui/ProgressBar'
+import { Button } from '../core/ui/controls'
 
 /** Statusleisten-Eintrag des Projekt-Index: Fortschritt beim Aufbau, danach kurz "Index ready". */
 export function IndexStatusItem() {
@@ -19,9 +20,9 @@ export function IndexStatusItem() {
 
   if (!summary) return null
   return (
-    <button type="button" className="forge-status-btn forge-index-status" title={`${summary.tooltip} (click to open the IDE Log)`} onClick={openIndexLog}>
+    <Button variant="bare" className="forge-status-btn forge-index-status" title={`${summary.tooltip} (click to open the IDE Log)`} onClick={openIndexLog}>
       <span className="forge-index-status-text">{summary.text}</span>
       {summary.kind === 'busy' ? <ProgressBar percent={summary.percent} label="Project index" /> : null}
-    </button>
+    </Button>
   )
 }

@@ -1,23 +1,29 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
-import { NewObjectDialog } from '../shell/NewObjectDialog'
-import { OpenModelDialog, type ModelEntry } from '../shell/OpenModelDialog'
-import { OptionsDialog, type KeymapEntry } from '../shell/OptionsDialog'
-import { DeployOptionsDialog, type DeployOptionsPayload } from '../shell/DeployOptionsDialog'
-import { AboutDialog } from '../shell/Dialogs'
-import { DeployDialog } from '../shell/DeployDialog'
-import { LocalDataDialog } from '../shell/LocalDataDialog'
-import { PluginsDialog } from '../shell/PluginsDialog'
-import { ProjectZipDialog } from '../shell/ProjectZipDialog'
-import { UpdatesDialog } from '../shell/UpdatesDialog'
+import type { KeymapEntry } from '../shell/OptionsDialog'
+import type { DeployOptionsPayload } from '../shell/DeployOptionsDialog'
+import { lazyNamed } from '../core/lazyNamed'
 import { getDialog } from '../core/plugins/registry'
-import { RenameDialog } from '../tree/TreeDialogs'
 import type { ThemeName } from '../theme/useTheme'
 import type { TranspilerEngineId } from '../settings/transpilerEngine'
 import { DialogHost } from '../core/dialogService'
 import { OsWindowContext } from './osWindowContext'
 import { getWindowBackend } from './windowService'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
+
+// Jeder Dialog lädt erst, wenn sein Fenster ihn zeigt: ein Popup holt nur den Code, den es braucht.
+const NewObjectDialog = lazyNamed(() => import('../shell/NewObjectDialog'), 'NewObjectDialog')
+const OptionsDialog = lazyNamed(() => import('../shell/OptionsDialog'), 'OptionsDialog')
+const DeployOptionsDialog = lazyNamed(() => import('../shell/DeployOptionsDialog'), 'DeployOptionsDialog')
+const AboutDialog = lazyNamed(() => import('../shell/Dialogs'), 'AboutDialog')
+const DeployDialog = lazyNamed(() => import('../shell/DeployDialog'), 'DeployDialog')
+const LocalDataDialog = lazyNamed(() => import('../shell/LocalDataDialog'), 'LocalDataDialog')
+const PluginsDialog = lazyNamed(() => import('../shell/PluginsDialog'), 'PluginsDialog')
+const ProjectZipDialog = lazyNamed(() => import('../shell/ProjectZipDialog'), 'ProjectZipDialog')
+const UpdatesDialog = lazyNamed(() => import('../shell/UpdatesDialog'), 'UpdatesDialog')
+const ThemeStudio = lazyNamed(() => import('../studio/ThemeStudio'), 'ThemeStudio')
+const RenameDialog = lazyNamed(() => import('../tree/TreeDialogs'), 'RenameDialog')
 
 // Content of a dialog window: the payload the opener handed over decides what is drawn, the result
 // goes back to the main window and the window closes. Escape or the window's own close button
@@ -152,8 +158,8 @@ export const DIALOG_WINDOWS: Record<string, DialogSpec> = {
   deployplan: {
     render: (api, p, done) => <DeployPlanWindow api={api} payload={p} done={done} />,
   },
-  open: {
-    render: (_api, p, done) => <OpenModelDialog models={(p.models as ModelEntry[]) ?? []} onClose={() => done(null)} onPick={(m) => done(m)} />,
+  themestudio: {
+    render: (api, _p, done) => <ThemeStudio api={api} inWindow onClose={() => done(null)} />,
   },
 }
 
@@ -161,22 +167,18 @@ export function DialogWindowApp({ name, api }: { name: string; api: ForgeApi }) 
   const [payload, setPayload] = useState<Record<string, unknown> | null>(null)
   const [failed, setFailed] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     getWindowBackend()
       .payload('dialog', name)
       .then((text) => {
-        if (cancelled) return
+        if (signal.aborted) return
         try {
           setPayload(text ? (JSON.parse(text) as Record<string, unknown>) : {})
         } catch {
           setFailed('The dialog could not read its input.')
         }
       })
-      .catch((e) => !cancelled && setFailed(String(e)))
-    return () => {
-      cancelled = true
-    }
+      .catch((e) => !signal.aborted && setFailed(String(e)))
   }, [name])
 
   const done: Done = (result) => void getWindowBackend().result('dialog', name, result === null ? null : JSON.stringify(result))
@@ -186,7 +188,7 @@ export function DialogWindowApp({ name, api }: { name: string; api: ForgeApi }) 
   if (!spec) body = <p className="forge-field-error">Unknown dialog {name}.</p>
   else if (failed) body = <p className="forge-field-error">{failed}</p>
   else if (!payload) body = <p className="forge-field-hint">Please Wait…</p>
-  else body = spec.render(api, payload, done)
+  else body = <Suspense fallback={<p className="forge-field-hint">Please Wait…</p>}>{spec.render(api, payload, done)}</Suspense>
 
   return (
     <OsWindowContext.Provider value={true}>

@@ -5,6 +5,7 @@ import { isTauriRuntime } from '../chrome/tauriWindow'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { LocalDataInfo } from '../wire/types'
 import { Modal } from '../core/Modal'
+import { Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 
 export function AboutDialog({ api, onClose }: { api?: ForgeApi; onClose: () => void }) {
   const [version, setVersion] = useState<string | null>(null)
@@ -37,16 +38,16 @@ export function AboutDialog({ api, onClose }: { api?: ForgeApi; onClose: () => v
       title="About Dito Designer"
       onClose={onClose}
       footer={
-        <button type="button" onClick={onClose}>
+        <Button variant="bare" onClick={onClose}>
           Close
-        </button>
+        </Button>
       }
     >
       <div className="forge-opt-pages" role="tablist" aria-label="About">
         {(['version', 'licence', 'system'] as const).map((t) => (
-          <button key={t} type="button" role="tab" aria-selected={tab === t} className={`forge-opt-page${tab === t ? ' is-active' : ''}`} onClick={() => setTab(t)}>
+          <Button variant="bare" key={t} role="tab" aria-selected={tab === t} className={`forge-opt-page${tab === t ? ' is-active' : ''}`} onClick={() => setTab(t)}>
             {t === 'version' ? 'Version' : t === 'licence' ? 'Licence' : 'System'}
-          </button>
+          </Button>
         ))}
       </div>
       {tab === 'version' ? (
@@ -67,16 +68,17 @@ export function AboutDialog({ api, onClose }: { api?: ForgeApi; onClose: () => v
       ) : null}
       {tab === 'system' ? (
         <div className="forge-opt-scroll">
-          <table className="forge-opt-table" aria-label="System properties">
-            <tbody>
+          <Table className="forge-opt-table" aria-label="System properties">
+            <TableHeader><TableColumn isRowHeader className="forge-sr-only">Name</TableColumn><TableColumn className="forge-sr-only">Value</TableColumn></TableHeader>
+            <TableBody>
               {systemRows.map(([k, v]) => (
-                <tr key={k}>
-                  <th>{k}</th>
-                  <td>{v}</td>
-                </tr>
+                <TableRow key={k}>
+                  <TableCell>{k}</TableCell>
+                  <TableCell>{v}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       ) : null}
     </Modal>

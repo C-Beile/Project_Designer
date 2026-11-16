@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import * as monaco from 'monaco-editor'
 import type { ForgeApi } from '../../api/ForgeApi'
-import type { DiffContent, DiffTarget } from '../../wire/types'
+import type { DiffTarget } from '../../wire/types'
 import { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForgeThemeForMonaco } from '../../theme/monacoTheme'
 import { languageForFile } from '../../tabs/TextFileEditor'
 import { useScm } from '../../core/scm'
 import { diffTitle, SIDE_LABEL } from './diffTitle'
-import { errorText } from '../../core/errorText'
+import { useResource } from '../../core/hooks/useResource'
 
 // Diff tab of the Source Control panel: the two versions of one file side by side in the Monaco
 // diff editor, read-only. Which versions depends on where the file was clicked: Changes (index
@@ -14,27 +14,14 @@ import { errorText } from '../../core/errorText'
 
 export function DiffView({ api, target }: { api: ForgeApi; target: DiffTarget }) {
   const scm = useScm()
-  const [content, setContent] = useState<DiffContent | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const hostRef = useRef<HTMLDivElement | null>(null)
 
   // The work tree side changes with every save; staged and commit sides only with Git actions.
   const refreshKey = target.side === 'commit' ? 0 : scm.version
 
-  useEffect(() => {
-    let cancelled = false
-    api
-      .scmDiff(target.root, target.path, target.side, target.hash ?? null)
-      .then((c) => {
-        if (cancelled) return
-        setContent(c)
-        setError(null)
-      })
-      .catch((e) => !cancelled && setError(errorText(e)))
-    return () => {
-      cancelled = true
-    }
-  }, [api, target.root, target.path, target.side, target.hash, refreshKey])
+  const diff = useResource(() => api.scmDiff(target.root, target.path, target.side, target.hash ?? null), [api, target.root, target.path, target.side, target.hash, refreshKey])
+  const content = diff.data ?? null
+  const error = diff.error ?? null
 
   useEffect(() => {
     const host = hostRef.current

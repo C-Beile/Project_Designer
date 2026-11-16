@@ -7,7 +7,7 @@ import { setSubTab, openTab, type SubTab, type TabState } from '../../tabs/tabMo
 import { diskFolderOf, objectLayout, type TreeMenuContext } from '../../tree/contextMenu'
 import type { TreeNode } from '../../wire/types'
 import { useOsDialog } from '../../windows/useOsDialog'
-import { openDialogWindow, osWindowsAvailable } from '../../windows/windowService'
+import { openDialogWindow, osPopupsAvailable } from '../../windows/windowService'
 import { runCommandById } from '../../core/plugins/registry'
 import type { OutputLine, OutputSubTab } from '../OutputPanel'
 import { nodeKind } from '../shellHelpers'
@@ -25,7 +25,7 @@ export interface TreeActionsDeps {
   activateNode: (node: TreeNode, project: string) => Promise<void>
   handleOpen: (node: TreeNode, top?: TreeNode) => Promise<void>
   projectOf: (top: TreeNode) => string
-  showToolWindow: (id: 'output' | 'properties', focus?: boolean) => void
+  showToolWindow: (id: 'nodejs' | 'properties', focus?: boolean) => void
   setOutputSub: (sub: OutputSubTab) => void
   appendLog: (sub: OutputSubTab, lines: OutputLine[]) => void
   closeProjects: (toClose: string[]) => void
@@ -127,7 +127,7 @@ export function useTreeActions(d: TreeActionsDeps) {
       if (!(await confirmDialog(text, { title: `npm ${action}`, okLabel: `Run npm ${action}` }))) return
     }
     npmBusy.current = true
-    showToolWindow('output', false)
+    showToolWindow('nodejs', false)
     setOutputSub('nodejs')
     appendLog('nodejs', [{ level: 'info', text: `[${timestamp()}] npm ${action} in ${project}` }])
     try {
@@ -266,7 +266,7 @@ export function useTreeActions(d: TreeActionsDeps) {
 
   // New opens as a window of its own (modal: the main window is locked meanwhile); in a plain browser the embedded dialog is used.
   useEffect(() => {
-    if (!newTarget || !osWindowsAvailable() || newWindowOpen.current) return
+    if (!newTarget || !osPopupsAvailable() || newWindowOpen.current) return
     newWindowOpen.current = true
     const target = newTarget
     void openDialogWindow<{ aod: string; folder: string; name: string }>('new', 'Create New Model', { width: 433, height: 340 }, { projectRoot: target.project, projects, folder: target.folder }, { modal: true, resizable: false })

@@ -2,9 +2,9 @@ import * as monaco from 'monaco-editor'
 import { ensureMonacoLanguagesDefined, gitTokenRules } from './monacoLanguages'
 import { getOptions, subscribeOptions } from '../settings/options'
 import { findCustomTheme, subscribeCustomThemes } from './customThemes'
-import { editorOverrides, subscribeColorOverrides } from './colorOverrides'
 import { isPluginActive, subscribePluginPrefs } from '../settings/plugins'
 import type { MonacoThemeData } from './vscodeTheme'
+import { getActiveEditorTheme, mergeEditorTheme, subscribeEditorTheme, type ActiveEditorTheme } from './editorTheme'
 
 // Monaco ships its own theme engine, entirely separate from tokens.css - defining a proper Night
 // Owl theme here closes the one remaining unthemed seam in Forge: without this, the embedded
@@ -180,20 +180,26 @@ export function ensureMonacoThemesDefined(): void {
 // theme was imported anew (the stored object changes then).
 const registeredCustom = new Map<string, MonacoThemeData>()
 
-const OVERRIDE_THEME = 'forge-user-colours'
-let overrideStamp = ''
+const TOML_THEME = 'forge-toml'
+let tomlStamp = ''
 
-/** The theme with the colours the user changed by hand put on top; the same id is defined anew when the colours change. */
-function withUserColours(baseId: string, base: MonacoThemeData | undefined): string {
-  const { colors, rules } = editorOverrides()
-  if (!base || (Object.keys(colors).length === 0 && rules.length === 0)) return baseId
-  const stamp = JSON.stringify([baseId, colors, rules])
-  if (stamp !== overrideStamp) {
-    // A later rule of the same token wins, so the user's rules go to the end.
-    monaco.editor.defineTheme(OVERRIDE_THEME, withSqlTokens({ ...base, colors: { ...base.colors, ...colors }, rules: [...base.rules, ...rules] }))
-    overrideStamp = stamp
+/** Das eingebaute Monaco-Theme, auf dem die Code-Farben eines TOML-Themes liegen. */
+function baseThemeFor(theme: ActiveEditorTheme): string {
+  if (theme.id === 'lion') return LION_DARK
+  return theme.kind === 'light' ? NIGHT_OWL_LIGHT : NIGHT_OWL_DARK
+}
+
+/** Definiert das Monaco-Theme aus den Code-Farben des TOML-Themes neu, wenn sie sich geändert haben. */
+function tomlMonacoTheme(theme: ActiveEditorTheme): string {
+  ensureMonacoThemesDefined()
+  const baseId = baseThemeFor(theme)
+  const stamp = JSON.stringify([baseId, theme.colors, theme.syntax])
+  const base = builtinData.get(baseId)
+  if (base && stamp !== tomlStamp) {
+    monaco.editor.defineTheme(TOML_THEME, mergeEditorTheme(base, theme))
+    tomlStamp = stamp
   }
-  return OVERRIDE_THEME
+  return base ? TOML_THEME : baseId
 }
 
 /** Maps Forge's own theme name (theme/useTheme.ts) to the matching Monaco theme id. */
@@ -205,13 +211,11 @@ export function monacoThemeFor(forgeTheme: 'dark' | 'light' | 'lion'): string {
       monaco.editor.defineTheme(custom.id, withSqlTokens(custom.data))
       registeredCustom.set(custom.id, custom.data)
     }
-    return withUserColours(custom.id, custom.data)
+    return custom.id
   }
-  const id = forgeTheme === 'lion' ? LION_DARK : forgeTheme === 'light' ? NIGHT_OWL_LIGHT : NIGHT_OWL_DARK
-  const mine = editorOverrides()
-  if (Object.keys(mine.colors).length === 0 && mine.rules.length === 0) return id
-  ensureMonacoThemesDefined()
-  return withUserColours(id, builtinData.get(id))
+  const toml = getActiveEditorTheme()
+  if (toml) return tomlMonacoTheme(toml)
+  return forgeTheme === 'lion' ? LION_DARK : forgeTheme === 'light' ? NIGHT_OWL_LIGHT : NIGHT_OWL_DARK
 }
 
 /**
@@ -241,13 +245,13 @@ export function watchForgeThemeForMonaco(onChange: (monacoTheme: string) => void
   // The editor theme can also change through the Options window or a newly imported theme.
   const offOptions = subscribeOptions(apply)
   const offThemes = subscribeCustomThemes(apply)
-  const offColors = subscribeColorOverrides(apply)
   const offPlugins = subscribePluginPrefs(apply)
+  const offEditorTheme = subscribeEditorTheme(apply)
   return () => {
     observer.disconnect()
     offOptions()
     offThemes()
-    offColors()
     offPlugins()
+    offEditorTheme()
   }
 }

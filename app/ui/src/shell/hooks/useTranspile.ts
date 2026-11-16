@@ -23,7 +23,7 @@ export interface TranspileDeps {
   trees: Record<string, TreeNode[]>
   installDir: string | null
   appendLog: (sub: OutputSubTab, lines: OutputLine[]) => void
-  showToolWindow: (id: 'output', focus?: boolean) => void
+  showToolWindow: (id: 'build', focus?: boolean) => void
   setOutputSub: (sub: OutputSubTab) => void
   setStatus: (text: string) => void
 }
@@ -69,7 +69,7 @@ export function useTranspile({ api, root, trees, installDir, appendLog, showTool
       lastProgressLog.current = { step: '', percent: -10 }
       setProblems('build', [])
       setTranspileRunning(true)
-      showToolWindow('output', false)
+      showToolWindow('build', false)
       setOutputSub('build')
       const started = Date.now()
       appendLog('build', [

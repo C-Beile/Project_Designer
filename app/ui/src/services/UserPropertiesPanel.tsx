@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import type { UserPropertyDto } from '../wire/types'
 import { confirmDialog } from '../core/dialogService'
 import { notifyUsersChanged, type UserSelection } from './userSelection'
 import { errorText } from '../core/errorText'
+import { Button, Input } from '../core/ui/controls'
+import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 // Properties panel of a user selected in the Users tab, laid out like the original Designer:
 // the tabs Properties, Extended and Internal; General, Security and Personal as sections. Values
@@ -56,8 +58,7 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
   const [pw1, setPw1] = useState('')
   const [pw2, setPw2] = useState('')
 
-  useEffect(() => {
-    let cancelled = false
+  useAbortableEffect((signal) => {
     setProps(null)
     setEdits({})
     setListEdits({})
@@ -65,27 +66,20 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
     setError(null)
     void (async () => {
       await api.dbActivate(systemKey).catch(() => false)
-      void api.systemAssignedRoles().then((r) => !cancelled && setSystemRoles(r)).catch(() => undefined)
+      void api.systemAssignedRoles().then((r) => !signal.aborted && setSystemRoles(r)).catch(() => undefined)
       return api.systemUserProperties(user)
     })()
-      .then((p) => !cancelled && setProps(p))
-      .catch((e) => !cancelled && setError(errorText(e)))
-    return () => {
-      cancelled = true
-    }
+      .then((p) => !signal.aborted && setProps(p))
+      .catch((e) => !signal.aborted && setError(errorText(e)))
   }, [api, user, systemKey, tick])
 
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     const root = systemKey.split('|')[0]
     if (!root) return
-    let cancelled = false
     api
       .listProjectModels(root)
-      .then((models) => !cancelled && setRoles(models.filter((m) => m.folder === 'role').map((m) => m.name).sort((a, b) => a.localeCompare(b))))
+      .then((models) => !signal.aborted && setRoles(models.filter((m) => m.folder === 'role').map((m) => m.name).sort((a, b) => a.localeCompare(b))))
       .catch(() => undefined)
-    return () => {
-      cancelled = true
-    }
   }, [api, systemKey])
 
   const byKey = useMemo(() => fieldsByKey(props ?? []), [props])
@@ -154,22 +148,22 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
           <span className="up-value">
             {isSet ? '***' : ''}
             {lower === 'password' ? (
-              <button type="button" className="up-pw-button" disabled={saving} onClick={() => setPwOpen((o) => !o)}>
+              <Button variant="bare" className="up-pw-button" isDisabled={saving} onClick={() => setPwOpen((o) => !o)}>
                 Change password...
-              </button>
+              </Button>
             ) : null}
           </span>
           {lower === 'password' && pwOpen ? (
             <div className="up-pw-form">
-              <input type="password" autoComplete="off" aria-label="New password" placeholder="New password" value={pw1} onChange={(e) => setPw1(e.target.value)} />
-              <input type="password" autoComplete="off" aria-label="Repeat new password" placeholder="Repeat new password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+              <Input type="password" autoComplete="off" aria-label="New password" placeholder="New password" value={pw1} onChange={(e) => setPw1(e.target.value)} />
+              <Input type="password" autoComplete="off" aria-label="Repeat new password" placeholder="Repeat new password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
               <div className="up-pw-actions">
-                <button type="button" disabled={saving || pw1 === ''} onClick={() => void changePassword()}>
+                <Button isDisabled={saving || pw1 === ''} onClick={() => void changePassword()}>
                   Save password
-                </button>
-                <button type="button" onClick={() => { setPwOpen(false); setPw1(''); setPw2('') }}>
+                </Button>
+                <Button onClick={() => { setPwOpen(false); setPw1(''); setPw2('') }}>
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           ) : null}
@@ -184,16 +178,16 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
         <div className={`up-row up-list${isChanged ? ' is-changed' : ''}`} key={key}>
           <span className={`up-name${isSet ? '' : ' is-unset'}`}>{key}</span>
           <div className="up-listbox">
-            <button type="button" className="up-list-button" aria-label={key} aria-expanded={openList === key} onClick={() => setOpenList(openList === key ? null : key)}>
+            <Button variant="bare" className="up-list-button" aria-label={key} aria-expanded={openList === key} onClick={() => setOpenList(openList === key ? null : key)}>
               <span>[{selected.join(', ')}]</span>
               <span aria-hidden="true">{'▾'}</span>
-            </button>
+            </Button>
             {openList === key ? (
               <div className="up-list-menu" role="listbox" aria-label={`${key} values`}>
                 {options.length === 0 ? <p className="forge-field-hint">No roles found in the project.</p> : null}
                 {options.map((o) => (
                   <label key={o}>
-                    <input
+                    <Input
                       type="checkbox"
                       checked={selected.includes(o)}
                       onChange={(e) => setListEdits((prev) => ({ ...prev, [key]: e.target.checked ? [...selected, o] : selected.filter((v) => v !== o) }))}
@@ -225,9 +219,9 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
       <div className={`up-row${isChanged ? ' is-changed' : ''}`} key={key}>
         <span className={`up-name${isSet ? '' : ' is-unset'}`}>{key}</span>
         {BOOLEANS.has(lower) ? (
-          <input type="checkbox" aria-label={key} checked={current.toLowerCase() === 'true'} onChange={(e) => setEdits((prev) => ({ ...prev, [key]: e.target.checked ? 'true' : 'false' }))} />
+          <Input type="checkbox" aria-label={key} checked={current.toLowerCase() === 'true'} onChange={(e) => setEdits((prev) => ({ ...prev, [key]: e.target.checked ? 'true' : 'false' }))} />
         ) : (
-          <input
+          <Input
             type="text"
             aria-label={key}
             value={lower === 'lastmodified' && current ? formatStamp(current) : current}
@@ -247,17 +241,17 @@ export function UserPropertiesPanel({ api, selection }: { api: ForgeApi; selecti
     <div className="user-props" aria-label="User properties">
       <div className="user-props-tabs" role="tablist">
         {(['properties', 'extended', 'internal'] as Tab[]).map((t) => (
-          <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? 'is-active' : undefined} onClick={() => setTab(t)}>
+          <Button variant="bare" key={t} role="tab" aria-selected={tab === t} className={tab === t ? 'is-active' : undefined} onClick={() => setTab(t)}>
             {t === 'properties' ? 'Properties' : t === 'extended' ? 'Extended' : 'Internal'}
-          </button>
+          </Button>
         ))}
         <span className="user-props-actions">
-          <button type="button" title="Read the properties again" aria-label="Reload properties" onClick={() => setTick((n) => n + 1)}>
+          <Button variant="bare" title="Read the properties again" aria-label="Reload properties" onClick={() => setTick((n) => n + 1)}>
             {'↻'}
-          </button>
-          <button type="button" className="is-primary" disabled={changeCount === 0 || saving} onClick={() => void save()}>
+          </Button>
+          <Button variant="bare" className="is-primary" isDisabled={changeCount === 0 || saving} onClick={() => void save()}>
             {saving ? 'Saving...' : `Save${changeCount ? ` (${changeCount})` : ''}`}
-          </button>
+          </Button>
         </span>
       </div>
       {error ? (
