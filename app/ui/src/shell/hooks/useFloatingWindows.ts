@@ -172,7 +172,8 @@ export function useFloatingWindows(d: FloatingDeps) {
         navigator: bridge.floating.includes('navigator') ? ('closed' as const) : layout.panels.navigator,
         properties: bridge.floating.includes('properties') ? ('closed' as const) : layout.panels.properties,
         output: bridge.floating.includes('output') ? ('closed' as const) : layout.panels.output,
-      },
+        ...(bridge.floating.includes('services') ? { services: 'closed' as const } : {}),
+      } as LayoutState['panels'],
     }),
     [layout, bridge.floating],
   )

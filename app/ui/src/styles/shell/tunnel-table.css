@@ -33,8 +33,47 @@
 }
 
 .tunnel-toolbar button {
-  min-width: 24px;
-  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 24px;
+  border-radius: 5px;
+}
+
+.tunnel-toolbar button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fg) 12%, transparent);
+}
+
+.tunnel-toolbar button:disabled {
+  opacity: 0.4;
+}
+
+.tunnel-status.is-error {
+  color: var(--error);
+}
+
+.tunnel-status.is-busy {
+  color: var(--warning);
+}
+
+.tunnel-view {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+}
+
+.tunnel-view button {
+  padding: 0 10px;
+  color: var(--fg-muted);
+}
+
+.tunnel-view button.is-active {
+  color: var(--fg);
+  background: var(--bg-panel, var(--bg));
 }
 
 .tunnel-table {
@@ -59,15 +98,208 @@
 }
 
 .tunnel-status {
+  display: inline-flex;
+  align-items: center;
   color: var(--fg-muted);
 }
 
+.tunnel-status.is-busy svg {
+  animation: tunnel-spin 0.9s linear infinite;
+}
+
+@keyframes tunnel-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .tunnel-status.is-active {
-  color: #3fb950;
+  color: var(--success);
 }
 
 .forge-modal-title,
 .forge-about-title {
   font-family: var(--font-heading);
   font-weight: 700;
+}
+
+.tunnel-key {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 10px 12px 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--fg) 5%, var(--bg-panel)), var(--bg-panel));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--fg) 8%, transparent) inset, 0 4px 10px color-mix(in srgb, var(--shadow-ink) 28%, transparent);
+}
+
+.tunnel-key.is-attention {
+  border-color: var(--warning);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--warning) 45%, transparent), 0 4px 12px color-mix(in srgb, var(--shadow-ink) 30%, transparent);
+}
+
+.tunnel-key-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--fg) 10%, transparent) inset;
+}
+
+.tunnel-key-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tunnel-key-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.tunnel-key-state {
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--fg-muted);
+  background: color-mix(in srgb, var(--fg) 10%, transparent);
+}
+
+.tunnel-key-state.is-set {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+}
+
+.tunnel-key-path {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tunnel-key-hint {
+  margin-top: 6px;
+  color: var(--warning);
+  font-size: 0.75rem;
+}
+
+.tunnel-key-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tunnel-key-choose {
+  padding: 3px 12px;
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--fg);
+}
+
+.tunnel-key.is-attention .tunnel-key-choose {
+  background: color-mix(in srgb, var(--warning) 22%, transparent);
+  border-color: var(--warning);
+}
+
+.tunnel-editor .tpx {
+  flex: 0 0 auto;
+  margin: 8px 12px 12px;
+  width: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-panel);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--shadow-ink) 28%, transparent);
+}
+
+.tunnel-editor > * {
+  flex-shrink: 0;
+}
+
+.tunnel-editor {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.tunnel-editor .tpx-bar {
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+}
+
+.tunnel-toolbar {
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 0;
+}
+
+.tunnel-toolbar button {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+  transition: background 0.14s ease, transform 0.14s ease;
+}
+
+.tunnel-toolbar button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--fg) 15%, transparent);
+  transform: translateY(-1px);
+}
+
+.tunnel-toolbar button:active:not(:disabled) {
+  transform: none;
+}
+
+.tunnel-toolbar button:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.tunnel-toolbar .tunnel-view button {
+  background: transparent;
+  transform: none;
+}
+
+.tunnel-toolbar .tunnel-view button.is-active {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.tunnel-table tbody tr {
+  transition: background 0.12s ease;
+}
+
+.tunnel-table tbody tr:hover:not(.is-selected) {
+  background: color-mix(in srgb, var(--fg) 6%, transparent);
+}
+
+.tunnel-key,
+.tunnel-editor .tpx {
+  animation: tunnel-appear 0.22s ease;
+}
+
+@keyframes tunnel-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tunnel-key,
+  .tunnel-editor .tpx,
+  .tunnel-status.is-busy svg {
+    animation: none;
+  }
+  .tunnel-toolbar button {
+    transition: none;
+  }
 }

@@ -9,10 +9,12 @@ import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { confirmDialog, promptDialog } from '../core/dialogService'
 import type { DbStatus, ForwardStatusDto, TunnelRowDto } from '../wire/types'
 import { TunnelPorts, pinKey } from './TunnelPorts'
+import { TunnelKeyBar } from './TunnelKeyBar'
 import { errorText } from '../core/errorText'
 import { Button, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '../core/ui/controls'
 import { copyText as copyToClipboard } from '../core/clipboard'
 import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
+import { Icon } from '../core/icons/Icon'
 
 function savedView(): 'ports' | 'table' {
   return configGet<string>('tunnels', 'view') === 'table' ? 'table' : 'ports'
@@ -43,6 +45,8 @@ export function hostPort(row: TunnelRowDto): string {
 }
 
 export type RowState = 'idle' | 'busy' | 'up' | 'error'
+
+const STATUS_ICON = { idle: 'plugs', busy: 'circle-notch', up: 'plugs-connected', error: 'warning' } as const
 
 /** Pinned targets (`service:port`), the same for every project. */
 function savedPins(): Set<string> {
@@ -90,7 +94,7 @@ export function TunnelConfigEditor({
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({})
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   // Key file and passphrase are set once in Options > ADITO > General; no input here.
-  const [keyFile] = useSshKeyPath(api)
+  const [keyFile, setKeyFile] = useSshKeyPath(api)
   const [pinned, setPinned] = useState<Set<string>>(savedPins)
   useEffect(() => onConfigChange((path) => path[0] === 'tunnels' && setPinned(savedPins())), [])
   const togglePin = useCallback((r: TunnelRowDto) => {
@@ -305,10 +309,10 @@ export function TunnelConfigEditor({
     <div className="tunnel-editor">
       <div className="tunnel-toolbar" role="toolbar" aria-label="Tunnel config">
         <Button variant="bare" title="Adds a tunnel to the tunnel config file" aria-label="Add tunnel" onClick={() => void addTunnel()}>
-          +
+          <Icon name="plus" weight="bold" color="success" />
         </Button>
         <Button variant="bare" aria-label="Stop tunnels" title="Close all open tunnels" isDisabled={!anyUp && !db.tunnel_up} onClick={() => void stop()}>
-          {'■'}
+          <Icon name="stop" weight="fill" color="danger" />
         </Button>
         <Button variant="bare"
 
@@ -317,10 +321,10 @@ export function TunnelConfigEditor({
           isDisabled={!row}
           onClick={() => row && copy(copyText(row))}
         >
-          {'⎘'}
+          <Icon name="copy-simple" weight="bold" color="accent" />
         </Button>
         <Button variant="bare" aria-label="Refresh" title="Reload the file and the tunnel states" onClick={refresh}>
-          {'↻'}
+          <Icon name="arrows-clockwise" weight="bold" color="cool" />
         </Button>
         <span className="tunnel-view" role="group" aria-label="View">
           <Button variant="bare" aria-pressed={view === 'ports'} className={view === 'ports' ? 'is-active' : undefined} onClick={() => setView('ports')}>
@@ -331,6 +335,7 @@ export function TunnelConfigEditor({
           </Button>
         </span>
       </div>
+      <TunnelKeyBar api={api} keyFile={keyFile} onKeyFile={setKeyFile} errors={[...(error ? [error] : []), ...Object.values(rowErrors)]} />
       {error ? (
         <p className="forge-field-hint" role="alert">
           {error}
@@ -384,7 +389,7 @@ export function TunnelConfigEditor({
                 >
                   <TableCell>
                     <span className={`tunnel-status is-${state}${state === 'up' ? ' is-active' : ''}`} role="img" aria-label={label} title={tip}>
-                      {'◖'}
+                      <Icon name={STATUS_ICON[state]} weight="bold" />
                     </span>
                   </TableCell>
                   <TableCell>{r.tunnel_host}</TableCell>

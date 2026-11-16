@@ -12,6 +12,7 @@ import { listenBackend } from './shell/hooks/backendEvent'
 import { setErrorLogSink } from './core/errorLog'
 import { markPerf } from './core/perf/marks'
 import { revealApp } from './core/revealApp'
+import { installNoPageScroll } from './core/noPageScroll'
 import './styles.css'
 
 // Dev-only convenience: a "project" URL parameter can still pre-select a project folder for a
@@ -28,6 +29,7 @@ const projectRoot = new URLSearchParams(window.location.search).get('project') ?
 const windowKind = new URLSearchParams(window.location.search).get('window')
 const windowName = new URLSearchParams(window.location.search).get('name') ?? ''
 
+installNoPageScroll()
 const root = createRoot(document.getElementById('root')!)
 
 // A dialog window only loads what the dialog needs: the whole application (editors, Monaco, the

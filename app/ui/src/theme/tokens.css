@@ -38,6 +38,7 @@
  */
 
 :root {
+  --shadow-ink: #000; /* Farbe für Schatten, in allen Themes gleich */
   color-scheme: dark;
 
   /* Projektfarben (Tabs, Suche): das n-te offene Projekt nimmt die n-te Farbe, danach von vorn */

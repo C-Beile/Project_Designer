@@ -28,7 +28,7 @@ icon-lg       = 20   # Größe großer Icons. Ganzzahl 12 bis 40 (px)
 [icons.toolbar]
 style     = "fill"      # Grundstil der Aktionsleiste. line (Linie) | fill (gefüllt) | duotone (zweifarbig)
 thickness = "regular"   # Linienstärke bei line und duotone. thin | light | regular | bold. Bei fill ohne Wirkung
-color     = "text"      # Farbe. text (Textfarbe des Themes) | muted (blasser) | accent (Akzentfarbe des Themes) | Hex wie #4aa8e8
+color     = "text"      # Farbe. text (Textfarbe des Themes) | muted (blasser) | accent | accent-2 | cool | warm | success | warning | danger (Farben des Themes) | Hex wie #4aa8e8
 
 [icons.tree]
 style     = "fill"      # Grundstil der Typ-Icons im Baum. line | fill | duotone
@@ -47,18 +47,64 @@ color     = "muted"     # Farbe. text | muted | accent | Hex
 # thickness = "bold"          # thin | light | regular | bold, nur bei line und duotone
 # color     = "#e0b46a"       # text | muted | accent | Hex. Weglassen = Farbe des Bereichs
 
-# Toolbar-Icons. Name = Befehl des Knopfes. Nur diese drei sind bunt, alle anderen folgen [icons.toolbar].
-[icon.run]
-color = "accent"
+# Toolbar-Icons. Name = Befehl des Knopfes. Die Farben stammen aus dem Theme und passen sich ihm an.
+# Nicht genannte Knöpfe (Zurück, Vor, Rückgängig, Wiederholen) folgen [icons.toolbar].
+[icon.new]
+color = "success"
+
+[icon.find]
+color = "warning"
+
+[icon.refresh]
+color = "cool"
 
 [icon.save]
-color = "accent"
+color = "warning"
 
 [icon.save-all]
-color = "accent"
+color = "warning"
+
+[icon.open-project]
+color = "warm"
 
 [icon.deploy]
+name  = "rocket-launch"
+color = "accent-2"
+
+[icon.rest]
+color = "warm"
+
+[icon.sql]
+color = "cool"
+
+[icon.run]
+color = "success"
+
+[icon.transpile]
 color = "accent"
+
+[icon.commit]
+color = "success"
+
+[icon.pull]
+name  = "caret-double-down"
+color = "accent"
+
+[icon.push]
+name  = "caret-double-up"
+color = "accent-2"
+
+[icon.diff]
+color = "accent"
+
+[icon.history]
+color = "warning"
+
+[icon.local-changes]
+color = "cool"
+
+[icon.deploy-opened]
+color = "accent-2"
 
 # Projektbaum-Icons. Name = Objekttyp, name = Phosphor-Icon, color = feste Akzentfarbe (gilt in allen Themes).
 

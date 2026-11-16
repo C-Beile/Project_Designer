@@ -89,7 +89,8 @@ describe('style.toml', () => {
   })
 
   it('resolves an icon from its own values first, then from its area', () => {
-    expect(resolveIcon('run', 'toolbar')).toEqual({ name: undefined, weight: 'fill', color: 'accent' })
+    expect(resolveIcon('run', 'toolbar')).toEqual({ name: undefined, weight: 'fill', color: 'success' })
+    expect(resolveIcon('deploy', 'toolbar').color).toBe('accent-2')
     expect(resolveIcon('open', 'toolbar')).toEqual({ name: undefined, weight: 'fill', color: 'text' })
     expect(resolveIcon('entity', 'tree')).toMatchObject({ name: 'database', weight: 'fill', color: '#f25c9c' })
     expect(resolveIcon('x', 'control')).toMatchObject({ weight: 'bold', color: 'muted' })
@@ -99,7 +100,7 @@ describe('style.toml', () => {
 
   it('rejects a wrong value of a single icon', () => {
     expect(() => parseStyleConfig(text.replace('[icon.run]', '[icon.run]\nstyle = "filled"'))).toThrow(/icon\.run\.style.*line \| fill \| duotone/)
-    expect(() => parseStyleConfig(text.replace('color = "accent"', 'color = "red"'))).toThrow(/icon\.run\.color.*Hex/)
+    expect(() => parseStyleConfig(text.replace(/\[icon\.run\]\r?\ncolor = "success"/, '[icon.run]\ncolor = "red"'))).toThrow(/icon\.run\.color.*Hex/)
   })
 
   it('sets one fixed colour per artefact type, independent of the theme', () => {

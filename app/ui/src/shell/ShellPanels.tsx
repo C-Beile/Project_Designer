@@ -100,6 +100,7 @@ export interface ShellPanelsDeps {
   handleCloseTab: (id: string) => void
   handleCloseOthers: (id: string) => void
   handleCloseAll: () => void
+  handleCloseProject: (project: string) => void
   handleTreeSelect: (node: TreeNode, top: TreeNode) => void
   handleOpen: (node: TreeNode, top?: TreeNode) => Promise<void>
   openProjectAt: (path: string) => void
@@ -119,7 +120,7 @@ export function useShellPanels({
   api, root, projects, tree, objectsByType, tabState, setTabState, selected, selectedProject, value, setValue, sheetVersion, setSheetVersion, setCanUndo, setCanRedo, recent, recentList, unsaved, hasProject, totalErrors,
   problemList, problemCounts, scanning, logs, clearLog, db, changeDb, drafts, historyFlags, sqlTexts, sqlNonce, reveal, setReveal, projectIndex, editorWindows, bridge, systemBadge, gitFor, loadingProjects,
   iconSvgs, projectsTab, setProjectsTab, outputTabs, outputTab, setOutputTab, closeOutputTab, aliasSel, inspected, inspectedKind, inspectedObject, elementSel, focusLabel, setNavSel, resetNavElement,
-  activateNavElement, refactoring, setRefactoring, doRefactoring, setCtxMenu, runTreeAction, handleActivateTab, handleCloseTab, handleCloseOthers, handleCloseAll, handleTreeSelect, handleOpen,
+  activateNavElement, refactoring, setRefactoring, doRefactoring, setCtxMenu, runTreeAction, handleActivateTab, handleCloseTab, handleCloseOthers, handleCloseAll, handleCloseProject, handleTreeSelect, handleOpen,
   openProjectAt, openSql, openProblem, markUnsaved, refreshDiagnostics, applyOutcome, registerFlush, setScanTick, setReloadToken, setStatus,
 }: ShellPanelsDeps) {
   // The Services tab only exists while a system is connected; it is the place to see and close the connections.
@@ -148,7 +149,7 @@ export function useShellPanels({
     </div>
   ) : (
     <div className="forge-editor-pane">
-      <EditorTabBar projects={projects} tabs={tabState.tabs} activeId={tabState.activeId} dirtyIds={unsaved} onActivate={handleActivateTab} onClose={handleCloseTab} onCloseOthers={handleCloseOthers} onCloseAll={handleCloseAll} onMoveToWindow={osWindowsAvailable() ? (id, at) => { const tab = tabState.tabs.find((t) => t.id === id); if (tab) void editorWindows.moveToWindow(tab, at) } : undefined} problemCounts={problemCounts} badgeFor={(t) => (t.node.object_type === 'system' ? systemBadge(t.node) : null)} gitFor={(t) => (t.node.diff ? null : gitFor(t.node))} />
+      <EditorTabBar projects={projects} tabs={tabState.tabs} activeId={tabState.activeId} dirtyIds={unsaved} onActivate={handleActivateTab} onClose={handleCloseTab} onCloseOthers={handleCloseOthers} onCloseAll={handleCloseAll} onCloseProject={handleCloseProject} onMoveToWindow={osWindowsAvailable() ? (id, at) => { const tab = tabState.tabs.find((t) => t.id === id); if (tab) void editorWindows.moveToWindow(tab, at) } : undefined} problemCounts={problemCounts} badgeFor={(t) => (t.node.object_type === 'system' ? systemBadge(t.node) : null)} gitFor={(t) => (t.node.diff ? null : gitFor(t.node))} />
       {currentTab ? (
         <ProjectIndexContext.Provider value={projectIndex}>
         <ObjectEditorArea
@@ -223,7 +224,7 @@ export function useShellPanels({
   const panels: Record<PanelId, PanelContent> = {
     projects: {
       title: projectsTab === 'projects' ? 'Projects' : 'Services',
-      header: <ProjectsPanelHeader tab={projectsTab} floating={bridge.floating} onTab={setProjectsTab} servicesVisible={servicesVisible} />,
+      header: <ProjectsPanelHeader tab={projectsTab} floating={bridge.floating} onTab={setProjectsTab} servicesVisible={false} />,
       body: (
         <ProjectsPanelBody
           api={api}

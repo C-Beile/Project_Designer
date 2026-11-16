@@ -16,6 +16,7 @@
 | `dbBrowserSql.ts` | SQL und Texte des DB-Browsers (nur lesend). |
 | `TunnelConfigEditor.tsx` | Tabelle der Tunnel einer Tunnel-Config, Connect je Zeile. |
 | `TunnelPorts.tsx` | Tunnel-Manager (kompakt wie der AditoHub): Tabs Connected/Pinned/Extended (Start), Gruppen ADITO/PLUGIN/OTHER, Hub-Marke. Pins `service:port` in `designer.conf` `[tunnels] pinned`, für alle Projekte. |
+| `TunnelKeyBar.tsx` | Karte "SSH key" oben in der Tunnel-Ansicht: Schlüssel wählen oder entfernen, Passphrase (`SshKeyPassphrase`). Hebt sich hervor, wenn ein Fehler nach Schlüssel aussieht (`looksLikeKeyProblem`). |
 <!-- AUTO:END -->
 
 ## Zweck

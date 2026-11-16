@@ -15,7 +15,7 @@ const sizeSchema: Schema = {
 }
 const STYLES = ['line', 'fill', 'duotone'] as const
 const THICKNESS = ['thin', 'light', 'regular', 'bold'] as const
-const COLOR = { type: 'string', pattern: /^(text|muted|accent|#[0-9a-f]{6})$/i, hint: 'text | muted | accent | Hex wie #4aa8e8' } as const
+const COLOR = { type: 'string', pattern: /^(text|muted|accent|accent-2|cool|warm|success|warning|danger|#[0-9a-f]{6})$/i, hint: 'text | muted | accent | accent-2 | cool | warm | success | warning | danger | Hex wie #4aa8e8' } as const
 const AREAS = ['toolbar', 'tree', 'control'] as const
 const areaSchema: Schema = { style: { type: 'enum', values: STYLES }, thickness: { type: 'enum', values: THICKNESS }, color: COLOR }
 const iconSchema: Schema = {

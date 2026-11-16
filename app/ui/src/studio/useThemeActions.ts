@@ -14,8 +14,8 @@ export const USER_PREFIX = 'user:'
 export interface StudioSource {
   id: string
   label: string
-  /** `builtin`: eingebaut, nur als Kopie speicherbar. `user`: Datei des Nutzers. */
-  kind: 'builtin' | 'user'
+  /** `builtin`: eingebaut, nur als Kopie speicherbar. `imported`: importiertes VS-Code-Theme, ebenfalls nur als Kopie. `user`: Datei des Nutzers. */
+  kind: 'builtin' | 'imported' | 'user'
   text: string
 }
 

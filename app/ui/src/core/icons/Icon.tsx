@@ -6,10 +6,21 @@ export type IconSize = 'sm' | 'md' | 'lg'
 
 const SIZE: Record<IconSize, string> = { sm: 'var(--icon-sm)', md: 'var(--icon-md)', lg: 'var(--icon-lg)' }
 
-/** Farbe für CSS: `text` erbt die Textfarbe des Elternteils (Hover, Deaktiviert), `muted` und `accent` folgen dem Theme, Hex bleibt Hex. */
+const THEME_VAR: Record<string, string> = {
+  muted: 'var(--fg-muted)',
+  accent: 'var(--accent)',
+  'accent-2': 'var(--accent-2)',
+  cool: 'var(--cyan)',
+  warm: 'var(--warm)',
+  success: 'var(--success)',
+  danger: 'var(--error)',
+  warning: 'var(--warning)',
+}
+
+/** Farbe für CSS: `text` erbt die Textfarbe des Elternteils (Hover, Deaktiviert), die Namen aus `THEME_VAR` folgen dem Theme, Hex bleibt Hex. */
 export function iconColor(color: string | undefined): string | undefined {
   if (!color || color === 'text') return undefined
-  return color === 'muted' ? 'var(--fg-muted)' : color === 'accent' ? 'var(--accent)' : color
+  return THEME_VAR[color] ?? color
 }
 
 export interface IconProps {

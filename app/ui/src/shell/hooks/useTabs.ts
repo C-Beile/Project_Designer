@@ -1,3 +1,4 @@
+import { pathKey } from '../../platform/pathKey'
 import { useCallback, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
 import type { ForgeApi } from '../../api/ForgeApi'
 import { choiceDialog } from '../../core/dialogService'
@@ -193,6 +194,10 @@ export function useTabs({ api, root, treeRef, editorWindowsRef, saveIdsRef, proj
   )
   const handleCloseOthers = useCallback((id: string) => closeMany((t) => t !== id, id), [closeMany])
   const handleCloseAll = useCallback(() => closeMany(() => true, null), [closeMany])
+  const handleCloseProject = useCallback(
+    (project: string) => closeMany((id) => pathKey(tabState.tabs.find((t) => t.id === id)?.project ?? '') === pathKey(project), null),
+    [closeMany, tabState],
+  )
 
-  return { tabState, setTabState, drafts, flushers, historyFlags, unsaved, markUnsaved, activateNode, activateNodeRef, handleOpen, handleActivateTab, closeTabNow, handleCloseTab, handleCloseOthers, handleCloseAll }
+  return { tabState, setTabState, drafts, flushers, historyFlags, unsaved, markUnsaved, activateNode, activateNodeRef, handleOpen, handleActivateTab, closeTabNow, handleCloseTab, handleCloseOthers, handleCloseAll, handleCloseProject }
 }

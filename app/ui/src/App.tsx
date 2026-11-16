@@ -8,6 +8,8 @@ import './editors/registerAllBuiltins'
 import { useEffect, useState } from 'react'
 import { registerFeaturePlugins } from './features/registerFeatures'
 import { registerCoreStatusItems } from './shell/coreStatusItems'
+import { registerPanel } from './core/contrib/panels'
+import { SERVICES_PANEL_ID, ServicesDockPanel } from './services/ServicesDock'
 import { registerPerfSnapshot } from './core/perf/perfSnapshot'
 import { registerThemeStudio } from './studio/registerThemeStudio'
 
@@ -34,6 +36,7 @@ export function App({ api = loggedTauriApi, projectRoot }: { api?: ForgeApi; pro
   useEffect(() => registerCoreStatusItems(), [])
   useEffect(() => registerThemeStudio(), [])
   useEffect(() => registerPerfSnapshot(), [])
+  useEffect(() => registerPanel({ id: SERVICES_PANEL_ID, title: 'Services', area: 'left', group: 'left-top', opens: 'on-demand', component: ServicesDockPanel }), [])
   if (!ready) return null
   return (
     <>

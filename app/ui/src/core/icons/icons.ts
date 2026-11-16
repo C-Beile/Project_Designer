@@ -90,11 +90,21 @@ import { UsersIcon } from '@phosphor-icons/react/dist/csr/Users'
 import { PlusIcon } from '@phosphor-icons/react/dist/csr/Plus'
 import { PrinterIcon } from '@phosphor-icons/react/dist/csr/Printer'
 import { UploadSimpleIcon } from '@phosphor-icons/react/dist/csr/UploadSimple'
+import { PlugsIcon } from '@phosphor-icons/react/dist/csr/Plugs'
+import { PushPinIcon } from '@phosphor-icons/react/dist/csr/PushPin'
+import { ArrowSquareOutIcon } from '@phosphor-icons/react/dist/csr/ArrowSquareOut'
+import { DotsThreeIcon } from '@phosphor-icons/react/dist/csr/DotsThree'
+import { StopIcon } from '@phosphor-icons/react/dist/csr/Stop'
+import { RocketLaunchIcon } from '@phosphor-icons/react/dist/csr/RocketLaunch'
+import { CaretDoubleDownIcon } from '@phosphor-icons/react/dist/csr/CaretDoubleDown'
+import { CaretDoubleUpIcon } from '@phosphor-icons/react/dist/csr/CaretDoubleUp'
+import { FolderPlusIcon } from '@phosphor-icons/react/dist/csr/FolderPlus'
 
 export const ICONS = {
   'app-window': AppWindowIcon,
   'arrow-left': ArrowLeftIcon,
   'arrow-line-down': ArrowLineDownIcon,
+  'arrow-square-out': ArrowSquareOutIcon,
   'arrow-line-up': ArrowLineUpIcon,
   'arrow-right': ArrowRightIcon,
   'arrow-u-up-left': ArrowUUpLeftIcon,
@@ -111,6 +121,8 @@ export const ICONS = {
   browser: BrowserIcon,
   bug: BugIcon,
   'calendar-blank': CalendarBlankIcon,
+  'caret-double-down': CaretDoubleDownIcon,
+  'caret-double-up': CaretDoubleUpIcon,
   'caret-down': CaretDownIcon,
   'caret-left': CaretLeftIcon,
   'caret-right': CaretRightIcon,
@@ -126,6 +138,7 @@ export const ICONS = {
   copy: CopyIcon,
   'copy-simple': CopySimpleIcon,
   database: DatabaseIcon,
+  'dots-three': DotsThreeIcon,
   'dots-three-circle': DotsThreeCircleIcon,
   'download-simple': DownloadSimpleIcon,
   envelope: EnvelopeIcon,
@@ -141,6 +154,7 @@ export const ICONS = {
   'floppy-disk-back': FloppyDiskBackIcon,
   'flow-arrow': FlowArrowIcon,
   folder: FolderIcon,
+  'folder-plus': FolderPlusIcon,
   'folder-open': FolderOpenIcon,
   gear: GearIcon,
   'gear-six': GearSixIcon,
@@ -164,12 +178,16 @@ export const ICONS = {
   'paint-brush': PaintBrushIcon,
   'pause-circle': PauseCircleIcon,
   play: PlayIcon,
+  plugs: PlugsIcon,
   'plugs-connected': PlugsConnectedIcon,
   plus: PlusIcon,
   printer: PrinterIcon,
+  'rocket-launch': RocketLaunchIcon,
+  'push-pin': PushPinIcon,
   'shield-check': ShieldCheckIcon,
   'sliders-horizontal': SlidersHorizontalIcon,
   square: SquareIcon,
+  stop: StopIcon,
   'squares-four': SquaresFourIcon,
   stack: StackIcon,
   table: TableIcon,

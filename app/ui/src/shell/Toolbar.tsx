@@ -198,30 +198,7 @@ export function Toolbar(p: ToolbarProps) {
           <Sep />
         </>
       ) : null}
-      {g.run ? (
-        <>
-          <ToolButton
-            label="Partial Transpile"
-            hint={p.transpileRunning ? 'Transpile running…' : p.hasProject ? 'Partial Transpile' : 'Partial Transpile (open a project first)'}
-            enabled={transpileEnabled}
-            onClick={() => p.onCommand('tools.transpilePartial')}
-          >
-            <IconTranspile />
-          </ToolButton>
-          <Sep />
-        </>
-      ) : null}
       {g.git ? <PluginToolbarGroup group="git" ctx={{ hasProject: p.hasProject, pluginActive: p.gitActive !== false, gitRepo: p.gitRepo !== false, gitChanges: p.gitChanges !== false }} onCommand={p.onCommand} /> : null}
-      {g.analytics ? (
-        <>
-          <Sep />
-        </>
-      ) : null}
-      {g.convert ? (
-        <>
-          <Sep />
-        </>
-      ) : null}
       {g.performance ? (
         <>
           <span className="forge-toolbar-heap" title="performance mb - memory used by the Designer window">

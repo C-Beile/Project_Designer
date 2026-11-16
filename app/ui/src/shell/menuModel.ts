@@ -492,7 +492,6 @@ const CORE_MENUS: Omit<MainMenuSpec, 'order'>[] = [
           windowItem('refactoring', 'Refactoring'),
         ],
       },
-      windowItem('services', 'Services', 'Mod+5'),
       windowItem('scanservices', 'Scan Services'),
       windowItem('navigator', 'Navigator', 'Mod+7'),
       windowItem('editor', 'Editor', 'Mod+0'),

@@ -27,6 +27,7 @@ export function EditorTabBar({
   onClose,
   onCloseOthers,
   onCloseAll,
+  onCloseProject,
   problemCounts,
   badgeFor,
   gitFor,
@@ -42,6 +43,8 @@ export function EditorTabBar({
   problemCounts?: ReadonlyMap<string, { errors: number; warnings: number }>
   onCloseOthers?: (id: string) => void
   onCloseAll?: () => void
+  /** Schließt alle Reiter eines Projekts. */
+  onCloseProject?: (project: string) => void
   tabs: EditorTab[]
   activeId: string | null
   dirtyIds: ReadonlySet<string>
@@ -166,6 +169,7 @@ export function EditorTabBar({
               : []),
             { id: 'closeOthers', label: 'Close Other Documents', enabled: tabs.length > 1 && !!onCloseOthers, hint: 'Only one document is open' },
             { id: 'closeAll', label: 'Close All Documents', enabled: !!onCloseAll },
+            ...(projects.length > 1 && onCloseProject ? [{ id: 'closeProject', label: 'Close All Documents of This Project', enabled: true }] : []),
           ]}
           x={tabMenu.x}
           y={tabMenu.y}
@@ -174,6 +178,7 @@ export function EditorTabBar({
             else if (pick === 'moveToWindow') onMoveToWindow?.(tabMenu.id)
             else if (pick === 'closeOthers') onCloseOthers?.(tabMenu.id)
             else if (pick === 'closeAll') onCloseAll?.()
+            else if (pick === 'closeProject') onCloseProject?.(tabs.find((x) => x.id === tabMenu.id)?.project ?? '')
           }}
           onClose={() => setTabMenu(null)}
         />
@@ -265,7 +270,15 @@ export function EditorTabBar({
           })
           return groups.map((g) => (
             <div key={g.project} className="forge-tabgroup" role="presentation" style={{ '--tab-project': projectColor(g.project, projects) } as CSSProperties}>
-              <span className="forge-tabgroup-label" title={g.project}>
+              <span
+                className="forge-tabgroup-label"
+                title={g.project}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  const first = g.items[0]?.tab
+                  if (first) setTabMenu({ id: first.id, x: e.clientX, y: e.clientY })
+                }}
+              >
                 {g.project.split(/[\\/]/).filter(Boolean).pop() ?? g.project}
               </span>
               <div className="forge-tabgroup-tabs" role="presentation">

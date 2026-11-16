@@ -2,9 +2,9 @@
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 2px;
-  height: 34px;
-  padding: 0 10px;
+  gap: 0;
+  height: 32px;
+  padding: 0 8px;
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border-panel);
 }
@@ -13,8 +13,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
@@ -25,8 +25,8 @@
 
 .forge-toolbar-sep {
   width: 1px;
-  height: 18px;
-  margin: 0 7px;
+  height: 16px;
+  margin: 0 5px;
   background: var(--bg-toggle-active);
 }
 

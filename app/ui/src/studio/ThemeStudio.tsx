@@ -8,7 +8,9 @@ import { IconsTab } from '../core/ui/gallery/IconsTab'
 import { ScalesTab } from '../core/ui/gallery/ScalesTab'
 import { previewTomlTheme, restoreTheme, snapshotTheme, type ThemeSnapshot } from '../core/ui/gallery/themePreview'
 import { BUILTIN_THEME_TEXTS } from '../theme/builtinThemes'
+import { customThemes, subscribeCustomThemes } from '../theme/customThemes'
 import { getUserThemes, subscribeThemes } from '../theme/themeStore'
+import { IMPORTED_PREFIX, importedThemeToToml } from './importedTheme'
 import { parseTheme, type ParsedTheme } from '../theme/themeToml'
 import { THEME_LABELS } from '../theme/useTheme'
 import { ColorEditor } from './ColorEditor'
@@ -23,12 +25,14 @@ const CodePreview = lazy(() => import('./CodePreview').then((m) => ({ default: m
 
 function useSources(): StudioSource[] {
   const users = useSyncExternalStore(subscribeThemes, getUserThemes)
+  const imported = useSyncExternalStore(subscribeCustomThemes, customThemes)
   return useMemo(
     () => [
       ...Object.entries(BUILTIN_THEME_TEXTS).map(([id, text]) => ({ id, label: THEME_LABELS[id as 'lion'] ?? id, kind: 'builtin' as const, text })),
       ...users.map((u) => ({ id: USER_PREFIX + u.file, label: `${u.parsed?.meta.name ?? u.file} (yours)`, kind: 'user' as const, text: u.text })),
+      ...imported.map((t) => ({ id: IMPORTED_PREFIX + t.id, label: `${t.name} (VS Code)`, kind: 'imported' as const, text: importedThemeToToml(t) })),
     ],
-    [users],
+    [users, imported],
   )
 }
 

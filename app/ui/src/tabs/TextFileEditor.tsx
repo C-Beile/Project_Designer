@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ForgeApi } from '../api/ForgeApi'
 import { MonacoText, type MonacoTextHandle } from './MonacoText'
 import { MarkdownPreview } from './MarkdownPreview'
+import { CsvPreview } from './CsvPreview'
 import { GITATTRIBUTES_LANGUAGE, IGNORE_LANGUAGE } from '../theme/monacoLanguages'
 import { applyJditoTypes } from '../theme/monacoJdito'
 import { registerFormatter } from '../theme/formatOnSave'
@@ -48,6 +49,12 @@ export function languageForFile(label: string): string {
   if (FILE_NAMES[name]) return FILE_NAMES[name]
   const dot = name.lastIndexOf('.')
   return (dot > 0 && LANGUAGES[name.slice(dot + 1)]) || 'plaintext'
+}
+
+export function previewKindForFile(label: string): 'markdown' | 'csv' | null {
+  const name = label.replace(/^.*[\\/]/, '').toLowerCase()
+  if (/\.(csv|tsv)$/.test(name)) return 'csv'
+  return languageForFile(label) === 'markdown' ? 'markdown' : null
 }
 
 type MarkdownView = 'source' | 'split' | 'preview'
@@ -130,6 +137,7 @@ export function TextFileEditor({
   }, [api, path, projectRoot, drafts, isNew])
 
   const language = languageForFile(label)
+  const previewKind = previewKindForFile(label)
   useEffect(() => {
     if (language === 'javascript') void applyJditoTypes(api, projectRoot)
   }, [api, projectRoot, language])
@@ -144,8 +152,8 @@ export function TextFileEditor({
           Read-only: this file belongs to an installed module.
         </div>
       ) : null}
-      {language === 'markdown' ? (
-        <div className="forge-md-switch" role="tablist" aria-label="Markdown view">
+      {previewKind ? (
+        <div className="forge-md-switch" role="tablist" aria-label={previewKind === 'csv' ? 'CSV view' : 'Markdown view'}>
           {MARKDOWN_VIEWS.map(([id, text]) => (
             <Button variant="bare" key={id} role="tab" aria-selected={mdView === id} className={`forge-md-tab${mdView === id ? ' is-active' : ''}`} onClick={() => setMdView(id)}>
               {text}
@@ -153,7 +161,7 @@ export function TextFileEditor({
           ))}
         </div>
       ) : null}
-      <div className={`forge-md-body${language === 'markdown' ? ` is-${mdView}` : ''}`}>
+      <div className={`forge-md-body${previewKind ? ` is-${mdView}` : ''}`}>
         <div className="forge-md-source">
           <MonacoText
             initial={loaded.initial}
@@ -166,12 +174,13 @@ export function TextFileEditor({
             reveal={reveal ?? undefined}
             onChange={(text) => {
               drafts.set(path, text)
-              if (language === 'markdown') setMdText(text)
+              if (previewKind) setMdText(text)
               onDirty(path, true)
             }}
           />
         </div>
-        {language === 'markdown' && mdView !== 'source' ? <MarkdownPreview text={mdText} /> : null}
+        {previewKind === 'markdown' && mdView !== 'source' ? <MarkdownPreview text={mdText} /> : null}
+        {previewKind === 'csv' && mdView !== 'source' ? <CsvPreview text={mdText} /> : null}
       </div>
     </div>
   )

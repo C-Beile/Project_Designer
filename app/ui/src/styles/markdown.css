@@ -41,3 +41,12 @@
 .forge-md th, .forge-md td { padding: 5px 12px; border: 1px solid var(--border); text-align: left; }
 
 .forge-md th { background: var(--bg-panel); font-weight: 600; }
+
+.forge-csv { padding: 0; overflow: auto; }
+.forge-csv table { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.75rem; }
+.forge-csv th, .forge-csv td { max-width: 320px; padding: 3px 10px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+.forge-csv th { position: sticky; top: 0; z-index: 1; background: var(--bg-panel); font-weight: 600; }
+.forge-csv tbody tr:nth-child(even) td { background: color-mix(in srgb, var(--fg) 3%, transparent); }
+.forge-csv tbody tr:hover td { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.forge-csv .forge-csv-no { width: 1%; color: var(--fg-muted); text-align: right; background: var(--bg-panel); }
+.forge-csv.is-empty { padding: 12px; color: var(--fg-muted); }

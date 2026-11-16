@@ -1,8 +1,8 @@
 /* ---- 0.7.0: toolbar, plugins, local data, table center, open dialog ---- */
 
 .forge-toolbar.is-large .forge-tool-btn {
-  width: 32px;
-  height: 28px;
+  width: 28px;
+  height: 26px;
 }
 
 .forge-toolbar.is-large {

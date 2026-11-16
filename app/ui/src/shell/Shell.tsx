@@ -31,7 +31,7 @@ import { TranspileMatchDialog } from './TranspileMatchDialog'
 import { UpdatesDialog } from './UpdatesDialog'
 import { decorationFor, indexOf, useScm, GIT_CODE_LABEL } from '../core/scm'
 import { TabSwitcher } from './TabSwitcher'
-import { QuickFileSearch, useDoubleCtrl } from './QuickFileSearch'
+import { useDoubleCtrl } from './QuickFileSearch'
 import { TableCenterDialog } from './TableCenterDialog'
 import { loadToolbarPrefs, saveToolbarPrefs, type ToolbarGroup, type ToolbarPrefs } from './toolbarPrefs'
 import { getEditorPrefs, subscribeEditorPrefs } from '../theme/editorPrefs'
@@ -51,7 +51,8 @@ import { osWindowsAvailable } from '../windows/windowService'
 import { FLOAT_SIZES, type FloatView } from '../windows/protocol'
 import { aliasConfigTabNode, type AliasConfigRef } from '../tabs/AliasConfigTab'
 import { TranspileProgress, TranspileResult } from './TranspileProgress'
-import { requestSystemReload, UNCONFIGURED_HINT, systemKey, systemNameOf, projectOfPath, systemPhase, TUNNEL_PHASE_LABEL } from '../services/tunnelState'
+import { ServicesDockProvider, SERVICES_PANEL_ID } from '../services/ServicesDock'
+import { useTunnelState, requestSystemReload, UNCONFIGURED_HINT, systemKey, systemNameOf, projectOfPath, systemPhase, TUNNEL_PHASE_LABEL } from '../services/tunnelState'
 import { countsByNode, errorCount, fromDiagnostic, getProblems, normId, setProblems, subscribeProblems, type Problem } from '../problems/problemStore'
 import { subscribeShellRequests } from '../core/outputBus'
 import { WorkspaceDialog } from './WorkspaceDialog'
@@ -155,6 +156,14 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   useIndexStatus(api, projects)
   const { treeSelection, setTreeSelection, selected, setSelected, selectedProject, setSelectedProject, navSel, setNavSel, inspected, inspectedObject, editNode, elementSel, focusLabel, inspectedKind } = useSelection(tree)
   const { db, changeDb, clearDb, tunnelState, nowTick } = useDbStatus(api, projects, trees, appendLog)
+  const allTunnelStates = useTunnelState()
+  const servicesConnected = Object.entries(allTunnelStates.bySystem).some(([k, v]) => k !== '' && (v.connected || v.tunnel_up))
+  const servicesWasConnected = useRef(false)
+  useEffect(() => {
+    if (servicesConnected === servicesWasConnected.current) return
+    servicesWasConnected.current = servicesConnected
+    setLayout((prev) => ({ ...prev, panels: { ...prev.panels, [SERVICES_PANEL_ID]: servicesConnected ? 'open' : 'closed' } as LayoutState['panels'] }))
+  }, [servicesConnected])
   const editorWindowsRef = useRef<ReturnType<typeof useEditorWindows> | null>(null)
   const scm = useScm()
   // Kein Repository im Projektordner (oder Git fehlt): Git-Knöpfe und -Menüs bleiben abgeblendet.
@@ -213,7 +222,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   )
 
   const saveIdsRef = useRef<(ids: string[]) => Promise<boolean>>(async () => false)
-  const { tabState, setTabState, drafts, flushers, historyFlags, unsaved, markUnsaved, activateNode, activateNodeRef, handleOpen, handleActivateTab, closeTabNow, handleCloseTab, handleCloseOthers, handleCloseAll } = useTabs({
+  const { tabState, setTabState, drafts, flushers, historyFlags, unsaved, markUnsaved, activateNode, activateNodeRef, handleOpen, handleActivateTab, closeTabNow, handleCloseTab, handleCloseOthers, handleCloseAll, handleCloseProject } = useTabs({
     api, root, treeRef, editorWindowsRef, saveIdsRef, projectOf, refreshDiagnostics, setSelected, setTreeSelection, setActiveProject, setSelectedProject, setValue, setDiagnostics, setCanUndo, setCanRedo, setAliasSel, setStatus,
   })
   useTabMemory({ projects, trees, loadingProjects, tabState, handleOpen })
@@ -280,8 +289,9 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
 
   const { resetNavElement, activateNavElement, resetNavRef, activateNavRef } = useNavElements({ api, root, inspectedObject, applyOutcome, setNavSel, setReloadToken, setStatus, removeElementRef })
 
-  const [quickSearch, setQuickSearch] = useState(false)
-  useDoubleCtrl(() => setQuickSearch(true))
+  useDoubleCtrl(() => {
+    if (root.trim() !== '') setDialog('openModel')
+  })
   const { bridge, floatingViews, effectiveLayout, commands: floatingCommands } = useFloatingWindows({
     api, root, tree, treeRef, selectedId, handleOpen, openSql, markUnsaved, refreshDiagnostics, resetNavRef, activateNavRef, editorWindowsRef,
     setNavSel, setAliasSel, setTreeSelection, setValue, setSheetVersion, setCanUndo, setStatus, setReloadToken,
@@ -291,13 +301,14 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   const showToolWindow = useCallback((id: ToolWindowId, focus = true) => {
     const panel = TOOL_WINDOWS.find((w) => w.id === id)!.panel
     if (panel) setLayout((prev) => ({ ...prev, panels: { ...prev.panels, [panel]: 'open' } }))
-    if (id === 'projects' || id === 'services') setProjectsTab(id)
+    if (id === 'services') setLayout((prev) => ({ ...prev, panels: { ...prev.panels, [SERVICES_PANEL_ID]: 'open' } as LayoutState['panels'] }))
+    if (id === 'projects') setProjectsTab(id)
     if (isOutputTab(id)) {
       setOutputTabs((prev) => (prev.includes(id) ? prev : [...prev, id]))
       setOutputTab(id)
     }
     if (focus) {
-      const selector = panel ? `[data-panel="${panel}"]` : '.forge-editor-area'
+      const selector = panel ? `[data-panel="${panel}"]` : id === 'services' ? `[data-panel="${SERVICES_PANEL_ID}"]` : '.forge-editor-area'
       setTimeout(() => document.querySelector<HTMLElement>(selector)?.focus(), 0)
     }
   }, [])
@@ -503,7 +514,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
     api, root, projects, tree, objectsByType, tabState, setTabState, selected, selectedProject, value, setValue, sheetVersion, setSheetVersion, setCanUndo, setCanRedo, recent, recentList, unsaved, hasProject, totalErrors,
     problemList, problemCounts, scanning, logs, clearLog, db, changeDb, drafts, historyFlags, sqlTexts, sqlNonce, reveal, setReveal, projectIndex, editorWindows, bridge, systemBadge, gitFor, loadingProjects,
     iconSvgs, projectsTab, setProjectsTab, outputTabs, outputTab, setOutputTab, closeOutputTab, aliasSel, inspected, inspectedKind, inspectedObject, elementSel, focusLabel, setNavSel, resetNavElement,
-    activateNavElement, refactoring, setRefactoring, doRefactoring, setCtxMenu, runTreeAction, handleActivateTab, handleCloseTab, handleCloseOthers, handleCloseAll, handleTreeSelect, handleOpen,
+    activateNavElement, refactoring, setRefactoring, doRefactoring, setCtxMenu, runTreeAction, handleActivateTab, handleCloseTab, handleCloseOthers, handleCloseAll, handleCloseProject, handleTreeSelect, handleOpen,
     openProjectAt, openSql, openProblem, markUnsaved, refreshDiagnostics, applyOutcome, registerFlush, setScanTick, setReloadToken, setStatus,
   })
 
@@ -536,6 +547,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         />
       </ErrorBoundary>
       <ExperimentalEngineWarning engine={engine} />
+      <ServicesDockProvider value={{ api, db, onDbChange: changeDb, onOpenSql: openSql, projects: projects.length > 0 ? projects : [root] }}>
       <DockHost
         uiFactor={readAppearance().fontSize / DEFAULT_FONT_SIZE}
         layout={effectiveLayout}
@@ -545,7 +557,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         onFloat={
           osWindowsAvailable()
             ? {
-                canFloat: (id) => id === 'navigator' || id === 'properties' || id === 'output' || (id === 'projects' && projectsTab === 'services'),
+                canFloat: (id) => id === 'navigator' || id === 'properties' || id === 'output' || (id as string) === SERVICES_PANEL_ID,
                 float: (id, at) => {
                   const view = (id === 'projects' ? projectsTab : id) as FloatView
                   const size = FLOAT_SIZES[view]
@@ -555,6 +567,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
             : undefined
         }
       />
+      </ServicesDockProvider>
       <ErrorBoundary compact label="Status bar">
         <StatusBar
           system={activeSystem || null}
@@ -682,19 +695,6 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
         />
       ) : null}
       <TabSwitcher tabs={tabState.tabs} activeId={tabState.activeId} dirtyIds={unsaved} onActivate={handleActivateTab} />
-      {quickSearch && hasProject ? (
-        <QuickFileSearch
-          api={api}
-          projectRoots={projects.length > 0 ? projects : [root]}
-          onClose={() => setQuickSearch(false)}
-          onOpen={(path) => {
-            // An object file opens as the object, any other file as a plain file.
-            const m = /\/([^/]+)\/([^/]+)\/\2\.aod$/i.exec(path)
-            const object = m ? findObject(tree, m[1], m[2]) : null
-            void handleOpen(object ?? { id: path, label: baseName(path), object_type: null, kind: 'file', is_leaf: true, children: [] })
-          }}
-        />
-      ) : null}
       {connectionPick ? (
         <SelectDatabaseConnectionDialog
           connections={connectionPick.connections}
