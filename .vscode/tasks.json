@@ -20,7 +20,7 @@
             "label": "rust: build designer-app",
             "type": "shell",
             "command": "cargo build -p designer-app",
-            "options": { "cwd": "${workspaceFolder}" },
+            "options": { "cwd": "${workspaceFolder}", "env": { "RUSTUP_TOOLCHAIN": "stable-x86_64-pc-windows-msvc" } },
             "problemMatcher": ["$rustc"]
         },
         {

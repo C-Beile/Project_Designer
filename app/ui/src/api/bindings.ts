@@ -813,11 +813,6 @@ export type RestCallResponse = {
 	sent: string,
 };
 
-export type ServerDto = {
-	host: string,
-	systems: string[],
-};
-
 export type SearchHit = {
 	path: string,
 	line: number,
@@ -844,6 +839,11 @@ export type SearchResult = {
 	files_searched: number,
 	files_with_hits: number,
 	truncated: boolean,
+};
+
+export type ServerDto = {
+	host: string,
+	systems: string[],
 };
 
 export type SheetGroup = SheetGroup_Serialize | SheetGroup_Deserialize;
