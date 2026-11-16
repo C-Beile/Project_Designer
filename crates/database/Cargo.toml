@@ -10,6 +10,8 @@ publish.workspace = true
 ssh-tunnel = { path = "../ssh-tunnel" }
 app-base = { path = "../app-base" }
 platform = { path = "../platform" }
+getrandom = "0.2"
+sha2 = "0.10"
 serde = { workspace = true }
 quick-xml = { workspace = true }
 serde_json = { workspace = true }

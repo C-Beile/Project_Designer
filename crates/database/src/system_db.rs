@@ -305,6 +305,50 @@ pub fn set_user_list_property(manager: &DbManager, user: &str, key: &str, values
     Ok(())
 }
 
+const PASSWORD_ALGORITHM: &str = "SHA256S";
+
+fn hex_upper(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02X}")).collect()
+}
+
+/// The stored form of a password the way the ADITO server writes and checks it: `SHA256S:<salt>:<hash>`, salt
+/// and hash as upper-case hex, hash = SHA-256 over the salt followed by the UTF-8 bytes of the password.
+pub fn hash_password(password: &str, salt: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    hasher.update(salt);
+    hasher.update(password.as_bytes());
+    format!("{PASSWORD_ALGORITHM}:{}:{}", hex_upper(salt), hex_upper(&hasher.finalize()))
+}
+
+/// Sets a new password of a user. Only called after the user confirmed; only the `password` row of that user is touched.
+pub fn set_user_password(manager: &DbManager, user: &str, password: &str) -> Result<(), String> {
+    check_user_name(user)?;
+    if password.is_empty() || password.len() > 256 || password.contains(|c: char| c.is_control()) {
+        return Err("Enter a password without control characters (at most 256 characters).".into());
+    }
+    let mut salt = [0u8; 32];
+    getrandom::getrandom(&mut salt).map_err(|e| format!("No random salt could be made: {e}"))?;
+    let stored = hash_password(password, &salt);
+    let found = manager.query(&format!("SELECT ID FROM ASYS_USERS WHERE NAME = '{}' AND PROPKEY = 'password'", sql_text(user)), false)?;
+    match found.rows.as_slice() {
+        [] => {
+            let group = property_group(manager, "password");
+            insert_property(manager, user, "password", &stored, &group)
+        }
+        [row] => {
+            let Some(Some(id)) = row.first() else { return Err("The password row has no id.".into()) };
+            let is_id = id.len() == 36 && id.chars().all(|c| c.is_ascii_hexdigit() || c == '-');
+            if !is_id {
+                return Err("The property id is not valid.".into());
+            }
+            manager.query(&format!("UPDATE ASYS_USERS SET PROPVAL = '{stored}', DATE_EDIT = NOW() WHERE ID = '{id}'"), true)?;
+            Ok(())
+        }
+        _ => Err("This user has several password rows. Fix them in the client of the system first.".into()),
+    }
+}
+
 /// Adds a user with its basic properties and returns its id. It has no password yet.
 pub fn create_user(manager: &DbManager, title: &str) -> Result<String, String> {
     let title = title.trim();
@@ -579,6 +623,21 @@ mod alias_rank_tests {
         let order = rank_server_ids(&r, &[]);
         assert_eq!(r[order[0]].0, "dev");
         assert_eq!(r[order[2]].0, "default");
+    }
+}
+
+#[cfg(test)]
+mod password_tests {
+    use super::*;
+
+    #[test]
+    fn password_is_stored_like_the_server_does() {
+        assert_eq!(
+            hash_password("abc", &[0u8; 32]),
+            "SHA256S:0000000000000000000000000000000000000000000000000000000000000000:365AA7D8F7F9402C4B9434502B4CC89DDB09FE50D7CD95B493B834C62D5A5370"
+        );
+        let parts: Vec<String> = hash_password("x", &[1, 2, 255]).split(':').map(str::to_string).collect();
+        assert_eq!((parts.len(), parts[0].as_str(), parts[1].as_str()), (3, "SHA256S", "0102FF"));
     }
 }
 

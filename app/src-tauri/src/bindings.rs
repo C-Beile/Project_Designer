@@ -94,6 +94,7 @@ pub fn builder() -> Builder<tauri::Wry> {
         crate::commands::misc::check_for_update,
         crate::commands::misc::local_data_info,
         crate::commands::rest::rest_list_webservices,
+        crate::commands::rest::rest_list_servers,
         crate::commands::rest::rest_send,
         crate::commands::settings::get_settings,
         crate::commands::settings::set_settings,

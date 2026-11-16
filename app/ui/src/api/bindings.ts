@@ -236,6 +236,7 @@ export const commands = {
 	 */
 	localDataInfo: (thresholdDays: number, options?: InvokeOptions) => __TAURI_INVOKE<LocalDataInfo_Serialize>("local_data_info", { thresholdDays }, options),
 	restListWebservices: (projectRoot: string, options?: InvokeOptions) => __TAURI_INVOKE<WebserviceDto_Serialize[]>("rest_list_webservices", { projectRoot }, options),
+	restListServers: (projectRoot: string, options?: InvokeOptions) => __TAURI_INVOKE<ServerDto[]>("rest_list_servers", { projectRoot }, options),
 	restSend: (request: RestCallRequest_Deserialize, options?: InvokeOptions) => __TAURI_INVOKE<RestCallResponse>("rest_send", { request }, options),
 	/**  P8 Tools > Options: Forge's own user settings (see `project::settings`). */
 	getSettings: (options?: InvokeOptions) => __TAURI_INVOKE<ForgeSettings_Serialize>("get_settings", undefined, options),
@@ -809,6 +810,12 @@ export type RestCallResponse = {
 	body: string,
 	elapsedMs: number,
 	size: number,
+	sent: string,
+};
+
+export type ServerDto = {
+	host: string,
+	systems: string[],
 };
 
 export type SearchHit = {
