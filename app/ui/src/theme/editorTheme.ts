@@ -34,12 +34,41 @@ const SQL_FOLLOWS = ['string', 'number', 'comment']
 
 const hex = (color: string) => color.replace(/^#/, '').slice(0, 6).toLowerCase()
 
+/** Widget-Farben, die Monaco sonst aus seinem eigenen Standard-Theme nimmt (blaue Peek-Ansicht): abgeleitet aus den Flächenfarben des Themes. */
+export function widgetColors(colors: Record<string, string>): Record<string, string> {
+  const editorBg = colors['editor.background']
+  const widget = colors['editorWidget.background'] ?? editorBg
+  const fg = colors['editor.foreground']
+  const border = colors['editorWidget.border'] ?? colors['focusBorder']
+  const selection = colors['editor.selectionBackground']
+  const derived: Record<string, string | undefined> = {
+    'peekViewEditor.background': widget,
+    'peekViewEditorGutter.background': widget,
+    'peekViewResult.background': widget,
+    'peekViewTitle.background': widget,
+    'peekViewBorder': border,
+    'peekViewResult.selectionBackground': selection,
+    'peekViewResult.lineForeground': fg,
+    'peekViewResult.fileForeground': fg,
+    'peekViewTitleLabel.foreground': fg,
+    'editorHoverWidget.background': widget,
+    'editorHoverWidget.border': border,
+    'editorSuggestWidget.background': widget,
+    'editorSuggestWidget.border': border,
+    'editorGutter.background': editorBg,
+  }
+  const out: Record<string, string> = {}
+  for (const [key, value] of Object.entries(derived)) if (value) out[key] = value
+  return out
+}
+
 /** Legt die Farben des TOML-Themes über ein eingebautes Monaco-Theme. Eigene Regeln stehen hinten und gewinnen. */
 export function mergeEditorTheme(base: MonacoThemeData, theme: ActiveEditorTheme): MonacoThemeData {
   const own: MonacoThemeRule[] = Object.entries(theme.syntax).map(([token, { color, italic }]) => ({ token, foreground: hex(color), ...(italic ? { fontStyle: 'italic' } : {}) }))
   const sql = own.filter((r) => SQL_FOLLOWS.includes(r.token)).map((r) => ({ ...r, token: `${r.token}.sql` }))
   const rules = [...own, ...sql]
-  return { ...base, colors: { ...base.colors, ...theme.colors }, rules: [...base.rules, ...rules] }
+  const colors = { ...base.colors, ...theme.colors }
+  return { ...base, colors: { ...widgetColors(colors), ...colors }, rules: [...base.rules, ...rules] }
 }
 
 /** Stellt einen früher gemerkten Stand wieder her (Schließen des Studios). */

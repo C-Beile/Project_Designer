@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
+import { useAbortableEffect } from '../../core/hooks/useAbortableEffect'
 import * as monaco from 'monaco-editor'
 import type { ForgeApi } from '../../api/ForgeApi'
 import type { DiffTarget } from '../../wire/types'
 import { currentForgeTheme, ensureMonacoThemesDefined, monacoThemeFor, watchForgeThemeForMonaco } from '../../theme/monacoTheme'
 import { languageForFile } from '../../tabs/TextFileEditor'
+import { ensureMonacoWorkers } from '../../theme/monacoWorkers'
 import { useScm } from '../../core/scm'
 import { diffTitle, SIDE_LABEL } from './diffTitle'
 import { useResource } from '../../core/hooks/useResource'
@@ -23,32 +25,37 @@ export function DiffView({ api, target }: { api: ForgeApi; target: DiffTarget })
   const content = diff.data ?? null
   const error = diff.error ?? null
 
-  useEffect(() => {
+  useAbortableEffect((signal) => {
     const host = hostRef.current
     if (!host || !content || content.binary || content.too_large) return
-    ensureMonacoThemesDefined()
-    const language = languageForFile(target.path)
-    const editor = monaco.editor.createDiffEditor(host, {
-      readOnly: true,
-      originalEditable: false,
-      automaticLayout: true,
-      renderSideBySide: true,
-      theme: monacoThemeFor(currentForgeTheme()),
-      ariaLabel: diffTitle(target),
-      minimap: { enabled: false },
-      scrollBeyondLastLine: false,
-      fontSize: 13,
+    let dispose = () => {}
+    void ensureMonacoWorkers().then(() => {
+      if (signal.aborted) return
+      ensureMonacoThemesDefined()
+      const language = languageForFile(target.path)
+      const editor = monaco.editor.createDiffEditor(host, {
+        readOnly: true,
+        originalEditable: false,
+        automaticLayout: true,
+        renderSideBySide: true,
+        theme: monacoThemeFor(currentForgeTheme()),
+        ariaLabel: diffTitle(target),
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        fontSize: 13,
+      })
+      const original = monaco.editor.createModel(content.original, language)
+      const modified = monaco.editor.createModel(content.modified, language)
+      editor.setModel({ original, modified })
+      const stopTheme = watchForgeThemeForMonaco((theme) => monaco.editor.setTheme(theme))
+      dispose = () => {
+        stopTheme()
+        editor.dispose()
+        original.dispose()
+        modified.dispose()
+      }
     })
-    const original = monaco.editor.createModel(content.original, language)
-    const modified = monaco.editor.createModel(content.modified, language)
-    editor.setModel({ original, modified })
-    const stopTheme = watchForgeThemeForMonaco((theme) => monaco.editor.setTheme(theme))
-    return () => {
-      stopTheme()
-      editor.dispose()
-      original.dispose()
-      modified.dispose()
-    }
+    return () => dispose()
   }, [content, target])
 
   if (error) return <div className="forge-editor-empty"><p className="forge-field-hint" role="alert">{error}</p></div>

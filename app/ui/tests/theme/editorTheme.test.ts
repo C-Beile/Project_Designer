@@ -39,7 +39,8 @@ describe('editor colours of a TOML theme', () => {
   it('go on top of a built-in Monaco theme and also colour SQL text', () => {
     setActiveEditorTheme(parseTheme(theme))
     const merged = mergeEditorTheme(base, getActiveEditorTheme()!)
-    expect(merged.colors).toEqual({ 'editor.background': '#fafafa', focusBorder: '#123456', 'editor.selectionBackground': '#ccddee' })
+    expect(merged.colors).toMatchObject({ 'editor.background': '#fafafa', focusBorder: '#123456', 'editor.selectionBackground': '#ccddee' })
+    expect(merged.colors['peekViewEditor.background']).toBe('#fafafa')
     const tokens = merged.rules.map((r) => r.token)
     expect(tokens).toEqual(expect.arrayContaining(['comment', 'keyword', 'string', 'string.sql', 'comment.sql']))
     expect(merged.rules.find((r) => r.token === 'comment.sql')).toMatchObject({ foreground: '008800', fontStyle: 'italic' })

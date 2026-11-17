@@ -13,6 +13,7 @@ import { TreeContextMenu } from '../tree/TreeContextMenu'
 import { chooseWorkspaceFolder, getWorkspaceFolders } from '../settings/workspaceFolder'
 import { requestShell } from '../core/outputBus'
 import { Button } from '../core/ui/controls'
+import { Icon } from '../core/icons/Icon'
 import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
 
 export type ProjectsTab = 'projects' | 'services'
@@ -62,10 +63,11 @@ export interface ProjectsPanelBodyProps {
   openProjects: string[]
   onOpenProjects: () => void
   onOpenRecent: (path: string) => void
+  activeProject?: string
 }
 
 // Inhalt des Projects-Panels: Projektbaum mit Leiste des aktiven Projekts, oder die Services.
-export function ProjectsPanelBody({ api, tab, tree, loading, problemCounts, badgeFor, gitFor, iconSvg, db, onDbChange, onSelect, onOpen, onContextMenu, onFileKey, onOpenSql, setStatus, recentProjects, openProjects, onOpenProjects, onOpenRecent }: ProjectsPanelBodyProps) {
+export function ProjectsPanelBody({ api, tab, tree, loading, problemCounts, badgeFor, gitFor, iconSvg, db, onDbChange, onSelect, onOpen, onContextMenu, onFileKey, onOpenSql, setStatus, recentProjects, openProjects, onOpenProjects, onOpenRecent, activeProject }: ProjectsPanelBodyProps) {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const [inside, setInside] = useState<Record<string, FoundProjectDto[]>>({})
   useAbortableEffect((signal) => {
@@ -140,6 +142,7 @@ export function ProjectsPanelBody({ api, tab, tree, loading, problemCounts, badg
         gitFor={gitFor}
         onFileKey={onFileKey}
       />
+      <ActiveProjectBar path={activeProject ?? ''} count={openProjects.length} />
       {menu ? (
         <TreeContextMenu
           entries={[
@@ -159,6 +162,17 @@ export function ProjectsPanelBody({ api, tab, tree, loading, problemCounts, badg
           onClose={() => setMenu(null)}
         />
       ) : null}
+    </div>
+  )
+}
+
+export function ActiveProjectBar({ path, count }: { path: string; count: number }) {
+  if (!path || count === 0) return null
+  return (
+    <div className="projects-active" title={path} aria-label={`Active project: ${baseName(path)}`}>
+      <Icon name="folder-open" size="sm" color="accent" />
+      <span className="projects-active-label">Active project</span>
+      <span className="projects-active-name">{baseName(path)}</span>
     </div>
   )
 }

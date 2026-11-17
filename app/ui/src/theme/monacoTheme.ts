@@ -4,7 +4,7 @@ import { getOptions, subscribeOptions } from '../settings/options'
 import { findCustomTheme, subscribeCustomThemes } from './customThemes'
 import { isPluginActive, subscribePluginPrefs } from '../settings/plugins'
 import type { MonacoThemeData } from './vscodeTheme'
-import { getActiveEditorTheme, mergeEditorTheme, subscribeEditorTheme, type ActiveEditorTheme } from './editorTheme'
+import { getActiveEditorTheme, mergeEditorTheme, subscribeEditorTheme, widgetColors, type ActiveEditorTheme } from './editorTheme'
 
 // Monaco ships its own theme engine, entirely separate from tokens.css - defining a proper Night
 // Owl theme here closes the one remaining unthemed seam in Forge: without this, the embedded
@@ -39,10 +39,14 @@ function withSqlTokens(data: MonacoThemeData): MonacoThemeData {
   return { ...data, rules: [...data.rules, ...extra] }
 }
 
+function withWidgetColors(data: MonacoThemeData): MonacoThemeData {
+  return { ...data, colors: { ...widgetColors(data.colors), ...data.colors } }
+}
+
 function defineBuiltin(id: string, data: MonacoThemeData): void {
   const full = withSqlTokens(data)
   builtinData.set(id, full)
-  monaco.editor.defineTheme(id, full)
+  monaco.editor.defineTheme(id, withWidgetColors(full))
 }
 
 /** Registers both Monaco themes once per process. Safe to call multiple times. */
@@ -208,7 +212,7 @@ export function monacoThemeFor(forgeTheme: 'dark' | 'light' | 'lion'): string {
   if (custom) {
     ensureMonacoThemesDefined()
     if (registeredCustom.get(custom.id) !== custom.data) {
-      monaco.editor.defineTheme(custom.id, withSqlTokens(custom.data))
+      monaco.editor.defineTheme(custom.id, withWidgetColors(withSqlTokens(custom.data)))
       registeredCustom.set(custom.id, custom.data)
     }
     return custom.id

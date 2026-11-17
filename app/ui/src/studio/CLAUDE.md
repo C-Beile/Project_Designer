@@ -4,6 +4,7 @@
 | Datei | Wofür |
 |---|---|
 | `ColorEditor.tsx` | Ein Farbfeld je Schlüssel (`ColorField`), gruppiert, mit wirksamem oder geerbtem Wert. |
+| `importedTheme.ts` | Importierte VS-Code-Themes als Liste für das Theme Studio (Art `imported`). |
 | `registerThemeStudio.tsx` | Meldet Tools > Theme Studio an (Befehl, Menü, Shell-Beitrag) und öffnet das Fenster (`openThemeStudioWindow`). |
 | `ThemeStudio.tsx` | Das Studio: Zustand (Auswahl, Text, Vorschau), Editor links, Vorschau-Tabs rechts. |
 | `StudioToolbar.tsx` | Kopf mit Theme-Auswahl, Reload und Ordner, dazu die Knopfleiste (Speichern, Kopie, Löschen, Use as my theme). |

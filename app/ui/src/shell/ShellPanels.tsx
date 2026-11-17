@@ -247,6 +247,7 @@ export function useShellPanels({
           openProjects={projects}
           onOpenProjects={() => void runCommandById('file.openProject')}
           onOpenRecent={openProjectAt}
+          activeProject={currentTab?.project || selectedProject || root}
         />
       ),
     },

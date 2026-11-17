@@ -4,6 +4,7 @@
 | Datei | Wofür |
 |---|---|
 | `tabModel.ts` | Reiter-Zustand als reine Funktionen (`openTab`, `subTabsFor`, `isFileNode`, `tunnelTabNode` ...). |
+| `CsvPreview.tsx` | Tabellen-Vorschau für CSV und TSV (`parseCsv`, `detectDelimiter`). Umschalter in `TextFileEditor.tsx`. |
 | `ObjectEditorArea.tsx` | Inhalt des aktiven Reiters: Unter-Reiter (Editor, Users, Source, History) und die passende Ansicht. |
 | `EditorTabBar.tsx` | Reiterleiste. Zu viele Reiter (Einstellung `[appearance] tabOverflow`): Dropdown rechts mit den verdeckten (der aktive bleibt sichtbar), scrollbare Leiste (Mausrad) oder Reihen untereinander. Bei mehreren offenen Projekten (`projects`) trägt jeder Reiter oben einen Streifen in der Projektfarbe (`core/projectColor.ts`). |
 | `SourceEditor.tsx` | Unter-Reiter Source: rohe `.aod`, Änderungen gehen ans Backend. |

@@ -4,6 +4,7 @@
 | Datei | Wofür |
 |---|---|
 | `Modal.tsx` | Rahmen für jeden Dialog (Titel, Inhalt, Fußzeile, Enter). Im OS-Fenster füllt er das Fenster. |
+| `noPageScroll.ts` | `installNoPageScroll()`: setzt eine verirrte Seiten-Scrollposition sofort zurück (die Seite scrollt nie, nur Panels). Aufruf in `main.tsx`. |
 | `dialogService.tsx` | `confirmDialog`, `promptDialog`, `choiceDialog` als Promise. `DialogHost` zeigt sie und die Masken. |
 | `notifications.tsx` | `notify(text, opts)`: Toast ohne Fokusraub. `ToastHost` zeigt ihn. Liste für den Notifications-Reiter. |
 | `openFileBus.ts` | `openFileInDesigner(path)`: "Open File" aus einem eigenen Fenster (Commit-Fenster) öffnet die Datei im Hauptfenster. |
