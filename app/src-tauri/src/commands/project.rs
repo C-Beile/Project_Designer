@@ -32,6 +32,7 @@ pub async fn open_project(path: String, registry: State<'_, Arc<IndexRegistry>>)
         // The index starts after the tree scan (both read every file); a running one is compared with the disk again.
         if result.is_ok() {
             registry.ensure_started(&PathBuf::from(&path));
+            project::modification_overlay::warm(PathBuf::from(&path));
         }
         result
     })

@@ -11,6 +11,8 @@
 | `useNavElements.ts` | Navigator: Element zurücksetzen/aktivieren. Liefert `resetNavElement, activateNavElement, resetNavRef, activateNavRef`. Setzt `removeElementRef.current`. |
 | `useExternalChanges.ts` | Änderungen von außen: hört `forge://project-changed` (kein Polling, geht auch ohne Fenster-Fokus), gleicht beim Fokus per `api.indexVerify` ab (entprellt), lädt Baum, Probleme und offene Tabs nach; Konflikt-Dialog. Liefert `resolveConflict`. |
 | `useIndexStatus.ts` | Hört `forge://index-progress` und füllt `core/indexStatus`; fragt nach einem Fenster-Reload `api.indexStatus` ab. Muss nach `useProjects` aufgerufen werden. |
+| `useDropView.ts` | Hört `dragover`/`drop` im Fenster: Dateien aus dem Explorer werden gelesen (`core/viewFiles.ts`) und als schreibgeschützter Reiter geöffnet. Ziehen innerhalb der App (ohne `Files`) bleibt unberührt. |
+| `useUpdateCheck.ts` | Fragt 4 s nach dem Start einmal `api.checkForUpdate`. Gibt es eine neuere Version, erscheint ein Hinweis mit "Details" (Updates-Dialog) und "Install and restart". Fehler (z. B. Build ohne Token) kommen nur ins Protokoll. Aus: `[updates] check_on_start = false` in `designer.conf`. |
 | `useProblemScan.ts` | Projektweiter Problem-Scan. Liefert `scanning`. |
 | `useOutputLogs.ts` | Zeilen der Output-Reiter (auch "IDE Log": live aus dem Event `forge://log-entry`, farbig nach Art und Bereich). Liefert `logs, appendLog, clearLog`. |
 | `useDbStatus.ts` | Datenbank- und Tunnel-Status des aktiven Projekts. Liefert `db, changeDb, clearDb, tunnelState, nowTick`. |

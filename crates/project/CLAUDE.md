@@ -24,6 +24,7 @@
 | `src/history.rs` | Undo/Redo-Verlauf je Objekt. |
 | `src/linked_file.rs` | Lesen/Schreiben verknüpfter Dateien (`%aditoprj%`). |
 | `src/modification_write.rs` | Modifikationen für Modul-Objekte (`modification/<id>`). |
+| `src/modification_overlay.rs` | Findet die Modifikationen von Projekt und Modulen, die ein Modul-Objekt treffen (für die Anzeige im Navigator, `project_actor::navigator`). Pfade dieser Elemente fehlen, sie sind nur zu sehen. |
 | `src/transpile_action.rs` | Transpile-Aktion, Engine-Wahl, `set_transpilers`. |
 | `src/transpile_compare.rs` | Vergleich eigener `dist` mit der Referenz. |
 | `src/actions.rs` | `dispatch_action` (Action-Id zu `Action`). |

@@ -12,6 +12,8 @@ import { ArrowUUpRightIcon } from '@phosphor-icons/react/dist/csr/ArrowUUpRight'
 import { DownloadSimpleIcon } from '@phosphor-icons/react/dist/csr/DownloadSimple'
 import { HammerIcon } from '@phosphor-icons/react/dist/csr/Hammer'
 import { XIcon } from '@phosphor-icons/react/dist/csr/X'
+import { CaretUpIcon } from '@phosphor-icons/react/dist/csr/CaretUp'
+import { TrashIcon } from '@phosphor-icons/react/dist/csr/Trash'
 import { CaretLeftIcon } from '@phosphor-icons/react/dist/csr/CaretLeft'
 import { FilePlusIcon } from '@phosphor-icons/react/dist/csr/FilePlus'
 import { FileMagnifyingGlassIcon } from '@phosphor-icons/react/dist/csr/FileMagnifyingGlass'
@@ -124,6 +126,8 @@ export const ICONS = {
   'caret-double-down': CaretDoubleDownIcon,
   'caret-double-up': CaretDoubleUpIcon,
   'caret-down': CaretDownIcon,
+  'caret-up': CaretUpIcon,
+  trash: TrashIcon,
   'caret-left': CaretLeftIcon,
   'caret-right': CaretRightIcon,
   'chart-bar': ChartBarIcon,

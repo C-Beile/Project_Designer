@@ -8,6 +8,9 @@
 | `FilePropertiesPanel.tsx` | Eigenschaften einer einfachen Datei. |
 | `AliasConfigPanel.tsx` | Sheet einer Alias-Config. |
 | `configSections.ts` | Abschnittsbaum der Config `_____CONFIGURATION` und Zeilen je Abschnitt. |
+| `loginList.ts` | Die Login-Liste der Config (`loginList`): Typen, Eigenschaftsschlüssel, lesen und schreiben als JSON, Prüfungen. Quelle der Typen und Schlüssel: Klassen des Designers (`ELogin`, `LoginProperties`). |
+| `ListTableDialog.tsx` | Allgemeiner Listen-Dialog: Tabelle mit Hinzufügen, Entfernen, Hoch, Runter, OK und Abbrechen. Styles in `ListTableDialog.css`. |
+| `LoginListDialog.tsx` | Das Fenster "Login" der Config und dahinter das Fenster "<Typ> Properties" (Schlüssel und Wert). Öffnet über "…" in `AliasConfigPanel`. |
 | `IconCombo.tsx` | Auswahlliste für eine Icon-Eigenschaft. |
 | `IconPicker.tsx` | Icon-Chooser (Vaadin und Neon). |
 | `WildcardPicker.tsx` | Auswahl mit Suchmuster (`*` als Joker). |

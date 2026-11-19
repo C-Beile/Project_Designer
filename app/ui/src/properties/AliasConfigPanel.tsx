@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import type { AliasConfigDto } from '../wire/types'
 import { CONFIG_DESCRIPTIONS } from './configDescriptions.generated'
 import { useSheetSplit } from './useSheetSplit'
 import { isConfigurationAlias, sectionLabel, sectionSheet, useConfigSection, type SheetGroup } from './configSections'
 import { Button, Input } from '../core/ui/controls'
+import { LoginListDialog } from './LoginListDialog'
+import { loginNames, parseLoginList, serializeLoginList, type LoginEntry } from './loginList'
 
 // Property sheet of an alias config (original Designer, shots 83, 84, 98, 102544): type aliasConfig,
 // one collapsible group per kind of property, Name | Value, unset values grey and italic, check
@@ -28,10 +31,17 @@ export function AliasConfigPanel({ config, system, editable = false, splitKey = 
   const [selected, setSelected] = useState<string | null>(null)
   const byConfig = isConfigurationAlias(config.name)
   const [draft, setDraft] = useState<Record<string, string>>({})
+  const [loginEdit, setLoginEdit] = useState<{ id: string; original: string } | null>(null)
   useEffect(() => setDraft({}), [config.name, system])
+  useEffect(() => setLoginEdit(null), [config.name, system, section])
   useEffect(() => setSelected(null), [config.name, section])
   const sheet = useMemo(() => (byConfig ? sectionSheet(config, section) : { groups: plainGroups(config), defined: true }), [byConfig, config, section])
   const changes = Object.keys(draft).length
+  const commitLogins = (id: string, original: string, logins: LoginEntry[]) => {
+    const json = serializeLoginList(logins)
+    setDraft((d) => (json === original ? Object.fromEntries(Object.entries(d).filter(([k]) => k !== id)) : { ...d, [id]: json }))
+    setLoginEdit(null)
+  }
   const selectedName = selected ? selected.slice(selected.indexOf('/') + 1) : null
   const selectedText = selectedName ? CONFIG_DESCRIPTIONS[selectedName] : undefined
   const hint =
@@ -77,6 +87,23 @@ export function AliasConfigPanel({ config, system, editable = false, splitKey = 
                 <span className={`forge-props-name${unset ? ' is-unset' : ''}`}>{r.name}</span>
                 {r.secret ? (
                   <span className="forge-props-value">{r.set ? '•'.repeat(12) : ''}</span>
+                ) : r.kind === 'login-list' ? (
+                  <span className={`forge-props-value login-list-value${unset ? ' is-unset' : ''}`}>
+                    <span className="login-list-names">{loginNames(parseLoginList(draft[id] ?? r.data ?? ''))}</span>
+                    <Button
+                      variant="bare"
+                      className="login-list-open"
+                      aria-label={`Edit ${r.name}`}
+                      title={editable ? 'Edit the login types' : 'Show the login types'}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelected(id)
+                        setLoginEdit({ id, original: r.data ?? '' })
+                      }}
+                    >
+                      …
+                    </Button>
+                  </span>
                 ) : r.kind === 'checkbox' ? (
                   <Input
                     type="checkbox"
@@ -127,6 +154,17 @@ export function AliasConfigPanel({ config, system, editable = false, splitKey = 
           {selectedText ? <p className="alias-config-text">{selectedText}</p> : null}
         </div>
       ) : null}
+      {loginEdit
+        ? createPortal(
+            <LoginListDialog
+              logins={parseLoginList(draft[loginEdit.id] ?? loginEdit.original)}
+              readOnly={!editable}
+              onOk={(logins) => commitLogins(loginEdit.id, loginEdit.original, logins)}
+              onCancel={() => setLoginEdit(null)}
+            />,
+            document.body,
+          )
+        : null}
     </div>
   )
 }

@@ -283,7 +283,7 @@ fn entity_navigator_outline() {
     assert_eq!(nav.len(), 1);
     let root = &nav[0];
     let folders: Vec<&str> = root.children.iter().map(|n| n.label.as_str()).collect();
-    assert_eq!(folders, vec!["RecordContainers", "Fields", "Parameters", "Providers", "Consumers", "Services"]);
+    assert_eq!(folders, vec!["RecordContainers", "Fields", "Parameters", "Providers", "Consumers", "Actions", "Services"]);
     let fields: Vec<&str> = root.children[1].children.iter().map(|n| n.label.as_str()).collect();
     assert_eq!(fields, vec!["ACTIVITY_ID", "OBJECT_TYPE"]);
     assert_eq!(root.children[1].children[1].path.as_deref(), Some("entityFields.entityField[0]"));
@@ -295,6 +295,79 @@ fn entity_navigator_outline() {
     ]);
     assert_eq!(db.children[1].path.as_deref(), Some("recordContainers.dbRecordContainer.recordFieldMappings.dbRecordFieldMapping"));
     assert_eq!(root.children[3].children[0].label, "#PROVIDER");
+}
+
+#[test]
+fn extension_points_group_their_implementations_in_the_entity_outline() {
+    let entity = obj(vec![
+        ("name", text("Activity_entity")),
+        ("entityFields", obj(vec![
+            ("entityField", obj(vec![("name", text("SUBJECT"))])),
+            ("entityFieldExtensionPoint", WireValue::Array { items: vec![
+                obj(vec![("name", text("THHIT_Fields")), ("implementations", obj(vec![("entityField", WireValue::Array { items: vec![
+                    obj(vec![("name", text("THHIT_FOLLOW_UP_DATE"))]),
+                    obj(vec![("name", text("THHIT_CONFIDENTIAL"))]),
+                ] })]))]),
+                obj(vec![("name", text("FieldExtensionPoint"))]),
+            ] }),
+            ("entityParameterExtensionPoint", obj(vec![("name", text("ParameterExtensionPoint"))])),
+            ("entityConsumerExtensionPoint", obj(vec![("name", text("ConsumerExtensionPoint"))])),
+        ])),
+    ]);
+    let outline = navigator("entity", &entity, "Activity_entity", None);
+    let folders = &outline[0].children;
+    let fields: Vec<(&str, &str, usize)> = folders[1].children.iter().map(|n| (n.label.as_str(), n.icon.as_str(), n.children.len())).collect();
+    assert_eq!(fields, vec![("FieldExtensionPoint", "extension", 0), ("SUBJECT", "field", 0), ("THHIT_Fields", "extension", 2)]);
+    let point = &folders[1].children[2];
+    let inside: Vec<(&str, &str)> = point.children.iter().map(|n| (n.label.as_str(), n.icon.as_str())).collect();
+    assert_eq!(inside, vec![("THHIT_FOLLOW_UP_DATE", "field"), ("THHIT_CONFIDENTIAL", "field")]);
+    assert_eq!(point.children[0].path.as_deref(), Some("entityFields.entityFieldExtensionPoint[0].implementations.entityField[0]"));
+    assert!(!point.children[0].with_origin);
+    assert_eq!(folders[2].children[0].icon, "extension");
+    assert_eq!(folders[4].children[0].icon, "extension");
+}
+
+#[test]
+fn actions_have_their_own_folder_in_file_order_and_aggregates_sit_below_their_field() {
+    let entity = obj(vec![
+        ("name", text("Activity_entity")),
+        ("entityFields", obj(vec![
+            ("entityField", WireValue::Array { items: vec![obj(vec![("name", text("COUNT"))]), obj(vec![("name", text("ABC"))])] }),
+            ("entityAggregateField", obj(vec![("name", text("COUNT_aggregate")), ("parentField", text("COUNT"))])),
+            ("entityActionGroup", obj(vec![
+                ("name", text("filterActions")),
+                ("children", obj(vec![
+                    ("entityActionField", obj(vec![("name", text("observe"))])),
+                    ("entityActionFieldExtensionPoint", obj(vec![("name", text("ActionFilterExtensionPoint"))])),
+                ])),
+            ])),
+            ("entityActionFieldExtensionPoint", obj(vec![("name", text("ActionFieldExtensionPoint"))])),
+            ("entityActionField", obj(vec![("name", text("newActivity"))])),
+        ])),
+    ]);
+    let folders = &navigator("entity", &entity, "Activity_entity", None)[0].children;
+    let fields: Vec<(&str, usize)> = folders[1].children.iter().map(|n| (n.label.as_str(), n.children.len())).collect();
+    assert_eq!(fields, vec![("ABC", 0), ("COUNT", 1)]);
+    let count = &folders[1].children[1];
+    assert_eq!((count.children[0].label.as_str(), count.children[0].icon.as_str()), ("COUNT_aggregate", "aggregate"));
+    let actions: Vec<(&str, &str)> = folders[5].children.iter().map(|n| (n.label.as_str(), n.icon.as_str())).collect();
+    assert_eq!(actions, vec![("filterActions", "action"), ("ActionFieldExtensionPoint", "extension"), ("newActivity", "action")]);
+    let group: Vec<(&str, &str)> = folders[5].children[0].children.iter().map(|n| (n.label.as_str(), n.icon.as_str())).collect();
+    assert_eq!(group, vec![("observe", "action"), ("ActionFilterExtensionPoint", "extension")]);
+}
+
+#[test]
+fn graft_keeps_own_paths_and_gives_merged_in_elements_none() {
+    let node = |label: &str, path: Option<&str>, icon: &str, children: Vec<NavNode>| NavNode { label: label.into(), path: path.map(Into::into), icon: icon.into(), dimmed: false, with_origin: false, tooltip: None, children };
+    let base = vec![node("E", Some("$"), "object", vec![node("Fields", None, "folder", vec![node("A", Some("entityFields.entityField[0]"), "field", Vec::new())])])];
+    let merged = vec![node("E", Some("$"), "object", vec![node("Fields", None, "folder", vec![
+        node("A", Some("entityFields.entityField[1]"), "field", Vec::new()),
+        node("New", Some("entityFields.entityField[0]"), "field", Vec::new()),
+    ])])];
+    let result = graft(&base, merged);
+    let fields = &result[0].children[0].children;
+    assert_eq!(fields[0].path.as_deref(), Some("entityFields.entityField[0]"));
+    assert_eq!(fields[1].path.as_deref(), Some("#mod:entityFields.entityField[0]"));
 }
 
 #[test]

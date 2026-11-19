@@ -3,7 +3,7 @@ import { useCallback, useRef, useState, type Dispatch, type MutableRefObject, ty
 import type { ForgeApi } from '../../api/ForgeApi'
 import { choiceDialog } from '../../core/dialogService'
 import { codeTabNode, processCodeTarget } from '../../properties/codeSave'
-import { EMPTY_TABS, activateTab, activeTab, closeTab, closeTabsWhere, isFileNode, isServiceNode, openTab, type TabState } from '../../tabs/tabModel'
+import { EMPTY_TABS, activateTab, activeTab, closeTab, closeTabsWhere, isFileNode, isServiceNode, isViewNode, openTab, type TabState } from '../../tabs/tabModel'
 import type { DiagnosticDto, TreeNode, WireValue } from '../../wire/types'
 import type { useEditorWindows } from '../../windows/useEditorWindows'
 import { nodeKind, ownerNodeOf } from '../shellHelpers'
@@ -53,6 +53,15 @@ export function useTabs({ api, root, treeRef, editorWindowsRef, saveIdsRef, proj
   // Makes a node the object shown in the editor area, Properties and Navigator.
   const activateNode = useCallback(
     async (node: TreeNode, project: string) => {
+      if (isViewNode(node)) {
+        setSelected(null)
+        setTreeSelection(null)
+        setValue(null)
+        setDiagnostics([])
+        setCanUndo(false)
+        setCanRedo(false)
+        return
+      }
       setSelected(node)
       // A code tab of a property shows the Properties of the object it belongs to.
       setTreeSelection(ownerNodeOf(treeRef.current, node) ?? node)
@@ -61,7 +70,7 @@ export function useTabs({ api, root, treeRef, editorWindowsRef, saveIdsRef, proj
       const flags = historyFlags.current.get(node.id)
       setCanUndo(flags?.undo ?? false)
       setCanRedo(flags?.redo ?? false)
-      if (isFileNode(node) || isServiceNode(node)) {
+      if (isFileNode(node) || isServiceNode(node) || isViewNode(node)) {
         setValue(null)
         setDiagnostics([])
         return
@@ -82,7 +91,7 @@ export function useTabs({ api, root, treeRef, editorWindowsRef, saveIdsRef, proj
   // Double click, Enter or Go to: opens (or focuses) the editor tab of the node.
   const handleOpen = useCallback(
     async (node: TreeNode, top?: TreeNode) => {
-      const project = top ? projectOf(top) : root
+      const project = isViewNode(node) ? '' : top ? projectOf(top) : root
       // A document lives in one window only: when it was moved out, that window comes forward.
       if (editorWindowsRef.current?.detachedRef.current[node.id]) {
         void editorWindowsRef.current.focus(node.id)

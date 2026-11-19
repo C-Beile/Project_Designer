@@ -10,6 +10,7 @@
 | `SourceEditor.tsx` | Unter-Reiter Source: rohe `.aod`, Änderungen gehen ans Backend. |
 | `HistoryView.tsx` | Unter-Reiter History: Git-Log einer Datei. |
 | `TextFileEditor.tsx` | Editor einer einfachen Projektdatei (Entwürfe in `drafts`). |
+| `ViewFileEditor.tsx` | Reiter einer von außen abgelegten Datei (`kind` `view`): nur lesen, Text aus `core/viewFiles.ts`, nichts wird gespeichert oder ins Projekt kopiert. |
 | `MonacoText.tsx` | Monaco-Textfeld für Source und Dateien. |
 | `MarkdownPreview.tsx` | Markdown als HTML (`marked`, bereinigt mit DOMPurify). |
 | `AliasConfigTab.tsx` | Reiter einer Alias-Config eines Systems. |

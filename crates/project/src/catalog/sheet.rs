@@ -365,6 +365,10 @@ fn named_items(container: &WireValue, container_path: &NodePath) -> Vec<(String,
     out
 }
 
+pub const MERGED_MARK: &str = "#mod:";
+
+pub const READ_ONLY_MERGED: &str = "This element comes from a modification of another module or of the project. It is shown here, not edited.";
+
 pub fn navigator(model_type: &str, root: &WireValue, object_name: &str, js_source: Option<&str>) -> Vec<NavNode> {
     let root_path = NodePath::root();
     let mut top = nav(object_name, Some("$".into()), "object", Vec::new());
@@ -403,6 +407,22 @@ pub fn navigator(model_type: &str, root: &WireValue, object_name: &str, js_sourc
         _ => top.children = template_outline(root, &root_path),
     }
     vec![top]
+}
+
+pub fn graft(base: &[NavNode], merged: Vec<NavNode>) -> Vec<NavNode> {
+    merged
+        .into_iter()
+        .map(|mut node| {
+            let own = base.iter().find(|b| b.label == node.label && b.icon == node.icon);
+            node.path = match own {
+                Some(b) => b.path.clone(),
+                None => node.path.take().filter(|p| p != "$").map(|p| format!("{MERGED_MARK}{p}")),
+            };
+            node.dimmed = own.map(|b| b.dimmed).unwrap_or(false);
+            node.children = graft(own.map(|b| b.children.as_slice()).unwrap_or(&[]), std::mem::take(&mut node.children));
+            node
+        })
+        .collect()
 }
 
 /// Readable name of a reference element: the view it points at.
@@ -458,6 +478,26 @@ fn template_outline(element: &WireValue, path: &NodePath) -> Vec<NavNode> {
         .collect()
 }
 
+fn item_icon(tag: &str) -> &'static str {
+    if tag.ends_with("ExtensionPoint") {
+        "extension"
+    } else if tag.starts_with("entityAction") {
+        "action"
+    } else if tag == "entityAggregateField" {
+        "aggregate"
+    } else if tag.starts_with("entityParameter") {
+        "parameter"
+    } else if tag.starts_with("entityProvider") {
+        "provider"
+    } else if tag.starts_with("entityConsumer") {
+        "consumer"
+    } else if tag.starts_with("entityServiceDefinition") {
+        "service"
+    } else {
+        "field"
+    }
+}
+
 fn entity_outline(root: &WireValue) -> Vec<NavNode> {
     let root_path = NodePath::root();
     let fields_container = field(root, "entityFields");
@@ -468,10 +508,16 @@ fn entity_outline(root: &WireValue) -> Vec<NavNode> {
     let mut providers = Vec::new();
     let mut consumers = Vec::new();
     let mut services = Vec::new();
+    let mut actions = Vec::new();
+    let mut aggregates: Vec<(String, NavNode)> = Vec::new();
     let mut field_names: Vec<String> = Vec::new();
     let mut consumer_names: Vec<String> = Vec::new();
     for (tag, name, p, item) in &items {
-        let (bucket, icon) = if tag.starts_with("entityParameter") {
+        let point = tag.ends_with("ExtensionPoint");
+        let aggregate = tag == "entityAggregateField";
+        let (bucket, icon) = if tag.starts_with("entityAction") {
+            (&mut actions, "action")
+        } else if tag.starts_with("entityParameter") {
             (&mut parameters, "parameter")
         } else if tag.starts_with("entityProvider") {
             (&mut providers, "provider")
@@ -488,19 +534,42 @@ fn entity_outline(root: &WireValue) -> Vec<NavNode> {
             }
             (&mut fields, "field")
         };
-        let children = field(item, "children").map(|c| {
-            named_items(c, &p.field("children"))
-                .into_iter()
-                .map(|(_, n, cp, _)| {
-                    let mut c = nav(n, Some(cp.to_string()), "field", Vec::new());
-                    c.with_origin = true;
-                    c
+        let children: Vec<NavNode> = if point {
+            field(item, "implementations")
+                .map(|c| {
+                    named_items(c, &p.field("implementations"))
+                        .into_iter()
+                        .map(|(t, n, cp, _)| nav(n, Some(cp.to_string()), item_icon(&t), Vec::new()))
+                        .collect()
                 })
-                .collect()
-        });
-        let mut node = nav(name.clone(), Some(p.to_string()), icon, children.unwrap_or_default());
+                .unwrap_or_default()
+        } else {
+            field(item, "children")
+                .map(|c| {
+                    named_items(c, &p.field("children"))
+                        .into_iter()
+                        .map(|(t, n, cp, _)| {
+                            let mut c = nav(n, Some(cp.to_string()), item_icon(&t), Vec::new());
+                            c.with_origin = true;
+                            c
+                        })
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+        let mut node = nav(name.clone(), Some(p.to_string()), if point { "extension" } else if aggregate { "aggregate" } else { icon }, children);
         node.with_origin = true;
-        bucket.push(node);
+        if aggregate {
+            aggregates.push((field(item, "parentField").and_then(text_of).unwrap_or_default(), node));
+        } else {
+            bucket.push(node);
+        }
+    }
+    for (parent, node) in aggregates {
+        match fields.iter_mut().find(|f| f.label == parent && f.icon == "field") {
+            Some(owner) => owner.children.push(node),
+            None => fields.push(node),
+        }
     }
     for list in [&mut fields, &mut parameters, &mut providers, &mut consumers, &mut services] {
         list.sort_by_key(|n| nav_sort_key(&n.label));
@@ -550,6 +619,7 @@ fn entity_outline(root: &WireValue) -> Vec<NavNode> {
         nav("Parameters", None, "folder", parameters),
         nav("Providers", None, "folder", providers),
         nav("Consumers", None, "folder", consumers),
+        nav("Actions", None, "folder", actions),
         nav("Services", None, "folder", services),
     ]
 }

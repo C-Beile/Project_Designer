@@ -1,0 +1,103 @@
+.forge-modal:has(.list-dialog) {
+  width: min(52rem, calc(100vw - 2rem));
+}
+
+.list-dialog {
+  display: flex;
+  gap: var(--space-2);
+  min-height: 14rem;
+}
+
+.list-dialog-table {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 14rem;
+  overflow: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+
+.list-dialog-grid {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.list-dialog-grid th {
+  padding: var(--space-1) var(--space-2);
+  background: var(--bg-label);
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted);
+  font-weight: 500;
+  text-align: left;
+}
+
+.list-dialog-grid td {
+  padding: var(--space-0-5) var(--space-1);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.list-dialog-grid .list-dialog-index {
+  width: 2.5rem;
+  color: var(--fg-muted);
+  text-align: right;
+}
+
+.list-dialog-grid tr.is-selected td {
+  background: color-mix(in srgb, var(--selection) 35%, transparent);
+}
+
+.list-dialog-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.list-dialog-popup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.list-dialog-summary {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--fg-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list-dialog-tools {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.list-dialog-error {
+  flex: 1 1 auto;
+  align-self: center;
+  color: var(--error);
+}
+
+.login-list-value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.login-list-names {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.login-list-open {
+  flex: 0 0 auto;
+}

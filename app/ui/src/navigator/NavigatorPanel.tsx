@@ -32,6 +32,12 @@ function NavIcon({ icon }: { icon: string }) {
       return <Icon name="table" size="sm" color="muted" />
     case 'key':
       return <Icon name="key" size="sm" color="var(--icon-folder)" />
+    case 'extension':
+      return <Icon name="dots-three-circle" size="sm" color="muted" />
+    case 'action':
+      return <Icon name="gear" weight="fill" size="sm" color="muted" />
+    case 'aggregate':
+      return <Icon name="stack" size="sm" color="muted" />
     case 'object':
     case 'entity':
       return <Icon name="square" size="sm" color="var(--icon-entity)" />
@@ -44,12 +50,22 @@ function NavIcon({ icon }: { icon: string }) {
 }
 
 const NEW_MARK = '#new:'
+const MERGED_MARK = '#mod:'
 
 // Group that is open when an object is shown for the first time; every other group starts closed.
 const MAIN_GROUP: Record<string, string> = { entity: 'Fields', neonDashboard: 'Dashlets' }
 
 // Opened and closed groups per object, kept for the session.
 const collapsedMemory = new Map<string, Set<string>>()
+
+const OUTLINE_MEMORY_LIMIT = 24
+const outlineMemory = new Map<string, NavNode[]>()
+
+function rememberOutline(nodeId: string, nodes: NavNode[]) {
+  outlineMemory.delete(nodeId)
+  outlineMemory.set(nodeId, nodes)
+  while (outlineMemory.size > OUTLINE_MEMORY_LIMIT) outlineMemory.delete(outlineMemory.keys().next().value as string)
+}
 
 export function startsCollapsed(node: { icon: string; label: string }, depth: number, objectType: string | null): boolean {
   if (depth === 1 && node.icon === 'folder') return node.label !== (objectType ? MAIN_GROUP[objectType] : undefined)
@@ -113,7 +129,7 @@ export function NavigatorPanel({
   useAbortableEffect((signal) => {
     if (lastNode.current !== nodeId) {
       setCollapsed(new Set(nodeId ? (collapsedMemory.get(nodeId) ?? []) : []))
-      setNodes(null)
+      setNodes(nodeId ? (outlineMemory.get(nodeId) ?? null) : null)
     }
     lastNode.current = nodeId
     if (!nodeId || objectType === 'application') {
@@ -124,7 +140,9 @@ export function NavigatorPanel({
     api
       .getNavigator(nodeId)
       .then((n) => {
-        if (!signal.aborted) setNodes(n)
+        if (signal.aborted) return
+        rememberOutline(nodeId, n)
+        setNodes(n)
       })
       .catch(() => {
         if (!signal.aborted) setNodes([])
@@ -262,12 +280,24 @@ export function NavigatorPanel({
   )
 }
 
+const NOT_BUILT = 'Creating elements from the Navigator is not available yet.'
+const FIELDS_FOLDER_MENU: MenuEntry[] = [
+  { id: 'new-field', label: 'New Field', enabled: false, hint: NOT_BUILT },
+  { id: 'new-field-group', label: 'New Field Group', enabled: false, hint: NOT_BUILT },
+  { id: 'new-extension-point', label: 'New Extension Point', enabled: false, hint: NOT_BUILT },
+  { id: 'new-blueprint', label: 'New with Blueprint', enabled: false, hint: NOT_BUILT },
+  { id: 'sep', label: '', enabled: false, separator: true },
+  { id: 'paste', label: 'Paste', enabled: false, hint: 'Nothing to paste.' },
+]
+
 // Entries of the Navigator context menu. The Manual does not describe this menu; Set to Default was asked for,
 // Copy Name is Dito Designer's own choice. Entries without a function stay visible, dimmed, with the reason.
 function menuEntries(node: NavNode, canReset: boolean, canActivate: boolean, readOnlyHint: string): MenuEntry[] {
+  if (node.icon === 'folder' && node.label === 'Fields') return FIELDS_FOLDER_MENU
   const isElement = !!node.path && node.path !== '$' && node.icon !== 'folder'
   let hint = ''
   if (!isElement) hint = 'Only an element can be set to default.'
+  else if (node.path!.startsWith(MERGED_MARK)) hint = 'This element comes from a modification. It is shown here, not edited.'
   else if (node.path!.includes(NEW_MARK) || node.dimmed) hint = 'Already shows the defaults: this entry has no definition of its own.'
   else if (!canReset) hint = 'Not available here.'
   else if (readOnlyHint) hint = readOnlyHint

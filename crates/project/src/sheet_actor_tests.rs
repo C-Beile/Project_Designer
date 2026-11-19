@@ -144,6 +144,60 @@ fn navigator_of_a_real_entity_fixture() {
 }
 
 #[test]
+fn navigator_of_a_module_object_shows_what_modifications_bring_but_selects_only_its_own() {
+    let path = fixture_copy("entity", "THHIT_BusinessStrategyMetrics_entity", true);
+    let project = path.ancestors().nth(6).unwrap().to_path_buf();
+    let folder = project.join("modification").join("m1");
+    std::fs::create_dir_all(&folder).unwrap();
+    let xml = [
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+        "<modification xmlns=\"http://www.adito.de/2018/ao/Model\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" VERSION=\"1.2.0\" xsi:schemaLocation=\"http://www.adito.de/2018/ao/Model adito://models/xsd/modification/1.2.0\">",
+        "  <name>m1</name>",
+        "  <majorModelMode>DISTRIBUTED</majorModelMode>",
+        "  <changeType>INSERT</changeType>",
+        "  <position v=\"1763387421\" />",
+        "  <modelType>entity</modelType>",
+        "  <modelName>THHIT_BusinessStrategyMetrics_entity</modelName>",
+        "  <path>THHIT_BusinessStrategyMetrics_entity/entityFields</path>",
+        "  <value>",
+        "    <modelValueWrapper>",
+        "      <name>value</name>",
+        "      <value>",
+        "        <entityFieldExtensionPoint>",
+        "          <name>THHIT_Fields</name>",
+        "          <implementations>",
+        "            <entityField>",
+        "              <name>THHIT_ONE</name>",
+        "            </entityField>",
+        "          </implementations>",
+        "        </entityFieldExtensionPoint>",
+        "      </value>",
+        "    </modelValueWrapper>",
+        "  </value>",
+        "</modification>",
+    ]
+    .join("\r\n");
+    std::fs::write(folder.join("m1.aod"), xml).unwrap();
+    let before = std::fs::read(&path).unwrap();
+    let actor = ProjectActorHandle::spawn();
+    let nav = actor.navigator(path.to_string_lossy().into_owned()).unwrap();
+    let fields = &nav[0].children[1];
+    let point = fields.children.iter().find(|n| n.label == "THHIT_Fields").expect("extension point from the modification");
+    assert_eq!(point.icon, "extension");
+    assert!(point.path.as_deref().is_some_and(|p| p.starts_with("#mod:entityFields.entityFieldExtensionPoint")));
+    assert_eq!(point.children.len(), 1);
+    assert_eq!(point.children[0].label, "THHIT_ONE");
+    let child_path = point.children[0].path.clone().expect("selectable");
+    assert!(child_path.starts_with("#mod:") && child_path.contains(".implementations.entityField"));
+    let sheet = actor.property_sheet(path.to_string_lossy().into_owned(), child_path, None).expect("sheet of a merged-in element");
+    assert!(sheet.groups.iter().flat_map(|g| g.rows.iter()).any(|r| r.name == "name" && r.display == "THHIT_ONE"));
+    assert!(sheet.groups.iter().flat_map(|g| g.rows.iter()).all(|r| !r.editable));
+    let own = fields.children.iter().find(|n| n.label == "ORG_ID").expect("own field");
+    assert!(own.path.as_deref().is_some_and(|p| p.starts_with("entityFields.entityField[")));
+    assert_eq!(std::fs::read(&path).unwrap(), before);
+}
+
+#[test]
 fn source_shows_the_raw_file_and_unsaved_edits() {
     let (_, id, original) = entity();
     let actor = ProjectActorHandle::spawn();

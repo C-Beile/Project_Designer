@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { normId } from '../../problems/problemStore'
 import { configGet, configSet } from '../../settings/appConfig'
-import { isAliasConfigNode, isRestNode, isServiceNode, isTunnelNode, type TabState } from '../../tabs/tabModel'
+import { isAliasConfigNode, isRestNode, isServiceNode, isTunnelNode, isViewNode, type TabState } from '../../tabs/tabModel'
 import type { TreeNode } from '../../wire/types'
 import { findNodeByPath } from '../shellHelpers'
 
@@ -22,7 +22,7 @@ interface SavedTabs {
 const readSaved = (project: string) => configGet<SavedTabs>('tabs', project)
 
 // Tabs mit einer Datei oder einem Objekt dahinter; SQL-, REST-, Alias- und Tunnel-Tabs sind virtuell und kommen nicht wieder.
-const isRememberable = (node: TreeNode) => !(isServiceNode(node) || isRestNode(node) || isAliasConfigNode(node) || isTunnelNode(node) || node.code)
+const isRememberable = (node: TreeNode) => !(isServiceNode(node) || isRestNode(node) || isAliasConfigNode(node) || isTunnelNode(node) || isViewNode(node) || node.code)
 
 // Merkt offene Editor-Tabs je Projekt und öffnet sie wieder, sobald der Baum des Projekts geladen ist.
 export function useTabMemory({ projects, trees, loadingProjects, tabState, handleOpen }: TabMemoryDeps) {

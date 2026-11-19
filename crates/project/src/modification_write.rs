@@ -465,7 +465,9 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> Result<(), String> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    designer_core::platform::fs::atomic_write(path, bytes).map_err(|e| format!("failed to write '{}': {e}", path.display()))
+    designer_core::platform::fs::atomic_write(path, bytes).map_err(|e| format!("failed to write '{}': {e}", path.display()))?;
+    crate::modification_overlay::bump();
+    Ok(())
 }
 
 fn write_if_different(path: &Path, bytes: &[u8]) -> Result<bool, String> {

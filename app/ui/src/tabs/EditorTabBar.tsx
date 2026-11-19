@@ -58,7 +58,7 @@ export function EditorTabBar({
   // Gruppiert: die Reiter eines Projekts stehen zusammen (Reihenfolge der Projekte, innerhalb davon wie geöffnet).
   const base = useMemo(() => {
     if (!grouped) return tabs
-    const rank = (t: EditorTab) => Math.max(0, projects.findIndex((p) => pathKey(p) === pathKey(t.project)))
+    const rank = (t: EditorTab) => (t.project ? Math.max(0, projects.findIndex((p) => pathKey(p) === pathKey(t.project))) : projects.length)
     return [...tabs].sort((a, b) => rank(a) - rank(b))
   }, [grouped, tabs, projects])
   const overflow = useTabOverflow()
@@ -279,7 +279,7 @@ export function EditorTabBar({
                   if (first) setTabMenu({ id: first.id, x: e.clientX, y: e.clientY })
                 }}
               >
-                {g.project.split(/[\\/]/).filter(Boolean).pop() ?? g.project}
+                {g.project ? (g.project.split(/[\\/]/).filter(Boolean).pop() ?? g.project) : 'Opened files'}
               </span>
               <div className="forge-tabgroup-tabs" role="presentation">
                 {g.items.map((i) => renderTab(i.tab, i.index))}

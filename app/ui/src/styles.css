@@ -102,6 +102,7 @@
 @import './styles/problems-tables.css';
 @import './styles/view-canvas.css';
 @import './styles/config-editor.css';
+@import './properties/ListTableDialog.css';
 @import './styles/commit-window-tree.css';
 @import './editors/PreferencesEditor.css';
 @import './styles/editors-sheet.css';

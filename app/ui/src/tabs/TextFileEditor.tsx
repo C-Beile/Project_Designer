@@ -57,8 +57,8 @@ export function previewKindForFile(label: string): 'markdown' | 'csv' | null {
   return languageForFile(label) === 'markdown' ? 'markdown' : null
 }
 
-type MarkdownView = 'source' | 'split' | 'preview'
-const MARKDOWN_VIEWS: [MarkdownView, string][] = [
+export type MarkdownView = 'source' | 'split' | 'preview'
+export const MARKDOWN_VIEWS: [MarkdownView, string][] = [
   ['source', 'Source'],
   ['split', 'Split'],
   ['preview', 'Preview'],

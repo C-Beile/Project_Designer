@@ -8,7 +8,7 @@ import { ErrorBoundary } from '../core/errorHandling'
 import { useDialog } from '../core/plugins/registry'
 import { UsersTab } from '../services/UsersTable'
 import { systemKey, useTunnelState } from '../services/tunnelState'
-import { SUB_TAB_LABELS, isFileNode, isServiceNode, isRestNode, isTunnelNode, isAliasConfigNode, subTabsFor, type EditorTab, type SubTab } from './tabModel'
+import { SUB_TAB_LABELS, isFileNode, isServiceNode, isRestNode, isTunnelNode, isAliasConfigNode, isViewNode, subTabsFor, type EditorTab, type SubTab } from './tabModel'
 import { Button } from '../core/ui/controls'
 
 // Content of the active editor tab: the sub-tab row (Editor | Source | History, plus Users for
@@ -21,6 +21,7 @@ const SqlEditor = lazy(() => import('../services/SqlEditor').then((m) => ({ defa
 const DbBrowserTab = lazy(() => import('./DbBrowserTab').then((m) => ({ default: m.DbBrowserTab })))
 const AliasConfigTab = lazy(() => import('./AliasConfigTab').then((m) => ({ default: m.AliasConfigTab })))
 const TunnelConfigEditor = lazy(() => import('./TunnelConfigEditor').then((m) => ({ default: m.TunnelConfigEditor })))
+const ViewFileEditor = lazy(() => import('./ViewFileEditor').then((m) => ({ default: m.ViewFileEditor })))
 const TextFileEditor = lazy(() => import('./TextFileEditor').then((m) => ({ default: m.TextFileEditor })))
 
 function Hint({ children }: { children: string }) {
@@ -113,6 +114,12 @@ export function ObjectEditorArea({
     body = (
       <Suspense fallback={Loading}>
         <SqlEditor api={api} db={db} label={node.label} initial={sqlTexts.get(node.id) ?? ''} onTextChange={(text) => sqlTexts.set(node.id, text)} />
+      </Suspense>
+    )
+  } else if (isViewNode(node)) {
+    body = (
+      <Suspense fallback={Loading}>
+        <ViewFileEditor id={node.id} label={node.label} />
       </Suspense>
     )
   } else if (sub === 'history') {

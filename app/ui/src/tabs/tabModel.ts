@@ -32,6 +32,10 @@ export function isServiceNode(node: TreeNode): boolean {
   return node.kind === 'service' || node.kind === 'tunnel' || node.kind === 'aliasconfig' || node.kind === 'rest'
 }
 
+export function isViewNode(node: TreeNode): boolean {
+  return node.kind === 'view'
+}
+
 export function isRestNode(node: TreeNode): boolean {
   return node.kind === 'rest'
 }
@@ -55,7 +59,7 @@ export function tunnelTabNode(systemId: string, systemName: string, reference: s
 // definition of a module or of the project has none); plain files have no object structure, so they get the
 // text editor and the history only.
 export function subTabsFor(node: TreeNode): SubTab[] {
-  if (isServiceNode(node)) return ['editor']
+  if (isServiceNode(node) || isViewNode(node)) return ['editor']
   if (isFileNode(node)) return ['editor', 'history']
   if (node.object_type === 'system') return ['editor', 'users', 'source', 'history']
   return ['editor', 'source', 'history']

@@ -123,5 +123,61 @@ describe('Navigator', () => {
     expect(await screen.findByText('Parameters_item')).toBeInTheDocument()
     expect(screen.queryByText('RecordContainers_item')).toBeNull()
   })
-})
 
+  it('shows an extension point as a closed group that opens to the fields in it', async () => {
+    const user = userEvent.setup({ delay: null })
+    const api = createMockForgeApi({ projectTree: [], documents: {} })
+    const field = (label: string, path: string): NavNode => ({ label, path, icon: 'field', children: [] })
+    api.getNavigator = async () => [
+      {
+        label: 'Activity_entity',
+        path: '$',
+        icon: 'object',
+        children: [
+          {
+            label: 'Fields',
+            icon: 'folder',
+            children: [
+              { label: 'SUBJECT', path: 'entityFields.entityField[0]', icon: 'field', children: [] },
+              { label: 'THHIT_Fields', path: 'entityFields.entityFieldExtensionPoint[0]', icon: 'extension', children: [field('THHIT_CONFIDENTIAL', 'entityFields.entityFieldExtensionPoint[0].implementations.entityField[0]')] },
+              { label: 'FieldExtensionPoint', path: 'entityFields.entityFieldExtensionPoint[1]', icon: 'extension', children: [] },
+            ],
+          },
+        ],
+      },
+    ]
+    render(<NavigatorPanel api={api} nodeId="x.aod" objectType="entity" origin="" selectedPath={null} onSelect={() => {}} />)
+    const point = (await screen.findByText('THHIT_Fields')).closest('[role="treeitem"]')!
+    expect(point).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByText('THHIT_CONFIDENTIAL')).toBeNull()
+    expect(screen.getByText('FieldExtensionPoint').closest('[role="treeitem"]')).not.toHaveAttribute('aria-expanded')
+    await user.click(point.querySelector('.nav-toggle')!)
+    expect(point).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('THHIT_CONFIDENTIAL')).toBeInTheDocument()
+    await user.click(point.querySelector('.nav-toggle')!)
+    expect(screen.queryByText('THHIT_CONFIDENTIAL')).toBeNull()
+  })
+
+  it('offers the creation entries on the Fields folder, dimmed with the reason', async () => {
+    const user = userEvent.setup({ delay: null })
+    setup()
+    await user.pointer({ keys: '[MouseRight]', target: await screen.findByText('Fields') })
+    for (const label of ['New Field', 'New Field Group', 'New Extension Point', 'New with Blueprint', 'Paste']) {
+      expect(screen.getByRole('menuitem', { name: label })).toHaveAttribute('aria-disabled', 'true')
+    }
+  })
+
+  it('selects an element that a modification brings and does not offer Set to Default for it', async () => {
+    const user = userEvent.setup({ delay: null })
+    const api = createMockForgeApi({ projectTree: [], documents: {} })
+    api.getNavigator = async () => [
+      { label: 'Activity_entity', path: '$', icon: 'object', children: [{ label: 'Fields', icon: 'folder', children: [{ label: 'THHIT_Fields', path: '#mod:entityFields.entityFieldExtensionPoint[0]', icon: 'extension', children: [] }] }] },
+    ]
+    const onSelect = vi.fn()
+    render(<NavigatorPanel api={api} nodeId="x.aod" objectType="entity" origin="" selectedPath={null} onSelect={onSelect} onReset={() => {}} />)
+    await user.click(await screen.findByText('THHIT_Fields'))
+    expect(onSelect).toHaveBeenCalledWith('#mod:entityFields.entityFieldExtensionPoint[0]', 'THHIT_Fields')
+    await user.pointer({ keys: '[MouseRight]', target: screen.getByText('THHIT_Fields') })
+    expect(screen.getByRole('menuitem', { name: 'Set to Default' })).toHaveAttribute('aria-disabled', 'true')
+  })
+})

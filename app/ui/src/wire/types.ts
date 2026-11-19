@@ -54,7 +54,7 @@ export function asArray(value: WireValue | undefined): WireValue[] {
 // Mirrors crates/project/src/tree.rs's `TreeNode`. Optional fields are omitted by the backend when
 // empty/false. `id` is the absolute file path for objects and files (what getPropertyTree/save
 // take) and not unique within a tree: the same entity shows in `entity` and below its context.
-export type TreeNodeKind = 'project' | 'folder' | 'object' | 'file' | 'dir' | 'libraries' | 'module' | 'service' | 'tunnel' | 'aliasconfig' | 'rest'
+export type TreeNodeKind = 'project' | 'folder' | 'object' | 'file' | 'dir' | 'libraries' | 'module' | 'service' | 'tunnel' | 'aliasconfig' | 'rest' | 'view'
 
 export interface TreeNode {
   id: string

@@ -7,6 +7,7 @@
 | `noPageScroll.ts` | `installNoPageScroll()`: setzt eine verirrte Seiten-Scrollposition sofort zurück (die Seite scrollt nie, nur Panels). Aufruf in `main.tsx`. |
 | `dialogService.tsx` | `confirmDialog`, `promptDialog`, `choiceDialog` als Promise. `DialogHost` zeigt sie und die Masken. |
 | `notifications.tsx` | `notify(text, opts)`: Toast ohne Fokusraub. `ToastHost` zeigt ihn. Liste für den Notifications-Reiter. |
+| `viewFiles.ts` | Von außen abgelegte Dateien: `readViewFile(file)` liest Text (max. 5 MB, keine Binärdateien) und liefert einen Knoten `kind: view`; `viewFileText`, `forgetViewFile`. Nur im Speicher. |
 | `openFileBus.ts` | `openFileInDesigner(path)`: "Open File" aus einem eigenen Fenster (Commit-Fenster) öffnet die Datei im Hauptfenster. |
 | `outputBus.ts` | `logOutput(sub, text)` schreibt ins Output-Fenster. `requestShell` für kleine Bitten an die Shell. SQL-Maskierung. |
 | `shortcuts.ts` | Kürzel als `Mod+Shift+S` schreiben, anzeigen (`formatShortcut`) und prüfen (`matchesShortcut`). |

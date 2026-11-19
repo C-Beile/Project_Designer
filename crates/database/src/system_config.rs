@@ -121,28 +121,120 @@ fn leaf_pairs(xml: &str) -> Vec<(String, String)> {
     let mut reader = Reader::from_str(xml);
     let mut out = Vec::new();
     let mut current: Option<String> = None;
+    let mut in_login_list = false;
     while let Ok(ev) = reader.read_event() {
         match ev {
-            Event::Start(e) => current = Some(String::from_utf8_lossy(e.name().as_ref()).to_string()),
+            Event::Start(e) => {
+                let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                if name == "loginList" {
+                    in_login_list = true;
+                }
+                current = Some(name);
+            }
             Event::Empty(e) => {
-                if let Some(v) = attr(&e, "v") {
+                if let (false, Some(v)) = (in_login_list, attr(&e, "v")) {
                     out.push((String::from_utf8_lossy(e.name().as_ref()).to_string(), v));
                 }
             }
             Event::Text(t) => {
-                if let (Some(k), Ok(text)) = (current.as_ref(), t.unescape()) {
+                if let (false, Some(k), Ok(text)) = (in_login_list, current.as_ref(), t.unescape()) {
                     let text = text.trim();
                     if !text.is_empty() {
                         out.push((k.clone(), text.to_string()));
                     }
                 }
             }
-            Event::End(_) => current = None,
+            Event::End(e) => {
+                if e.name().as_ref() == b"loginList" {
+                    in_login_list = false;
+                }
+                current = None;
+            }
             Event::Eof => break,
             _ => {}
         }
     }
     out
+}
+
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+pub struct LoginEntry {
+    pub name: String,
+    #[serde(rename = "loginType")]
+    pub login_type: String,
+    pub title: String,
+    pub description: String,
+    pub properties: Vec<LoginProperty>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+pub struct LoginProperty {
+    pub key: String,
+    pub value: String,
+}
+
+pub fn login_list(xml: &str) -> Vec<LoginEntry> {
+    let mut reader = Reader::from_str(xml);
+    let mut path: Vec<String> = Vec::new();
+    let mut out = Vec::new();
+    let mut entry: Option<LoginEntry> = None;
+    let mut pair = LoginProperty::default();
+    while let Ok(ev) = reader.read_event() {
+        match ev {
+            Event::Start(e) => {
+                let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
+                if name == "logIn" && path.last().map(String::as_str) == Some("loginList") {
+                    entry = Some(LoginEntry::default());
+                }
+                path.push(name);
+            }
+            Event::Text(t) => {
+                let (Some(en), Ok(text)) = (entry.as_mut(), t.unescape()) else { continue };
+                let text = text.trim().to_string();
+                let tail: Vec<&str> = path.iter().rev().take(3).map(String::as_str).collect();
+                match tail.as_slice() {
+                    ["name", "logIn", ..] => en.name = text,
+                    ["loginType", "logIn", ..] => en.login_type = text,
+                    ["title", "logIn", ..] => en.title = text,
+                    ["description", "logIn", ..] => en.description = text,
+                    ["key", "entry", "properties"] => pair.key = text,
+                    ["value", "entry", "properties"] => pair.value = text,
+                    _ => {}
+                }
+            }
+            Event::End(_) => {
+                let closed = path.pop().unwrap_or_default();
+                if closed == "entry" && path.last().map(String::as_str) == Some("properties") {
+                    if let Some(en) = entry.as_mut() {
+                        if !pair.key.is_empty() {
+                            en.properties.push(std::mem::take(&mut pair));
+                        }
+                    }
+                    pair = LoginProperty::default();
+                } else if closed == "logIn" && path.last().map(String::as_str) == Some("loginList") {
+                    out.extend(entry.take());
+                }
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+    }
+    out
+}
+
+fn login_list_property(xml: &str) -> Option<(String, String)> {
+    let mut entries = login_list(xml);
+    if entries.is_empty() {
+        return None;
+    }
+    for entry in &mut entries {
+        for p in &mut entry.properties {
+            if is_secret_key(&p.key) {
+                p.value.clear();
+            }
+        }
+    }
+    serde_json::to_string(&entries).ok().map(|json| ("loginList".to_string(), json))
 }
 
 fn jdbc_label(url: &str) -> String {
@@ -216,10 +308,11 @@ pub fn alias_row_to_dto(alias_id: &str, description: Option<&str>, xml: Option<&
     let from_parts = get("host").map(|h| format!("jdbc:mariadb://{h}:{}/{}", get("port").unwrap_or_default(), get("database").unwrap_or_default()));
     let jdbc = from_leaf.or(from_description).or(from_parts);
     let label = type_label_for(alias_id, &leaves, jdbc.as_deref());
-    let shown: Vec<(String, String)> = leaves
+    let mut shown: Vec<(String, String)> = leaves
         .into_iter()
         .filter(|(k, _)| !["name", "type", "aliastype", "title", "description", "majormodelmode"].contains(&k.to_ascii_lowercase().as_str()))
         .collect();
+    shown.extend(xml.and_then(login_list_property));
     build(alias_id, &shown, label, jdbc)
 }
 
@@ -380,6 +473,63 @@ mod tests {
 <entry key="type" value="Workflow modeler"/><entry key="modelerUrl" value="https://x/y"/>
 <entry key="user" value="admin"/><entry key="password" value="HUSH"/></map></node></node>
 </node></root></preferences>"#;
+
+    const LOGIN_XML: &str = r#"<aliasConfig><aliasConfigSub><aliasSubInstanceConfiguration>
+<clientTimeout>1D</clientTimeout>
+<loginList>
+  <logIn>
+    <name>THHIT_EntraScimToken</name>
+    <loginType>oauth2-token</loginType>
+    <properties>
+      <entry><key>alias</key><value>THHIT_EntraProvisioning_alias</value></entry>
+    </properties>
+  </logIn>
+  <logIn>
+    <name>Second</name>
+    <title>Second login</title>
+    <description>a &amp; b</description>
+    <loginType>default</loginType>
+    <properties/>
+  </logIn>
+</loginList>
+</aliasSubInstanceConfiguration></aliasConfigSub></aliasConfig>"#;
+
+    #[test]
+    fn reads_the_login_list_of_a_config() {
+        let list = login_list(LOGIN_XML);
+        assert_eq!(list.len(), 2);
+        assert_eq!(list[0].name, "THHIT_EntraScimToken");
+        assert_eq!(list[0].login_type, "oauth2-token");
+        assert_eq!(list[0].properties, vec![LoginProperty { key: "alias".into(), value: "THHIT_EntraProvisioning_alias".into() }]);
+        assert_eq!((list[1].title.as_str(), list[1].description.as_str()), ("Second login", "a & b"));
+        assert!(list[1].properties.is_empty());
+    }
+
+    #[test]
+    fn a_config_without_login_list_has_none() {
+        assert!(login_list("<aliasConfig><clientTimeout>1D</clientTimeout></aliasConfig>").is_empty());
+        assert!(login_list_property("<aliasConfig/>").is_none());
+    }
+
+    #[test]
+    fn login_leaves_do_not_leak_into_the_flat_properties() {
+        let dto = alias_row_to_dto("_____CONFIGURATION", None, Some(LOGIN_XML));
+        let props: Vec<(&str, &str)> = dto.groups.iter().flat_map(|g| g.props.iter()).map(|p| (p.name.as_str(), p.value.as_str())).collect();
+        assert!(props.iter().any(|(k, v)| *k == "clientTimeout" && *v == "1D"));
+        assert!(!props.iter().any(|(k, _)| ["key", "value", "loginType", "alias"].contains(k)));
+        let login = props.iter().find(|(k, _)| *k == "loginList").expect("loginList property");
+        let parsed: serde_json::Value = serde_json::from_str(login.1).unwrap();
+        assert_eq!(parsed[0]["name"], "THHIT_EntraScimToken");
+        assert_eq!(parsed[0]["loginType"], "oauth2-token");
+        assert_eq!(parsed[0]["properties"][0]["key"], "alias");
+    }
+
+    #[test]
+    fn secret_looking_login_properties_are_not_sent() {
+        let xml = "<c><loginList><logIn><name>x</name><loginType>external</loginType><properties><entry><key>client secret</key><value>HUSH</value></entry></properties></logIn></loginList></c>";
+        let dto = alias_row_to_dto("_____CONFIGURATION", None, Some(xml));
+        assert!(!serde_json::to_string(&dto).unwrap().contains("HUSH"));
+    }
 
     #[test]
     fn lists_system_alias_with_jdbc_url_and_masked_secret() {

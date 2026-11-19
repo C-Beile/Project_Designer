@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import type { AliasConfigDto } from '../wire/types'
+import { loginNames, parseLoginList } from './loginList'
 
 // Sections of the alias config `_____CONFIGURATION` (original Designer, shots 101, 105, 108-115):
 // the Navigator of the open config shows the tree System > Client, Modules, Logging, Custom, ...;
@@ -30,7 +31,7 @@ export const SECTION_TREE: SectionNode = {
   ],
 }
 
-export type PropKind = 'text' | 'checkbox' | 'combo'
+export type PropKind = 'text' | 'checkbox' | 'combo' | 'login-list'
 
 interface GroupDef {
   label: string
@@ -40,11 +41,12 @@ interface GroupDef {
 const cb = (name: string) => ({ name, kind: 'checkbox' as const })
 const combo = (name: string) => ({ name, kind: 'combo' as const })
 const txt = (name: string) => ({ name })
+const loginList = (name: string) => ({ name, kind: 'login-list' as const })
 
 const CLIENT: GroupDef[] = [
   { label: 'Neon', props: [cb('neonVaadinClientEnabled'), cb('neonHandleCORS'), txt('neonIdleTimeout'), combo('neonLoginTypeIds')] },
   { label: 'Client', props: [txt('clientTitleText'), combo('clientLogo'), txt('clientLogoFile'), txt('clientBackgroundFile'), combo('clientBackground'), txt('clientTimeout'), txt('clientTheme'), txt('clientDarkTheme')] },
-  { label: 'Login', props: [txt('securitySSOUserTemplate'), txt('loginList')] },
+  { label: 'Login', props: [txt('securitySSOUserTemplate'), loginList('loginList')] },
 ]
 
 const SYSTEM: GroupDef[] = [
@@ -159,6 +161,7 @@ export interface SheetRow {
   /** The config has a value for it; unset rows are shown grey and italic. */
   set: boolean
   kind: PropKind
+  data?: string
 }
 
 export interface SheetGroup {
@@ -187,8 +190,10 @@ export function sectionSheet(config: AliasConfigDto, sectionId: string): { group
     label: g.label,
     rows: g.props.map((p) => {
       const v = values.get(p.name.toLowerCase())
-      const secret = v?.secret ?? isSecretName(p.name)
-      return { name: p.name, value: v?.value ?? '', secret, set: !!v && (v.value !== '' || v.secret), kind: p.kind ?? 'text' }
+      const secret = p.kind === 'login-list' ? false : (v?.secret ?? isSecretName(p.name))
+      const data = v?.value ?? ''
+      const value = p.kind === 'login-list' ? loginNames(parseLoginList(data)) : data
+      return { name: p.name, value, data: p.kind === 'login-list' ? data : undefined, secret, set: !!v && (data !== '' || v.secret), kind: p.kind ?? 'text' }
     }),
   }))
   if (sectionId === 'system') {

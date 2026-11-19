@@ -63,6 +63,8 @@ import { listenBackend } from './hooks/backendEvent'
 import { ConflictDialog } from './ConflictDialog'
 import { useExternalChanges } from './hooks/useExternalChanges'
 import { useIndexStatus } from './hooks/useIndexStatus'
+import { useUpdateCheck } from './hooks/useUpdateCheck'
+import { useDropView } from './hooks/useDropView'
 import { setIndexOpenLog } from '../core/indexStatus'
 import { keymapEntries, useDialogWindows } from './hooks/useDialogWindows'
 import { useOutputLogs } from './hooks/useOutputLogs'
@@ -154,6 +156,7 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
   useEffect(() => saveLayout(layout), [layout])
   const { projects, setActiveProject, reloadToken, setReloadToken, trees, loadingProjects, iconSvgs, root, tree, treeRef, objectsByType, openableModels, activeTree, systems, activeSystem, setRunConfig, projectOf, openProjectAt, removeProjects } = useProjects({ api, projectRoot, setStatus })
   useIndexStatus(api, projects)
+  useUpdateCheck(api, setDialog)
   const { treeSelection, setTreeSelection, selected, setSelected, selectedProject, setSelectedProject, navSel, setNavSel, inspected, inspectedObject, editNode, elementSel, focusLabel, inspectedKind } = useSelection(tree)
   const { db, changeDb, clearDb, tunnelState, nowTick } = useDbStatus(api, projects, trees, appendLog)
   const allTunnelStates = useTunnelState()
@@ -417,6 +420,8 @@ export function Shell({ api, projectRoot }: { api: ForgeApi; projectRoot: string
       }),
     [trees, handleOpen],
   )
+
+  useDropView(handleOpen)
 
   // Editors moved into windows of their own: their tab leaves this window while the window exists.
   const unsavedRef = useRef(unsaved)

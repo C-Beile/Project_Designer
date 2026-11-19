@@ -40,6 +40,7 @@ pub mod local_data;
 mod sheet_actor_tests;
 pub mod history;
 pub mod linked_file;
+pub mod modification_overlay;
 pub mod modification_write;
 pub mod project_actor;
 pub mod settings;

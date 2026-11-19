@@ -637,6 +637,9 @@ fn linked_preview(project_root: Option<&Path>, reference: &str) -> Option<String
 }
 
 fn property_sheet(open: &mut HashMap<String, OpenObject>, node_id: &str, path: &str, catalog: Option<&Catalog>, modification: bool) -> Result<PropertySheet, String> {
+    if let Some(merged_path) = path.strip_prefix(sheet::MERGED_MARK) {
+        return merged_sheet(open, node_id, path, merged_path, catalog);
+    }
     let virtual_target = split_virtual(path);
     let node_path = match virtual_target {
         Some((container, _)) => parse_node_path(container)?,
@@ -661,6 +664,21 @@ fn property_sheet(open: &mut HashMap<String, OpenObject>, node_id: &str, path: &
     if virtual_target.is_some() {
         result.path = path.to_string();
     }
+    Ok(result)
+}
+
+fn merged_sheet(open: &mut HashMap<String, OpenObject>, node_id: &str, path: &str, merged_path: &str, catalog: Option<&Catalog>) -> Result<PropertySheet, String> {
+    let node_path = parse_node_path(merged_path)?;
+    let entry = ensure_open(open, node_id)?;
+    let bytes = entry.handle.serialized_bytes();
+    let model_type = root_tag(&bytes);
+    let own = WireValue::from_core(&live_snapshot(&entry.handle, &NodePath::root(), &entry.shape));
+    let name = sheet::field(&own, "name").and_then(sheet::text_of).unwrap_or_default();
+    let file = Path::new(node_id);
+    let merged = crate::modification_overlay::merged_root(file, &bytes, &model_type, &name).ok_or_else(|| "The modifications of this object are not available any more.".to_string())?;
+    let project_root = crate::modification_overlay::project_root_of_module_object(file);
+    let mut result = sheet::resolve_sheet(catalog, &model_type, &merged, &node_path, Some(sheet::READ_ONLY_MERGED), &|r| linked_preview(project_root.as_deref(), r))?;
+    result.path = path.to_string();
     Ok(result)
 }
 
@@ -728,7 +746,15 @@ fn navigator(open: &mut HashMap<String, OpenObject>, node_id: &str) -> Result<Ve
     } else {
         None
     };
-    Ok(sheet::navigator(&model_type, &root, &name, js.as_deref()))
+    let outline = sheet::navigator(&model_type, &root, &name, js.as_deref());
+    let file = resolve_leaf_path(node_id)?;
+    Ok(with_modifications(entry, &file, &model_type, &name, outline))
+}
+
+fn with_modifications(entry: &OpenObject, file: &Path, model_type: &str, name: &str, outline: Vec<NavNode>) -> Vec<NavNode> {
+    let Some(merged) = crate::modification_overlay::merged_root(file, &entry.handle.serialized_bytes(), model_type, name) else { return outline };
+    let merged_name = sheet::field(&merged, "name").and_then(sheet::text_of).unwrap_or_default();
+    sheet::graft(&outline, sheet::navigator(model_type, &merged, &merged_name, None))
 }
 
 fn encode_attr(raw: &str) -> String {
