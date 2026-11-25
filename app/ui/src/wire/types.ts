@@ -495,12 +495,23 @@ export interface ForwardStatusDto {
 }
 
 /** An ADITO project found inside the projects folder. */
+export interface RestParamHint {
+  name: string
+  kind?: string | null
+  mandatory: boolean
+}
+
 export interface WebserviceDto {
   name: string
   module: string | null
   methods: string[]
   loginTypes: string[]
   fields: number
+  /** `entity`: entity web service; `custom`: process published as web service. */
+  kind: 'entity' | 'custom' | string
+  accepts?: string | null
+  delivers?: string | null
+  params: RestParamHint[]
 }
 
 export interface RestServerDto {

@@ -33,24 +33,53 @@ fn strip_project_variable(reference: &str) -> &str {
     text
 }
 
+const OUTSIDE: &str = "Config path must stay inside the project folder.";
+
+fn parts_of(text: &str) -> Vec<String> {
+    text.replace('\\', "/").split('/').map(str::trim).filter(|p| !p.is_empty() && *p != ".").map(str::to_string).collect()
+}
+
+/// The part of an absolute path that lies below the project. The path may sit in this project folder (any letter case,
+/// any kind of separator) or come from a computer where the project lived elsewhere: then everything after the last folder
+/// that has the project folder's name counts.
+fn below_project(project_root: &Path, parts: &[String]) -> Option<Vec<String>> {
+    let root = project_root.to_string_lossy().replace('\\', "/");
+    let root_parts = parts_of(root.trim_start_matches("//?/"));
+    let same = |a: &String, b: &String| a.eq_ignore_ascii_case(b);
+    if !root_parts.is_empty() && parts.len() > root_parts.len() && parts.iter().zip(&root_parts).all(|(a, b)| same(a, b)) {
+        return Some(parts[root_parts.len()..].to_vec());
+    }
+    let name = root_parts.last()?;
+    let at = parts[..parts.len().saturating_sub(1)].iter().rposition(|p| same(p, name))?;
+    Some(parts[at + 1..].to_vec())
+}
+
 /// The folders and the file of a reference below the project, whatever separators the system that wrote it used (a
-/// project made on Windows carries backslashes). Refuses anything outside the project folder.
-fn project_segments(reference: &str) -> Result<Vec<String>, String> {
-    let unified = strip_project_variable(reference).replace('\\', "/");
-    // A drive letter or a leading double slash is the absolute path of another computer.
+/// project made on Windows carries backslashes). Understands `$PROJECTHOME/...`, `%aditoprj%/...`, project-relative paths
+/// and absolute paths into the project. Refuses anything outside the project folder.
+fn project_segments(project_root: &Path, reference: &str) -> Result<Vec<String>, String> {
+    let text = reference.trim();
+    let stripped = strip_project_variable(text);
+    let by_variable = stripped.len() != text.len();
+    let unified = stripped.replace('\\', "/");
+    let unified = unified.strip_prefix("//?/").unwrap_or(&unified);
     let bytes = unified.as_bytes();
     let is_drive = bytes.len() >= 2 && bytes[1] == b':' && bytes[0].is_ascii_alphabetic();
-    if is_drive || unified.starts_with("//") {
-        return Err("Config path must stay inside the project folder.".into());
+    let is_network = unified.starts_with("//");
+    let parts = parts_of(unified);
+    if parts.iter().any(|p| p == "..") {
+        return Err(OUTSIDE.into());
     }
-    let mut segments = Vec::new();
-    for part in unified.split('/') {
-        match part.trim() {
-            "" | "." => {}
-            ".." => return Err("Config path must stay inside the project folder.".into()),
-            other => segments.push(other.to_string()),
+    let absolute = !by_variable && (is_drive || is_network || unified.starts_with('/'));
+    let segments = if absolute {
+        match below_project(project_root, &parts) {
+            Some(below) => below,
+            None if is_drive || is_network => return Err(format!("{OUTSIDE} ({reference} is not in {}.)", project_root.display())),
+            None => parts,
         }
-    }
+    } else {
+        parts
+    };
     if segments.is_empty() {
         return Err("Config path is empty.".into());
     }
@@ -62,11 +91,12 @@ fn entry_ignoring_case(dir: &Path, name: &str) -> Option<PathBuf> {
     std::fs::read_dir(dir).ok()?.flatten().find(|e| e.file_name().to_string_lossy().eq_ignore_ascii_case(name)).map(|e| e.path())
 }
 
-/// Resolves `$PROJECTHOME/...` (or a project-relative path) and refuses anything outside the project folder. Works the
+/// Resolves `$PROJECTHOME/...`, `%aditoprj%/...`, a project-relative path or an absolute path into the project, and
+/// refuses anything outside the project folder. Works the
 /// same on Windows and macOS: both kinds of separator are read, and where the exact spelling does not exist the
 /// folders are searched without regard to letter case.
 pub fn resolve_config_path(project_root: &Path, reference: &str) -> Result<PathBuf, String> {
-    let segments = project_segments(reference)?;
+    let segments = project_segments(project_root, reference)?;
     let mut exact = project_root.to_path_buf();
     for s in &segments {
         exact.push(s);
@@ -253,6 +283,33 @@ mod tests {
         assert!(resolve_config_path(root, "$PROJECTHOME/others/a.xml").is_ok());
         assert!(resolve_config_path(root, "$PROJECTHOME/../x.xml").is_err());
         assert!(resolve_config_path(root, "C:/x.xml").is_err());
+    }
+
+    #[test]
+    fn absolute_paths_into_the_project_are_accepted() {
+        let root = Path::new("C:/Users/me/Desktop/GitRepos/Vendira_basic");
+        let expected = root.join("data").join("config").join("t.xml");
+        assert_eq!(resolve_config_path(root, r"C:\Users\me\Desktop\GitRepos\Vendira_basic\data\config\t.xml").unwrap(), expected);
+        assert_eq!(resolve_config_path(root, "c:/users/ME/desktop/gitrepos/vendira_basic/data/config/t.xml").unwrap(), expected);
+        assert_eq!(resolve_config_path(root, r"\\?\C:\Users\me\Desktop\GitRepos\Vendira_basic\data\config\t.xml").unwrap(), expected);
+        assert_eq!(resolve_config_path(root, r"C:\Users\colleague\work\Vendira_basic\data\config\t.xml").unwrap(), expected);
+        assert_eq!(resolve_config_path(root, r"\\server\share\Vendira_basic\data\config\t.xml").unwrap(), expected);
+    }
+
+    #[test]
+    fn absolute_paths_outside_the_project_are_still_refused() {
+        let root = Path::new("C:/Users/me/GitRepos/Vendira_basic");
+        assert!(resolve_config_path(root, r"C:\Users\me\GitRepos\Other\t.xml").is_err());
+        assert!(resolve_config_path(root, r"C:\Users\me\GitRepos\Vendira_basic\..\Other\t.xml").is_err());
+        assert!(resolve_config_path(root, r"C:\Users\me\GitRepos\Vendira_basic").is_err());
+        assert!(resolve_config_path(root, r"D:\t.xml").is_err());
+    }
+
+    #[test]
+    fn unix_absolute_paths_into_the_project_are_accepted() {
+        let root = Path::new("/Users/dev/proj");
+        assert_eq!(resolve_config_path(root, "/Users/dev/proj/others/t.xml").unwrap(), root.join("others").join("t.xml"));
+        assert_eq!(resolve_config_path(root, "/home/other/proj/others/t.xml").unwrap(), root.join("others").join("t.xml"));
     }
 
     #[test]

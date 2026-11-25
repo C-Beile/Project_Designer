@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('monaco-editor', () => import('../support/monacoMock'))
 
-import { languageForFile } from '../../src/tabs/TextFileEditor'
+import { languageForFile, typeNameOf } from '../../src/tabs/TextFileEditor'
 import { MarkdownPreview, renderMarkdown } from '../../src/tabs/MarkdownPreview'
 
 describe('language of a project file', () => {
@@ -14,6 +14,12 @@ describe('language of a project file', () => {
     expect(languageForFile('.npmrc')).toBe('ini')
     expect(languageForFile(String.raw`C:\work\proj\.gitignore`)).toBe('forge-ignore')
     expect(languageForFile('/work/proj/.GitAttributes')).toBe('forge-gitattributes')
+  })
+
+  it('reads the type from the path when the label is only a name, like an implementation', () => {
+    expect(languageForFile(typeNameOf('bhb_impl', 'C:/p/modification/m1/process.js'))).toBe('javascript')
+    expect(languageForFile(typeNameOf('package.json', 'C:/p/package.json'))).toBe('json')
+    expect(languageForFile(typeNameOf('.gitignore', 'C:/p/.gitignore'))).toBe('forge-ignore')
   })
 
   it('keeps the extension rules', () => {

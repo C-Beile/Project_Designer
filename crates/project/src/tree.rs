@@ -139,6 +139,8 @@ struct PackageScan {
     contexts: HashMap<String, ContextInfo>,
     entity_icons: HashMap<String, String>,
     process_groups: HashMap<String, &'static str>,
+    /// Implementations an object lists itself (`<implementations>`), by object name: `(name, linked file)`.
+    implementations: HashMap<String, Vec<(String, Option<String>)>>,
     modifications: Vec<Modification>,
     /// Project-only: system folders without their `.aod` (shown dimmed, see `system_nodes`).
     incomplete_systems: Vec<(String, PathBuf)>,
@@ -168,6 +170,9 @@ struct Modification {
     /// For an INSERT of a `<webserviceReference>`: `(reference name, webservice name)`.
     #[serde(default)]
     webservice_reference: Option<(String, String)>,
+    /// For an INSERT of a `<serviceImplementation>`: `(implementation name, linked file)`.
+    #[serde(default)]
+    implementation: Option<(String, Option<String>)>,
 }
 
 fn forward(path: &Path) -> String {
@@ -237,6 +242,14 @@ fn view_references(xml: &str) -> Vec<(String, String)> {
     blocks(xml, "neonViewReference")
         .into_iter()
         .filter_map(|b| Some((tag_text(b, "name").unwrap_or("").to_string(), tag_text(b, "view")?.to_string())))
+        .collect()
+}
+
+/// The `<serviceImplementation>`s of a text with their linked script (`<process>%aditoprj%/...</process>`).
+fn service_implementations(xml: &str) -> Vec<(String, Option<String>)> {
+    blocks(xml, "serviceImplementation")
+        .into_iter()
+        .filter_map(|b| Some((tag_text(b, "name")?.to_string(), tag_text(b, "process").filter(|p| !p.is_empty()).map(str::to_string))))
         .collect()
 }
 
@@ -317,6 +330,7 @@ fn parse_modification(xml: &str) -> Option<Modification> {
         path: tag_text(xml, "path")?.to_string(),
         view_reference: view_references(xml).into_iter().next(),
         webservice_reference: webservice_references(xml).into_iter().next(),
+        implementation: service_implementations(xml).into_iter().next(),
     })
 }
 
@@ -333,7 +347,7 @@ fn sub_dirs(dir: &Path) -> Vec<(String, PathBuf)> {
 enum ObjectRead {
     /// The folder has no `.aod` of its own.
     Missing(String, PathBuf),
-    Found { name: String, aod: PathBuf, context: Option<ContextInfo>, icon: Option<String>, group: Option<&'static str> },
+    Found { name: String, aod: PathBuf, context: Option<ContextInfo>, icon: Option<String>, group: Option<&'static str>, implementations: Vec<(String, Option<String>)> },
 }
 
 /// Scans one package. `threads` is how many threads may read its files: the project itself is one big package and
@@ -347,14 +361,15 @@ fn scan_package(pkg: &Package, threads: usize) -> PackageScan {
             if !aod.is_file() {
                 return ObjectRead::Missing(name.clone(), dir.clone());
             }
-            let (mut context, mut icon, mut group) = (None, None, None);
+            let (mut context, mut icon, mut group, mut implementations) = (None, None, None, Vec::new());
             match *folder {
                 "neonContext" => context = fs::read_to_string(&aod).ok().map(|xml| parse_context(&xml)),
                 "entity" => icon = head_of_file(&aod).as_deref().and_then(top_level_icon),
                 "process" => group = fs::read_to_string(&aod).ok().map(|xml| process_group(&xml)),
+                "serviceDefinition" => implementations = fs::read_to_string(&aod).map(|xml| service_implementations(&xml)).unwrap_or_default(),
                 _ => {}
             }
-            ObjectRead::Found { name: name.clone(), aod, context, icon, group }
+            ObjectRead::Found { name: name.clone(), aod, context, icon, group, implementations }
         });
         for read in reads {
             match read {
@@ -363,7 +378,10 @@ fn scan_package(pkg: &Package, threads: usize) -> PackageScan {
                         scan.incomplete_systems.push((name, dir));
                     }
                 }
-                ObjectRead::Found { name, aod, context, icon, group } => {
+                ObjectRead::Found { name, aod, context, icon, group, implementations } => {
+                    if !implementations.is_empty() {
+                        scan.implementations.insert(name.clone(), implementations);
+                    }
                     if let Some(c) = context {
                         scan.contexts.insert(name.clone(), c);
                     }
@@ -396,7 +414,7 @@ fn scan_package(pkg: &Package, threads: usize) -> PackageScan {
 // remembered on disk and only re-read when the module's folder stamps differ. The project's own
 // objects and linked (symlinked) modules are always read fresh.
 
-const SCAN_CACHE_FORMAT: u32 = 2;
+const SCAN_CACHE_FORMAT: u32 = 3;
 
 #[derive(Serialize, Deserialize)]
 struct StoredScan {
@@ -405,6 +423,8 @@ struct StoredScan {
     #[serde(default)]
     entity_icons: HashMap<String, String>,
     process_groups: HashMap<String, String>,
+    #[serde(default)]
+    implementations: HashMap<String, Vec<(String, Option<String>)>>,
     modifications: Vec<Modification>,
 }
 
@@ -426,6 +446,7 @@ fn store_scan(scan: &PackageScan) -> StoredScan {
         contexts: scan.contexts.clone(),
         entity_icons: scan.entity_icons.clone(),
         process_groups: scan.process_groups.iter().map(|(k, v)| (k.clone(), (*v).to_string())).collect(),
+        implementations: scan.implementations.clone(),
         modifications: scan
             .modifications
             .iter()
@@ -437,6 +458,7 @@ fn store_scan(scan: &PackageScan) -> StoredScan {
                 path: m.path.clone(),
                 view_reference: m.view_reference.clone(),
                 webservice_reference: m.webservice_reference.clone(),
+                implementation: m.implementation.clone(),
             })
             .collect(),
     }
@@ -451,6 +473,7 @@ fn restore_scan(stored: &StoredScan) -> Option<PackageScan> {
     }
     scan.contexts = stored.contexts.clone();
     scan.entity_icons = stored.entity_icons.clone();
+    scan.implementations = stored.implementations.clone();
     for (name, group) in &stored.process_groups {
         let group = PROCESS_GROUPS.iter().find(|g| *g == group)?;
         scan.process_groups.insert(name.clone(), group);
@@ -464,6 +487,7 @@ fn restore_scan(stored: &StoredScan) -> Option<PackageScan> {
             path: m.path.clone(),
             view_reference: m.view_reference.clone(),
             webservice_reference: m.webservice_reference.clone(),
+            implementation: m.implementation.clone(),
         });
     }
     Some(scan)
@@ -612,6 +636,96 @@ struct Model<'a> {
     objects: HashMap<&'static str, BTreeMap<String, ObjRef>>,
     /// `(modelType, modelName)` -> packages whose modifications target it.
     modified_by: HashMap<(String, String), BTreeSet<usize>>,
+    /// Object name -> what hangs below it: its own implementations and those other packages insert through modifications.
+    implementations: HashMap<String, Vec<ImplementationInfo>>,
+}
+
+/// One implementation hanging below an object (a service): its name, the script it links and where that lies.
+struct ImplementationInfo {
+    name: String,
+    file: Option<PathBuf>,
+    /// The package that inserted it, when that is a module (the project's own are not marked).
+    origin: Option<String>,
+    read_only: bool,
+}
+
+/// Object types whose implementations are shown below them in the tree. An object that has some can be opened up like
+/// an extension point in the Navigator: the file of every implementation is one click away.
+const IMPLEMENTATION_TYPES: &[&str] = &["serviceDefinition"];
+
+/// A `%aditoprj%/...` reference (any letter case, any separators) as a path inside the package that wrote it.
+fn link_path(dir: &Path, reference: &str) -> PathBuf {
+    let text = reference.trim();
+    let rel = match text.get(..11) {
+        Some(prefix) if prefix.eq_ignore_ascii_case("%aditoprj%/") || prefix.eq_ignore_ascii_case("%aditoprj%\\") => &text[11..],
+        _ => text,
+    };
+    let mut path = dir.to_path_buf();
+    for part in rel.split(['/', '\\']).filter(|p| !p.is_empty()) {
+        path.push(part);
+    }
+    path
+}
+
+/// The implementations below each object of `IMPLEMENTATION_TYPES`: the ones the object lists itself (read from the
+/// package that provides it) and the ones any package inserts into it with an INSERT modification.
+fn build_implementations(packages: &[Package], scans: &[PackageScan]) -> HashMap<String, Vec<ImplementationInfo>> {
+    let mut out: HashMap<String, Vec<ImplementationInfo>> = HashMap::new();
+    let mut owner: HashMap<&str, usize> = HashMap::new();
+    for (i, scan) in scans.iter().enumerate() {
+        for (folder, name, _) in &scan.objects {
+            if IMPLEMENTATION_TYPES.contains(folder) {
+                owner.entry(name.as_str()).or_insert(i);
+            }
+        }
+    }
+    for (name, index) in &owner {
+        let pkg = &packages[*index];
+        for (impl_name, file) in scans[*index].implementations.get(*name).into_iter().flatten() {
+            out.entry((*name).to_string()).or_default().push(ImplementationInfo {
+                name: impl_name.clone(),
+                file: file.as_deref().map(|f| link_path(&pkg.dir, f)),
+                origin: None,
+                read_only: !pkg.is_project,
+            });
+        }
+    }
+    for (pkg, scan) in packages.iter().zip(scans) {
+        for m in &scan.modifications {
+            let Some((impl_name, file)) = &m.implementation else { continue };
+            if m.change != "INSERT" || !IMPLEMENTATION_TYPES.contains(&m.model_type.as_str()) || m.path != format!("{}/implementations", m.model_name) {
+                continue;
+            }
+            out.entry(m.model_name.clone()).or_default().push(ImplementationInfo {
+                name: impl_name.clone(),
+                file: file.as_deref().map(|f| link_path(&pkg.dir, f)),
+                origin: (!pkg.is_project).then(|| pkg.coordinate.clone()),
+                read_only: !pkg.is_project,
+            });
+        }
+    }
+    out
+}
+
+fn implementation_node(service: &str, info: &ImplementationInfo) -> TreeNode {
+    match &info.file {
+        Some(path) => {
+            let mut node = file_node(path, info.read_only);
+            node.label = info.name.clone();
+            node.origin = info.origin.clone();
+            node.dimmed = !path.is_file();
+            node
+        }
+        None => TreeNode {
+            id: format!("missing:{service}/implementations/{}", info.name),
+            label: info.name.clone(),
+            is_leaf: true,
+            kind: NodeKind::Object,
+            dimmed: true,
+            origin: info.origin.clone(),
+            ..TreeNode::default()
+        },
+    }
 }
 
 fn sort_key(label: &str) -> (String, String) {
@@ -673,6 +787,19 @@ impl Model<'_> {
                 }
             }
         }
+        node
+    }
+
+    /// Hangs the implementations of `name` below its node, so the object can be opened up like an extension point.
+    fn with_implementations(&self, mut node: TreeNode, name: &str) -> TreeNode {
+        let Some(list) = self.implementations.get(name) else { return node };
+        let mut children: Vec<TreeNode> = list.iter().map(|i| implementation_node(name, i)).collect();
+        if children.is_empty() {
+            return node;
+        }
+        sort_nodes(&mut children);
+        node.is_leaf = false;
+        node.children = children;
         node
     }
 
@@ -901,7 +1028,7 @@ fn module_children(dir: &Path) -> Vec<TreeNode> {
 /// The type folders of one module, built with the same code as the folders of a project.
 fn module_folder_nodes(pkg: &Package, scan: &PackageScan) -> Vec<TreeNode> {
     let packages = std::slice::from_ref(pkg);
-    let mut model = Model { packages, objects: HashMap::new(), modified_by: HashMap::new() };
+    let mut model = Model { packages, objects: HashMap::new(), modified_by: HashMap::new(), implementations: build_implementations(packages, std::slice::from_ref(scan)) };
     for (folder, name, aod) in &scan.objects {
         model.objects.entry(*folder).or_default().insert(name.clone(), ObjRef { aod: aod.clone(), pkg: 0 });
     }
@@ -922,6 +1049,9 @@ fn module_folder_nodes(pkg: &Package, scan: &PackageScan) -> Vec<TreeNode> {
                         let mut node = model.object_node(f, &n, f);
                         if f == "entity" {
                             node.icon = scan.entity_icons.get(&n).cloned();
+                        }
+                        if IMPLEMENTATION_TYPES.contains(&f) {
+                            node = model.with_implementations(node, &n);
                         }
                         node
                     })
@@ -962,7 +1092,7 @@ pub fn scan_project_tree_with(project_root: &Path, preference_files: &[PathBuf])
     let module_project = npm_modules::model::parse_package_json(&project_root.join("package.json")).map(|d| d.adito_type == npm_modules::AditoType::Module).unwrap_or(false);
     let scans = scan_packages(project_root, &packages);
 
-    let mut model = Model { packages: &packages, objects: HashMap::new(), modified_by: HashMap::new() };
+    let mut model = Model { packages: &packages, objects: HashMap::new(), modified_by: HashMap::new(), implementations: build_implementations(&packages, &scans) };
     let mut contexts: HashMap<String, ContextInfo> = HashMap::new();
     let mut entity_icons: HashMap<String, String> = HashMap::new();
     let mut process_groups: HashMap<String, &'static str> = HashMap::new();
@@ -1027,6 +1157,9 @@ pub fn scan_project_tree_with(project_root: &Path, preference_files: &[PathBuf])
                         let mut node = model.object_node(f, &n, f);
                         if f == "entity" {
                             node.icon = entity_icons.get(&n).cloned();
+                        }
+                        if IMPLEMENTATION_TYPES.contains(&f) {
+                            node = model.with_implementations(node, &n);
                         }
                         node
                     })

@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createMockForgeApi } from '../support/mockApi'
 import { RestEditor } from '../../src/services/RestEditor'
 
-const webservices = [{ name: 'Person_ws', module: null, methods: ['GET', 'PATCH'], loginTypes: ['internal.default'], fields: 1 }]
+const webservices = [{ name: 'Person_ws', module: null, methods: ['GET', 'PATCH'], loginTypes: ['internal.default'], fields: 1, kind: 'entity', params: [] }]
 
 describe('RestEditor', () => {
   it('lists only the calls a web service allows and fills the url', async () => {

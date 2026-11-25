@@ -51,6 +51,11 @@ export function languageForFile(label: string): string {
   return (dot > 0 && LANGUAGES[name.slice(dot + 1)]) || 'plaintext'
 }
 
+/** The name the file type is read from: the label, or the path when the label has no ending (an implementation shown by its name, `bhb_impl`, whose file is `process.js`). */
+export function typeNameOf(label: string, path: string): string {
+  return /\.[A-Za-z0-9]+$/.test(label) || label.startsWith('.') ? label : path
+}
+
 export function previewKindForFile(label: string): 'markdown' | 'csv' | null {
   const name = label.replace(/^.*[\\/]/, '').toLowerCase()
   if (/\.(csv|tsv)$/.test(name)) return 'csv'
@@ -136,8 +141,9 @@ export function TextFileEditor({
       })
   }, [api, path, projectRoot, drafts, isNew])
 
-  const language = languageForFile(label)
-  const previewKind = previewKindForFile(label)
+  const typeName = typeNameOf(label, path)
+  const language = languageForFile(typeName)
+  const previewKind = previewKindForFile(typeName)
   useEffect(() => {
     if (language === 'javascript') void applyJditoTypes(api, projectRoot)
   }, [api, projectRoot, language])

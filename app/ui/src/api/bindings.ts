@@ -1090,6 +1090,11 @@ export type WebserviceDto_Deserialize = {
 	methods: string[],
 	loginTypes: string[],
 	fields: number,
+	/**  `entity` for an entity web service, `custom` for a process published as web service. */
+	kind: string,
+	accepts?: string | null,
+	delivers?: string | null,
+	params: ParamHintDto[],
 };
 
 export type WebserviceDto_Serialize = {
@@ -1098,6 +1103,26 @@ export type WebserviceDto_Serialize = {
 	methods: string[],
 	loginTypes: string[],
 	fields: number,
+	/**  `entity` for an entity web service, `custom` for a process published as web service. */
+	kind: string,
+	accepts: string | null,
+	delivers: string | null,
+	params: ParamHintDto[],
+};
+
+/**  A query parameter a custom web service reads, found in its script. */
+export type ParamHintDto = ParamHintDto_Serialize | ParamHintDto_Deserialize;
+
+export type ParamHintDto_Deserialize = {
+	name: string,
+	kind?: string | null,
+	mandatory: boolean,
+};
+
+export type ParamHintDto_Serialize = {
+	name: string,
+	kind: string | null,
+	mandatory: boolean,
 };
 
 export type WireField = {

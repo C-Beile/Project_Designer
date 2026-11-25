@@ -363,3 +363,93 @@ fn context_shows_its_icon_the_entity_icon_and_its_webservices() {
     assert_eq!(imp.children[0].icon.as_deref(), Some("VAADIN:PRINT"));
     assert_eq!(imp.children[1].object_type.as_deref(), Some("entityWebservice"));
 }
+
+fn implementation(name: &str, file: &str) -> String {
+    format!("<serviceImplementation><name>{name}</name><process>{file}</process></serviceImplementation>")
+}
+
+/// A module with a service that lists two implementations of its own, a service without any, and a project that
+/// hangs a third implementation (with a script of its own) on the module's service through a modification.
+fn service_fixture() -> PathBuf {
+    let root = temp_dir("services").join("Demo");
+    write(&root.join("package.json"), r#"{"name":"@acme/demo","version":"1.0.0","adito":{"type":"project"},"dependencies":{"@mods/svc":"1.0.0"}}"#);
+    object(&root, "serviceDefinition", "Own_service", &format!("  <implementations>{}</implementations>", implementation("own_impl", "%aditoprj%/serviceDefinition/Own_service/implementations/own_impl/process.js")));
+    write(&root.join("serviceDefinition/Own_service/implementations/own_impl/process.js"), "// own");
+    modification(&root, "pm1", "INSERT", "serviceDefinition", "Shared_service", "Shared_service/implementations", &implementation("proj_impl", "%aditoprj%/modification/pm1/process.js"));
+    write(&root.join("modification/pm1/process.js"), "// project");
+
+    let svc = root.join("node_modules/@mods/svc");
+    write(&svc.join("package.json"), r#"{"name":"@mods/svc","version":"1.0.0","adito":{"type":"module"}}"#);
+    object(
+        &svc,
+        "serviceDefinition",
+        "Shared_service",
+        &format!(
+            "  <implementations>\n{}\n{}\n  </implementations>",
+            implementation("b_impl", "%aditoprj%/serviceDefinition/Shared_service/implementations/b_impl/process.js"),
+            implementation("a_impl", r"%AditoPrj%\serviceDefinition\Shared_service\implementations\a_impl\process.js")
+        ),
+    );
+    write(&svc.join("serviceDefinition/Shared_service/implementations/b_impl/process.js"), "// b");
+    write(&svc.join("serviceDefinition/Shared_service/implementations/a_impl/process.js"), "// a");
+    object(&svc, "serviceDefinition", "Empty_service", "");
+    root
+}
+
+#[test]
+fn a_service_with_implementations_opens_up_and_shows_the_file_of_each() {
+    let root = service_fixture();
+    let tree = scan(&root);
+    let services = child(&tree, "service");
+    let own = child(services, "Own_service");
+    assert!(!own.is_leaf);
+    assert_eq!(own.children.len(), 1);
+    let file = &own.children[0];
+    assert_eq!(file.label, "own_impl");
+    assert_eq!(file.kind, NodeKind::File);
+    assert!(file.is_leaf && !file.dimmed && !file.read_only);
+    assert!(file.id.replace('\\', "/").ends_with("serviceDefinition/Own_service/implementations/own_impl/process.js"));
+    assert!(child(services, "Empty_service").is_leaf, "a service without implementations stays a leaf");
+}
+
+#[test]
+fn implementations_inserted_by_other_packages_hang_below_the_service_they_extend() {
+    let root = service_fixture();
+    let tree = scan(&root);
+    let shared = child(child(&tree, "service"), "Shared_service");
+    let labels: Vec<&str> = shared.children.iter().map(|c| c.label.as_str()).collect();
+    assert_eq!(labels, ["a_impl", "b_impl", "proj_impl"]);
+    let a = &shared.children[0];
+    assert!(a.read_only, "the module's own files cannot be changed");
+    assert!(a.id.replace('\\', "/").ends_with("node_modules/@mods/svc/serviceDefinition/Shared_service/implementations/a_impl/process.js"), "{}", a.id);
+    let project = &shared.children[2];
+    assert!(!project.read_only && project.origin.is_none());
+    assert!(project.id.replace('\\', "/").ends_with("Demo/modification/pm1/process.js"), "{}", project.id);
+}
+
+#[test]
+fn a_link_to_a_missing_file_is_shown_dimmed_and_a_missing_link_is_not_openable() {
+    let root = temp_dir("service-missing").join("Demo");
+    object(&root, "serviceDefinition", "X_service", &format!("  <implementations>{}<serviceImplementation><name>nolink_impl</name></serviceImplementation></implementations>", implementation("gone_impl", "%aditoprj%/serviceDefinition/X_service/gone.js")));
+    let tree = scan(&root);
+    let x = child(child(&tree, "service"), "X_service");
+    let gone = child(x, "gone_impl");
+    assert!(gone.dimmed && gone.kind == NodeKind::File);
+    let nolink = child(x, "nolink_impl");
+    assert!(nolink.dimmed && nolink.kind == NodeKind::Object && nolink.id.starts_with("missing:"));
+}
+
+#[test]
+fn a_module_shows_its_service_implementations_below_the_service_too() {
+    let root = service_fixture();
+    let libraries = scan(&root).children.into_iter().find(|c| c.kind == NodeKind::Libraries).unwrap();
+    let module = libraries.children.iter().find(|c| c.id.starts_with("module:")).expect("module node");
+    let nodes = list_tree_children(&module.id).unwrap();
+    let shared = child(child_of(&nodes, "service"), "Shared_service");
+    assert!(!shared.is_leaf);
+    assert_eq!(shared.children.iter().map(|c| c.label.as_str()).collect::<Vec<_>>(), ["a_impl", "b_impl"]);
+}
+
+fn child_of<'a>(nodes: &'a [TreeNode], label: &str) -> &'a TreeNode {
+    nodes.iter().find(|c| c.label == label).unwrap_or_else(|| panic!("no node '{label}'"))
+}

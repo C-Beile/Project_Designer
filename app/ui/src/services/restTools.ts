@@ -10,15 +10,27 @@ export interface RestCall {
   path: string
   label: string
   record: boolean
+  /** A process published as web service: no record id, the script decides what the call does. */
+  custom?: boolean
 }
 
 export type KeyValue = { key: string; value: string; on: boolean }
 
 export type LoginKind = 'none' | 'basic' | 'usertoken'
 
+export function isCustom(ws: Pick<WebserviceDto, 'kind'> | null): boolean {
+  return ws?.kind === 'custom'
+}
+
+const CUSTOM_ORDER = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+const CUSTOM_LABEL: Record<string, string> = { GET: 'Read', POST: 'Send', PUT: 'Replace', PATCH: 'Update', DELETE: 'Delete' }
+
 export function callsOf(ws: WebserviceDto): RestCall[] {
   const base = `${REST_ROOT}/${ws.name}`
   const allowed = new Set(ws.methods.map((m) => m.toUpperCase()))
+  if (isCustom(ws)) {
+    return CUSTOM_ORDER.filter((m) => allowed.has(m)).map((m) => ({ id: `${ws.name} ${m}`, method: m, path: base, label: CUSTOM_LABEL[m], record: false, custom: true }))
+  }
   const out: RestCall[] = []
   if (allowed.has('GET')) out.push({ id: `${ws.name} GET list`, method: 'GET', path: base, label: 'List', record: false })
   if (allowed.has('POST')) out.push({ id: `${ws.name} POST`, method: 'POST', path: base, label: 'Create', record: false })
@@ -40,6 +52,7 @@ export function loginKindOf(ws: WebserviceDto | null): LoginKind {
 
 export function bodyTemplate(call: RestCall | null): string {
   if (!call) return ''
+  if (call.custom) return call.method === 'POST' || call.method === 'PUT' || call.method === 'PATCH' ? '{\n  \n}' : ''
   if (call.method === 'POST') return '[\n  {\n    \n  }\n]'
   if (call.method === 'PUT' || call.method === 'PATCH') return '{\n  \n}'
   return ''
@@ -85,6 +98,71 @@ export function withQuery(path: string, params: KeyValue[]): string {
   if (active.length === 0) return path
   const q = active.map((p) => `${encodeQuery(p.key.trim())}=${encodeQuery(p.value)}`).join('&')
   return `${path}${path.includes('?') ? '&' : '?'}${q}`
+}
+
+export type SystemTone = 'prod' | 'test' | 'qa' | 'dev' | 'other'
+
+/** The kind of environment a system name stands for (`prod_bg`, `dev2`, `qs`): drives the colour of its chip and the care taken before writing calls. */
+export function systemTone(name: string): SystemTone {
+  const n = name.toLowerCase()
+  if (/(^|[^a-z])(prod|production|live)/.test(n)) return 'prod'
+  if (/(^|[^a-z])(test|stage|staging|uat)/.test(n)) return 'test'
+  if (/(^|[^a-z])(qs|qa)([^a-z]|$)/.test(n)) return 'qa'
+  if (/(^|[^a-z])dev/.test(n)) return 'dev'
+  return 'other'
+}
+
+export function serverTone(systems: string[], host: string): SystemTone {
+  const tones = [...systems.map(systemTone), systemTone(host)]
+  for (const t of ['prod', 'test', 'qa', 'dev'] as const) if (tones.includes(t)) return t
+  return 'other'
+}
+
+export const WRITE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE']
+
+/** Cuts string values longer than `max` characters in a JSON text (Base64 images, documents) so the response stays readable; the full text is still what Copy takes. */
+export function shortenLongStrings(text: string, max = 120): string {
+  return text.replace(/"((?:[^"\\]|\\.)+)"/g, (whole, inner: string) => (inner.length > max ? `"${inner.slice(0, 60)}… (${inner.length} characters)"` : whole))
+}
+
+/** One line about the shape of a JSON response, e.g. `Array · 12 items` or `Object · 3 keys`. */
+export function describeJson(text: string): string | null {
+  const t = text.trim()
+  if (!/^[{[]/.test(t)) return null
+  try {
+    const value: unknown = JSON.parse(t)
+    if (Array.isArray(value)) return `Array · ${value.length} ${value.length === 1 ? 'item' : 'items'}`
+    if (value && typeof value === 'object') {
+      const n = Object.keys(value).length
+      return `Object · ${n} ${n === 1 ? 'key' : 'keys'}`
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
+export interface HistoryEntry {
+  id: number
+  method: string
+  url: string
+  status: number | null
+  elapsedMs: number | null
+  at: number
+  serviceName: string | null
+  base: string
+  path: string
+  params: KeyValue[]
+  headers: KeyValue[]
+  body: string
+}
+
+export function agoText(at: number, now: number): string {
+  const s = Math.max(0, Math.round((now - at) / 1000))
+  if (s < 5) return 'now'
+  if (s < 60) return `${s} s ago`
+  const m = Math.round(s / 60)
+  return m < 60 ? `${m} min ago` : `${Math.round(m / 60)} h ago`
 }
 
 export const PARAM_CHIPS: { key: string; value: string; hint: string }[] = [

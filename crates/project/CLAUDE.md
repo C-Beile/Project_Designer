@@ -10,7 +10,7 @@
 | `src/` | Quellcode. Einzeldateien folgen. |
 | `src/lib.rs` | Modulliste. Kein Tauri im Crate. |
 | `src/project_actor.rs` | `ProjectActorHandle` und Actor-Thread: alle offenen Objekte, Undo/Redo, Speichern. |
-| `src/tree.rs` | Projektbaum (`TreeNode`, `scan_project_tree`, `list_tree_children`). |
+| `src/tree.rs` | Projektbaum (`TreeNode`, `scan_project_tree`, `list_tree_children`). Ein Objekt mit Implementierungen (heute `serviceDefinition`, Liste `IMPLEMENTATION_TYPES`) ist aufklappbar: darunter die Dateien seiner `<implementations>` und die, die Projekt oder Module per INSERT-Modifikation anhängen (`build_implementations`). |
 | `src/tree_ops.rs` | Objekt kopieren und löschen (Kontextmenü). |
 | `src/file_ops.rs` | Datei kopieren, verschieben, umbenennen, löschen, Eigenschaften. |
 | `src/new_object.rs` | "Neu": Vorlagen und `create_object`. |
@@ -24,7 +24,7 @@
 | `src/history.rs` | Undo/Redo-Verlauf je Objekt. |
 | `src/linked_file.rs` | Lesen/Schreiben verknüpfter Dateien (`%aditoprj%`). |
 | `src/modification_write.rs` | Modifikationen für Modul-Objekte (`modification/<id>`). |
-| `src/modification_overlay.rs` | Findet die Modifikationen von Projekt und Modulen, die ein Modul-Objekt treffen (für die Anzeige im Navigator, `project_actor::navigator`). Pfade dieser Elemente fehlen, sie sind nur zu sehen. |
+| `src/modification_overlay.rs` | Findet die Modifikationen von Projekt und Modulen, die ein Modul-Objekt treffen (für die Anzeige im Navigator, `project_actor::navigator`). Die Elemente tragen Pfade mit dem Präfix `#mod:`, sind im Property Sheet nur zu sehen (nicht änderbar). |
 | `src/transpile_action.rs` | Transpile-Aktion, Engine-Wahl, `set_transpilers`. |
 | `src/transpile_compare.rs` | Vergleich eigener `dist` mit der Referenz. |
 | `src/actions.rs` | `dispatch_action` (Action-Id zu `Action`). |
@@ -33,7 +33,7 @@
 | `src/watch.rs` | Re-Export von `FileStamp`/`file_stamp` (Stempel je geöffneter Datei). Die Erkennung im ganzen Projekt macht `project-index`. |
 | `src/settings.rs` | Eigene Einstellungen und Liste offener Projekte. |
 | `src/discover.rs` | `find_projects`: ADITO-Projekte direkt in einem Ordner finden (`.aditoprj` oder `package.json` plus Objektordner). |
-| `src/webservices.rs` | `list_webservices`: Entity-Webservices von Projekt und Modulen mit erlaubten Methoden und Login-Typen (nur lesen). `list_servers`: Hosts der Server-Configs der Systeme. |
+| `src/webservices.rs` | `list_webservices`: Entity-Webservices (`entityWebservice/`) und Custom Webservices (Prozesse mit `publishAsWebservice` und Style REST in `process/`) von Projekt und Modulen, nur lesen. Entity: erlaubte Methoden und Login-Typen. Custom (`kind` `custom`): Methoden aus den Funktionen `restget`/`restpost`/... im Skript, Mime-Typen, Query-Parameter als Hinweis aus `checkQueryParams` und `request.query.x`. `list_servers`: Hosts der Server-Configs der Systeme. |
 | `src/http_wire.rs` | Hilfen für den eigenen HTTP-Client des REST-Clients: Ziel-URL zerlegen, Antwort lesen, Base64. |
 | `src/file_list.rs` | Dateinamen für die Schnellsuche, Theme-Dateien lesen. |
 | `src/import_resolve.rs` | Ziel eines `import ... from` finden. |

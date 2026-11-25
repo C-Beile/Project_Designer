@@ -5,29 +5,33 @@ import type { ForgeApi } from '../api/ForgeApi'
 import type { RestResponseDto, RestServerDto, RestUserDto, WebserviceDto } from '../wire/types'
 import { errorText } from '../core/errorText'
 import { logOutput } from '../core/outputBus'
+import { confirmDialog } from '../core/dialogService'
 import {
   METHODS,
   REST_ROOT,
   PARAM_CHIPS,
+  WRITE_METHODS,
   bodyTemplate,
   callsOf,
   defaultUser,
-  formatSize,
+  isCustom,
   joinUrl,
   loginKindOf,
-  prettyBody,
+  serverTone,
   splitQuery,
-  statusClass,
-  tokenizeJson,
+  systemTone,
   tokenizeUrl,
   withQuery,
+  type HistoryEntry,
   type KeyValue,
   type LoginKind,
   type RestCall,
 } from './restTools'
-import { Button, Dropdown, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, TextArea } from '../core/ui/controls'
-import { copyText } from '../core/clipboard'
+import { Button, Dropdown, Input, TextArea } from '../core/ui/controls'
 import { useAbortableEffect } from '../core/hooks/useAbortableEffect'
+import { JsonText } from './RestJson'
+import { RestResponse } from './RestResponse'
+import { RestSidebar } from './RestSidebar'
 
 // Zuletzt benutzte Werte des REST-Clients, Abschnitt [rest] in designer.conf (nie das Passwort: das liegt im Schlüsselbund).
 const BASE_KEY = 'base'
@@ -35,7 +39,7 @@ const BASES_KEY = 'bases'
 const USER_KEY = 'user'
 const INSECURE_KEY = 'insecure'
 const BODY_METHODS = ['POST', 'PUT', 'PATCH']
-const MAX_HIGHLIGHT = 200_000
+const HISTORY_LIMIT = 25
 
 function read(key: string, fallback = ''): string {
   const value = configGet<unknown>('rest', key)
@@ -81,20 +85,6 @@ function HighlightedUrl({ value, onChange, onEnter, label }: { value: string; on
         }}
       />
     </div>
-  )
-}
-
-function JsonText({ text }: { text: string }) {
-  const parts = useMemo(() => (text.length > MAX_HIGHLIGHT ? null : tokenizeJson(text)), [text])
-  if (!parts) return <>{text}</>
-  return (
-    <>
-      {parts.map((p, i) => (
-        <span key={i} className={`j-${p.kind}`}>
-          {p.text}
-        </span>
-      ))}
-    </>
   )
 }
 
@@ -162,8 +152,7 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
   const [services, setServices] = useState<WebserviceDto[]>([])
   const [users, setUsers] = useState<RestUserDto[]>([])
   const [servers, setServers] = useState<RestServerDto[]>([])
-  const [filter, setFilter] = useState('')
-  const [open, setOpen] = useState<Set<string>>(() => new Set())
+  const [history, setHistory] = useState<HistoryEntry[]>([])
   const [selected, setSelected] = useState<WebserviceDto | null>(null)
   const [call, setCall] = useState<RestCall | null>(null)
 
@@ -175,7 +164,6 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
   const [headers, setHeaders] = useState<KeyValue[]>([{ key: 'Accept', value: 'application/json', on: true }])
   const [body, setBody] = useState('')
   const [reqTab, setReqTab] = useState<ReqTab>('params')
-  const [resTab, setResTab] = useState<'body' | 'headers' | 'sent'>('body')
   const [insecure, setInsecure] = useState(() => configGet<boolean>('rest', INSECURE_KEY) === true)
 
   const [loginKind, setLoginKind] = useState<LoginKind>('basic')
@@ -189,7 +177,6 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
   const [busy, setBusy] = useState(false)
   const [response, setResponse] = useState<RestResponseDto | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
 
   useAbortableEffect((signal) => {
     api
@@ -197,7 +184,6 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
       .then((list) => {
         if (signal.aborted) return
         setServices(list)
-        setOpen(new Set(list.filter((w) => w.module === null).map((w) => w.name)))
       })
       .catch(() => setServices([]))
   }, [api, projectRoot])
@@ -257,15 +243,13 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
     setPassword('')
   }, [base, user])
 
-  const groups = useMemo(() => {
-    const q = filter.trim().toLowerCase()
-    const list = q === '' ? services : services.filter((w) => w.name.toLowerCase().includes(q))
-    const map = new Map<string, WebserviceDto[]>()
-    for (const w of list) map.set(w.module ?? 'Project', [...(map.get(w.module ?? 'Project') ?? []), w])
-    return [...map.entries()]
-  }, [services, filter])
-
   const fullUrl = withQuery(joinUrl(base, path), params)
+  const baseTone = useMemo(() => {
+    const url = base.replace(/\/+$/, '')
+    const known = servers.find((s) => `https://${s.host}${REST_ROOT}` === url || url.startsWith(`https://${s.host}`))
+    if (known) return serverTone(known.systems, known.host)
+    return systemTone(url.replace(/^https?:\/\//i, ''))
+  }, [base, servers])
 
   function choose(ws: WebserviceDto, c: RestCall) {
     setSelected(ws)
@@ -280,6 +264,20 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
       return BODY_METHODS.includes(c.method) ? [...rest, { key: 'Content-Type', value: 'application/json', on: true }] : rest
     })
     setReqTab(BODY_METHODS.includes(c.method) ? 'body' : 'params')
+    setResponse(null)
+    setError(null)
+  }
+
+  function restore(h: HistoryEntry) {
+    setBase(h.base)
+    write(BASE_KEY, h.base)
+    setPath(h.path)
+    setMethod(h.method)
+    setParams(h.params)
+    setHeaders(h.headers)
+    setBody(h.body)
+    setSelected(services.find((w) => w.name === h.serviceName) ?? null)
+    setCall(null)
     setResponse(null)
     setError(null)
   }
@@ -346,8 +344,14 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
       setError('Replace {id} in the URL with the id of a record.')
       return
     }
+    if (baseTone === 'prod' && WRITE_METHODS.includes(method)) {
+      const sure = await confirmDialog(`This call changes data on a production server:\n${method} ${fullUrl}`, { title: 'Production server', okLabel: `Send ${method}` })
+      if (!sure) return
+    }
     setBusy(true)
     setError(null)
+    const rememberCall = (status: number | null, elapsedMs: number | null) =>
+      setHistory((cur) => [{ id: Date.now() + cur.length, method, url: fullUrl, status, elapsedMs, at: Date.now(), serviceName: selected?.name ?? null, base, path, params, headers, body }, ...cur].slice(0, HISTORY_LIMIT))
     try {
       const hs = headers.filter((h) => h.on && h.key.trim() !== '').map((h) => [h.key.trim(), h.value] as [string, string])
       const kind: LoginKind = loginKind === 'basic' && user.trim() === '' ? 'none' : loginKind
@@ -360,7 +364,7 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
         insecure,
       })
       setResponse(res)
-      setResTab('body')
+      rememberCall(res.status, res.elapsedMs)
       const list = [base, ...bases.filter((b) => b !== base)].filter((b) => b.trim() !== '').slice(0, 10)
       setBases(list)
       configSet(['rest', BASES_KEY], list)
@@ -369,6 +373,7 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
     } catch (e) {
       const text = errorText(e)
       setResponse(null)
+      if (!text.includes('PASSWORD_REQUIRED')) rememberCall(null, null)
       if (text.includes('PASSWORD_REQUIRED')) {
         setReqTab('auth')
         setError(`No password saved for ${user} on this server yet. Enter it once under Authorization, it is kept in the system keychain afterwards.`)
@@ -380,17 +385,8 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
     }
   }
 
-  async function copyBody(text: string) {
-    if (await copyText(text)) {
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1200)
-    } else {
-      setCopied(false)
-    }
-  }
-
-  const pretty = response ? prettyBody(response) : ''
   const methodsOfSelected = selected ? selected.methods.join(', ') : ''
+  const paramChips = selected && isCustom(selected) ? selected.params.map((p) => ({ key: p.name, value: '', hint: `${p.kind ?? 'any type'}${p.mandatory ? ', required' : ''}`, mandatory: p.mandatory })) : PARAM_CHIPS.map((c) => ({ ...c, mandatory: false }))
   const tab = (id: ReqTab, label: string, badge?: ReactNode) => (
     <Button variant="bare" role="tab" aria-selected={reqTab === id} className={`rest-tab${reqTab === id ? ' is-active' : ''}`} onClick={() => setReqTab(id)}>
       {label}
@@ -399,45 +395,16 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
   )
 
   return (
-    <div className="rest-root">
-      <aside className="rest-side" aria-label="Web services">
-        <Input className="rest-filter" value={filter} placeholder="Filter web services" aria-label="Filter web services" onChange={(e) => setFilter(e.target.value)} />
-        <div className="rest-list">
-          {groups.length === 0 ? <p className="rest-empty">No entity web services in this project.</p> : null}
-          {groups.map(([group, list]) => (
-            <section key={group}>
-              <h4>{group}</h4>
-              {list.map((ws) => {
-                const calls = callsOf(ws)
-                const isOpen = open.has(ws.name) || filter.trim() !== ''
-                return (
-                  <div key={`${group}/${ws.name}`} className="rest-ws">
-                    <Button variant="bare"
-
-                      className={`rest-ws-head${selected?.name === ws.name ? ' is-selected' : ''}`}
-                      aria-expanded={isOpen}
-                      onClick={() => setOpen((cur) => { const next = new Set(cur); if (!next.delete(ws.name)) next.add(ws.name); return next })}
-                    >
-                      <span className="rest-caret">{isOpen ? '▾' : '▸'}</span>
-                      <span className="rest-ws-name">{ws.name}</span>
-                    </Button>
-                    {isOpen
-                      ? calls.length === 0
-                        ? <p className="rest-empty rest-nomethods">No method is allowed.</p>
-                        : calls.map((c) => (
-                            <Button variant="bare" key={c.id} className={`rest-item${call?.id === c.id ? ' is-active' : ''}`} title={`${c.method} ${c.path}`} onClick={() => choose(ws, c)}>
-                              <span className={`rest-method m-${c.method}`}>{c.method}</span>
-                              <span className="rest-item-name">{c.label}</span>
-                            </Button>
-                          ))
-                      : null}
-                  </div>
-                )
-              })}
-            </section>
-          ))}
-        </div>
-      </aside>
+    <div
+      className="rest-root"
+      onKeyDown={(e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          e.preventDefault()
+          void send()
+        }
+      }}
+    >
+      <RestSidebar services={services} selected={selected} call={call} onChoose={choose} history={history} onRestore={restore} now={Date.now()} />
 
       <div className="rest-main">
         <div className="rest-conn">
@@ -461,7 +428,8 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
             {servers.map((s) => {
               const url = `https://${s.host}${REST_ROOT}`
               return (
-                <Button key={s.host} variant="bare" className={`rest-chip${base.replace(/\/+$/, '') === url ? ' is-on' : ''}`} title={url} onClick={() => changeBase(url)}>
+                <Button key={s.host} variant="bare" className={`rest-chip tone-${serverTone(s.systems, s.host)}${base.replace(/\/+$/, '') === url ? ' is-on' : ''}`} title={url} onClick={() => changeBase(url)}>
+                  <span className="rest-tonedot" aria-hidden="true" />
                   {s.systems.join(', ')}
                 </Button>
               )
@@ -469,7 +437,13 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
           </div>
         ) : null}
 
-        <div className="rest-bar">
+        {baseTone === 'prod' ? (
+          <p className="rest-prodbar" role="note">
+            Production server: calls that change data ask for confirmation first.
+          </p>
+        ) : null}
+
+        <div className={`rest-bar m-bar-${method}`}>
           <Dropdown value={method} aria-label="Method" className={`rest-methodpick m-${method}`} onChange={(v) => changeMethod(v)} options={[...new Set([...(selected ? callsOf(selected).map((c) => c.method) : [...METHODS]), method])].map((m) => ({ id: m, label: m }))} />
           <HighlightedUrl value={fullUrl} onChange={changeFull} onEnter={() => void send()} label="Request URL" />
           <Button variant="bare" className="rest-send" isDisabled={busy} onClick={() => void send()}>
@@ -477,8 +451,21 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
           </Button>
         </div>
         {selected ? (
-          <p className="rest-hint">
-            <strong>{selected.name}</strong> allows {methodsOfSelected === '' ? 'no method' : methodsOfSelected}
+          <p className="rest-hint rest-selected">
+            <span className={`rest-kind k-${isCustom(selected) ? 'custom' : 'entity'}`}>{isCustom(selected) ? 'C' : 'E'}</span>
+            <strong>{selected.name}</strong>
+            <span>{isCustom(selected) ? 'custom web service' : 'entity web service'}, allows</span>
+            {methodsOfSelected === '' ? (
+              <span>no method</span>
+            ) : (
+              selected.methods.map((m) => (
+                <span key={m} className={`rest-mpill m-${m.toUpperCase()}`}>
+                  {m.toUpperCase()}
+                </span>
+              ))
+            )}
+            {isCustom(selected) && selected.accepts ? <span className="rest-meta">takes {selected.accepts}</span> : null}
+            {isCustom(selected) && selected.delivers ? <span className="rest-meta">returns {selected.delivers}</span> : null}
           </p>
         ) : null}
 
@@ -492,11 +479,13 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
           {reqTab === 'params' ? (
             <>
               <div className="rest-chips" aria-label="Add a parameter">
-                {PARAM_CHIPS.map((c) => (
-                  <Button variant="bare" key={c.key} className="rest-chip" title={c.hint} isDisabled={params.some((p) => p.key === c.key)} onClick={() => addChip(c.key, c.value)}>
+                {paramChips.map((c) => (
+                  <Button variant="bare" key={c.key} className={`rest-chip${c.mandatory ? ' is-required' : ''}`} title={c.hint} isDisabled={params.some((p) => p.key === c.key)} onClick={() => addChip(c.key, c.value)}>
                     + {c.key}
+                    {c.mandatory ? <span className="rest-req" aria-label="required">*</span> : null}
                   </Button>
                 ))}
+                {selected && isCustom(selected) && selected.params.length === 0 ? <span className="rest-hint">The script reads no query parameter that could be found. Add your own below.</span> : null}
               </div>
               <KeyValueTable rows={params} onChange={setParams} label="Param" />
             </>
@@ -570,65 +559,16 @@ export function RestEditor({ api, projectRoot }: { api: ForgeApi; projectRoot: s
           {reqTab === 'body' ? <BodyEditor value={body} onChange={setBody} /> : null}
         </div>
 
-        <div className="rest-res">
-          {error ? <p className="rest-error" role="alert">{error}</p> : null}
-          {response && response.status === 401 && loginKind === 'basic' ? (
-            <p className="rest-error" role="alert">
-              The server rejected the login of {user === '' ? 'this call' : user}
-              {response.headers.find(([k]) => k.toLowerCase() === 'www-authenticate') ? ` (it asks for: ${response.headers.find(([k]) => k.toLowerCase() === 'www-authenticate')?.[1]})` : ''}. If the password is wrong, change it.{' '}
-              <Button variant="bare" className="rest-link" onClick={() => { setReqTab('auth'); setChanging(true) }}>
-                Change password
-              </Button>
-            </p>
-          ) : null}
-          {response ? (
-            <>
-              <div className="rest-res-bar">
-                <span className={`rest-status s-${statusClass(response.status)}`}>
-                  {response.status} {response.reason}
-                </span>
-                <span className="rest-meta">{response.elapsedMs} ms</span>
-                <span className="rest-meta">{formatSize(response.size)}</span>
-                <span className="rest-spacer" />
-                <Button variant="bare" className={`rest-tab${resTab === 'body' ? ' is-active' : ''}`} onClick={() => setResTab('body')}>
-                  Body
-                </Button>
-                <Button variant="bare" className={`rest-tab${resTab === 'headers' ? ' is-active' : ''}`} onClick={() => setResTab('headers')}>
-                  Headers <span className="rest-badge">{response.headers.length}</span>
-                </Button>
-                <Button variant="bare" className={`rest-tab${resTab === 'sent' ? ' is-active' : ''}`} onClick={() => setResTab('sent')}>
-                  Sent request
-                </Button>
-                <Button variant="bare" onClick={() => void copyBody(resTab === 'body' ? pretty : resTab === 'sent' ? response.sent : response.headers.map(([k, v]) => `${k}: ${v}`).join('\n'))}>
-                  {copied ? 'Copied' : 'Copy'}
-                </Button>
-              </div>
-              {resTab === 'body' ? (
-                <pre className="rest-code" aria-label="Response body">
-                  <JsonText text={pretty} />
-                </pre>
-              ) : resTab === 'sent' ? (
-                <pre className="rest-code" aria-label="Sent request">
-                  {response.sent}
-                </pre>
-              ) : (
-                <Table className="rest-headers" aria-label="Response headers">
-                  <TableHeader><TableColumn isRowHeader className="forge-sr-only">Name</TableColumn><TableColumn className="forge-sr-only">Value</TableColumn></TableHeader>
-                  <TableBody>
-                    {response.headers.map(([k, v], i) => (
-                      <TableRow key={i}>
-                        <TableCell>{k}</TableCell>
-                        <TableCell>{v}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </>
-          ) : error ? null : (
-            <p className="rest-empty rest-placeholder">Pick a call on the left, check the URL and press Send.</p>
-          )}
-        </div>
+        <RestResponse
+          response={response}
+          error={error}
+          loginKind={loginKind}
+          user={user}
+          onChangePassword={() => {
+            setReqTab('auth')
+            setChanging(true)
+          }}
+        />
       </div>
     </div>
   )

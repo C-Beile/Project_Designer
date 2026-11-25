@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { bodyTemplate, callsOf, joinUrl, loginKindOf, splitQuery, tokenizeJson, tokenizeUrl, withQuery } from '../../src/services/restTools'
+import { agoText, bodyTemplate, callsOf, describeJson, joinUrl, loginKindOf, serverTone, shortenLongStrings, splitQuery, systemTone, tokenizeJson, tokenizeUrl, withQuery } from '../../src/services/restTools'
 
-const ws = (methods: string[], loginTypes: string[] = []) => ({ name: 'Person_ws', module: null, methods, loginTypes, fields: 0 })
+const ws = (methods: string[], loginTypes: string[] = []) => ({ name: 'Person_ws', module: null, methods, loginTypes, fields: 0, kind: 'entity', params: [] })
+const custom = (methods: string[]) => ({ name: 'Orders_c_ws', module: null, methods, loginTypes: [], fields: 0, kind: 'custom', params: [] })
 
 describe('callsOf', () => {
   it('offers only the methods the web service allows', () => {
@@ -69,5 +70,60 @@ describe('joinUrl with a server that already ends with the REST root', () => {
   it('does not repeat /services/rest', () => {
     expect(joinUrl('https://h.cloud/services/rest', '/services/rest/Product_ws')).toBe('https://h.cloud/services/rest/Product_ws')
     expect(joinUrl('https://h.cloud', '/services/rest/Product_ws')).toBe('https://h.cloud/services/rest/Product_ws')
+  })
+})
+
+describe('custom web services (processes)', () => {
+  it('has one call per method on the service address, without a record id', () => {
+    const calls = callsOf(custom(['POST', 'GET']))
+    expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual(['GET /services/rest/Orders_c_ws', 'POST /services/rest/Orders_c_ws'])
+    expect(calls.every((c) => !c.record && c.custom)).toBe(true)
+  })
+
+  it('suggests an object body for writing calls only', () => {
+    const [get, post] = callsOf(custom(['GET', 'POST']))
+    expect(bodyTemplate(get)).toBe('')
+    expect(bodyTemplate(post)).toBe('{\n  \n}')
+  })
+})
+
+describe('system tone', () => {
+  it('tells the environment from the system name', () => {
+    expect(systemTone('prod_bg')).toBe('prod')
+    expect(systemTone('dev2')).toBe('dev')
+    expect(systemTone('qs')).toBe('qa')
+    expect(systemTone('test')).toBe('test')
+    expect(systemTone('dev_sam')).toBe('dev')
+    expect(systemTone('default')).toBe('other')
+  })
+
+  it('takes the most careful tone of the systems of a server', () => {
+    expect(serverTone(['dev', 'prod'], 'h.example')).toBe('prod')
+    expect(serverTone(['dev_bg'], 'h.example')).toBe('dev')
+    expect(serverTone([], 'prod-svb.example.cloud')).toBe('prod')
+  })
+})
+
+describe('response helpers', () => {
+  it('shortens long string values and keeps the rest', () => {
+    const text = JSON.stringify({ name: 'x', content: 'A'.repeat(500) })
+    const short = shortenLongStrings(text)
+    expect(short).toContain('(500 characters)')
+    expect(short).toContain('"name":"x"')
+    expect(short.length).toBeLessThan(200)
+  })
+
+  it('describes the shape of a JSON response', () => {
+    expect(describeJson('[1,2,3]')).toBe('Array · 3 items')
+    expect(describeJson('[1]')).toBe('Array · 1 item')
+    expect(describeJson('{"a":1,"b":2}')).toBe('Object · 2 keys')
+    expect(describeJson('plain text')).toBeNull()
+  })
+
+  it('writes how long ago something happened', () => {
+    expect(agoText(1000, 2000)).toBe('now')
+    expect(agoText(0, 30_000)).toBe('30 s ago')
+    expect(agoText(0, 5 * 60_000)).toBe('5 min ago')
+    expect(agoText(0, 2 * 3_600_000)).toBe('2 h ago')
   })
 })
